@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, and Smile. The gld libraries target Mojo 1.1.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, and Smile. The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
 
 ## Runtime
 
@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is published, and this TOML row still times DataBooth/mojo-toml. BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
+There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
 
 These times cannot be ranked against another language.
 
@@ -60,6 +60,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) | Schema | leo-gan/gld-flatbuffers 0.4.0 | bytes only | Reused `Builder` and generated tables from the suite `.fbs` |
 | [mojo-avro](https://github.com/leo-gan/gld-avro) | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
 | [mojo-toml](https://github.com/DataBooth/mojo-toml) | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
+| [gld-toml](https://github.com/leo-gan/gld-toml) | Text | leo-gan/gld-toml 0.1.0 | bytes only | `encode_toml` / `decode_toml` (vendored as `gldtoml`) |
 | [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.6.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.4.0 | bytes only | WireWriter / WireReader |
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
@@ -100,7 +101,11 @@ gld-avro (leo-gan) implements Apache Avro for Mojo via `AvroDatum`. Avro exists 
 
 #### [mojo-toml](https://github.com/DataBooth/mojo-toml) · `0.9.1`
 
-DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row still times that library. `gld-toml` is published separately and is not this row.
+DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is the next row; the two do not share a serializer id or a Mojo package name.
+
+#### [gld-toml](https://github.com/leo-gan/gld-toml) · `0.1.0`
+
+gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as `gldtoml` so `from toml` still means DataBooth and `from gldtoml` means this library.
 
 #### [gld-yaml](https://github.com/leo-gan/gld-yaml) · `0.6.0`
 

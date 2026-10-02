@@ -1322,8 +1322,13 @@ languages:
       - name: mojo-toml
         category: text
         package: DataBooth/mojo-toml
-        rationale: "Pure-Mojo TOML 1.0 parser and writer"
+        rationale: "Pure-Mojo TOML 1.0 parser and writer (DataBooth). Not gld-toml."
         optimal_api: "to_toml(Dict) / parse(text)"
+      - name: gld-toml
+        category: text
+        package: leo-gan/gld-toml
+        rationale: "Pure-Mojo TOML 1.1 (leo-gan/gld-toml). Distinct from DataBooth/mojo-toml; vendored as gldtoml so the toml package name does not collide."
+        optimal_api: "encode_toml / decode_toml on a TomlDoc (vendored as gldtoml)"
       - name: gld-yaml
         category: text
         package: https://github.com/leo-gan/gld-yaml

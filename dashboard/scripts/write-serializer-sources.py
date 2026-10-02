@@ -1419,8 +1419,13 @@ SPECIFICS: dict[str, str] = {
     ),
     "mojo-toml": (
         "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as "
-        "an obvious config language. This row still times that library. "
-        "`gld-toml` is published separately and is not this row."
+        "an obvious config language. This row times that library. "
+        "leo-gan/gld-toml is a different library and is the gld-toml row."
+    ),
+    "gld-toml": (
+        "gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. "
+        "It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml "
+        "so its package name does not collide with DataBooth's toml package."
     ),
     "gld-yaml": (
         "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML "
@@ -1738,6 +1743,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-flatbuffers"): "gld-flatbuffers",
     ("mojo", "mojo-avro"): "gld-avro",
     ("mojo", "mojo-toml"): "mojo-toml",
+    ("mojo", "gld-toml"): "gld-toml",
     ("mojo", "gld-yaml"): "gld-yaml",
     ("mojo", "mojo-msgpack"): "gld-msgpack",
     ("mojo", "mojo-bson"): "gld-bson",

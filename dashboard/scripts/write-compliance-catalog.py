@@ -602,7 +602,9 @@ add("mojo", "mojo-flatbuffers", ["flatbuffers"], "https://github.com/leo-gan/gld
 add("mojo", "mojo-avro", ["avro"], "https://github.com/leo-gan/gld-avro",
     "gld-avro: Avro datum encode/decode.")
 add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
-    "DataBooth/mojo-toml: TOML.")
+    "DataBooth/mojo-toml: TOML. Not leo-gan/gld-toml.")
+add("mojo", "gld-toml", ["toml"], "https://github.com/leo-gan/gld-toml",
+    "gld-toml: TOML 1.1 TomlDoc encode/decode. Vendored as gldtoml so it does not collide with DataBooth's toml package.")
 add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-messagepack",
     "gld-messagepack: MessagePack wire.")
 add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",

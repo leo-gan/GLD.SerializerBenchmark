@@ -2,7 +2,7 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src}.
+# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,gldtoml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -45,7 +45,8 @@ acquire gld-avro "$tmp/gld-avro" https://github.com/leo-gan/gld-avro.git
 acquire gld-bson "$tmp/gld-bson" https://github.com/leo-gan/gld-bson.git
 acquire gld-ion "$tmp/gld-ion" https://github.com/leo-gan/gld-ion.git
 acquire gld-smile "$tmp/gld-smile" https://github.com/leo-gan/gld-smile.git
-# This row times DataBooth/mojo-toml. gld-toml is a different library and must not replace it.
+acquire gld-toml "$tmp/gld-toml" https://github.com/leo-gan/gld-toml.git
+# DataBooth/mojo-toml keeps the `toml` package. gld-toml is vendored separately below.
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
   rm -rf "$tmp/mojo-toml"
@@ -185,6 +186,17 @@ rewrite_tree(
         "schema": "ion_schema",
         "codegen": "ion_codegen",
         "ion": "ion",
+    },
+)
+rewrite_tree(
+    src_root / "gld-toml" / "src",
+    mojo / "vendor" / "gldtoml_src",
+    {
+        "runtime": "gldtoml_runtime",
+        "wire": "gldtoml_wire",
+        "schema": "gldtoml_schema",
+        "codegen": "gldtoml_codegen",
+        "toml": "gldtoml",
     },
 )
 rewrite_tree(
