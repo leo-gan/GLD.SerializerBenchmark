@@ -70,6 +70,26 @@ def _ehsan_batch(type_id: String) raises:
         raise Error("ehsanmok-json fidelity n=100 " + type_id)
 
 
+def _yaml_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var one = make_one(type_id, cfg, UInt64(42), 0)
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var yaml = YamlSer()
+    var small = yaml.serialize_bytes(one)
+    var buf = yaml.serialize_bytes(fx)
+    if not yaml.check(fx, buf):
+        raise Error("gld-yaml fidelity n=100 " + type_id)
+    if len(buf) < len(small) * 50:
+        raise Error(
+            "gld-yaml size n=100 "
+            + type_id
+            + " "
+            + String(len(buf))
+            + " vs n=1 "
+            + String(len(small))
+        )
+
+
 def _flatbuffers_batch(type_id: String) raises:
     var cfg = TypeConfig()
     var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
@@ -91,4 +111,9 @@ def main() raises:
     _flatbuffers_batch("strings")
     _flatbuffers_batch("event")
     _flatbuffers_batch("message")
+    _yaml_batch("message")
+    _yaml_batch("document")
+    _yaml_batch("telemetry")
+    _yaml_batch("strings")
+    _yaml_batch("event")
     print("ok")
