@@ -135,7 +135,7 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 		names[s.Name()] = true
 	}
 	for _, want := range []string{
-		"encoding/json", "sonic", "goccy/go-json", "jsoniter",
+		"encoding/json", "encoding/json/v2", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
 		"encoding/gob", "mongo-bson", "ion-go", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
@@ -181,6 +181,7 @@ func TestCallPathDocsMentionOptimizations(t *testing.T) {
 func TestStreamModeLabels(t *testing.T) {
 	want := map[string]StreamMode{
 		"encoding/json":            StreamNative,
+		"encoding/json/v2":         StreamNative,
 		"sonic":                    StreamNative,
 		"goccy/go-json":            StreamNative,
 		"jsoniter":                 StreamNative,

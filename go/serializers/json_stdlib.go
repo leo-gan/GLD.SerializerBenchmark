@@ -7,7 +7,11 @@ import (
 	"serializer-benchmark-go/model"
 )
 
-// encodingJSON — Go standard library baseline.
+// encodingJSON — Go standard library v1 API (encoding/json).
+// On Go 1.27 this package is backed by the v2 engine but keeps v1 semantics
+// (duplicate names and invalid UTF-8 are still accepted). The stricter v2
+// defaults are the separate encoding/json/v2 row. Do not build this module
+// with GOEXPERIMENT=nojsonv2: that flag hides encoding/json/v2.
 // Recommended: json.Marshal / json.Unmarshal (no indent); Encoder/Decoder for streams.
 // https://pkg.go.dev/encoding/json
 type encodingJSON struct {

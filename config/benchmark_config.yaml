@@ -720,13 +720,18 @@ languages:
     log_dir: logs/go
     time_unit: nanoseconds
     docs_dir: docs/go
-    min_go_version: "1.23"
+    min_go_version: "1.27"
     serializers:
       - name: encoding/json
         category: json
         package: stdlib
-        rationale: "Go standard library JSON baseline"
+        rationale: "Go standard library JSON v1 API (v1 semantics on the Go 1.27 engine)"
         optimal_api: "json.Marshal / Unmarshal; Encoder/Decoder for streams"
+      - name: encoding/json/v2
+        category: json
+        package: stdlib
+        rationale: "Go 1.27 encoding/json/v2 defaults (rejects invalid UTF-8 and duplicate names)"
+        optimal_api: "json/v2.Marshal / Unmarshal; MarshalWrite / UnmarshalRead"
       - name: sonic
         category: json
         package: github.com/bytedance/sonic

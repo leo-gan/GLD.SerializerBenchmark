@@ -109,6 +109,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("javascript", "bser"): "https://github.com/facebook/watchman",
     # Go
     ("go", "encoding/json"): "https://github.com/golang/go/tree/master/src/encoding/json",
+    ("go", "encoding/json/v2"): "https://github.com/golang/go/tree/master/src/encoding/json/v2",
     ("go", "protobuf"): "https://github.com/protocolbuffers/protobuf-go",
     ("go", "mongo-bson"): "https://github.com/mongodb/mongo-go-driver",
     ("go", "encoding/gob"): "https://github.com/golang/go/tree/master/src/encoding/gob",
@@ -653,7 +654,16 @@ SPECIFICS: dict[str, str] = {
     "go-json": (
         "Go's `encoding/json` is the standard library JSON codec. It "
         "exists so every Go program can speak RFC 8259 with struct tags. "
-        "This row is the baseline other Go JSON libraries try to beat."
+        "This row is the baseline other Go JSON libraries try to beat. "
+        "On Go 1.27 the package keeps v1 semantics. The stricter defaults "
+        "are the separate `encoding/json/v2` row."
+    ),
+    "go-json-v2": (
+        "`encoding/json/v2` is the Go 1.27 standard library JSON API with "
+        "stricter defaults than `encoding/json`: invalid UTF-8 and duplicate "
+        "object names are errors, and `<`, `>`, and `&` are not HTML-escaped. "
+        "This row times `Marshal` / `Unmarshal` and `MarshalWrite` / "
+        "`UnmarshalRead`."
     ),
     "goccy-json": (
         "goccy/go-json was written as a faster drop-in for `encoding/json`. "
@@ -1533,6 +1543,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("javascript", "sia"): "sia",
     ("javascript", "bser"): "bser",
     ("go", "encoding/json"): "go-json",
+    ("go", "encoding/json/v2"): "go-json-v2",
     ("go", "goccy/go-json"): "goccy-json",
     ("go", "jsoniter"): "jsoniter-go",
     ("go", "segmentio/encoding/json"): "segmentio-json",

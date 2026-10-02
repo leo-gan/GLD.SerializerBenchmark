@@ -169,6 +169,8 @@ add("javascript", "bser", [], "https://facebook.github.io/watchman/docs/bser.htm
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
     "Go stdlib encoding/json: RFC 7159 JSON.")
+add("go", "encoding/json/v2", ["json"], "https://pkg.go.dev/encoding/json/v2",
+    "Go 1.27 encoding/json/v2: stricter JSON defaults (invalid UTF-8 and duplicate names rejected).")
 add("go", "goccy/go-json", ["json"], "https://github.com/goccy/go-json",
     "goccy/go-json: fast encoding/json-compatible JSON library.")
 add("go", "jsoniter", ["json"], "https://github.com/json-iterator/go",
