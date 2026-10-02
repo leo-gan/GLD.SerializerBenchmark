@@ -2,11 +2,12 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (21)
+## Serializers (22)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
-| encoding/json | JSON | stdlib | `Marshal`/`Unmarshal`; stream `Encoder` with `SetEscapeHTML(false)` |
+| encoding/json | JSON | stdlib | v1 API. `Marshal`/`Unmarshal`; stream `Encoder` with `SetEscapeHTML(false)`. On Go 1.27 this keeps v1 semantics |
+| encoding/json/v2 | JSON | stdlib | v2 defaults. `Marshal`/`Unmarshal`; stream `MarshalWrite`/`UnmarshalRead` |
 | sonic | JSON | `github.com/bytedance/sonic` | `ConfigDefault` + `Pretouch` in `prepare` |
 | goccy/go-json | JSON | `github.com/goccy/go-json` | drop-in fast JSON; native stream |
 | jsoniter | JSON | `github.com/json-iterator/go` | `ConfigCompatibleWithStandardLibrary` |
@@ -57,7 +58,7 @@ go build -o bin/serializer-benchmark-go .
 ./bin/serializer-benchmark-go 100
 ```
 
-Requires Go **1.24+**. `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/go/`).
+Requires Go **1.27+** (`go.mod` toolchain `go1.27.1`). A 1.22+ bootstrap is enough when `GOTOOLCHAIN=auto` can download that toolchain. Do not set `GOEXPERIMENT=nojsonv2`; that build hides `encoding/json/v2`. `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/go/`).
 
 Analysis: `analyze-benchmarks -l go`.
 

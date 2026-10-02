@@ -5,6 +5,7 @@ func All() []BenchSerializer {
 	return []BenchSerializer{
 		// JSON family
 		newEncodingJSON(),
+		newEncodingJSONV2(),
 		newSonicJSON(),
 		newGoccyJSON(),
 		newJSONIter(),

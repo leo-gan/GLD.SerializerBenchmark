@@ -85,6 +85,7 @@ export const CATALOG = [
   { language: "javascript", name: "sia", formats: [], docs: "https://github.com/TimeleapLabs/sia", evidence: "Sia: project-specific binary tags, no public MUST/MUST NOT spec." },
   { language: "javascript", name: "bser", formats: [], docs: "https://facebook.github.io/watchman/docs/bser.html", evidence: "Watchman BSER: Facebook Watchman binary protocol, not a general interchange spec." },
   { language: "go", name: "encoding/json", formats: ["json"], docs: "https://pkg.go.dev/encoding/json", evidence: "Go stdlib encoding/json: RFC 7159 JSON." },
+  { language: "go", name: "encoding/json/v2", formats: ["json"], docs: "https://pkg.go.dev/encoding/json/v2", evidence: "Go 1.27 encoding/json/v2: stricter JSON defaults (invalid UTF-8 and duplicate names rejected)." },
   { language: "go", name: "goccy/go-json", formats: ["json"], docs: "https://github.com/goccy/go-json", evidence: "goccy/go-json: fast encoding/json-compatible JSON library." },
   { language: "go", name: "jsoniter", formats: ["json"], docs: "https://github.com/json-iterator/go", evidence: "json-iterator: high-performance JSON for Go." },
   { language: "go", name: "segmentio/encoding/json", formats: ["json"], docs: "https://github.com/segmentio/encoding", evidence: "segmentio/encoding/json: drop-in encoding/json replacement." },

@@ -5,7 +5,7 @@ title: "Go"
 Go
 ===
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro).
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro). `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
 
@@ -15,8 +15,8 @@ Go compiles to **native machine code** before the process starts. There is no Ja
 
 | | This suite |
 |---|---|
-| Language / module | Go **1.24** (`go.mod` toolchain `go1.24.13`) |
-| Host bootstrap | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.24. |
+| Language / module | Go **1.27** (`go.mod` toolchain `go1.27.1`) |
+| Host bootstrap | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.27. |
 | Prepare | `./scripts/install-host-requirements.sh go` installs into `~/.local/go` |
 | Run | `go/scripts/run-benchmarks.sh` runs `go build` and then the binary |
 | Memory | Concurrent garbage collector inside the Go runtime |
@@ -51,7 +51,8 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
 | [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) | Native | stdlib | registered types | native | Buffer Reset between encodes |
-| [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON | stdlib | struct tags | native | Stream `SetEscapeHTML(false)` |
+| [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON | stdlib | struct tags | native | v1 API. Stream `SetEscapeHTML(false)` |
+| [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2) | JSON | stdlib | struct tags | native | v2 defaults. `MarshalWrite` / `UnmarshalRead` |
 | [fxamacker/cbor](https://github.com/fxamacker/cbor) | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
 | [goccy/go-json](https://github.com/goccy/go-json) | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
@@ -76,13 +77,17 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
 
-#### [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) · `go1.24.13`
+#### [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) · `go1.27.1`
 
 encoding/gob is Go's native binary stream for Go types. It was created so Go programs can RPC and persist values without an IDL. It is not a cross-language wire format.
 
-#### [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) · `go1.24.13`
+#### [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) · `go1.27.1`
 
-Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat.
+Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat. On Go 1.27 the package keeps v1 semantics. The stricter defaults are the separate `encoding/json/v2` row.
+
+#### [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2) · `go1.27.1`
+
+`encoding/json/v2` is the Go 1.27 standard library JSON API with stricter defaults than `encoding/json`: invalid UTF-8 and duplicate object names are errors, and `<`, `>`, and `&` are not HTML-escaped. This row times `Marshal` / `Unmarshal` and `MarshalWrite` / `UnmarshalRead`.
 
 #### [fxamacker/cbor](https://github.com/fxamacker/cbor) · `2.9.4`
 

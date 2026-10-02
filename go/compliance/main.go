@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
 	"math"
@@ -356,6 +357,7 @@ func builtin() []adapter {
 	}
 	return []adapter{
 		{"encoding/json", "json", moduleVer("stdlib"), jsonDec(json.Unmarshal)},
+		{"encoding/json/v2", "json", moduleVer("stdlib"), jsonDec(jsonV2Unmarshal)},
 		{"goccy/go-json", "json", moduleVer("github.com/goccy/go-json"), jsonDec(goccyjson.Unmarshal)},
 		{"jsoniter", "json", moduleVer("github.com/json-iterator/go"), jsonDec(jsoniter.Unmarshal)},
 		{"sonic", "json", moduleVer("github.com/bytedance/sonic"), jsonDec(sonic.Unmarshal)},
@@ -482,6 +484,10 @@ func pbDocMap(msg *dynamicpb.Message) map[string]any {
 		"ok":   msg.Get(md.Fields().ByName("ok")).Bool(),
 		"tags": tags,
 	}
+}
+
+func jsonV2Unmarshal(b []byte, v any) error {
+	return jsonv2.Unmarshal(b, v)
 }
 
 func moduleVer(path string) string {

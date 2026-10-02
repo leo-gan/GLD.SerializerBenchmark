@@ -482,13 +482,18 @@
     "go": {
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
-        "version": "go1.24.13",
+        "version": "go1.27.1",
         "specifics": "encoding/gob is Go's native binary stream for Go types. It was created so Go programs can RPC and persist values without an IDL. It is not a cross-language wire format."
       },
       "encoding/json": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/json",
-        "version": "go1.24.13",
-        "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat."
+        "version": "go1.27.1",
+        "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat. On Go 1.27 the package keeps v1 semantics. The stricter defaults are the separate `encoding/json/v2` row."
+      },
+      "encoding/json/v2": {
+        "source_url": "https://github.com/golang/go/tree/master/src/encoding/json/v2",
+        "version": "go1.27.1",
+        "specifics": "`encoding/json/v2` is the Go 1.27 standard library JSON API with stricter defaults than `encoding/json`: invalid UTF-8 and duplicate object names are errors, and `<`, `>`, and `&` are not HTML-escaped. This row times `Marshal` / `Unmarshal` and `MarshalWrite` / `UnmarshalRead`."
       },
       "fxamacker/cbor": {
         "source_url": "https://github.com/fxamacker/cbor",
