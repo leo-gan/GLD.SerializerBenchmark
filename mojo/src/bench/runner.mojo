@@ -12,6 +12,7 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
+from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
@@ -192,6 +193,7 @@ def run() raises:
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
     var toml = TomlSer()
+    var gldtoml = GldTomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
@@ -206,6 +208,7 @@ def run() raises:
     names.append(proto.name())
     names.append(fb.name())
     names.append(toml.name())
+    names.append(gldtoml.name())
     names.append(gldj.name())
     names.append(yaml.name())
     names.append(bson.name())
@@ -280,6 +283,8 @@ def run() raises:
                     _ = ion.serialize_bytes(fx)
                 elif nm == smile.name():
                     _ = smile.serialize_bytes(fx)
+                elif nm == gldtoml.name():
+                    _ = gldtoml.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -451,6 +456,18 @@ def run() raises:
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1
                             size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == gldtoml.name():
+                            ver = gldtoml.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = gldtoml.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = gldtoml.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = buf.byte_length()
                             if not fidelity(fx, back):
                                 ok = 0.0
                         else:

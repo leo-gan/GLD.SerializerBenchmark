@@ -47,7 +47,21 @@ export function getRankSort() {
   return chartOptions.rankSort;
 }
 
+function updateScatterHelp(metric) {
+  const help = document.getElementById('scatter-help');
+  if (!help) return;
+  const right =
+    metric === 'ops'
+      ? '<strong>Right</strong> = faster (higher ops/s).'
+      : '<strong>Right</strong> = slower (higher total latency).';
+  help.innerHTML =
+    'Each point is one serializer. ' +
+    `${right} <strong>Up</strong> = larger payload. ` +
+    'Highlighted = Pareto (no other library is both faster and smaller).';
+}
+
 export function updateCharts(groups, paretoNames, metric) {
+  updateScatterHelp(metric);
   updateScatterChart(groups, paretoNames, metric);
   updateBarChart(groups, paretoNames, metric);
   const title = document.getElementById('bar-chart-title');
@@ -212,7 +226,11 @@ function updateScatterChart(groups, paretoNames, metric) {
                 `Throughput: ${formatOpsCompact(p.ops)}`,
                 `Latency: ${formatTimeCompact(p.time)}`,
                 `Size: ${formatIntGrouped(p.y)} bytes`,
-                p.onFrontier ? 'On Pareto frontier' : 'Dominated on speed/size',
+                p.onFrontier
+                  ? 'On Pareto frontier'
+                  : isOps
+                    ? 'Dominated on ops/s and size'
+                    : 'Dominated on latency and size',
                 src ? `Source: ${src}` : '',
               ].filter(Boolean);
             },
@@ -419,7 +437,11 @@ function updateBarChart(groups, paretoNames, metric) {
               const g = sortedGroups[items[0]?.dataIndex];
               if (!g) return [];
               return [
-                paretoNames.includes(g.serializer) ? 'Pareto optimal' : 'Dominated on speed/size',
+                paretoNames.includes(g.serializer)
+                  ? 'Pareto optimal'
+                  : isOps
+                    ? 'Dominated on ops/s and size'
+                    : 'Dominated on latency and size',
               ];
             },
           },

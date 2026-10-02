@@ -10,8 +10,8 @@ colliding top-level packages renamed (`json` → `gldjson` or `avro_json`,
 `emberjson_src/emberjson/` is EmberJson 0.3.4. The conda package ships a
 Mojo 1.0 `.mojoc`, so the harness compiles these sources instead.
 
-`toml_src/` is `DataBooth/mojo-toml` unchanged (`toml` does not collide).
-`gld-toml` is published as `mojo-toml` on prefix.dev. This harness still times DataBooth/mojo-toml so the TOML row stays the same library.
+`toml_src/` is `DataBooth/mojo-toml` unchanged. The benchmark row is `mojo-toml`.
+`gldtoml_src/` is leo-gan/gld-toml with `toml` / `wire` / `runtime` / `schema` / `codegen` renamed to `gldtoml*`. The benchmark row is `gld-toml`. The two libraries both ship a top-level `toml` package, so one process cannot import them under that name.
 
 `smile_src` keeps one guard that gld-smile 0.2.0 does not have. A buffer that starts with `0x3A` and is shorter than four bytes is a truncated header. The 0.2.0 decoder left those bytes in place and looped. This copy raises end-of-input instead. `fetch-vendors.sh` puts that guard back after each copy.
 

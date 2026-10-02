@@ -752,6 +752,9 @@
       "mojo-toml": [
         "toml"
       ],
+      "gld-toml": [
+        "toml"
+      ],
       "mojo-msgpack": [
         "msgpack"
       ],

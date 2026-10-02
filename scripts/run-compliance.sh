@@ -384,7 +384,7 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
             -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src \
             -I vendor/msgpack_src -I vendor/fb_src -I vendor/avro_src \
             -I vendor/emberjson_src -I vendor/bson_src \
-            -I vendor/ion_src -I vendor/smile_src \
+            -I vendor/ion_src -I vendor/smile_src -I vendor/gldtoml_src \
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then
@@ -399,7 +399,8 @@ for src in sorted(root.rglob("*.json")):
     rel = src.relative_to(root)
     # YAML catalogs are large enough to OOM EmberJson. Smile is split per
     # case because one truncated header makes gld-smile 0.2.0 loop.
-    step = 20 if src.parent.name == "yaml" else 1 if src.parent.name == "smile" else 0
+    # TOML chunks stay small: a few DataBooth documents OOM the process.
+    step = 20 if src.parent.name == "yaml" else 4 if src.parent.name == "toml" else 1 if src.parent.name == "smile" else 0
     if step:
         doc = json.loads(src.read_text())
         cases = doc.get("cases") or []

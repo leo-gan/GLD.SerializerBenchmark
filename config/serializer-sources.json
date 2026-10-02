@@ -948,6 +948,11 @@
         "version": "0.4.0",
         "specifics": "ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk."
       },
+      "gld-toml": {
+        "source_url": "https://github.com/leo-gan/gld-toml",
+        "version": "0.1.0",
+        "specifics": "gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml so its package name does not collide with DataBooth's toml package."
+      },
       "gld-yaml": {
         "source_url": "https://github.com/leo-gan/gld-yaml",
         "version": "0.6.0",
@@ -1001,7 +1006,7 @@
       "mojo-toml": {
         "source_url": "https://github.com/DataBooth/mojo-toml",
         "version": "0.9.1",
-        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row still times that library. `gld-toml` is published separately and is not this row."
+        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is a different library and is the gld-toml row."
       }
     },
     "php": {

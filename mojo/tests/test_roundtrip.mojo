@@ -6,6 +6,7 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
+from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
@@ -24,6 +25,7 @@ def _roundtrip_all(type_id: String) raises:
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
     var toml = TomlSer()
+    var gldtoml = GldTomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
@@ -44,6 +46,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("flatbuffers fidelity " + type_id)
     if not toml.check(fx, toml.serialize_bytes(fx)):
         raise Error("toml fidelity " + type_id)
+    if not gldtoml.check(fx, gldtoml.serialize_bytes(fx)):
+        raise Error("gld-toml fidelity " + type_id)
     if not gldj.check(fx, gldj.serialize_bytes(fx)):
         raise Error("mojo-json fidelity " + type_id)
     if not yaml.check(fx, yaml.serialize_bytes(fx)):

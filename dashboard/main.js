@@ -13,6 +13,7 @@ import {
   exportScatterPng,
   exportBarPng,
 } from './charts.js';
+import { paretoOptimalGroups } from './pareto.js';
 import {
   formatSig,
   formatIntGrouped,
@@ -2226,10 +2227,13 @@ function filterAndRefresh() {
 }
 
 function setViewMetric(metric) {
-  state.displayMetric = metric;
-  document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
-  document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
+  state.displayMetric = metric === 'time' ? 'time' : 'ops';
+  document.getElementById('btn-ops-sec')?.classList.toggle('active', state.displayMetric === 'ops');
+  document.getElementById('btn-time-ns')?.classList.toggle('active', state.displayMetric === 'time');
   updateRankSortPrimaryLabel();
+  calculateParetoFrontier();
+  updateKPIs();
+  renderTable();
   saveSettings();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
@@ -2383,28 +2387,11 @@ function formatRosterRelativeCell(row, key, higherIsBetter, scales, baselineGrou
   return formatRelativeCell(v, baseVal, higherIsBetter, scales, key, 'base');
 }
 
-function isParetoDominated(g, groups) {
-  const gOps = g.avg_ops_per_sec;
-  const gSize = g.median_size_bytes;
-  if (gOps == null || gSize == null) return true;
-  return groups.some((other) => {
-    if (other === g) return false;
-    const oOps = other.avg_ops_per_sec;
-    const oSize = other.median_size_bytes;
-    if (oOps == null || oSize == null) return false;
-    const betterOrEqualOps = oOps >= gOps;
-    const betterOrEqualSize = oSize <= gSize;
-    const strictlyBetter = oOps > gOps || oSize < gSize;
-    return betterOrEqualOps && betterOrEqualSize && strictlyBetter;
-  });
-}
-
-function paretoOptimalGroups(groups) {
-  return groups.filter((g) => !isParetoDominated(g, groups));
-}
-
 function calculateParetoFrontier() {
-  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map((g) => g.serializer);
+  state.paretoSerializerNames = paretoOptimalGroups(
+    state.filteredGroups,
+    state.displayMetric
+  ).map((g) => g.serializer);
 }
 
 // ---------- Cross-language ----------
@@ -2675,7 +2662,7 @@ function applyCrossLangParetoSelection() {
   const selected = [];
   for (const lang of LANGUAGE_CATALOG) {
     const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
-    const pareto = paretoOptimalGroups(groups)
+    const pareto = paretoOptimalGroups(groups, 'ops')
       .sort((a, b) => b.avg_ops_per_sec - a.avg_ops_per_sec)
       .slice(0, 2);
     pareto.forEach((g) => selected.push({ lang: lang.id, serializer: g.serializer }));
@@ -3012,7 +2999,8 @@ function updateKPIs() {
   if (paretoDesc) {
     const pl =
       state.filterPolicies[state.filterPolicy]?.label || state.filterPolicy || 'default';
-    paretoDesc.textContent = `Optimal trade-offs · samples: ${pl}`;
+    const axis = state.displayMetric === 'time' ? 'latency / size' : 'ops/s / size';
+    paretoDesc.textContent = `Undominated ${axis} · samples: ${pl}`;
   }
 }
 
@@ -3459,6 +3447,9 @@ function renderCompareMatrix() {
     const serName = col.group?.serializer || (col.key.includes('|') ? col.key.split('|').slice(1).join('|') : col.key);
     const serLang = col.group?.language || (col.key.includes('|') ? col.key.split('|')[0] : state.currentLanguage);
     const src = serializerSourceUrl(serLang, serName);
+    // The node actually parented by <th>. insertBefore must use this, not the
+    // inner name span, or Cross-language headers throw and the matrix stays empty.
+    let nameHost = nameEl;
     if (src) {
       const a = document.createElement('a');
       a.className = 'serializer-link';
@@ -3466,10 +3457,9 @@ function renderCompareMatrix() {
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.appendChild(nameEl);
-      th.appendChild(a);
-    } else {
-      th.appendChild(nameEl);
+      nameHost = a;
     }
+    th.appendChild(nameHost);
     if (ver) {
       const verEl = document.createElement('span');
       verEl.className = 'cmp-th-ver';
@@ -3480,7 +3470,7 @@ function renderCompareMatrix() {
       const subEl = document.createElement('span');
       subEl.className = 'cmp-th-lang';
       subEl.textContent = sub;
-      th.insertBefore(subEl, nameEl);
+      th.insertBefore(subEl, nameHost);
     }
     if (col.isBaseline) {
       const baseEl = document.createElement('span');

@@ -2,7 +2,7 @@
 
 Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (13)
+## Serializers (14)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -13,7 +13,8 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.7.0 | Generated suite messages (vendored sources) |
 | mojo-flatbuffers | Schema | leo-gan/gld-flatbuffers 0.4.0 | Reused Builder and generated tables from `cpp/schemas/benchmark.fbs` (vendored sources) |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | `AvroDatum` encode / decode (vendored sources) |
-| mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
+| mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source). Not gld-toml. |
+| gld-toml | Text | [leo-gan/gld-toml](https://github.com/leo-gan/gld-toml) 0.1.0 | `encode_toml` / `decode_toml` (vendored as `gldtoml`, so it does not collide with DataBooth's `toml` package) |
 | gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.6.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.4.0 | WireWriter / WireReader (vendored sources) |
 | mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources) |
