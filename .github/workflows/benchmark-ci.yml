@@ -407,6 +407,22 @@ jobs:
           cd java
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # Do not point smoke_run_config at this file.
+      - name: Run Java columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-java-columnar
+        run: |
+          cd java
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,orc,orc-uncompressed,sbe,jackson,protobuf,flatbuffers,avro"
+          err="../logs/java/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
+
   kotlin-benchmark:
     needs: changes
     if: >-

@@ -672,6 +672,11 @@
       }
     },
     "java": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-java",
+        "version": "19.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serializeBytes. table_project loads f_float_0 only. No compliance decoder."
+      },
       "avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.1",
@@ -767,6 +772,26 @@
         "version": "0.9.8",
         "specifics": "msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "Apache ORC was created as a columnar file with stripe indexes for scans. This row times orc-core 2.3.1 (classifier nohive). OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder."
+      },
       "protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
         "version": "4.35.0",
@@ -776,6 +801,11 @@
         "source_url": "https://github.com/protostuff/protostuff",
         "version": "1.8.0",
         "specifics": "protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Java flyweight inside serializeBytes. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       }
     },
     "javascript": {

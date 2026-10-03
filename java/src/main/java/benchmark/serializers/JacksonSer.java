@@ -1,6 +1,7 @@
 package benchmark.serializers;
 
 import benchmark.model.Fixture;
+import benchmark.model.v2.V2Rows;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -30,6 +31,7 @@ public final class JacksonSer implements BenchSerializer {
   private ObjectWriter writer;
   private ObjectReader reader;
   private Object proto;
+  private String typeId;
 
   public JacksonSer() {
     mapper = new ObjectMapper();
@@ -56,6 +58,7 @@ public final class JacksonSer implements BenchSerializer {
 
   @Override
   public void prepare(Fixture fx) {
+    typeId = fx.name;
     proto = fx.value;
     if (TypeUtil.isList(fx.value)) {
       writer = mapper.writerFor(TypeUtil.listTypeRef(fx.value));
@@ -73,7 +76,7 @@ public final class JacksonSer implements BenchSerializer {
 
   @Override
   public Object deserializeBytes(byte[] data) throws Exception {
-    return reader.readValue(data);
+    return project(reader.readValue(data));
   }
 
   @Override
@@ -85,7 +88,12 @@ public final class JacksonSer implements BenchSerializer {
 
   @Override
   public Object deserializeStream(InputStream in) throws Exception {
-    return reader.readValue(in);
+    return project(reader.readValue(in));
+  }
+
+  private Object project(Object decoded) {
+    if ("table_project".equals(typeId)) return V2Rows.float0(decoded);
+    return decoded;
   }
 
   static final class CountingOutputStream extends OutputStream {

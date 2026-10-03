@@ -1,6 +1,7 @@
 package benchmark.serializers;
 
 import benchmark.model.Fixture;
+import benchmark.model.v2.V2Rows;
 import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.BinaryEncoder;
@@ -31,6 +32,7 @@ public final class AvroSer implements BenchSerializer {
   private BinaryEncoder encoder;
   private BinaryDecoder decoder;
   private Object proto;
+  private String typeId;
 
   @Override
   public String name() {
@@ -55,6 +57,7 @@ public final class AvroSer implements BenchSerializer {
   @Override
   @SuppressWarnings("unchecked")
   public void prepare(Fixture fx) {
+    typeId = fx.name;
     proto = fx.value;
     Class<?> cls = TypeUtil.isList(fx.value) ? java.util.List.class : fx.value.getClass();
     if (TypeUtil.isList(fx.value)) {
@@ -83,7 +86,7 @@ public final class AvroSer implements BenchSerializer {
   @Override
   public Object deserializeBytes(byte[] data) throws Exception {
     decoder = DecoderFactory.get().binaryDecoder(data, decoder);
-    return reader.read(null, decoder);
+    return project(reader.read(null, decoder));
   }
 
   @Override
@@ -98,7 +101,12 @@ public final class AvroSer implements BenchSerializer {
   @Override
   public Object deserializeStream(InputStream in) throws Exception {
     decoder = DecoderFactory.get().binaryDecoder(in, decoder);
-    return reader.read(null, decoder);
+    return project(reader.read(null, decoder));
+  }
+
+  private Object project(Object decoded) {
+    if ("table_project".equals(typeId)) return V2Rows.float0(decoded);
+    return decoded;
   }
 
   static final class CountingOutputStream extends OutputStream {

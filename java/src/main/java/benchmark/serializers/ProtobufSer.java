@@ -4,12 +4,19 @@ import benchmark.model.Fixture;
 import benchmark.model.v2.Document;
 import benchmark.model.v2.Event;
 import benchmark.model.v2.Message;
+import benchmark.model.v2.NestedRow;
+import benchmark.model.v2.Signal;
 import benchmark.model.v2.Strings;
+import benchmark.model.v2.TableRow;
 import benchmark.model.v2.Telemetry;
+import benchmark.model.v2.V2Rows;
 import benchmark.v2.BatchDocument;
 import benchmark.v2.BatchEvent;
 import benchmark.v2.BatchMessage;
+import benchmark.v2.BatchNestedRow;
+import benchmark.v2.BatchSignal;
 import benchmark.v2.BatchStrings;
+import benchmark.v2.BatchTable;
 import benchmark.v2.BatchTelemetry;
 import benchmark.v2.DocumentItem;
 import benchmark.v2.DocumentMeta;
@@ -120,6 +127,21 @@ public final class ProtobufSer implements BenchSerializer {
           for (Object o : list) b.addItems(toEvent((Event) o));
           yield b.build();
         }
+        case "table", "table_project" -> {
+          BatchTable.Builder b = BatchTable.newBuilder();
+          for (Object o : list) b.addItems(toTable((TableRow) o));
+          yield b.build();
+        }
+        case "nested_table" -> {
+          BatchNestedRow.Builder b = BatchNestedRow.newBuilder();
+          for (Object o : list) b.addItems(toNested((NestedRow) o));
+          yield b.build();
+        }
+        case "signal" -> {
+          BatchSignal.Builder b = BatchSignal.newBuilder();
+          for (Object o : list) b.addItems(toSignal((Signal) o));
+          yield b.build();
+        }
         default -> throw new IllegalArgumentException(fx.name);
       };
     }
@@ -129,6 +151,9 @@ public final class ProtobufSer implements BenchSerializer {
       case "telemetry" -> toTelemetry((Telemetry) fx.value);
       case "strings" -> toStrings((Strings) fx.value);
       case "event" -> toEvent((Event) fx.value);
+      case "table", "table_project" -> toTable((TableRow) fx.value);
+      case "nested_table" -> toNested((NestedRow) fx.value);
+      case "signal" -> toSignal((Signal) fx.value);
       default -> throw new IllegalArgumentException(fx.name);
     };
   }
@@ -163,6 +188,26 @@ public final class ProtobufSer implements BenchSerializer {
           for (benchmark.v2.Event e : ((BatchEvent) ml).getItemsList()) out.add(fromEvent(e));
           yield out;
         }
+        case "table" -> {
+          List<TableRow> out = new ArrayList<>();
+          for (benchmark.v2.Table t : ((BatchTable) ml).getItemsList()) out.add(fromTable(t));
+          yield out;
+        }
+        case "table_project" -> {
+          List<TableRow> out = new ArrayList<>();
+          for (benchmark.v2.Table t : ((BatchTable) ml).getItemsList()) out.add(fromTable(t));
+          yield V2Rows.float0(out);
+        }
+        case "nested_table" -> {
+          List<NestedRow> out = new ArrayList<>();
+          for (benchmark.v2.NestedRow n : ((BatchNestedRow) ml).getItemsList()) out.add(fromNested(n));
+          yield out;
+        }
+        case "signal" -> {
+          List<Signal> out = new ArrayList<>();
+          for (benchmark.v2.Signal s : ((BatchSignal) ml).getItemsList()) out.add(fromSignal(s));
+          yield out;
+        }
         default -> ml;
       };
     }
@@ -172,6 +217,10 @@ public final class ProtobufSer implements BenchSerializer {
       case "telemetry" -> fromTelemetry((benchmark.v2.Telemetry) ml);
       case "strings" -> fromStrings((benchmark.v2.Strings) ml);
       case "event" -> fromEvent((benchmark.v2.Event) ml);
+      case "table" -> fromTable((benchmark.v2.Table) ml);
+      case "table_project" -> V2Rows.float0(fromTable((benchmark.v2.Table) ml));
+      case "nested_table" -> fromNested((benchmark.v2.NestedRow) ml);
+      case "signal" -> fromSignal((benchmark.v2.Signal) ml);
       default -> ml;
     };
   }
@@ -291,6 +340,135 @@ public final class ProtobufSer implements BenchSerializer {
       attrs.add(new Event.EventAttr(a.getKey(), a.getValue()));
     }
     return new Event(e.getEventId(), e.getEventType(), e.getOccurredAt(), e.getProducer(), attrs);
+  }
+
+  private static benchmark.v2.Table toTable(TableRow row) {
+    return benchmark.v2.Table.newBuilder()
+        .setFFloat0(row.fFloat0)
+        .setFFloat1(row.fFloat1)
+        .setFFloat2(row.fFloat2)
+        .setFFloat3(row.fFloat3)
+        .setFFloat4(row.fFloat4)
+        .setFFloat5(row.fFloat5)
+        .setFFloat6(row.fFloat6)
+        .setFFloat7(row.fFloat7)
+        .setFFloat8(row.fFloat8)
+        .setFFloat9(row.fFloat9)
+        .setFFloat10(row.fFloat10)
+        .setFFloat11(row.fFloat11)
+        .setFFloat12(row.fFloat12)
+        .setFFloat13(row.fFloat13)
+        .setFFloat14(row.fFloat14)
+        .setFFloat15(row.fFloat15)
+        .setFInt0(row.fInt0)
+        .setFInt1(row.fInt1)
+        .setFInt2(row.fInt2)
+        .setFInt3(row.fInt3)
+        .setFStr0(nullToEmpty(row.fStr0))
+        .setFStr1(nullToEmpty(row.fStr1))
+        .build();
+  }
+
+  private static TableRow fromTable(benchmark.v2.Table t) {
+    TableRow row = new TableRow();
+    row.fFloat0 = t.getFFloat0();
+    row.fFloat1 = t.getFFloat1();
+    row.fFloat2 = t.getFFloat2();
+    row.fFloat3 = t.getFFloat3();
+    row.fFloat4 = t.getFFloat4();
+    row.fFloat5 = t.getFFloat5();
+    row.fFloat6 = t.getFFloat6();
+    row.fFloat7 = t.getFFloat7();
+    row.fFloat8 = t.getFFloat8();
+    row.fFloat9 = t.getFFloat9();
+    row.fFloat10 = t.getFFloat10();
+    row.fFloat11 = t.getFFloat11();
+    row.fFloat12 = t.getFFloat12();
+    row.fFloat13 = t.getFFloat13();
+    row.fFloat14 = t.getFFloat14();
+    row.fFloat15 = t.getFFloat15();
+    row.fInt0 = t.getFInt0();
+    row.fInt1 = t.getFInt1();
+    row.fInt2 = t.getFInt2();
+    row.fInt3 = t.getFInt3();
+    row.fStr0 = t.getFStr0();
+    row.fStr1 = t.getFStr1();
+    return row;
+  }
+
+  private static benchmark.v2.NestedRow toNested(NestedRow row) {
+    benchmark.v2.NestedRow.Builder b =
+        benchmark.v2.NestedRow.newBuilder().setId(nullToEmpty(row.id)).setStatus(row.status);
+    if (row.meta != null) {
+      b.setMeta(
+          benchmark.v2.NestedMeta.newBuilder()
+              .setRegion(nullToEmpty(row.meta.region))
+              .setVersion(row.meta.version)
+              .build());
+    }
+    if (row.items != null) {
+      for (NestedRow.NestedItem it : row.items) {
+        b.addItems(
+            benchmark.v2.NestedItem.newBuilder()
+                .setSku(nullToEmpty(it.sku))
+                .setQty(it.qty)
+                .setPriceMinor(it.priceMinor)
+                .build());
+      }
+    }
+    return b.build();
+  }
+
+  private static NestedRow fromNested(benchmark.v2.NestedRow n) {
+    NestedRow.NestedMeta meta =
+        n.hasMeta()
+            ? new NestedRow.NestedMeta(n.getMeta().getRegion(), n.getMeta().getVersion())
+            : new NestedRow.NestedMeta("", 0);
+    NestedRow row = new NestedRow(n.getId(), n.getStatus(), meta, new ArrayList<>());
+    for (benchmark.v2.NestedItem it : n.getItemsList()) {
+      row.items.add(new NestedRow.NestedItem(it.getSku(), it.getQty(), it.getPriceMinor()));
+    }
+    return row;
+  }
+
+  private static benchmark.v2.Signal toSignal(Signal s) {
+    benchmark.v2.Signal.Builder b =
+        benchmark.v2.Signal.newBuilder()
+            .setSeq(s.seq)
+            .setTs(s.ts)
+            .setPriceMantissa(s.priceMantissa)
+            .setQty(s.qty)
+            .setFlags(s.flags)
+            .setSymbol(nullToEmpty(s.symbol))
+            .setVenue(nullToEmpty(s.venue));
+    if (s.legs != null) {
+      for (Signal.SignalLeg leg : s.legs) {
+        b.addLegs(
+            benchmark.v2.SignalLeg.newBuilder()
+                .setLegId(leg.legId)
+                .setLegQty(leg.legQty)
+                .setLegPad(leg.legPad)
+                .build());
+      }
+    }
+    return b.build();
+  }
+
+  private static Signal fromSignal(benchmark.v2.Signal s) {
+    Signal row =
+        new Signal(
+            s.getSeq(),
+            s.getTs(),
+            s.getPriceMantissa(),
+            s.getQty(),
+            s.getFlags(),
+            s.getSymbol(),
+            s.getVenue(),
+            new ArrayList<>());
+    for (benchmark.v2.SignalLeg leg : s.getLegsList()) {
+      row.legs.add(new Signal.SignalLeg(leg.getLegId(), leg.getLegQty(), leg.getLegPad()));
+    }
+    return row;
   }
 
   private static String nullToEmpty(String s) {

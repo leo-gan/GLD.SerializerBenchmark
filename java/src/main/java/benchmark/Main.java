@@ -85,7 +85,9 @@ public final class Main {
 
     System.err.println("[PROGRESS] Writing results under " + logDir);
 
-    List<BenchSerializer> sers = Registry.select(serFilter);
+    List<String> selectedNames = selectSerializerNames(Registry.names(), serFilter);
+    System.err.println("[PROGRESS] Selected serializers: " + String.join(",", selectedNames));
+    List<BenchSerializer> sers = Registry.byNames(selectedNames);
     long seed = 42;
     String seedEnv = System.getenv("BENCHMARK_SEED");
     if (seedEnv != null && !seedEnv.isBlank()) {
@@ -242,7 +244,7 @@ public final class Main {
     long deserNs = System.nanoTime() - t0;
     keep(out);
     out = ser.toDomain(out);
-    if (!Fidelity.check(fx.value, out)) {
+    if (!Fidelity.check(Fidelity.expectedForFidelity(fx.name, fx.value), out)) {
       throw new IllegalStateException("roundtrip fidelity failed for " + ser.name());
     }
     return new Measure(serNs, deserNs, buf.length);
@@ -263,10 +265,38 @@ public final class Main {
     long deserNs = System.nanoTime() - t0;
     keep(out);
     out = ser.toDomain(out);
-    if (!Fidelity.check(fx.value, out)) {
+    if (!Fidelity.check(Fidelity.expectedForFidelity(fx.name, fx.value), out)) {
       throw new IllegalStateException("stream roundtrip fidelity failed for " + ser.name());
     }
     return new Measure(serNs, deserNs, n > 0 ? n : baos.size());
+  }
+
+  /**
+   * Empty filter selects every name. A filter with no comma is a case-insensitive substring.
+   * A comma-separated list is case-insensitive exact names, in registry order.
+   */
+  public static List<String> selectSerializerNames(List<String> registryNames, String filter) {
+    if (filter == null || filter.isEmpty()) {
+      return new ArrayList<>(registryNames);
+    }
+    if (filter.indexOf(',') < 0) {
+      String needle = filter.toLowerCase(Locale.ROOT);
+      List<String> out = new ArrayList<>();
+      for (String name : registryNames) {
+        if (name.toLowerCase(Locale.ROOT).contains(needle)) out.add(name);
+      }
+      return out;
+    }
+    Set<String> want = new HashSet<>();
+    for (String part : filter.split(",", -1)) {
+      String trimmed = part.trim().toLowerCase(Locale.ROOT);
+      if (!trimmed.isEmpty()) want.add(trimmed);
+    }
+    List<String> out = new ArrayList<>();
+    for (String name : registryNames) {
+      if (want.contains(name.toLowerCase(Locale.ROOT))) out.add(name);
+    }
+    return out;
   }
 
   private static Path resolveLogDir(String logDirArg) {
