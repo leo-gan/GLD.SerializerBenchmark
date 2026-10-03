@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -122,7 +123,14 @@ class GlazeJson final : public ISerializer {
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    std::visit([&](const auto& v) { write_json_into(v, buf_); }, value_);
+    std::visit([&](const auto& v) {
+      using T = std::decay_t<decltype(v)>;
+      if constexpr (is_columnar_alt_v<T>) {
+        throw std::runtime_error("glaze: columnar type unsupported");
+      } else {
+        write_json_into(v, buf_);
+      }
+    }, value_);
     return std::vector<uint8_t>(buf_.begin(), buf_.end());
   }
 

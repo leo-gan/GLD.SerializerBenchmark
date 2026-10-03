@@ -39,7 +39,14 @@ const char* jsoncons_version() {
 // as an array and decode is ambiguous across object-shaped types).
 template <typename Encode>
 void encode_value(const Value& value, Encode&& encode) {
-  std::visit([&](const auto& v) { encode(v); }, value);
+  std::visit([&](const auto& v) {
+    using T = std::decay_t<decltype(v)>;
+    if constexpr (is_columnar_alt_v<T>) {
+      throw std::runtime_error("jsoncons: columnar type unsupported");
+    } else {
+      encode(v);
+    }
+  }, value);
 }
 
 struct CborBytesSrc {
@@ -225,7 +232,14 @@ class JsonconsBson final : public ISerializer {
   void encode_bson(const Value& value, std::vector<uint8_t>& buf) {
     if (n_ > 1) {
       jsoncons::json obj(jsoncons::json_object_arg);
-      std::visit([&](const auto& v) { obj["items"] = v; }, value);
+      std::visit([&](const auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("jsoncons: columnar type unsupported");
+        } else {
+          obj["items"] = v;
+        }
+      }, value);
       jsoncons::bson::encode_bson(obj, buf);
       return;
     }
@@ -234,7 +248,14 @@ class JsonconsBson final : public ISerializer {
   void encode_bson_os(const Value& value, std::ostream& os) {
     if (n_ > 1) {
       jsoncons::json obj(jsoncons::json_object_arg);
-      std::visit([&](const auto& v) { obj["items"] = v; }, value);
+      std::visit([&](const auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("jsoncons: columnar type unsupported");
+        } else {
+          obj["items"] = v;
+        }
+      }, value);
       jsoncons::bson::encode_bson(obj, os);
       return;
     }

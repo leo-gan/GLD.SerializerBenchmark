@@ -226,6 +226,8 @@ set(BENCH_SOURCES
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
   src/serializers/ser_yaml.cpp
+  src/serializers/ser_columnar.cpp
+  src/serializers/ser_sbe.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -278,8 +280,11 @@ if(BENCH_HAS_LIBPROTOBUF)
 endif()
 
 add_executable(serializer_benchmark_cpp ${BENCH_SOURCES})
+set_source_files_properties(src/serializers/ser_sbe.cpp PROPERTIES COMPILE_OPTIONS "-Wno-macro-redefined")
+
 target_include_directories(serializer_benchmark_cpp PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/gen/sbe
   ${CPP_TP}/rapidjson/include
   ${CPP_TP}/zpp_bits
   ${CPP_TP}/msgpack-c/include
@@ -307,12 +312,7 @@ if(BENCH_HAS_LIBPROTOBUF)
   target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_LIBPROTOBUF=1)
   target_include_directories(serializer_benchmark_cpp PRIVATE ${BENCH_PROTOBUF_INC})
   target_link_libraries(serializer_benchmark_cpp PRIVATE ${BENCH_PROTOBUF_LIB} pthread)
-  if(BENCH_PROTOBUF_LIBDIR)
-    # protoc and shared libs from sysroot at runtime (if .a not fully static)
-    set_target_properties(serializer_benchmark_cpp PROPERTIES
-      BUILD_RPATH "${BENCH_PROTOBUF_LIBDIR}"
-      INSTALL_RPATH "${BENCH_PROTOBUF_LIBDIR}")
-  endif()
+  # BUILD_RPATH is combined with Arrow after both targets exist.
 else()
   target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_LIBPROTOBUF=0)
   # Stub factory when official runtime is unavailable
@@ -365,6 +365,9 @@ set(TEST_SOURCES
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
   src/serializers/ser_yaml.cpp
+  src/serializers/ser_columnar.cpp
+  src/serializers/ser_sbe.cpp
+  tests/test_columnar.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -374,6 +377,7 @@ endif()
 add_executable(cpp_serializer_tests ${TEST_SOURCES})
 target_include_directories(cpp_serializer_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/gen/sbe
   ${CPP_TP}/rapidjson/include
   ${CPP_TP}/zpp_bits
   ${CPP_TP}/msgpack-c/include
@@ -515,5 +519,67 @@ endif()
 enable_testing()
 add_test(NAME cpp_roundtrip COMMAND cpp_serializer_tests)
 
+# ---- Optional: Apache Arrow / Parquet / ORC (prebuilt prefix, never FetchContent) ----
+set(BENCH_HAS_ARROW 0)
+set(ARROW_ROOT_CAND "")
+if(DEFINED ARROW_ROOT AND NOT "${ARROW_ROOT}" STREQUAL "")
+  set(ARROW_ROOT_CAND "${ARROW_ROOT}")
+elseif(DEFINED ENV{ARROW_ROOT} AND NOT "$ENV{ARROW_ROOT}" STREQUAL "")
+  set(ARROW_ROOT_CAND "$ENV{ARROW_ROOT}")
+endif()
+if(ARROW_ROOT_CAND)
+  set(_arrow_inc "${ARROW_ROOT_CAND}/include/arrow/api.h")
+  if(EXISTS "${ARROW_ROOT_CAND}/lib/x86_64-linux-gnu/libarrow.so")
+    set(ARROW_LIBDIR "${ARROW_ROOT_CAND}/lib/x86_64-linux-gnu")
+  elseif(EXISTS "${ARROW_ROOT_CAND}/lib/libarrow.so")
+    set(ARROW_LIBDIR "${ARROW_ROOT_CAND}/lib")
+  else()
+    set(ARROW_LIBDIR "")
+  endif()
+  if(EXISTS "${_arrow_inc}" AND NOT "${ARROW_LIBDIR}" STREQUAL ""
+     AND EXISTS "${ARROW_LIBDIR}/libparquet.so" AND EXISTS "${ARROW_LIBDIR}/libthrift.so")
+    set(BENCH_HAS_ARROW 1)
+    set(ARROW_INCLUDE "${ARROW_ROOT_CAND}/include")
+    message(STATUS "serializer: arrow/parquet/orc REAL via ${ARROW_ROOT_CAND} (prebuilt package, not FetchContent)")
+  else()
+    message(STATUS "serializer: arrow SKIPPED (ARROW_ROOT=${ARROW_ROOT_CAND} missing headers or libs)")
+  endif()
+else()
+  message(STATUS "serializer: arrow SKIPPED (set -DARROW_ROOT=prefix; columnar rows omitted)")
+endif()
 
-message(STATUS "C++ serializer benchmark configured (28+ codecs)")
+if(BENCH_HAS_ARROW)
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_ARROW=1)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_ARROW=1)
+  target_include_directories(serializer_benchmark_cpp PRIVATE "${ARROW_INCLUDE}")
+  target_include_directories(cpp_serializer_tests PRIVATE "${ARROW_INCLUDE}")
+  target_link_libraries(serializer_benchmark_cpp PRIVATE
+    "${ARROW_LIBDIR}/libparquet.so" "${ARROW_LIBDIR}/libarrow.so" "${ARROW_LIBDIR}/libthrift.so")
+  target_link_libraries(cpp_serializer_tests PRIVATE
+    "${ARROW_LIBDIR}/libparquet.so" "${ARROW_LIBDIR}/libarrow.so" "${ARROW_LIBDIR}/libthrift.so")
+  # Old-style RPATH so libarrow/libthrift needed by libparquet resolve without LD_LIBRARY_PATH.
+  target_link_options(serializer_benchmark_cpp PRIVATE "LINKER:--disable-new-dtags")
+  target_link_options(cpp_serializer_tests PRIVATE "LINKER:--disable-new-dtags")
+else()
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_ARROW=0)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_ARROW=0)
+endif()
+
+set(_bench_rpath "")
+if(BENCH_HAS_LIBPROTOBUF AND BENCH_PROTOBUF_LIBDIR)
+  list(APPEND _bench_rpath "${BENCH_PROTOBUF_LIBDIR}")
+endif()
+if(BENCH_HAS_ARROW)
+  list(APPEND _bench_rpath "${ARROW_LIBDIR}")
+endif()
+if(_bench_rpath)
+  list(JOIN _bench_rpath ":" _bench_rpath_str)
+  set_target_properties(serializer_benchmark_cpp PROPERTIES
+    BUILD_RPATH "${_bench_rpath_str}"
+    INSTALL_RPATH "${_bench_rpath_str}")
+  set_target_properties(cpp_serializer_tests PROPERTIES
+    BUILD_RPATH "${_bench_rpath_str}"
+    INSTALL_RPATH "${_bench_rpath_str}")
+endif()
+
+message(STATUS "C++ serializer benchmark configured (columnar codecs optional on ARROW_ROOT)")

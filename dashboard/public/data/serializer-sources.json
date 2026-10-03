@@ -129,6 +129,11 @@
         "version": "7.4.3",
         "specifics": "ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model."
       },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter into a buffer: the IPC stream inside the bytes API, not the Arrow file format. The record batch is built inside serialize_bytes. table_project sets IpcReadOptions.included_fields to f_float_0. The row is omitted when ARROW_ROOT is unset. No compliance decoder."
+      },
       "avro": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
         "version": "binary-1.11",
@@ -228,6 +233,26 @@
         "version": "3.12.0",
         "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache ORC was created as a columnar file with stripe indexes for scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row sets Compression::GZIP. The adapter stores that value as ORC ZLIB. table_project calls Read of f_float_0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same Arrow C++ ORC adapter as orc, with WriteOptions.compression set to UNCOMPRESSED. The name is the override. No compliance decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Arrow C++ 25.0.1 parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project reads leaf column 0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same Arrow C++ Parquet writer as parquet, with WriterProperties compression set to UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder."
+      },
       "protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
         "version": "3.12.4",
@@ -242,6 +267,11 @@
         "source_url": "https://github.com/Tencent/rapidjson",
         "version": "1.1.0",
         "specifics": "RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside serialize_bytes. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       },
       "simdjson": {
         "source_url": "https://github.com/simdjson/simdjson",

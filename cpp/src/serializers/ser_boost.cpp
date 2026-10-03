@@ -9,6 +9,8 @@
 #include "bench/stream_util.hpp"
 
 #include <sstream>
+#include <stdexcept>
+#include <type_traits>
 
 // Boost.Serialization — classic C++ native archive (medium value / historical staple).
 // Optimal: binary_oarchive / binary_iarchive on ostream/istream; free serialize in type ns.
@@ -75,7 +77,14 @@ class BoostSer final : public ISerializer {
     std::ostringstream oss(std::ios::binary);
     {
       boost::archive::binary_oarchive oa(oss, boost::archive::no_header);
-      std::visit([&](auto& v) { oa << v; }, value_);
+      std::visit([&](auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("boost_serialization: columnar type unsupported");
+        } else {
+          oa << v;
+        }
+      }, value_);
     }
     auto s = oss.str();
     return {s.begin(), s.end()};
@@ -92,7 +101,14 @@ class BoostSer final : public ISerializer {
     VecOutStream os(out);
     {
       boost::archive::binary_oarchive oa(os, boost::archive::no_header);
-      std::visit([&](auto& v) { oa << v; }, value_);
+      std::visit([&](auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("boost_serialization: columnar type unsupported");
+        } else {
+          oa << v;
+        }
+      }, value_);
     }
     return out.size();
   }

@@ -4,6 +4,7 @@
 #include <msgpack.hpp>
 
 #include <cstring>
+#include <stdexcept>
 #include <string_view>
 #include <type_traits>
 
@@ -295,7 +296,14 @@ class MsgpackSer final : public ISerializer {
   template <typename Packer>
   void pack_all(Packer& pk) {
     // Adaptor pack; std::vector<T> goes through the library's vector adaptor.
-    std::visit([&](const auto& v) { pk.pack(v); }, value_);
+    std::visit([&](const auto& v) {
+      using T = std::decay_t<decltype(v)>;
+      if constexpr (is_columnar_alt_v<T>) {
+        throw std::runtime_error("msgpack: columnar type unsupported");
+      } else {
+        pk.pack(v);
+      }
+    }, value_);
   }
   // Direct object → struct conversion via the convert<> adaptors above.
   Value obj_to_value(const msgpack::object& o) const {

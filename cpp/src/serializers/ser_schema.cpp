@@ -598,6 +598,192 @@ class FlexbuffersSer final : public ISerializer {
 };
 
 // ---------------------------------------------------------------------------
+// Hand-built FlatBuffers for table / nested_table / signal (no shared .fbs).
+// Field slot i lives at vtable offset 4+i*2, matching flatbuffers.Builder slots.
+// N=1 is one finished buffer. N>1 is uint32 count, then uint32 length + buffer.
+// ---------------------------------------------------------------------------
+
+static bool fb_columnar_id(const std::string& id) {
+  return id == "table" || id == "table_project" || id == "nested_table" || id == "signal";
+}
+
+static flatbuffers::voffset_t fb_vt(int slot) {
+  return static_cast<flatbuffers::voffset_t>(4 + slot * 2);
+}
+
+static std::vector<uint8_t> fb_finish(flatbuffers::FlatBufferBuilder& fbb, flatbuffers::uoffset_t root) {
+  fbb.Finish(flatbuffers::Offset<void>(root));
+  const uint8_t* p = fbb.GetBufferPointer();
+  return {p, p + fbb.GetSize()};
+}
+
+static double fb_f64(const flatbuffers::Table* t, int slot) {
+  return t->GetField<double>(fb_vt(slot), 0.0);
+}
+static int64_t fb_i64(const flatbuffers::Table* t, int slot) {
+  return t->GetField<int64_t>(fb_vt(slot), 0);
+}
+static int32_t fb_i32(const flatbuffers::Table* t, int slot) {
+  return t->GetField<int32_t>(fb_vt(slot), 0);
+}
+static std::string fb_str(const flatbuffers::Table* t, int slot) {
+  auto* s = t->GetPointer<const flatbuffers::String*>(fb_vt(slot));
+  if (!s) return {};
+  return s->str();
+}
+static const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::Table>>* fb_vec(
+    const flatbuffers::Table* t, int slot) {
+  return t->GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::Table>>*>(fb_vt(slot));
+}
+
+static const flatbuffers::Table* fb_root(const uint8_t* p) {
+  return flatbuffers::GetRoot<flatbuffers::Table>(p);
+}
+
+static std::vector<uint8_t> fb_build_table(const Table& row) {
+  flatbuffers::FlatBufferBuilder fbb(256);
+  auto s0 = fbb.CreateString(row.f_str_0);
+  auto s1 = fbb.CreateString(row.f_str_1);
+  auto start = fbb.StartTable();
+  for (int i = 0; i < 16; ++i) fbb.AddElement<double>(fb_vt(i), row.f_float[i], 0.0);
+  for (int i = 0; i < 4; ++i) fbb.AddElement<int64_t>(fb_vt(16 + i), row.f_int[i], 0);
+  fbb.AddOffset(fb_vt(20), s0);
+  fbb.AddOffset(fb_vt(21), s1);
+  return fb_finish(fbb, fbb.EndTable(start));
+}
+
+static Table fb_read_table(const uint8_t* p) {
+  const auto* t = fb_root(p);
+  Table row;
+  for (int i = 0; i < 16; ++i) row.f_float[i] = fb_f64(t, i);
+  for (int i = 0; i < 4; ++i) row.f_int[i] = fb_i64(t, 16 + i);
+  row.f_str_0 = fb_str(t, 20);
+  row.f_str_1 = fb_str(t, 21);
+  return row;
+}
+
+static std::vector<uint8_t> fb_build_nested(const NestedRow& row) {
+  flatbuffers::FlatBufferBuilder fbb(512);
+  auto sid = fbb.CreateString(row.id);
+  auto sreg = fbb.CreateString(row.meta.region);
+  auto mstart = fbb.StartTable();
+  fbb.AddOffset(fb_vt(0), sreg);
+  fbb.AddElement<int32_t>(fb_vt(1), row.meta.version, 0);
+  auto meta = fbb.EndTable(mstart);
+  std::vector<flatbuffers::Offset<flatbuffers::Table>> items;
+  items.reserve(row.items.size());
+  for (const auto& it : row.items) {
+    auto sku = fbb.CreateString(it.sku);
+    auto istart = fbb.StartTable();
+    fbb.AddOffset(fb_vt(0), sku);
+    fbb.AddElement<int32_t>(fb_vt(1), it.qty, 0);
+    fbb.AddElement<int64_t>(fb_vt(2), it.price_minor, 0);
+    items.push_back(flatbuffers::Offset<flatbuffers::Table>(fbb.EndTable(istart)));
+  }
+  auto ivec = fbb.CreateVector(items);
+  auto start = fbb.StartTable();
+  fbb.AddOffset(fb_vt(0), sid);
+  fbb.AddElement<int32_t>(fb_vt(1), row.status, 0);
+  fbb.AddOffset(fb_vt(2), flatbuffers::Offset<void>(meta));
+  fbb.AddOffset(fb_vt(3), ivec);
+  return fb_finish(fbb, fbb.EndTable(start));
+}
+
+static NestedRow fb_read_nested(const uint8_t* p) {
+  const auto* t = fb_root(p);
+  NestedRow row;
+  row.id = fb_str(t, 0);
+  row.status = fb_i32(t, 1);
+  if (auto* meta = t->GetPointer<const flatbuffers::Table*>(fb_vt(2))) {
+    row.meta.region = fb_str(meta, 0);
+    row.meta.version = fb_i32(meta, 1);
+  }
+  if (auto* vec = fb_vec(t, 3)) {
+    row.items.reserve(vec->size());
+    for (flatbuffers::uoffset_t i = 0; i < vec->size(); ++i) {
+      const auto* it = vec->Get(i);
+      NestedItem item;
+      item.sku = fb_str(it, 0);
+      item.qty = fb_i32(it, 1);
+      item.price_minor = fb_i64(it, 2);
+      row.items.push_back(std::move(item));
+    }
+  }
+  return row;
+}
+
+static std::vector<uint8_t> fb_build_signal(const Signal& s) {
+  flatbuffers::FlatBufferBuilder fbb(512);
+  auto symbol = fbb.CreateString(s.symbol);
+  auto venue = fbb.CreateString(s.venue);
+  std::vector<flatbuffers::Offset<flatbuffers::Table>> legs;
+  legs.reserve(s.legs.size());
+  for (const auto& leg : s.legs) {
+    auto start = fbb.StartTable();
+    fbb.AddElement<int64_t>(fb_vt(0), leg.leg_id, 0);
+    fbb.AddElement<int32_t>(fb_vt(1), leg.leg_qty, 0);
+    fbb.AddElement<int32_t>(fb_vt(2), leg.leg_pad, 0);
+    legs.push_back(flatbuffers::Offset<flatbuffers::Table>(fbb.EndTable(start)));
+  }
+  auto lvec = fbb.CreateVector(legs);
+  auto start = fbb.StartTable();
+  fbb.AddElement<int64_t>(fb_vt(0), s.seq, 0);
+  fbb.AddElement<int64_t>(fb_vt(1), s.ts, 0);
+  fbb.AddElement<int64_t>(fb_vt(2), s.price_mantissa, 0);
+  fbb.AddElement<int32_t>(fb_vt(3), s.qty, 0);
+  fbb.AddElement<int32_t>(fb_vt(4), s.flags, 0);
+  fbb.AddOffset(fb_vt(5), symbol);
+  fbb.AddOffset(fb_vt(6), venue);
+  fbb.AddOffset(fb_vt(7), lvec);
+  return fb_finish(fbb, fbb.EndTable(start));
+}
+
+static Signal fb_read_signal(const uint8_t* p) {
+  const auto* t = fb_root(p);
+  Signal s;
+  s.seq = fb_i64(t, 0);
+  s.ts = fb_i64(t, 1);
+  s.price_mantissa = fb_i64(t, 2);
+  s.qty = fb_i32(t, 3);
+  s.flags = fb_i32(t, 4);
+  s.symbol = fb_str(t, 5);
+  s.venue = fb_str(t, 6);
+  if (auto* vec = fb_vec(t, 7)) {
+    s.legs.reserve(vec->size());
+    for (flatbuffers::uoffset_t i = 0; i < vec->size(); ++i) {
+      const auto* leg = vec->Get(i);
+      SignalLeg x;
+      x.leg_id = fb_i64(leg, 0);
+      x.leg_qty = fb_i32(leg, 1);
+      x.leg_pad = fb_i32(leg, 2);
+      s.legs.push_back(x);
+    }
+  }
+  return s;
+}
+
+static void fb_w32(std::vector<uint8_t>& out, uint32_t v) {
+  out.push_back(static_cast<uint8_t>(v & 0xff));
+  out.push_back(static_cast<uint8_t>((v >> 8) & 0xff));
+  out.push_back(static_cast<uint8_t>((v >> 16) & 0xff));
+  out.push_back(static_cast<uint8_t>((v >> 24) & 0xff));
+}
+
+static uint32_t fb_r32(const uint8_t* p) {
+  return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8) |
+         (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+}
+
+static std::vector<uint8_t> fb_pack_batch(const std::vector<std::vector<uint8_t>>& parts) {
+  std::vector<uint8_t> out;
+  fb_w32(out, static_cast<uint32_t>(parts.size()));
+  for (const auto& p : parts) {
+    fb_w32(out, static_cast<uint32_t>(p.size()));
+    out.insert(out.end(), p.begin(), p.end());
+  }
+  return out;
+}
+
 // FlatBuffers — zero-copy tables via FlatBufferBuilder.
 // Dual C/C++: C uses flatcc; C++ uses google flatbuffers (this path).
 // Without generated headers we encode a single byte-vector payload table using
@@ -616,11 +802,13 @@ class FlatbuffersSer final : public ISerializer {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
     value_ = fx.value;
-    // Pre-encode domain to protobuf-wire for embedding (untimed convert).
-    payload_ = pb_encode_value(fx.value);
+    payload_.clear();
+    // Old types keep the untimed protobuf-wire blob. New ids are built inside serialize_bytes.
+    if (!fb_columnar_id(type_id_)) payload_ = pb_encode_value(fx.value);
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
+    if (fb_columnar_id(type_id_)) return serialize_columnar();
 #if HAS_FLATBUFFERS_GENERATED
     return serialize_typed();
 #else
@@ -629,6 +817,7 @@ class FlatbuffersSer final : public ISerializer {
   }
 
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
+    if (fb_columnar_id(type_id_)) return deserialize_columnar(data);
 #if HAS_FLATBUFFERS_GENERATED
     return deserialize_typed(data);
 #else
@@ -637,6 +826,93 @@ class FlatbuffersSer final : public ISerializer {
   }
 
  private:
+  std::vector<uint8_t> serialize_columnar() const {
+    std::vector<std::vector<uint8_t>> parts;
+    if (type_id_ == "table" || type_id_ == "table_project") {
+      for (const auto& row : as_rows<Table>(value_)) parts.push_back(fb_build_table(row));
+    } else if (type_id_ == "nested_table") {
+      for (const auto& row : as_rows<NestedRow>(value_)) parts.push_back(fb_build_nested(row));
+    } else if (type_id_ == "signal") {
+      for (const auto& row : as_rows<Signal>(value_)) parts.push_back(fb_build_signal(row));
+    } else {
+      throw std::runtime_error("flatbuffers: unsupported columnar type " + type_id_);
+    }
+    if (parts.empty()) throw std::runtime_error("flatbuffers: empty columnar batch");
+    if (n_ <= 1) return std::move(parts[0]);
+    return fb_pack_batch(parts);
+  }
+
+  Value deserialize_columnar(const std::vector<uint8_t>& data) const {
+    auto one = [&](const uint8_t* p, size_t n) -> Value {
+      (void)n;
+      if (type_id_ == "table") return fb_read_table(p);
+      if (type_id_ == "table_project") return std::vector<double>{fb_read_table(p).f_float[0]};
+      if (type_id_ == "nested_table") return fb_read_nested(p);
+      if (type_id_ == "signal") return fb_read_signal(p);
+      throw std::runtime_error("flatbuffers: unsupported columnar type " + type_id_);
+    };
+    if (n_ <= 1) {
+      if (type_id_ != "table_project") return one(data.data(), data.size());
+      return std::vector<double>{fb_read_table(data.data()).f_float[0]};
+    }
+    if (data.size() < 4) throw std::runtime_error("flatbuffers batch trunc");
+    const uint32_t count = fb_r32(data.data());
+    size_t off = 4;
+    if (type_id_ == "table_project") {
+      std::vector<double> col;
+      col.reserve(count);
+      for (uint32_t i = 0; i < count; ++i) {
+        if (off + 4 > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        uint32_t len = fb_r32(data.data() + off);
+        off += 4;
+        if (off + len > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        col.push_back(fb_read_table(data.data() + off).f_float[0]);
+        off += len;
+      }
+      return col;
+    }
+    if (type_id_ == "table") {
+      std::vector<Table> rows;
+      rows.reserve(count);
+      for (uint32_t i = 0; i < count; ++i) {
+        if (off + 4 > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        uint32_t len = fb_r32(data.data() + off);
+        off += 4;
+        if (off + len > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        rows.push_back(fb_read_table(data.data() + off));
+        off += len;
+      }
+      return rows;
+    }
+    if (type_id_ == "nested_table") {
+      std::vector<NestedRow> rows;
+      rows.reserve(count);
+      for (uint32_t i = 0; i < count; ++i) {
+        if (off + 4 > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        uint32_t len = fb_r32(data.data() + off);
+        off += 4;
+        if (off + len > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        rows.push_back(fb_read_nested(data.data() + off));
+        off += len;
+      }
+      return rows;
+    }
+    if (type_id_ == "signal") {
+      std::vector<Signal> rows;
+      rows.reserve(count);
+      for (uint32_t i = 0; i < count; ++i) {
+        if (off + 4 > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        uint32_t len = fb_r32(data.data() + off);
+        off += 4;
+        if (off + len > data.size()) throw std::runtime_error("flatbuffers batch trunc");
+        rows.push_back(fb_read_signal(data.data() + off));
+        off += len;
+      }
+      return rows;
+    }
+    return one(data.data(), data.size());
+  }
+
   // Manual Root { data:[ubyte] } — FlatBufferBuilder hot path without flatc.
   std::vector<uint8_t> serialize_blob_root() {
     flatbuffers::FlatBufferBuilder fbb(1024 + payload_.size());
