@@ -53,9 +53,14 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
+25 serializers are registered when the optional `simdjson` addon loads, and 24 otherwise. That is the previous registry (22 with `simdjson`, including `js-yaml`) plus `arrow-ipc`, `parquet`, and `parquet-uncompressed`.
+
+The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prepare()` is outside the clock. Every row, including the columnar ones, is **bytes only**: there is no distinct stream loop and no compliance decoder. `arrow-ipc` times the Arrow IPC stream (`tableToIPC(..., 'stream')`), not the Arrow file format. Parquet is registered because one `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. `parquet` keeps the writer default, Snappy. `parquet-uncompressed` sets `codec: 'UNCOMPRESSED'`, which changes the bytes and the column codec metadata. That is a second call path of the same writer, not a second library. `parquet-wasm` is not registered. Schema objects are selected in `prepare()`. Building the columnar batch from rows is inside timed `serialize`. `table_project` deserialize returns `f_float_0` only, an array of length N, including N=1.
+
 | Name | Category | Package | Optimal API |
 |------|----------|---------|-------------|
 | [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) | Binary | `@msgpack/msgpack` | `encode` / `decode` |
+| [arrow-ipc](https://github.com/apache/arrow) | Columnar | `apache-arrow` | `tableToIPC` / IPC stream reader (`'stream'`, not the file format) |
 | [avsc](https://github.com/mtth/avsc) | Schema | `avsc` | `Type.forSchema` + `toBuffer` / `fromBuffer` |
 | [bebop](https://github.com/6over3/bebop) | Schema | `bebop` | `BebopView` JSON-model primitives |
 | [bser](https://github.com/facebook/watchman) | Binary | `bser` | `dumpToBuffer` / `loadFromBuffer` |
@@ -71,6 +76,8 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 | [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
 | [JSON.stringify](https://github.com/nodejs/node) | JSON | builtin | `JSON.stringify` / `JSON.parse` |
 | [msgpackr](https://github.com/kriszyp/msgpackr) | Binary | `msgpackr` | reused `Packr` / `Unpackr` |
+| [parquet](https://github.com/hyparam/hyparquet-writer) | Columnar | `hyparquet-writer` | `parquetWriteBuffer` (default Snappy) / `hyparquet` `parquetReadObjects` |
+| [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer) | Columnar | `hyparquet-writer` | same writer, `codec: 'UNCOMPRESSED'` |
 | [protobuf-es](https://github.com/bufbuild/protobuf-es) | Schema | `@bufbuild/protobuf` | `create` + `toBinary` / `fromBinary` |
 | [protobufjs](https://github.com/protobufjs/protobuf.js) | Schema | `protobufjs` | real fixture `Type.encode` / `decode` |
 | [sia](https://github.com/TimeleapLabs/sia) | Binary | `@timeleap/sia` | typed-tag JSON-model over Sia primitives |
@@ -84,6 +91,10 @@ Why each library exists, what problem it was written to solve, and how. Names li
 #### [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) · `3.1.3`
 
 The official MessagePack JavaScript implementation (`@msgpack/msgpack`). MessagePack was created as compact binary JSON. This package is the reference encode/decode API for JS.
+
+#### [arrow-ipc](https://github.com/apache/arrow) · `21.2.0`
+
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. This row times `apache-arrow` `tableToIPC` / the IPC stream reader on the bytes API, not the Arrow file format. Schema objects are selected in `prepare`. Row-to-column conversion stays inside `serialize`. `table_project` deserialize reads `f_float_0` only. There is no compliance decoder.
 
 #### [avsc](https://github.com/mtth/avsc) · `5.7.9`
 
@@ -145,6 +156,14 @@ json-pack (jsonjoy) is a family of binary codecs including MessagePack. It was w
 
 msgpackr was written for high-throughput MessagePack in Node, with reusable Packr/Unpackr instances. The problem was that generic MessagePack libraries allocated too much per call. msgpackr solves that with a performance-oriented encoder/decoder.
 
+#### [parquet](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row is registered because a `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. It times `parquetWriteBuffer` at the library default codec, Snappy, and `parquetReadObjects`. `table_project` passes `columns: ['f_float_0']`. The `SerializerVersion` is the writer package. There is no compliance decoder.
+
+#### [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+
+This is the same `hyparquet-writer` path as `parquet`, with `codec: 'UNCOMPRESSED'`. That switch changes the column codec metadata and the bytes. It is not a second library, and `parquet-wasm` is not registered.
+
 #### [protobuf-es](https://github.com/bufbuild/protobuf-es) · `2.15.0`
 
 protobuf-es is Buf's Protocol Buffers implementation for ECMAScript. The problem was that existing JS protobuf stacks did not match modern TypeScript and the official proto3 feature set. It generates TypeScript and times `toBinary` / `fromBinary`.
@@ -176,7 +195,8 @@ Node's `v8.serialize` / `v8.deserialize` snapshot V8 values. They exist so the e
 - **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see the benchmark runner for float/array workarounds.
 - **bebop** / **sia** encode a JSON-shaped model via each library’s primitive writers.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
-- **prepare()** builds native messages and compiles schemas outside the timed path.
+- **prepare()** builds native messages and compiles schemas outside the timed path. Columnar schema objects are selected there; building the Arrow or Parquet batch from rows stays inside timed `serialize`.
+- **arrow-ipc / parquet / parquet-uncompressed** encode only `table`, `table_project`, `nested_table`, and `signal`. `table_project` deserialize returns an array of `f_float_0` of length N. Bytes only. No compliance decoder.
 
 Also: [`javascript/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/javascript/README.md).
 
