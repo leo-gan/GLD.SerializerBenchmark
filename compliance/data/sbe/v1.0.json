@@ -1,0 +1,97 @@
+{
+  "format": "sbe",
+  "standard": "SBE 1.0",
+  "version": "1.0",
+  "standard_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/03MessageStructure.md",
+  "provenance": "original-work",
+  "notes": "One Signal message from this repository's schema (id 1, version 0, little-endian). The header is the 8-byte blockLength, templateId, schemaId, version header. Names kelp and harbor are original. This is not the benchmark's counted batch.",
+  "cases": [
+    {
+      "id": "sbe-signal-one-leg",
+      "title": "Signal with one leg",
+      "section": "Message structure",
+      "section_title": "Repeating groups",
+      "section_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/03MessageStructure.md",
+      "paragraph": "After the message header and the fixed block, a repeating group is a group-size header (blockLength, numInGroup) and then that many groups. Variable-length data follows the groups.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "2000010001000000040000000000000007000000000000000b0000000000000003000000010000001000010009000000000000000200000000000000040000006b656c7006000000686172626f72",
+      "input_encoding": "hex",
+      "decoded": {
+        "seq": 4,
+        "ts": 7,
+        "price_mantissa": 11,
+        "qty": 3,
+        "flags": 1,
+        "legs": [
+          {
+            "leg_id": 9,
+            "leg_qty": 2,
+            "leg_pad": 0
+          }
+        ],
+        "symbol": "kelp",
+        "venue": "harbor"
+      },
+      "notes": "Wire order is the legs group, then symbol, then venue."
+    },
+    {
+      "id": "sbe-signal-no-legs",
+      "title": "Signal with an empty group",
+      "section": "Message structure",
+      "section_title": "Repeating groups",
+      "section_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/03MessageStructure.md",
+      "paragraph": "numInGroup may be zero. The group header is still present, and the variable-length fields follow it.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "2000010001000000040000000000000007000000000000000b00000000000000030000000100000010000000040000006b656c7006000000686172626f72",
+      "input_encoding": "hex",
+      "decoded": {
+        "seq": 4,
+        "ts": 7,
+        "price_mantissa": 11,
+        "qty": 3,
+        "flags": 1,
+        "legs": [],
+        "symbol": "kelp",
+        "venue": "harbor"
+      }
+    },
+    {
+      "id": "sbe-empty",
+      "title": "Empty buffer",
+      "section": "Message structure",
+      "section_title": "Message header",
+      "section_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/03MessageStructure.md",
+      "paragraph": "A message begins with the message header. An empty buffer has no header.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "sbe-truncated-block",
+      "title": "Block shorter than blockLength",
+      "section": "Message structure",
+      "section_title": "Message header",
+      "section_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/03MessageStructure.md",
+      "paragraph": "blockLength is the size of the fixed block that must follow the header. A buffer that ends inside that block is not a complete message.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "200001000100000004000000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "sbe-bad-template",
+      "title": "templateId is not the Signal template",
+      "section": "Message schema",
+      "section_title": "Template id",
+      "section_url": "https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/04MessageSchema.md",
+      "paragraph": "templateId selects the message body. A template id that is not the Signal template is not this message.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "2000090001000000040000000000000007000000000000000b00000000000000030000000100000010000000040000006b656c7006000000686172626f72",
+      "input_encoding": "hex"
+    }
+  ]
+}

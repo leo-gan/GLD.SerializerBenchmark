@@ -14,6 +14,7 @@
  *                  MessagePack even with empty cells.
  */
 import {
+  heatmapFromMatrix,
   languageOf,
   matchesRow,
   parseRowIdentity,
@@ -61,12 +62,109 @@ export const FORMAT_LABELS = {
   hocon: 'HOCON',
   plist: 'Property List',
   zon: 'ZON',
+  arrow: 'Arrow IPC',
+  parquet: 'Parquet',
+  orc: 'ORC',
+  sbe: 'SBE',
   [NO_SPEC]: NO_SPEC_LABEL,
 };
 
 export function formatLabel(id) {
   if (id === NO_SPEC) return NO_SPEC_LABEL;
   return FORMAT_LABELS[id] || id;
+}
+
+/**
+ * Version columns for a public standard that has catalog rows but no
+ * compliance/data corpus, so the matrix has no cell to name a column.
+ * Headers are released spec documents. Cells stay empty: this is not a
+ * pass rate. A real matrix column replaces this list.
+ * ORC v2 and SBE 2.0 are drafts, so they are not columns.
+ */
+export const PUBLISHED_STANDARD_COLUMNS = {
+  arrow: [
+    {
+      key: 'Arrow IPC stream',
+      standard: 'Arrow IPC stream',
+      version: 'stream',
+      standard_url: 'https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format',
+      unscored: true,
+    },
+  ],
+  parquet: [
+    {
+      key: 'Parquet file format',
+      standard: 'Parquet file format',
+      version: 'file',
+      standard_url: 'https://parquet.apache.org/docs/file-format/',
+      unscored: true,
+    },
+  ],
+  orc: [
+    {
+      key: 'ORC v0',
+      standard: 'ORC v0',
+      version: 'v0',
+      standard_url: 'https://orc.apache.org/specification/ORCv0/',
+      unscored: true,
+    },
+    {
+      key: 'ORC v1',
+      standard: 'ORC v1',
+      version: 'v1',
+      standard_url: 'https://orc.apache.org/specification/ORCv1/',
+      unscored: true,
+    },
+  ],
+  sbe: [
+    {
+      key: 'SBE 1.0',
+      standard: 'SBE 1.0',
+      version: '1.0',
+      standard_url:
+        'https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/01Introduction.md',
+      unscored: true,
+    },
+  ],
+};
+
+/** Keep scored version columns. Fill a column only when the matrix has none. */
+export function withPublishedStandardColumns(heat, format) {
+  const columns = heat?.columns || [];
+  if (!format || format === NO_SPEC || columns.length) return heat;
+  const published = PUBLISHED_STANDARD_COLUMNS[format];
+  if (!published?.length) return heat;
+  return {
+    columns: published.map((column) => ({ ...column })),
+    rows: heat?.rows || [],
+    filtered: heat?.filtered || [],
+  };
+}
+
+/**
+ * Standard heatmap the Compliance view renders.
+ * `extras` is the roster already chosen by the caller (one format, or All).
+ */
+export function complianceHeatmap(matrix, {
+  format = '',
+  serializerKey = '',
+  language = '',
+  benchVersions = {},
+  extras = [],
+} = {}) {
+  return withPublishedStandardColumns(
+    attachFormats(
+      padHeatmap(
+        heatmapFromMatrix(matrix, { format, serializerKey }),
+        extras,
+        { serializerKey },
+      ),
+      matrix,
+      language,
+      benchVersions,
+    ),
+    format,
+  );
 }
 
 export function canonicalSerializer(language, name) {

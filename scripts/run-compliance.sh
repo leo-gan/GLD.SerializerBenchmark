@@ -169,8 +169,16 @@ if want_lang java && command -v mvn >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/java
     echo ""
     echo -e "${BLUE}java compliance…${NC}"
     JAVA_OUT="$LOG_DIR/${TS}-java.json"
+    # exec.args is a plugin-wide property. Passing it during compile replaces the
+    # sbe-tool command line, so generate sources first, then run Compliance.
     set +e
-    (cd "$PROJECT_ROOT/java" && mvn -q -DskipTests compile exec:java -Dexec.mainClass=benchmark.Compliance -Dexec.args="--json-out ${JAVA_OUT} ${fmt_args[*]}")
+    (
+        cd "$PROJECT_ROOT/java" || exit 1
+        mvn -q -DskipTests compile || exit $?
+        # exec:java runs inside the Maven JVM. Arrow and Agrona need these opens.
+        JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" \
+            mvn -q -DskipTests exec:java -Dexec.mainClass=benchmark.Compliance -Dexec.args="--json-out ${JAVA_OUT} ${fmt_args[*]}"
+    )
     JAVA_ST=$?
     set -e
     if [[ "$JAVA_ST" -eq 0 && -s "$JAVA_OUT" ]]; then
@@ -207,6 +215,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
         "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
+        "arrow-ipc" "parquet" "parquet-uncompressed"
     )
     # NetJSON hangs on some catalog cases; keep it out of the unattended loop.
     export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
@@ -284,8 +293,25 @@ fi
 NLOHMANN="$PROJECT_ROOT/cpp/third_party/nlohmann_json/include"
 if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/src/compliance.cpp" && -d "$NLOHMANN" ]]; then
     CPP_BIN="$LOG_DIR/compliance-cpp"
-    CPP_INC=(-I"$NLOHMANN")
+    CPP_INC=(-I"$NLOHMANN" -I"$PROJECT_ROOT/cpp/gen/sbe")
+    CPP_DEFS=()
+    CPP_LINK=()
     CPP_LIBS=()
+    ARROW_ROOT="${ARROW_ROOT:-/tmp/arrow-prefix/usr}"
+    ARROW_LIBDIR=""
+    if [[ -f "$ARROW_ROOT/include/arrow/api.h" ]]; then
+        if [[ -f "$ARROW_ROOT/lib/x86_64-linux-gnu/libarrow.so" ]]; then
+            ARROW_LIBDIR="$ARROW_ROOT/lib/x86_64-linux-gnu"
+        elif [[ -f "$ARROW_ROOT/lib/libarrow.so" ]]; then
+            ARROW_LIBDIR="$ARROW_ROOT/lib"
+        fi
+    fi
+    if [[ -n "$ARROW_LIBDIR" && -f "$ARROW_LIBDIR/libparquet.so" && -f "$ARROW_LIBDIR/libthrift.so" ]]; then
+        CPP_INC+=(-I"$ARROW_ROOT/include")
+        CPP_LIBS+=("$ARROW_LIBDIR/libparquet.so" "$ARROW_LIBDIR/libarrow.so" "$ARROW_LIBDIR/libthrift.so")
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_ARROW=1)
+        CPP_LINK+=(-pthread -Wl,--disable-new-dtags "-Wl,-rpath,$ARROW_LIBDIR")
+    fi
     for d in rapidjson/include glaze/include ArduinoJson/src jsoncons/include msgpack-c/include flatbuffers/include yaml-cpp/include; do
         if [[ -d "$PROJECT_ROOT/cpp/third_party/$d" ]]; then
             CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/$d")
@@ -296,7 +322,7 @@ if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/s
         CPP_LIBS+=("$YAML_LIB")
     fi
     if [[ ! -x "$CPP_BIN" || "$PROJECT_ROOT/cpp/src/compliance.cpp" -nt "$CPP_BIN" ]]; then
-        g++ -O2 -std=c++20 "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" -o "$CPP_BIN" || true
+        g++ -O2 -std=c++20 "${CPP_DEFS[@]}" "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" "${CPP_LINK[@]}" -o "$CPP_BIN" || true
     fi
     if [[ -x "$CPP_BIN" ]]; then
         run_lang cpp "$CPP_BIN"

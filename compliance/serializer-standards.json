@@ -139,6 +139,21 @@
       ],
       "py-ubjson": [
         "ubjson"
+      ],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
       ]
     },
     "javascript": {
@@ -199,7 +214,16 @@
       "v8-serializer": [],
       "devalue": [],
       "sia": [],
-      "bser": []
+      "bser": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ]
     },
     "go": {
       "encoding/json": [
@@ -263,7 +287,19 @@
         "toml"
       ],
       "encoding/gob": [],
-      "kelindar/binary": []
+      "kelindar/binary": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "java": {
       "jackson": [
@@ -318,7 +354,25 @@
       "kryo": [],
       "fory": [],
       "hessian": [],
-      "protostuff": []
+      "protostuff": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "kotlin": {
       "kotlinx-json": [
@@ -390,7 +444,25 @@
       "kotlinx-properties": [],
       "kryo": [],
       "fory": [],
-      "protostuff": []
+      "protostuff": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "csharp": {
       "System.Text.Json": [
@@ -496,7 +568,16 @@
       "NetSerializer": [],
       "ServiceStack": [],
       "SharpSerializer": [],
-      "ZeroFormatter": []
+      "ZeroFormatter": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ]
     },
     "rust": {
       "serde_json": [
@@ -540,7 +621,19 @@
       "nanoserde": [],
       "postcard": [],
       "speedy": [],
-      "rkyv": []
+      "rkyv": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "cpp": {
       "nlohmann_json": [
@@ -618,7 +711,25 @@
       "custom_binary": [],
       "yas": [],
       "zpp_bits": [],
-      "boost_serialization": []
+      "boost_serialization": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "swift": {
       "Foundation.JSONEncoder": [

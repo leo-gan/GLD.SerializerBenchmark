@@ -1,0 +1,67 @@
+{
+  "format": "orc",
+  "standard": "ORC v1",
+  "version": "v1",
+  "standard_url": "https://orc.apache.org/specification/ORCv1/",
+  "provenance": "original-work",
+  "notes": "Uncompressed ORC whose postscript version list is the released ORC v1 (Hive 0.12). ORC v0 is not in this file. orc and orc-uncompressed are the same reader.",
+  "cases": [
+    {
+      "id": "orc-v1-berth-rows",
+      "title": "Two-row int64 column",
+      "section": "File Tail",
+      "section_title": "Postscript",
+      "section_url": "https://orc.apache.org/specification/ORCv1/",
+      "paragraph": "The Postscript ends one byte before the end of the file and stores the version. For ORC v1 that version is the sequence [0, 12]. The final byte is the Postscript length.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4f52430a061204080250000a120a020000120c080212060808100e1816500046018e0a060806100018080a060806100118140a060801100118031204080010001204080210001a03474d540a140a04080250000a0c080212060808100e18165000080310481a0a0803101c1803202928022212080c1201011a0562657274682000280030002208080420002800300030023a04080250003a0c080212060808100e1816500040904e48016205322e322e3208501000188080042202000c2816300682f403034f524317",
+      "input_encoding": "hex",
+      "decoded": [
+        {
+          "berth": 4
+        },
+        {
+          "berth": 7
+        }
+      ],
+      "notes": "Original column berth with values 4 and 7. The bytes were written once and frozen in this file. They are not an upstream test vector. A writer version string inside the container is file metadata, not a copied suite."
+    },
+    {
+      "id": "orc-v1-empty",
+      "title": "Empty buffer",
+      "section": "File Tail",
+      "section_title": "Postscript length",
+      "section_url": "https://orc.apache.org/specification/ORCv1/",
+      "paragraph": "The final byte of the file is the Postscript length. An empty buffer has no tail.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "orc-v1-zero-postscript-length",
+      "title": "Postscript length is zero",
+      "section": "File Tail",
+      "section_title": "Postscript length",
+      "section_url": "https://orc.apache.org/specification/ORCv1/",
+      "paragraph": "The final byte of the file is the serialized length of the Postscript, and that length is less than 256. A length of zero does not identify a Postscript.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4f52430a061204080250000a120a020000120c080212060808100e1816500046018e0a060806100018080a060806100118140a060801100118031204080010001204080210001a03474d540a140a04080250000a0c080212060808100e18165000080310481a0a0803101c1803202928022212080c1201011a0562657274682000280030002208080420002800300030023a04080250003a0c080212060808100e1816500040904e48016205322e322e3208501000188080042202000c2816300682f403034f524300",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "orc-v1-truncated",
+      "title": "Tail cut off",
+      "section": "File Tail",
+      "section_title": "Postscript",
+      "section_url": "https://orc.apache.org/specification/ORCv1/",
+      "paragraph": "The Postscript and its length byte must be present at the end of the file. A prefix of the file is not a complete ORC v1 file.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4f52430a061204080250000a120a020000120c08",
+      "input_encoding": "hex"
+    }
+  ]
+}

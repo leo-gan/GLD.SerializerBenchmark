@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { heatmapFromMatrix, parseRowIdentity, rowIdentity } from '../compliance-matrix.js';
+import {
+  NO_SPEC,
+  PUBLISHED_STANDARD_COLUMNS,
+  complianceHeatmap,
+} from '../compliance-groups.js';
 
 function cell(language, serializer, standard, total, passed = total) {
   return {
@@ -57,6 +62,86 @@ test('All-standards padding keeps language × serializer rows', () => {
   ];
   const { rows } = heatmapFromMatrix(matrix, { format: '' });
   assert.equal(rows.length, 2);
+});
+
+test('Arrow, Parquet, ORC, and SBE show spec columns when the matrix is empty', () => {
+  const extras = [
+    { language: 'java', serializer: 'arrow-ipc' },
+    { language: 'java', serializer: 'orc' },
+    { language: 'java', serializer: 'orc-uncompressed' },
+    { language: 'java', serializer: 'sbe' },
+    { language: 'java', serializer: 'parquet' },
+    { language: 'java', serializer: 'parquet-uncompressed' },
+  ];
+  const expected = {
+    arrow: ['Arrow IPC stream'],
+    parquet: ['Parquet file format'],
+    orc: ['ORC v0', 'ORC v1'],
+    sbe: ['SBE 1.0'],
+  };
+  for (const [format, titles] of Object.entries(expected)) {
+    const heat = complianceHeatmap([], { format, language: 'java', extras });
+    assert.deepEqual(heat.columns.map((column) => column.standard), titles, format);
+    assert.ok(heat.columns.every((column) => column.unscored === true), format);
+    assert.ok(heat.columns.every((column) => String(column.standard_url).startsWith('https://')), format);
+    assert.equal(heat.columns.some((column) => /v2|2\.0/i.test(column.standard)), false, format);
+    assert.ok(heat.rows.length > 0, format);
+    assert.ok(heat.rows.every((row) => row.byStandard.size === 0), format);
+  }
+  assert.deepEqual(
+    Object.keys(PUBLISHED_STANDARD_COLUMNS).sort(),
+    ['arrow', 'orc', 'parquet', 'sbe'],
+  );
+
+  const onlyOrc = complianceHeatmap([], {
+    format: 'orc',
+    language: 'java',
+    serializerKey: rowIdentity({ language: 'java', serializer: 'orc' }),
+    extras,
+  });
+  assert.deepEqual(onlyOrc.rows.map((row) => row.serializer), ['orc']);
+  assert.deepEqual(onlyOrc.columns.map((column) => column.standard), ['ORC v0', 'ORC v1']);
+});
+
+test('a scored ORC v1 cell replaces the empty ORC v0 placeholder', () => {
+  const matrix = [cell('java', 'orc', 'ORC v1', 3)];
+  matrix[0].format = 'orc';
+  matrix[0].version = 'v1';
+  const heat = complianceHeatmap(matrix, {
+    format: 'orc',
+    language: 'java',
+    extras: [
+      { language: 'java', serializer: 'orc' },
+      { language: 'java', serializer: 'orc-uncompressed' },
+    ],
+  });
+  assert.deepEqual(heat.columns.map((column) => column.standard), ['ORC v1']);
+  assert.equal(heat.columns[0].unscored, undefined);
+  assert.equal(heat.rows.find((row) => row.serializer === 'orc').byStandard.get('ORC v1').passed, 3);
+});
+
+test('a scored standard keeps its matrix columns', () => {
+  const matrix = [cell('python', 'json', 'RFC 8259', 4)];
+  matrix[0].format = 'json';
+  const heat = complianceHeatmap(matrix, {
+    format: 'json',
+    language: 'python',
+    extras: [{ language: 'python', serializer: 'json' }, { language: 'python', serializer: 'orjson' }],
+  });
+  assert.deepEqual(heat.columns.map((column) => column.standard), ['RFC 8259']);
+  assert.equal(heat.columns[0].unscored, undefined);
+  assert.equal(heat.rows.find((row) => row.serializer === 'orjson').byStandard.size, 0);
+
+  const all = complianceHeatmap([], {
+    format: '',
+    extras: [{ language: 'python', serializer: 'arrow-ipc' }],
+  });
+  assert.deepEqual(all.columns, []);
+  const noSpec = complianceHeatmap([], {
+    format: NO_SPEC,
+    extras: [{ language: 'python', serializer: 'pickle' }],
+  });
+  assert.deepEqual(noSpec.columns, []);
 });
 
 test('row identity never drops the language', () => {
