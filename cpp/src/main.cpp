@@ -60,6 +60,8 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
   // Policy: timed path measures codec APIs that return/fill buffers. Many C++
   // codecs allocate a fresh vector each call; stream mode reuses scratch.
   // Warmup (rep 0) absorbs cold alloc; analysis drops it when exclude_warmup.
+  // table_project compares the projected column, not the full row stored on fx.
+  const bench::Value expected = bench::expected_for_fidelity(fx);
   uint64_t t0 = now_ns();
   auto buf = ser.serialize_bytes(fx);
   m.ser_ns = now_ns() - t0;
@@ -70,7 +72,7 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
   m.deser_ns = now_ns() - t0;
   do_not_optimize(out);
   out = ser.to_domain(std::move(out));
-  if (!bench::fidelity(fx.value, out)) {
+  if (!bench::fidelity(expected, out)) {
     throw std::runtime_error(std::string("roundtrip fidelity failed for ") + ser.name());
   }
   auto [gz, zs] = bench::compress_sizes(buf.data(), buf.size());
@@ -83,6 +85,7 @@ static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
                               std::vector<uint8_t>& buf) {
   Measure m;
   buf.clear();  // capacity reused across reps (issue #59)
+  const bench::Value expected = bench::expected_for_fidelity(fx);
   uint64_t t0 = now_ns();
   size_t n = ser.serialize_stream(fx, buf);
   m.ser_ns = now_ns() - t0;
@@ -93,7 +96,7 @@ static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
   m.deser_ns = now_ns() - t0;
   do_not_optimize(out);
   out = ser.to_domain(std::move(out));
-  if (!bench::fidelity(fx.value, out)) {
+  if (!bench::fidelity(expected, out)) {
     throw std::runtime_error(std::string("stream roundtrip fidelity failed for ") + ser.name());
   }
   auto [gz, zs] = bench::compress_sizes(buf.data(), m.size);

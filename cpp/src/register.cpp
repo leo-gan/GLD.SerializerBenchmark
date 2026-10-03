@@ -35,6 +35,12 @@ SerializerPtr make_capnproto();
 SerializerPtr make_flexbuffers();
 SerializerPtr make_flatbuffers();
 SerializerPtr make_yaml_cpp();
+SerializerPtr make_arrow_ipc();
+SerializerPtr make_parquet();
+SerializerPtr make_parquet_uncompressed();
+SerializerPtr make_orc();
+SerializerPtr make_orc_uncompressed();
+SerializerPtr make_sbe();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -72,19 +78,61 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_flexbuffers());
   add(v, make_flatbuffers());
   add(v, make_yaml_cpp());
+  // Columnar rows stay at the end so the existing registration order is stable.
+  // Arrow factories are nullptr when the prebuilt package is absent.
+  add(v, make_arrow_ipc());
+  add(v, make_parquet());
+  add(v, make_parquet_uncompressed());
+  add(v, make_orc());
+  add(v, make_orc_uncompressed());
+  add(v, make_sbe());
   return v;
+}
+
+static std::string lower_copy(std::string s) {
+  for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  return s;
+}
+
+static std::string trim_copy(std::string s) {
+  auto not_space = [](unsigned char c) { return !std::isspace(c); };
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), not_space));
+  s.erase(std::find_if(s.rbegin(), s.rend(), not_space).base(), s.end());
+  return s;
 }
 
 std::vector<SerializerPtr> select_serializers(const std::string& filter) {
   auto all = all_serializers();
   if (filter.empty()) return all;
-  std::string f = filter;
-  for (char& c : f) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  // A comma means case-insensitive exact names. No comma keeps substring match
+  // so a filter of "protobuf" still includes protobuf-wire.
+  const bool exact = filter.find(',') != std::string::npos;
+  std::vector<std::string> keys;
+  if (exact) {
+    std::string cur;
+    for (size_t i = 0; i <= filter.size(); ++i) {
+      if (i == filter.size() || filter[i] == ',') {
+        auto token = lower_copy(trim_copy(cur));
+        if (!token.empty()) keys.push_back(std::move(token));
+        cur.clear();
+      } else {
+        cur.push_back(filter[i]);
+      }
+    }
+  }
+  const std::string needle = lower_copy(filter);
   std::vector<SerializerPtr> out;
   for (auto& s : all) {
-    std::string n = s->name();
-    for (char& c : n) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    if (n.find(f) != std::string::npos) out.push_back(std::move(s));
+    const std::string n = lower_copy(s->name());
+    bool keep = false;
+    if (exact) {
+      for (const auto& k : keys) {
+        if (n == k) keep = true;
+      }
+    } else {
+      keep = n.find(needle) != std::string::npos;
+    }
+    if (keep) out.push_back(std::move(s));
   }
   return out;
 }

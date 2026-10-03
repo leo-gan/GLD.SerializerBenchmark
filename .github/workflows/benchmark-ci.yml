@@ -463,10 +463,58 @@ jobs:
       - name: Check host requirements (cpp)
         run: ./scripts/check-host-requirements.sh cpp
 
+      # Columnar rows link only when ARROW_ROOT is set. Fail if this
+      # runner cannot install Arrow 25.0.1, instead of skipping the rows.
+      - name: Install Apache Arrow C++ 25.0.1
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          case "${VERSION_CODENAME}" in
+            jammy|noble) ;;
+            *)
+              echo "Apache Arrow apt packages are published for jammy and noble, not ${VERSION_CODENAME}."
+              echo "Refusing to build C++ without the Arrow rows."
+              exit 1
+              ;;
+          esac
+          sudo apt-get install -y ca-certificates wget
+          wget -O /tmp/apache-arrow-apt-source.deb \
+            "https://packages.apache.org/artifactory/arrow/ubuntu/apache-arrow-apt-source-latest-${VERSION_CODENAME}.deb"
+          sudo apt-get install -y -V /tmp/apache-arrow-apt-source.deb
+          sudo apt-get update
+          cand="$(apt-cache madison libarrow-dev | awk '{print $3}' | grep '^25\.0\.1-' | head -1)"
+          pq="$(apt-cache madison libparquet-dev | awk '{print $3}' | grep '^25\.0\.1-' | head -1)"
+          if [[ -z "${cand}" || -z "${pq}" ]]; then
+            echo "libarrow-dev / libparquet-dev 25.0.1 are not in the Apache Arrow apt repo for ${VERSION_CODENAME}."
+            apt-cache madison libarrow-dev || true
+            apt-cache madison libparquet-dev || true
+            exit 1
+          fi
+          sudo apt-get install -y -V "libarrow-dev=${cand}" "libparquet-dev=${pq}"
+          grep -q 'ARROW_VERSION_STRING "25.0.1"' /usr/include/arrow/util/config.h
+          test -e /usr/lib/x86_64-linux-gnu/libarrow.so
+          echo "ARROW_ROOT=/usr" >> "$GITHUB_ENV"
+
       - name: Run C++ Benchmark
         run: |
           cd cpp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # ARROW_ROOT from the install step keeps the five Arrow rows in the binary.
+      - name: Run C++ columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-cpp-columnar
+        run: |
+          cd cpp
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,orc,orc-uncompressed,sbe,nlohmann_json,protobuf,flatbuffers,avro"
+          err="../logs/cpp/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
 
   swift-benchmark:

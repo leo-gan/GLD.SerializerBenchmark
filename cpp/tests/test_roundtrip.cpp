@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+int run_columnar_checks();
+
 int main() {
   using namespace bench;
   if (int grc = verify_schedule_golden(); grc != 0) {
@@ -18,6 +20,7 @@ int main() {
   int failures = 0;
   for (auto& ser : sers) {
     for (const char* tid : types) {
+      if (!ser->supports(tid)) continue;
       try {
         Fixture fx = make_fixture(tid, cfg, 42, 1, "test");
         ser->prepare(fx);
@@ -72,5 +75,6 @@ int main() {
     return 1;
   }
   std::cout << "All roundtrips OK (" << sers.size() << " serializers)\n";
+  if (int crc = run_columnar_checks(); crc != 0) return crc;
   return 0;
 }

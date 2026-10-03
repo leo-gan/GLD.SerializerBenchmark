@@ -51,7 +51,7 @@ Thirteen runners share the same fixtures and analysis rules.
 |----------|------------:|
 | [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
 | [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 38 |
-| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 27+ |
+| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
 | [Go](go/) · [Dashboard](dashboard/?lang=go) | 19 |
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 18 |
 | [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 20 |
@@ -62,6 +62,8 @@ Thirteen runners share the same fixtures and analysis rules.
 | [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
 | [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |
+
+C++ is 35 when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
 
 ---
 
