@@ -7,6 +7,8 @@
 #include <cereal/types/vector.hpp>
 
 #include <sstream>
+#include <stdexcept>
+#include <type_traits>
 
 // cereal — BinaryOutput/InputArchive are stream-native (std::ostream / std::istream).
 // Bytes path: stringstream; stream path: VecOutStream / VecInStream into the harness vector.
@@ -49,7 +51,14 @@ class CerealSer final : public ISerializer {
     std::ostringstream oss(std::ios::binary);
     {
       cereal::BinaryOutputArchive ar(oss);
-      std::visit([&](auto& v) { ar(v); }, value_);
+      std::visit([&](auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("cereal: columnar type unsupported");
+        } else {
+          ar(v);
+        }
+      }, value_);
     }
     auto s = oss.str();
     return {s.begin(), s.end()};
@@ -64,7 +73,14 @@ class CerealSer final : public ISerializer {
     VecOutStream os(out);
     {
       cereal::BinaryOutputArchive ar(os);
-      std::visit([&](auto& v) { ar(v); }, value_);
+      std::visit([&](auto& v) {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (is_columnar_alt_v<T>) {
+          throw std::runtime_error("cereal: columnar type unsupported");
+        } else {
+          ar(v);
+        }
+      }, value_);
     }
     return out.size();
   }

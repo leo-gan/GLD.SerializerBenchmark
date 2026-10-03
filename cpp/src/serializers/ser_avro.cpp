@@ -209,6 +209,81 @@ static Event read_event(AvroReader& r) {
   return e;
 }
 
+static void write_table(AvroWriter& w, const Table& t) {
+  for (int i = 0; i < 16; ++i) w.write_double(t.f_float[i]);
+  for (int i = 0; i < 4; ++i) w.write_long(t.f_int[i]);
+  w.write_string(t.f_str_0);
+  w.write_string(t.f_str_1);
+}
+static Table read_table(AvroReader& r) {
+  Table t;
+  for (int i = 0; i < 16; ++i) t.f_float[i] = r.read_double();
+  for (int i = 0; i < 4; ++i) t.f_int[i] = r.read_long();
+  t.f_str_0 = r.read_string();
+  t.f_str_1 = r.read_string();
+  return t;
+}
+
+static void write_nested(AvroWriter& w, const NestedRow& row) {
+  w.write_string(row.id);
+  w.write_int(row.status);
+  w.write_string(row.meta.region);
+  w.write_int(row.meta.version);
+  w.write_array(row.items.size(), [&](size_t i) {
+    w.write_string(row.items[i].sku);
+    w.write_int(row.items[i].qty);
+    w.write_long(row.items[i].price_minor);
+  });
+}
+static NestedRow read_nested(AvroReader& r) {
+  NestedRow row;
+  row.id = r.read_string();
+  row.status = r.read_int();
+  row.meta.region = r.read_string();
+  row.meta.version = r.read_int();
+  r.read_array([&]() {
+    NestedItem it;
+    it.sku = r.read_string();
+    it.qty = r.read_int();
+    it.price_minor = r.read_long();
+    row.items.push_back(std::move(it));
+  });
+  return row;
+}
+
+static void write_signal(AvroWriter& w, const Signal& s) {
+  w.write_long(s.seq);
+  w.write_long(s.ts);
+  w.write_long(s.price_mantissa);
+  w.write_int(s.qty);
+  w.write_int(s.flags);
+  w.write_string(s.symbol);
+  w.write_string(s.venue);
+  w.write_array(s.legs.size(), [&](size_t i) {
+    w.write_long(s.legs[i].leg_id);
+    w.write_int(s.legs[i].leg_qty);
+    w.write_int(s.legs[i].leg_pad);
+  });
+}
+static Signal read_signal(AvroReader& r) {
+  Signal s;
+  s.seq = r.read_long();
+  s.ts = r.read_long();
+  s.price_mantissa = r.read_long();
+  s.qty = r.read_int();
+  s.flags = r.read_int();
+  s.symbol = r.read_string();
+  s.venue = r.read_string();
+  r.read_array([&]() {
+    SignalLeg leg;
+    leg.leg_id = r.read_long();
+    leg.leg_qty = r.read_int();
+    leg.leg_pad = r.read_int();
+    s.legs.push_back(leg);
+  });
+  return s;
+}
+
 static std::vector<uint8_t> encode(const Value& v) {
   AvroWriter w;
   std::visit(
@@ -219,6 +294,9 @@ static std::vector<uint8_t> encode(const Value& v) {
         else if constexpr (std::is_same_v<T, Telemetry>) write_telemetry(w, x);
         else if constexpr (std::is_same_v<T, Strings>) write_strings(w, x);
         else if constexpr (std::is_same_v<T, Event>) write_event(w, x);
+        else if constexpr (std::is_same_v<T, Table>) write_table(w, x);
+        else if constexpr (std::is_same_v<T, NestedRow>) write_nested(w, x);
+        else if constexpr (std::is_same_v<T, Signal>) write_signal(w, x);
         else if constexpr (std::is_same_v<T, std::vector<Message>>) {
           w.write_array(x.size(), [&](size_t i) { write_message(w, x[i]); });
         } else if constexpr (std::is_same_v<T, std::vector<Document>>) {
@@ -229,6 +307,12 @@ static std::vector<uint8_t> encode(const Value& v) {
           w.write_array(x.size(), [&](size_t i) { write_strings(w, x[i]); });
         } else if constexpr (std::is_same_v<T, std::vector<Event>>) {
           w.write_array(x.size(), [&](size_t i) { write_event(w, x[i]); });
+        } else if constexpr (std::is_same_v<T, std::vector<Table>>) {
+          w.write_array(x.size(), [&](size_t i) { write_table(w, x[i]); });
+        } else if constexpr (std::is_same_v<T, std::vector<NestedRow>>) {
+          w.write_array(x.size(), [&](size_t i) { write_nested(w, x[i]); });
+        } else if constexpr (std::is_same_v<T, std::vector<Signal>>) {
+          w.write_array(x.size(), [&](size_t i) { write_signal(w, x[i]); });
         }
       },
       v);
@@ -258,15 +342,43 @@ static Value decode(const std::vector<uint8_t>& data, const std::string& type_id
       r.read_array([&]() { v.push_back(read_strings(r)); });
       return v;
     }
-    std::vector<Event> v;
-    r.read_array([&]() { v.push_back(read_event(r)); });
-    return v;
+    if (type_id == "event") {
+      std::vector<Event> v;
+      r.read_array([&]() { v.push_back(read_event(r)); });
+      return v;
+    }
+    if (type_id == "table") {
+      std::vector<Table> v;
+      r.read_array([&]() { v.push_back(read_table(r)); });
+      return v;
+    }
+    if (type_id == "table_project") {
+      std::vector<double> col;
+      r.read_array([&]() { col.push_back(read_table(r).f_float[0]); });
+      return col;
+    }
+    if (type_id == "nested_table") {
+      std::vector<NestedRow> v;
+      r.read_array([&]() { v.push_back(read_nested(r)); });
+      return v;
+    }
+    if (type_id == "signal") {
+      std::vector<Signal> v;
+      r.read_array([&]() { v.push_back(read_signal(r)); });
+      return v;
+    }
+    throw std::runtime_error("avro: unsupported type " + type_id);
   }
   if (type_id == "message") return read_message(r);
   if (type_id == "document") return read_document(r);
   if (type_id == "telemetry") return read_telemetry(r);
   if (type_id == "strings") return read_strings(r);
-  return read_event(r);
+  if (type_id == "event") return read_event(r);
+  if (type_id == "table") return read_table(r);
+  if (type_id == "table_project") return std::vector<double>{read_table(r).f_float[0]};
+  if (type_id == "nested_table") return read_nested(r);
+  if (type_id == "signal") return read_signal(r);
+  throw std::runtime_error("avro: unsupported type " + type_id);
 }
 
 class AvroSer final : public ISerializer {

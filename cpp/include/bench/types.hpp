@@ -99,6 +99,78 @@ struct Event {
   }
 };
 
+// Wide flat row. Domain order is fixed columns, then the two strings.
+// SBE wire order matches that order; signal's wire order does not.
+struct Table {
+  double f_float[16]{};
+  int64_t f_int[4]{};
+  std::string f_str_0;
+  std::string f_str_1;
+  bool operator==(const Table& o) const {
+    for (int i = 0; i < 16; ++i) {
+      if (!nearly_eq(f_float[i], o.f_float[i])) return false;
+    }
+    for (int i = 0; i < 4; ++i) {
+      if (f_int[i] != o.f_int[i]) return false;
+    }
+    return f_str_0 == o.f_str_0 && f_str_1 == o.f_str_1;
+  }
+};
+
+struct NestedMeta {
+  std::string region;
+  int32_t version = 0;
+  bool operator==(const NestedMeta& o) const {
+    return region == o.region && version == o.version;
+  }
+};
+
+struct NestedItem {
+  std::string sku;
+  int32_t qty = 0;
+  int64_t price_minor = 0;
+  bool operator==(const NestedItem& o) const {
+    return sku == o.sku && qty == o.qty && price_minor == o.price_minor;
+  }
+};
+
+// Domain order: id, status, meta, items. Distinct from Document so both can live in Value.
+struct NestedRow {
+  std::string id;
+  int32_t status = 0;
+  NestedMeta meta;
+  std::vector<NestedItem> items;
+  bool operator==(const NestedRow& o) const {
+    return id == o.id && status == o.status && meta == o.meta && items == o.items;
+  }
+};
+
+struct SignalLeg {
+  int64_t leg_id = 0;
+  int32_t leg_qty = 0;
+  int32_t leg_pad = 0;
+  bool operator==(const SignalLeg& o) const {
+    return leg_id == o.leg_id && leg_qty == o.leg_qty && leg_pad == o.leg_pad;
+  }
+};
+
+// Domain order: fixed scalars, then symbol and venue, then legs.
+// SBE wire order is fixed scalars, then the legs group, then symbol and venue.
+struct Signal {
+  int64_t seq = 0;
+  int64_t ts = 0;
+  int64_t price_mantissa = 0;
+  int32_t qty = 0;
+  int32_t flags = 0;
+  std::string symbol;
+  std::string venue;
+  std::vector<SignalLeg> legs;
+  bool operator==(const Signal& o) const {
+    return seq == o.seq && ts == o.ts && price_mantissa == o.price_mantissa && qty == o.qty &&
+           flags == o.flags && symbol == o.symbol && venue == o.venue && legs == o.legs;
+  }
+};
+
 // Deterministic xorshift64* (within-language only). Zero-seed / avalanche uses
 // floor(2^64/φ)=0x9E3779B97F4A7C15 (golden ratio; nothing-up-my-sleeve).
 class Rng {
@@ -142,10 +214,10 @@ inline uint64_t mix_seed(uint64_t seed, const std::string& type_id, int32_t idx)
   return h == 0 ? 1 : h;
 }
 
-Message make_message(Rng& r);
-Document make_document(Rng& r, int children);
-Telemetry make_telemetry(Rng& r, int points, int tag_count);
-Strings make_strings(Rng& r, int count);
-Event make_event(Rng& r, int attr_count);
+Message make_message(Rng& r, int32_t lo, int32_t hi, int smin, int smax);
+Document make_document(Rng& r, int children, int smin, int smax);
+Telemetry make_telemetry(Rng& r, int points, int tag_count, int smin, int smax);
+Strings make_strings(Rng& r, int count, int smin, int smax, double duplication);
+Event make_event(Rng& r, int attr_count, int smin, int smax);
 
 }  // namespace bench

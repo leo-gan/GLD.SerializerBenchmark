@@ -257,6 +257,12 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("python", "parquet-uncompressed", "https://github.com/apache/arrow"),
     ("python", "orc", "https://github.com/apache/arrow"),
     ("python", "orc-uncompressed", "https://github.com/apache/arrow"),
+    ("cpp", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("cpp", "parquet", "https://github.com/apache/arrow"),
+    ("cpp", "parquet-uncompressed", "https://github.com/apache/arrow"),
+    ("cpp", "orc", "https://github.com/apache/arrow"),
+    ("cpp", "orc-uncompressed", "https://github.com/apache/arrow"),
+    ("cpp", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
 
 ]
 
@@ -1514,6 +1520,52 @@ SPECIFICS: dict[str, str] = {
         "`encode_doc` and `decode_bytes` on a document built from the "
         "suite value."
     ),
+    "arrow-ipc-cpp": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter "
+        "into a buffer: the IPC stream inside the bytes API, not the Arrow file "
+        "format. The record batch is built inside serialize_bytes. table_project "
+        "sets IpcReadOptions.included_fields to f_float_0. The row is omitted "
+        "when ARROW_ROOT is unset. No compliance decoder."
+    ),
+    "parquet-cpp": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times Arrow C++ 25.0.1 "
+        "parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to "
+        "UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project "
+        "reads leaf column 0. The batch is built inside serialize_bytes. "
+        "Optional on ARROW_ROOT. No compliance decoder."
+    ),
+    "parquet-uncompressed-cpp": (
+        "This is the same Arrow C++ Parquet writer as parquet, with "
+        "WriterProperties compression set to UNCOMPRESSED. Encodings stay at "
+        "the builder default. The name is the override. No compliance decoder."
+    ),
+    "orc-cpp": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to "
+        "UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row "
+        "sets Compression::GZIP. The adapter stores that value as ORC ZLIB. "
+        "table_project calls Read of f_float_0. The batch is built inside "
+        "serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+    ),
+    "orc-uncompressed-cpp": (
+        "This is the same Arrow C++ ORC adapter as orc, with "
+        "WriteOptions.compression set to UNCOMPRESSED. The name is the "
+        "override. No compliance decoder."
+    ),
+    "sbe-cpp": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside "
+        "serialize_bytes. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. The signal wire order is fixed "
+        "fields, then the legs group, then symbol and venue. No compliance decoder."
+    ),
 }
 
 # (language, name) -> SPECIFICS key. Default: try the name, then a heuristic.
@@ -1565,6 +1617,12 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "parquet-uncompressed"): "parquet-uncompressed",
     ("python", "orc"): "orc",
     ("python", "orc-uncompressed"): "orc-uncompressed",
+    ("cpp", "arrow-ipc"): "arrow-ipc-cpp",
+    ("cpp", "parquet"): "parquet-cpp",
+    ("cpp", "parquet-uncompressed"): "parquet-uncompressed-cpp",
+    ("cpp", "orc"): "orc-cpp",
+    ("cpp", "orc-uncompressed"): "orc-uncompressed-cpp",
+    ("cpp", "sbe"): "sbe-cpp",
     ("javascript", "ion-js"): "ion-js",
     ("go", "ion-go"): "ion-go",
     ("csharp", "Amazon.IonDotnet"): "ion-dotnet",

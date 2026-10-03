@@ -1,73 +1,229 @@
 #include "bench/types.hpp"
 #include "bench/fixture.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace bench {
+namespace {
 
-Message make_message(Rng& r) {
-  return Message{r.next_bool(),
-                 r.next_int(0, 1'000'000),
-                 static_cast<int64_t>(r.next_int(0, 1'000'000)),
-                 r.next_f64() * 1000.0,
-                 r.word(3, 16),
-                 r.next_bool(),
-                 r.next_int(0, 1'000'000),
-                 r.word(3, 16)};
+int32_t clamp_i32_hi(int32_t hi) {
+  constexpr int32_t kMax = 2147483647;
+  return hi > kMax ? kMax : hi;
 }
 
-Document make_document(Rng& r, int children) {
+void default_slen(const std::string& type_id, int& smin, int& smax) {
+  smin = 3;
+  if (type_id == "telemetry") {
+    smax = 10;
+  } else if (type_id == "document" || type_id == "nested_table" || type_id == "event" ||
+             type_id == "signal") {
+    smax = 12;
+  } else {
+    smax = 16;
+  }
+}
+
+void resolve_slen(const std::string& type_id, const TypeConfig& cfg, int& smin, int& smax) {
+  if (cfg.string_len_min >= 0 && cfg.string_len_max >= 0) {
+    smin = cfg.string_len_min;
+    smax = cfg.string_len_max;
+    return;
+  }
+  default_slen(type_id, smin, smax);
+}
+
+void resolve_irange(const TypeConfig& cfg, int32_t& lo, int32_t& hi) {
+  if (cfg.has_int_range) {
+    lo = cfg.int_range_min;
+    hi = cfg.int_range_max;
+  } else {
+    lo = 0;
+    hi = 1000000;
+  }
+}
+
+double resolve_dup(const std::string& type_id, const TypeConfig& cfg) {
+  if (cfg.duplication >= 0.0) return cfg.duplication;
+  if (type_id == "table" || type_id == "table_project") return 0.5;
+  if (type_id == "strings") return 0.1;
+  return 0.0;
+}
+
+int resolve_children(const std::string& type_id, const TypeConfig& cfg) {
+  if (cfg.children >= 0) return cfg.children;
+  if (type_id == "nested_table") return 4;
+  return 8;
+}
+
+int resolve_group(const TypeConfig& cfg) { return cfg.group_count >= 0 ? cfg.group_count : 4; }
+
+std::vector<std::string> shared_vocab(uint64_t seed, const std::string& type_id, int smin, int smax) {
+  Rng vocab(mix_seed(seed, type_id + "#vocab", 0));
+  std::vector<std::string> words;
+  words.reserve(32);
+  for (int i = 0; i < 32; ++i) words.push_back(vocab.word(smin, smax));
+  return words;
+}
+
+std::string pick_word(Rng& r, const std::vector<std::string>& vocab, double dup, int smin, int smax) {
+  if (!vocab.empty() && r.next_f64() < dup) {
+    return vocab[static_cast<size_t>(r.next_int(0, static_cast<int32_t>(vocab.size()) - 1))];
+  }
+  return r.word(smin, smax);
+}
+
+Table make_table(Rng& r, int32_t lo, int32_t hi, int smin, int smax, double dup,
+                 const std::vector<std::string>& vocab) {
+  Table t;
+  for (int i = 0; i < 16; ++i) t.f_float[i] = r.next_f64() * 1000.0;
+  for (int i = 0; i < 4; ++i) t.f_int[i] = r.next_int(lo, hi);
+  t.f_str_0 = pick_word(r, vocab, dup, smin, smax);
+  t.f_str_1 = pick_word(r, vocab, dup, smin, smax);
+  return t;
+}
+
+NestedRow make_nested(Rng& r, int children, int smin, int smax) {
+  NestedRow row;
+  row.items.reserve(static_cast<size_t>(children));
+  for (int i = 0; i < children; ++i) {
+    NestedItem it;
+    it.sku = r.word(smin, smax);
+    it.qty = r.next_int(1, 100);
+    it.price_minor = r.next_int(0, 100000);
+    row.items.push_back(std::move(it));
+  }
+  row.id = r.word(8, 12);
+  row.status = r.next_int(0, 5);
+  row.meta.region = r.word(2, 4);
+  row.meta.version = r.next_int(1, 10);
+  return row;
+}
+
+Signal make_signal(Rng& r, int group_count, int smin, int smax) {
+  Signal s;
+  s.legs.reserve(static_cast<size_t>(group_count));
+  for (int i = 0; i < group_count; ++i) {
+    SignalLeg leg;
+    leg.leg_id = r.next_int(0, 1000000);
+    leg.leg_qty = r.next_int(0, 10000);
+    leg.leg_pad = 0;
+    s.legs.push_back(leg);
+  }
+  s.seq = r.next_int(0, 1000000000);
+  s.ts = kBaseTsMs + r.next_int(0, 86400000);
+  s.price_mantissa = r.next_int(0, 1000000000);
+  s.qty = r.next_int(0, 10000);
+  s.flags = r.next_int(0, 65535);
+  s.symbol = r.word(smin, smax);
+  s.venue = r.word(smin, smax);
+  return s;
+}
+
+Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed, int idx) {
+  Rng r(mix_seed(seed, type_id, idx));
+  int smin = 3;
+  int smax = 16;
+  resolve_slen(type_id, cfg, smin, smax);
+  if (type_id == "message") {
+    int32_t lo = 0;
+    int32_t hi = 1000000;
+    resolve_irange(cfg, lo, hi);
+    return make_message(r, lo, hi, smin, smax);
+  }
+  if (type_id == "document") return make_document(r, resolve_children(type_id, cfg), smin, smax);
+  if (type_id == "telemetry") return make_telemetry(r, cfg.points, cfg.tag_count, smin, smax);
+  if (type_id == "strings") return make_strings(r, cfg.count, smin, smax, resolve_dup(type_id, cfg));
+  if (type_id == "event") return make_event(r, cfg.attr_count, smin, smax);
+  if (type_id == "table" || type_id == "table_project") {
+    int32_t lo = 0;
+    int32_t hi = 1000000;
+    resolve_irange(cfg, lo, hi);
+    auto vocab = shared_vocab(seed, type_id, smin, smax);
+    return make_table(r, lo, hi, smin, smax, resolve_dup(type_id, cfg), vocab);
+  }
+  if (type_id == "nested_table") return make_nested(r, resolve_children(type_id, cfg), smin, smax);
+  if (type_id == "signal") return make_signal(r, resolve_group(cfg), smin, smax);
+  throw std::runtime_error("unknown type_id: " + type_id);
+}
+
+template <typename T>
+std::vector<T> many_of(const std::string& type_id, const TypeConfig& cfg, uint64_t seed, int n) {
+  std::vector<T> v;
+  v.reserve(static_cast<size_t>(n));
+  for (int i = 0; i < n; ++i) v.push_back(std::get<T>(make_one(type_id, cfg, seed, i)));
+  return v;
+}
+
+}  // namespace
+
+Message make_message(Rng& r, int32_t lo, int32_t hi, int smin, int smax) {
+  const int32_t hi32 = clamp_i32_hi(hi);
+  return Message{r.next_bool(),
+                 r.next_int(lo, hi32),
+                 static_cast<int64_t>(r.next_int(lo, hi)),
+                 r.next_f64() * 1000.0,
+                 r.word(smin, smax),
+                 r.next_bool(),
+                 r.next_int(lo, hi32),
+                 r.word(smin, smax)};
+}
+
+Document make_document(Rng& r, int children, int smin, int smax) {
   Document d;
   d.id = r.word(8, 12);
   d.status = r.next_int(0, 5);
   d.meta = DocumentMeta{r.word(2, 4), r.next_int(1, 10)};
   d.items.reserve(static_cast<size_t>(children));
   for (int i = 0; i < children; ++i) {
-    d.items.push_back(DocumentItem{r.word(3, 12), r.next_int(1, 100),
-                                   static_cast<int64_t>(r.next_int(0, 100'000))});
+    d.items.push_back(DocumentItem{r.word(smin, smax), r.next_int(1, 100),
+                                   static_cast<int64_t>(r.next_int(0, 100000))});
   }
   return d;
 }
 
-Telemetry make_telemetry(Rng& r, int points, int tag_count) {
+Telemetry make_telemetry(Rng& r, int points, int tag_count, int smin, int smax) {
   Telemetry t;
-  t.source = r.word(3, 10);
-  t.ts = kBaseTsMs + r.next_int(0, 86'400'000);
+  t.source = r.word(smin, smax);
+  t.ts = kBaseTsMs + r.next_int(0, 86400000);
   t.tags.reserve(static_cast<size_t>(tag_count));
-  for (int i = 0; i < tag_count; ++i) t.tags.push_back(r.word(3, 10));
+  for (int i = 0; i < tag_count; ++i) t.tags.push_back(r.word(smin, smax));
   t.values.reserve(static_cast<size_t>(points));
   for (int i = 0; i < points; ++i) t.values.push_back(r.next_f64() * 100.0);
   return t;
 }
 
-Strings make_strings(Rng& r, int count) {
+Strings make_strings(Rng& r, int count, int smin, int smax, double duplication) {
   Strings s;
   s.items.reserve(static_cast<size_t>(count));
-  for (int i = 0; i < count; ++i) s.items.push_back(r.word(3, 16));
+  std::vector<std::string> pool;
+  for (int i = 0; i < count; ++i) {
+    if (!pool.empty() && r.next_f64() < duplication) {
+      s.items.push_back(pool[static_cast<size_t>(r.next_int(0, static_cast<int32_t>(pool.size()) - 1))]);
+    } else {
+      auto w = r.word(smin, smax);
+      pool.push_back(w);
+      s.items.push_back(std::move(w));
+    }
+  }
   return s;
 }
 
-Event make_event(Rng& r, int attr_count) {
+Event make_event(Rng& r, int attr_count, int smin, int smax) {
   Event e;
   e.event_id = r.word(8, 12);
-  e.event_type = r.word(3, 12);
-  e.occurred_at = kBaseTsMs + r.next_int(0, 86'400'000);
-  e.producer = r.word(3, 12);
+  e.event_type = r.word(smin, smax);
+  e.occurred_at = kBaseTsMs + r.next_int(0, 86400000);
+  e.producer = r.word(smin, smax);
   e.attrs.reserve(static_cast<size_t>(attr_count));
   for (int i = 0; i < attr_count; ++i) {
-    e.attrs.push_back(EventAttr{r.word(3, 12), r.word(3, 12)});
+    e.attrs.push_back(EventAttr{r.word(smin, smax), r.word(smin, smax)});
   }
   return e;
-}
-
-static Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed, int idx) {
-  Rng r(mix_seed(seed, type_id, idx));
-  if (type_id == "message") return make_message(r);
-  if (type_id == "document") return make_document(r, cfg.children);
-  if (type_id == "telemetry") return make_telemetry(r, cfg.points, cfg.tag_count);
-  if (type_id == "strings") return make_strings(r, cfg.count);
-  if (type_id == "event") return make_event(r, cfg.attr_count);
-  throw std::runtime_error("unknown type_id: " + type_id);
 }
 
 Fixture make_fixture(const std::string& type_id, const TypeConfig& cfg, uint64_t seed,
@@ -80,48 +236,40 @@ Fixture make_fixture(const std::string& type_id, const TypeConfig& cfg, uint64_t
     fx.value = make_one(type_id, cfg, seed, 0);
     return fx;
   }
-  if (type_id == "message") {
-    std::vector<Message> v;
-    v.reserve(static_cast<size_t>(fx.instance_count));
-    for (int i = 0; i < fx.instance_count; ++i)
-      v.push_back(std::get<Message>(make_one(type_id, cfg, seed, i)));
-    fx.value = std::move(v);
-  } else if (type_id == "document") {
-    std::vector<Document> v;
-    v.reserve(static_cast<size_t>(fx.instance_count));
-    for (int i = 0; i < fx.instance_count; ++i)
-      v.push_back(std::get<Document>(make_one(type_id, cfg, seed, i)));
-    fx.value = std::move(v);
-  } else if (type_id == "telemetry") {
-    std::vector<Telemetry> v;
-    v.reserve(static_cast<size_t>(fx.instance_count));
-    for (int i = 0; i < fx.instance_count; ++i)
-      v.push_back(std::get<Telemetry>(make_one(type_id, cfg, seed, i)));
-    fx.value = std::move(v);
-  } else if (type_id == "strings") {
-    std::vector<Strings> v;
-    v.reserve(static_cast<size_t>(fx.instance_count));
-    for (int i = 0; i < fx.instance_count; ++i)
-      v.push_back(std::get<Strings>(make_one(type_id, cfg, seed, i)));
-    fx.value = std::move(v);
-  } else if (type_id == "event") {
-    std::vector<Event> v;
-    v.reserve(static_cast<size_t>(fx.instance_count));
-    for (int i = 0; i < fx.instance_count; ++i)
-      v.push_back(std::get<Event>(make_one(type_id, cfg, seed, i)));
-    fx.value = std::move(v);
-  } else {
+  if (type_id == "message") fx.value = many_of<Message>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "document") fx.value = many_of<Document>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "telemetry")
+    fx.value = many_of<Telemetry>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "strings") fx.value = many_of<Strings>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "event") fx.value = many_of<Event>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "table" || type_id == "table_project")
+    fx.value = many_of<Table>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "nested_table")
+    fx.value = many_of<NestedRow>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "signal") fx.value = many_of<Signal>(type_id, cfg, seed, fx.instance_count);
+  else
     throw std::runtime_error("unknown type_id: " + type_id);
-  }
   return fx;
 }
 
 bool fidelity(const Value& a, const Value& b) {
   if (a.index() != b.index()) return false;
+  if (const auto* la = std::get_if<std::vector<double>>(&a)) {
+    const auto& lb = std::get<std::vector<double>>(b);
+    if (la->size() != lb.size()) return false;
+    for (size_t i = 0; i < la->size(); ++i) {
+      if (!nearly_eq((*la)[i], lb[i])) return false;
+    }
+    return true;
+  }
   return std::visit(
       [&](const auto& left) -> bool {
         using T = std::decay_t<decltype(left)>;
-        return left == std::get<T>(b);
+        if constexpr (std::is_same_v<T, std::vector<double>>) {
+          return false;
+        } else {
+          return left == std::get<T>(b);
+        }
       },
       a);
 }

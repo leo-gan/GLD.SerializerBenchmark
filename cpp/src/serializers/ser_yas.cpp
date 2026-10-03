@@ -6,6 +6,9 @@
 #include <yas/binary_iarchive.hpp>
 #include <yas/object.hpp>
 
+#include <stdexcept>
+#include <type_traits>
+
 // YAS (Yet Another Serialization) — frequently tops C++ binary benchmarks.
 // Optimal: yas::mem | yas::binary with YAS_OBJECT_NVP field packs; reuse flags.
 
@@ -61,6 +64,8 @@ class YasSer final : public ISerializer {
                 "event", ("event_id", v.event_id), ("event_type", v.event_type),
                 ("occurred_at", v.occurred_at), ("producer", v.producer), ("attrs", v.attrs)));
             return {buf.data.get(), buf.data.get() + buf.size};
+          } else if constexpr (is_columnar_alt_v<T>) {
+            throw std::runtime_error("yas: columnar type unsupported");
           } else {
             // Batch: serialize vector via YAS std support
             auto buf = yas::save<kFlags>(v);
