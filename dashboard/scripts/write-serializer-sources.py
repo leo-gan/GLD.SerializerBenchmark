@@ -252,6 +252,12 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("php", "yaml-pecl", "https://github.com/php/pecl-file_formats-yaml"),
     ("go", "shamaton/msgpack (array)", "https://github.com/shamaton/msgpack"),
     ("javascript", "bebop", "https://github.com/6over3/bebop"),
+    ("python", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("python", "parquet", "https://github.com/apache/arrow"),
+    ("python", "parquet-uncompressed", "https://github.com/apache/arrow"),
+    ("python", "orc", "https://github.com/apache/arrow"),
+    ("python", "orc-uncompressed", "https://github.com/apache/arrow"),
+
 ]
 
 # Shared origin stories: why the library exists, the problem, the solution.
@@ -384,6 +390,42 @@ SPECIFICS: dict[str, str] = {
         "stdlib way to speak the web's data format. The implementation is a "
         "C-accelerated codec over Python objects; this suite times that path "
         "as the baseline."
+    ),
+    "arrow-ipc": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times pyarrow's IPC stream writer and "
+        "reader inside the suite's bytes mode, not the Arrow file format. "
+        "Schema objects are selected in prepare. Row-to-column conversion "
+        "stays inside serialize. table_project deserialize reads f_float_0 only."
+    ),
+    "parquet": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times pyarrow.parquet.write_table "
+        "and read_table with pyarrow's default page compression, Snappy. "
+        "Encodings stay at the library default. table_project passes "
+        "columns=['f_float_0'] on read."
+    ),
+    "parquet-uncompressed": (
+        "This is the same pyarrow Parquet writer as parquet, with "
+        "compression='NONE'. Encodings stay at the library default. The name "
+        "is the override. Use this size when the question is layout rather "
+        "than Snappy."
+    ),
+    "orc": (
+        "Apache ORC was created at Hive as a columnar stripe file with "
+        "indexes and compression. This row times pyarrow.orc.write_table and "
+        "read_table with no compression argument. pyarrow's default is "
+        "uncompressed. Apache ORC's own C++ and Java writers default to Zlib; "
+        "this binding does not. table_project passes columns=['f_float_0'] on read."
+    ),
+    "orc-uncompressed": (
+        "This is the same pyarrow ORC writer as orc, with "
+        "compression='uncompressed'. On pyarrow 25 that codec is also the "
+        "default, so the bytes match orc. The name stays so the allow-list "
+        "matches languages whose ORC writer defaults to Zlib."
     ),
     "orjson": (
         "orjson was written to give CPython a JSON codec that is both fast "
@@ -1518,6 +1560,11 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "dill"): "dill",
     ("python", "tomllib"): "tomllib",
     ("python", "amazon-ion"): "amazon-ion",
+    ("python", "arrow-ipc"): "arrow-ipc",
+    ("python", "parquet"): "parquet",
+    ("python", "parquet-uncompressed"): "parquet-uncompressed",
+    ("python", "orc"): "orc",
+    ("python", "orc-uncompressed"): "orc-uncompressed",
     ("javascript", "ion-js"): "ion-js",
     ("go", "ion-go"): "ion-go",
     ("csharp", "Amazon.IonDotnet"): "ion-dotnet",

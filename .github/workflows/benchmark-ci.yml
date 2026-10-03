@@ -222,6 +222,15 @@ jobs:
           cd python
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Second smoke: the four columnar types are not in smoke.yaml.
+      # The allow-list is required. "parquet" and "orc" also match the
+      # uncompressed rows. Do not point smoke_run_config at this file.
+      - name: Run Python columnar smoke
+        run: |
+          cd python
+          BENCHMARK_RUN_CONFIG="${GITHUB_WORKSPACE}/config/library/columnar-smoke.yaml" \
+            ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,orc,orjson,protobuf,flatbuffers,avro"
+
   rust-benchmark:
     needs: changes
     if: >-

@@ -32,6 +32,7 @@ dependencies = [
     "amazon-ion>=0.13,<1",
     "py-ubjson>=0.16,<1",
     "newsmile>=1.1,<2",
+    "pyarrow>=25.0.1,<26",
 ]
 
 [project.optional-dependencies]

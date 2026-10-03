@@ -109,7 +109,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
 | Mojo | **13** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
 | PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
-| Python | **18** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
+| Python | **23** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
 | Rust | **17** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
 | Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
