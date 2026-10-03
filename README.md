@@ -43,7 +43,7 @@ Compare 200+ serialization libraries across **13 languages**.
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21
 - [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 47 serializers registered
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 35 with Arrow (30 without; sbe still registers)
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 22
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 26
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 21
 - [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 26

@@ -10,14 +10,17 @@ go 1.27.0
 toolchain go1.27.1
 
 require (
+	github.com/amazon-ion/ion-go v1.5.0
+	github.com/apache/arrow-go/v18 v18.8.0
 	github.com/bytedance/sonic v1.15.4
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/goccy/go-json v0.10.6
 	github.com/goccy/go-yaml v1.19.2
+	github.com/google/flatbuffers v25.12.19+incompatible
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19 // stay on this pin; v1.0.20 is a separate bump
-	github.com/klauspost/compress v1.18.2
+	github.com/klauspost/compress v1.19.2
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
@@ -29,19 +32,30 @@ require (
 )
 
 require (
-	github.com/amazon-ion/ion-go v1.5.0 // indirect
+	github.com/andybalholm/brotli v1.2.3 // indirect
+	github.com/apache/thrift v0.24.0 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic/loader v0.5.2 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.11 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/pierrec/lz4/v4 v4.1.29 // indirect
 	github.com/segmentio/asm v1.1.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/zeebo/xxh3 v1.1.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 )

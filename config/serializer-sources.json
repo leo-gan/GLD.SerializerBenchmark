@@ -540,6 +540,11 @@
       }
     },
     "go": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-go's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Record batches are built inside SerializeBytes. table_project reads the f_float_0 value buffer only, because arrow-go's ipc.Reader has no included-fields option. No compliance decoder."
+      },
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
         "version": "go1.27.1",
@@ -600,6 +605,16 @@
         "version": "1.17.9",
         "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
       },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-go pqarrow. arrow-go WriterProperties defaults to uncompressed, so this row sets Snappy, which is the suite's parquet page codec. table_project passes column index 0 to GetRecordReader. The schema is prepared untimed. The batch is built inside SerializeBytes. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "This is the same arrow-go pqarrow writer as parquet, with compression left off (Codecs.Uncompressed). Encodings stay at the library default. The name is the override. No compliance decoder."
+      },
       "pelletier/go-toml": {
         "source_url": "https://github.com/pelletier/go-toml",
         "version": "2.4.3",
@@ -609,6 +624,11 @@
         "source_url": "https://github.com/protocolbuffers/protobuf-go",
         "version": "1.36.12",
         "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Go flyweight inside SerializeBytes. It encodes table, table_project, and signal. nested_table is not an SBE body. No compliance decoder."
       },
       "segmentio/encoding/json": {
         "source_url": "https://github.com/segmentio/encoding",

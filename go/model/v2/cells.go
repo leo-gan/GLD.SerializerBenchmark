@@ -119,15 +119,44 @@ func FixtureFromCell(c Cell, seed uint64) (name string, value any) {
 			s[i] = insts[i].(Event)
 		}
 		return name, s
+	case "table", "table_project":
+		s := make([]TableRow, n)
+		for i := range insts {
+			s[i] = insts[i].(TableRow)
+		}
+		return name, s
+	case "nested_table":
+		s := make([]NestedRow, n)
+		for i := range insts {
+			s[i] = insts[i].(NestedRow)
+		}
+		return name, s
+	case "signal":
+		s := make([]Signal, n)
+		for i := range insts {
+			s[i] = insts[i].(Signal)
+		}
+		return name, s
 	default:
 		return name, insts
+	}
+}
+
+// IsOriginalV2TypeName reports the five publication type ids.
+func IsOriginalV2TypeName(name string) bool {
+	switch name {
+	case "message", "document", "telemetry", "strings", "event":
+		return true
+	default:
+		return false
 	}
 }
 
 // IsV2TypeName reports whether name is a Data Model v2 type_id.
 func IsV2TypeName(name string) bool {
 	switch name {
-	case "message", "document", "telemetry", "strings", "event":
+	case "message", "document", "telemetry", "strings", "event",
+		"table", "table_project", "nested_table", "signal":
 		return true
 	default:
 		return false

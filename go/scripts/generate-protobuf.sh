@@ -4,7 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT="$(cd "$GO_DIR/.." && pwd)"
-export PATH="${HOME}/.local/go/bin:${HOME}/.local/bin:$(go env GOPATH 2>/dev/null)/bin:${PATH}"
+# Prefer the Go 1.27.1 toolchain when it is installed. Do not prepend
+# ~/.local/go (1.23): that compiler is not the module toolchain.
+if [[ -x "${HOME}/gopath/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.1.linux-amd64/bin/go" ]]; then
+  export PATH="${HOME}/gopath/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.1.linux-amd64/bin:${PATH}"
+fi
+export GOTOOLCHAIN="${GOTOOLCHAIN:-local}"
+export PATH="${HOME}/.local/bin:$(go env GOPATH 2>/dev/null)/bin:${PATH}"
 
 if ! command -v protoc-gen-go >/dev/null 2>&1; then
   go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.1

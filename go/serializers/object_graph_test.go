@@ -8,9 +8,27 @@ import (
 	modelv2 "serializer-benchmark-go/model/v2"
 )
 
+func columnarOnly(name string) bool {
+	switch name {
+	case "arrow-ipc", "parquet", "parquet-uncompressed", "sbe":
+		return true
+	default:
+		return false
+	}
+}
+
 func TestAllSerializersSupportV2Types(t *testing.T) {
-	for _, typeID := range []string{"message", "document", "telemetry", "strings", "event"} {
-		for _, ser := range All() {
+	original := []string{"message", "document", "telemetry", "strings", "event"}
+	for _, ser := range All() {
+		if columnarOnly(ser.Name()) {
+			for _, typeID := range original {
+				if ser.Supports(typeID) {
+					t.Errorf("%s should not support %s", ser.Name(), typeID)
+				}
+			}
+			continue
+		}
+		for _, typeID := range original {
 			if !ser.Supports(typeID) {
 				t.Errorf("%s should support %s", ser.Name(), typeID)
 			}

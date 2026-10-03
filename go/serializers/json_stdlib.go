@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"serializer-benchmark-go/model"
+	modelv2 "serializer-benchmark-go/model/v2"
 )
 
 // encodingJSON — Go standard library v1 API (encoding/json).
@@ -15,7 +16,8 @@ import (
 // Recommended: json.Marshal / json.Unmarshal (no indent); Encoder/Decoder for streams.
 // https://pkg.go.dev/encoding/json
 type encodingJSON struct {
-	proto any // value prototype from Prepare
+	proto  any // value prototype from Prepare
+	fxName string
 }
 
 func newEncodingJSON() *encodingJSON { return &encodingJSON{} }
@@ -28,6 +30,7 @@ func (s *encodingJSON) Supports(n string) bool { return DefaultSupports(n) }
 
 func (s *encodingJSON) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
+	s.fxName = fx.Name
 	return nil
 }
 
@@ -40,7 +43,7 @@ func (s *encodingJSON) DeserializeBytes(buf []byte) (any, error) {
 	if err := json.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return model.Deref(dst), nil
+	return finishJSON(s.fxName, model.Deref(dst)), nil
 }
 
 func (s *encodingJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
@@ -60,5 +63,13 @@ func (s *encodingJSON) DeserializeStream(r io.Reader) (any, error) {
 	if err := json.NewDecoder(r).Decode(dst); err != nil {
 		return nil, err
 	}
-	return model.Deref(dst), nil
+	return finishJSON(s.fxName, model.Deref(dst)), nil
+}
+
+// table_project full-decodes the row, then keeps f_float_0. encoding/json/v2 is unchanged.
+func finishJSON(name string, v any) any {
+	if name == "table_project" {
+		return modelv2.ProjectFFloat0(v)
+	}
+	return v
 }
