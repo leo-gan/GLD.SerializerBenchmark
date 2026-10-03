@@ -1,13 +1,30 @@
 //! JSON family: serde_json, simd-json, sonic-rs.
 
-use crate::data::Fixture;
+use crate::data::{collect_f_float_0, Fixture};
 use anyhow::Result;
 use std::io::{Read, Write};
 
 use super::{ver, BenchSerializer, CountWrite, StreamMode};
 
-#[derive(Default)]
-pub struct SerdeJson;
+pub struct SerdeJson {
+    kind: &'static str,
+}
+
+impl Default for SerdeJson {
+    fn default() -> Self {
+        Self { kind: "message" }
+    }
+}
+
+impl SerdeJson {
+    fn finish(&self, fx: Fixture) -> Result<Fixture> {
+        if self.kind == "table_project" {
+            Ok(Fixture::Projected(collect_f_float_0(&fx)?))
+        } else {
+            Ok(fx)
+        }
+    }
+}
 
 impl BenchSerializer for SerdeJson {
     fn name(&self) -> &'static str {
@@ -19,7 +36,11 @@ impl BenchSerializer for SerdeJson {
     fn stream_mode(&self) -> StreamMode {
         StreamMode::Native
     }
-    fn prepare(&mut self, _: &Fixture) -> Result<()> {
+    fn supports(&self, _test_data_name: &str) -> bool {
+        true
+    }
+    fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
+        self.kind = fixture.name();
         Ok(())
     }
     fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
@@ -28,7 +49,7 @@ impl BenchSerializer for SerdeJson {
         Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
-        Ok(serde_json::from_slice(data)?)
+        self.finish(serde_json::from_slice(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
         let mut counter = CountWrite { inner: w, n: 0 };
@@ -36,7 +57,7 @@ impl BenchSerializer for SerdeJson {
         Ok(counter.n)
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
-        Ok(serde_json::from_reader(r)?)
+        self.finish(serde_json::from_reader(r)?)
     }
 }
 

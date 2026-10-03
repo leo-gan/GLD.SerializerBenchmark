@@ -33,19 +33,23 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 
 mod avro_ser;
 mod binary_serde;
+mod columnar;
 mod direct;
 mod json;
 mod kinded;
 mod prost_ser;
+mod sbe_ser;
 mod yaml;
 
 use avro_ser::AvroFastSer;
 use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
 };
+use columnar::{ArrowIpc, ParquetSer};
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
 use prost_ser::ProstSer;
+use sbe_ser::SbeSer;
 use yaml::SerdeYaml;
 
 #[inline]
@@ -89,6 +93,8 @@ pub enum NativeKind {
     Archive,
     /// Direct Encode/Decode or Speedy/Nanoserde path on concrete structs
     Direct,
+    /// Arrow / Parquet record batch
+    Table,
 }
 
 pub trait BenchSerializer: Send {
@@ -100,8 +106,9 @@ pub trait BenchSerializer: Send {
     fn native_kind(&self) -> NativeKind {
         NativeKind::Serde
     }
-    fn supports(&self, _test_data_name: &str) -> bool {
-        true
+    fn supports(&self, test_data_name: &str) -> bool {
+        // Columnar ids are opt-in. Peers and the new codecs override this.
+        !crate::data::is_columnar_id(test_data_name)
     }
 
     /// Untimed: build reusable codec state / bind kind-specific encode fns.
@@ -117,6 +124,30 @@ pub trait BenchSerializer: Send {
 
     /// Timed: encode `fixture` into `out` (caller cleared; capacity reused).
     fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()>;
+
+    /// Timed: encode a whole cell as one payload.
+    ///
+    /// N=1 calls [`serialize_into`]. N>1 wraps [`Fixture::Rows`] and encodes once.
+    /// Columnar codecs override this so they do not clone into `Rows`.
+    fn serialize_fixtures(&mut self, fixtures: &[Fixture], out: &mut Vec<u8>) -> Result<()> {
+        if fixtures.len() == 1 {
+            return self.serialize_into(&fixtures[0], out);
+        }
+        let rows = Fixture::Rows(fixtures.to_vec());
+        self.serialize_into(&rows, out)
+    }
+
+    /// Timed stream of one cell. Default writes the bytes payload.
+    fn serialize_fixtures_stream(
+        &mut self,
+        fixtures: &[Fixture],
+        w: &mut dyn Write,
+    ) -> Result<usize> {
+        let mut data = Vec::with_capacity(4096);
+        self.serialize_fixtures(fixtures, &mut data)?;
+        w.write_all(&data)?;
+        Ok(data.len())
+    }
 
     /// Timed: deserialize into a `Fixture` for semantic fidelity checks.
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture>;
@@ -171,13 +202,20 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
         Box::new(SerdeYaml::default()),
+        // Columnar. arrow-rs IPC stream / Parquet, and sbe-tool 1.40.2 flyweights.
+        Box::new(ArrowIpc::default()),
+        Box::new(ParquetSer::default()),
+        Box::new(ParquetSer::uncompressed()),
+        Box::new(SbeSer::default()),
     ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::{all_fixtures, fidelity, make_one, Fixture};
+    use crate::data::{
+        all_fixtures, check_cell_fidelity, fidelity, make_one, Fixture, TypeConfig,
+    };
     use super::binary_serde::CiboriumSer;
     use super::json::SerdeJson;
 
@@ -210,23 +248,24 @@ mod tests {
 
     #[test]
     fn all_serializers_support_message() {
-        let fx = make_one("message", 42, 0, 8, 32, 32, 4).unwrap();
+        let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
+        let all = all_serializers();
+        assert_eq!(all.len(), 22);
         for mut ser in all_serializers() {
-            assert!(
-                ser.supports("message"),
-                "{} should support message",
-                ser.name()
-            );
+            if !ser.supports("message") {
+                continue;
+            }
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        assert_eq!(ok, all_serializers().len());
+        // The four columnar rows do not support message. serde_yaml still does.
+        assert_eq!(ok, 18);
     }
 
     #[test]
     fn serialize_into_serde_json_deterministic() {
-        let fx = make_one("document", 1, 0, 4, 32, 32, 4).unwrap();
+        let fx = make_one("document", 1, 0, &TypeConfig::default()).unwrap();
         let mut s = SerdeJson::default();
         s.prepare(&fx).unwrap();
         let mut a = Vec::new();
@@ -238,7 +277,7 @@ mod tests {
 
     #[test]
     fn serialize_into_reuses_capacity() {
-        let fx = make_one("message", 1, 0, 8, 32, 32, 4).unwrap();
+        let fx = make_one("message", 1, 0, &TypeConfig::default()).unwrap();
         let mut s = SerdeJson::default();
         s.prepare(&fx).unwrap();
         let mut buf = Vec::with_capacity(4096);
@@ -253,7 +292,7 @@ mod tests {
 
     #[test]
     fn ciborium_no_empty_and_deterministic() {
-        let fx = make_one("message", 1, 0, 8, 32, 32, 4).unwrap();
+        let fx = make_one("message", 1, 0, &TypeConfig::default()).unwrap();
         let mut s = CiboriumSer::default();
         s.prepare(&fx).unwrap();
         let a = s.serialize_bytes(&fx).unwrap();
@@ -264,10 +303,71 @@ mod tests {
 
     #[test]
     fn fixture_generation_is_deterministic() {
-        let a = make_one("telemetry", 42, 0, 8, 32, 32, 4).unwrap();
-        let b = make_one("telemetry", 42, 0, 8, 32, 32, 4).unwrap();
+        let a = make_one("telemetry", 42, 0, &TypeConfig::default()).unwrap();
+        let b = make_one("telemetry", 42, 0, &TypeConfig::default()).unwrap();
         assert_eq!(a, b);
-        let c = make_one("telemetry", 42, 1, 8, 32, 32, 4).unwrap();
+        let c = make_one("telemetry", 42, 1, &TypeConfig::default()).unwrap();
         assert_ne!(a, c);
+    }
+
+    fn cell_roundtrip(ser: &mut dyn BenchSerializer, type_id: &str, n: i32) {
+        let cfg = TypeConfig::default();
+        let fixtures: Vec<Fixture> = (0..n)
+            .map(|i| make_one(type_id, 7, i, &cfg).unwrap())
+            .collect();
+        ser.prepare_many(&fixtures).expect("prepare");
+        let mut buf = Vec::new();
+        ser.serialize_fixtures(&fixtures, &mut buf).expect("ser");
+        assert!(!buf.is_empty(), "{} empty {}", ser.name(), type_id);
+        let got = ser.deserialize_bytes(&buf).expect("de");
+        check_cell_fidelity(type_id, &fixtures, &[got])
+            .unwrap_or_else(|e| panic!("{} {type_id} N={n}: {e}", ser.name()));
+        if n == 1 {
+            // Stream is a separate pass. Prost's encode cursor is per pass.
+            ser.begin_cell_encode();
+            let mut stream = Vec::new();
+            ser.serialize_stream(&fixtures[0], &mut stream).expect("stream ser");
+            let mut cursor = std::io::Cursor::new(stream);
+            let streamed = ser.deserialize_stream(&mut cursor).expect("stream de");
+            check_cell_fidelity(type_id, &fixtures, &[streamed])
+                .unwrap_or_else(|e| panic!("{} stream {type_id}: {e}", ser.name()));
+        }
+    }
+
+    #[test]
+    fn columnar_and_peers_roundtrip_n1_and_n100() {
+        let ids = ["table", "table_project", "nested_table", "signal"];
+        let peers = ["arrow-ipc", "parquet", "parquet-uncompressed", "sbe", "serde_json", "prost", "serde_avro_fast"];
+        for mut ser in all_serializers() {
+            if !peers.contains(&ser.name()) {
+                continue;
+            }
+            for tid in ids {
+                if !ser.supports(tid) {
+                    assert_eq!(ser.name(), "sbe");
+                    assert_eq!(tid, "nested_table");
+                    continue;
+                }
+                cell_roundtrip(ser.as_mut(), tid, 1);
+                cell_roundtrip(ser.as_mut(), tid, 100);
+            }
+        }
+        let names: Vec<_> = all_serializers().iter().map(|s| s.name()).collect();
+        for peer in peers {
+            assert!(names.contains(&peer), "missing {peer}");
+        }
+        for ser in all_serializers() {
+            match ser.name() {
+                "arrow-ipc" => assert_eq!(ser.version(), "60.0.0"),
+                "parquet" | "parquet-uncompressed" => assert_eq!(ser.version(), "60.0.0"),
+                "sbe" => {
+                    assert_eq!(ser.version(), "1.40.2");
+                    assert_ne!(ser.version(), "0.1.0");
+                    assert!(!ser.supports("nested_table"));
+                    assert!(!ser.supports("message"));
+                }
+                _ => {}
+            }
+        }
     }
 }
