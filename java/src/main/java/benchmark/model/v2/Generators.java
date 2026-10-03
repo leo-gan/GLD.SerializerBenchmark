@@ -1,6 +1,7 @@
 package benchmark.model.v2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,9 @@ public final class Generators {
       case "telemetry" -> makeTelemetry(r, typeConfig);
       case "strings" -> makeStrings(r, typeConfig);
       case "event" -> makeEvent(r, typeConfig);
+      case "table", "table_project" -> makeTable(r, typeConfig, seed, typeId);
+      case "nested_table" -> makeNested(r, typeConfig);
+      case "signal" -> makeSignal(r, typeConfig);
       default -> throw new IllegalArgumentException("unknown type_id: " + typeId);
     };
   }
@@ -37,6 +41,33 @@ public final class Generators {
     Object v = m.get(key);
     if (v instanceof Number n) return n.intValue();
     return def;
+  }
+
+  private static double cfgDouble(Map<String, Object> m, String key, double def) {
+    if (m == null || !m.containsKey(key) || m.get(key) == null) return def;
+    Object v = m.get(key);
+    if (v instanceof Number n) return n.doubleValue();
+    return def;
+  }
+
+  private static Map<String, Object> cfgMap(Map<String, Object> m, String key) {
+    if (m == null || !(m.get(key) instanceof Map<?, ?> raw)) return Map.of();
+    Map<String, Object> out = new HashMap<>();
+    for (Map.Entry<?, ?> e : raw.entrySet()) {
+      out.put(String.valueOf(e.getKey()), e.getValue());
+    }
+    return out;
+  }
+
+  /** Catalog string_len, or {@code defMin..defMax} when the key is absent. */
+  private static int[] slen(Map<String, Object> cfg, int defMin, int defMax) {
+    Map<String, Object> sl = cfgMap(cfg, "string_len");
+    return new int[] {cfgInt(sl, "min", defMin), cfgInt(sl, "max", defMax)};
+  }
+
+  private static int[] irange(Map<String, Object> cfg) {
+    Map<String, Object> ir = cfgMap(cfg, "int_range");
+    return new int[] {cfgInt(ir, "min", 0), cfgInt(ir, "max", 1_000_000)};
   }
 
   private static Message makeMessage(Rng r) {
@@ -93,5 +124,91 @@ public final class Generators {
         BASE_TS_MS + r.nextInt(0, 86_400_000),
         r.word(3, 12),
         attrs);
+  }
+
+  private static List<String> vocab(long seed, String typeId, int smin, int smax) {
+    Rng vr = new Rng(Rng.mixSeed(seed, typeId + "#vocab", 0));
+    List<String> out = new ArrayList<>(32);
+    for (int i = 0; i < 32; i++) out.add(vr.word(smin, smax));
+    return out;
+  }
+
+  private static String pick(Rng r, List<String> vocab, double duplication, int smin, int smax) {
+    if (!vocab.isEmpty() && r.nextF64() < duplication) {
+      return vocab.get(r.nextInt(0, vocab.size() - 1));
+    }
+    return r.word(smin, smax);
+  }
+
+  private static TableRow makeTable(Rng r, Map<String, Object> cfg, long seed, String typeId) {
+    int[] sl = slen(cfg, 3, 16);
+    int[] ir = irange(cfg);
+    double dup = cfgDouble(cfg, "duplication", 0.5);
+    List<String> words = vocab(seed, typeId, sl[0], sl[1]);
+    double[] f = new double[16];
+    for (int i = 0; i < f.length; i++) f[i] = r.nextF64() * 1000.0;
+    long[] n = new long[4];
+    for (int i = 0; i < n.length; i++) n[i] = r.nextInt(ir[0], ir[1]);
+    TableRow row = new TableRow();
+    row.fFloat0 = f[0];
+    row.fFloat1 = f[1];
+    row.fFloat2 = f[2];
+    row.fFloat3 = f[3];
+    row.fFloat4 = f[4];
+    row.fFloat5 = f[5];
+    row.fFloat6 = f[6];
+    row.fFloat7 = f[7];
+    row.fFloat8 = f[8];
+    row.fFloat9 = f[9];
+    row.fFloat10 = f[10];
+    row.fFloat11 = f[11];
+    row.fFloat12 = f[12];
+    row.fFloat13 = f[13];
+    row.fFloat14 = f[14];
+    row.fFloat15 = f[15];
+    row.fInt0 = n[0];
+    row.fInt1 = n[1];
+    row.fInt2 = n[2];
+    row.fInt3 = n[3];
+    row.fStr0 = pick(r, words, dup, sl[0], sl[1]);
+    row.fStr1 = pick(r, words, dup, sl[0], sl[1]);
+    return row;
+  }
+
+  /** Draw order: id, status, meta, then items. */
+  private static NestedRow makeNested(Rng r, Map<String, Object> cfg) {
+    int[] sl = slen(cfg, 3, 12);
+    int children = cfgInt(cfg, "children", 4);
+    NestedRow row = new NestedRow();
+    row.id = r.word(8, 12);
+    row.status = r.nextInt(0, 5);
+    row.meta = new NestedRow.NestedMeta(r.word(2, 4), r.nextInt(1, 10));
+    for (int i = 0; i < children; i++) {
+      row.items.add(
+          new NestedRow.NestedItem(
+              r.word(sl[0], sl[1]), r.nextInt(1, 100), r.nextInt(0, 100_000)));
+    }
+    return row;
+  }
+
+  /**
+   * Domain draw order is fixed fields, then symbol and venue, then legs.
+   * {@code leg_pad} is the constant 0 and does not consume the PRNG.
+   */
+  private static Signal makeSignal(Rng r, Map<String, Object> cfg) {
+    int[] sl = slen(cfg, 3, 12);
+    int groups = cfgInt(cfg, "group_count", 4);
+    Signal row = new Signal();
+    row.seq = r.nextInt(0, 1_000_000_000);
+    row.ts = BASE_TS_MS + r.nextInt(0, 86_400_000);
+    row.priceMantissa = r.nextInt(0, 1_000_000_000);
+    row.qty = r.nextInt(0, 10_000);
+    row.flags = r.nextInt(0, 65_535);
+    row.symbol = r.word(sl[0], sl[1]);
+    row.venue = r.word(sl[0], sl[1]);
+    for (int i = 0; i < groups; i++) {
+      row.legs.add(new Signal.SignalLeg(r.nextInt(0, 1_000_000), r.nextInt(0, 10_000), 0));
+    }
+    return row;
   }
 }

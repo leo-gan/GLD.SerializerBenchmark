@@ -271,6 +271,12 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("rust", "parquet", "https://github.com/apache/arrow-rs"),
     ("rust", "parquet-uncompressed", "https://github.com/apache/arrow-rs"),
     ("rust", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("java", "arrow-ipc", "https://github.com/apache/arrow-java"),
+    ("java", "parquet", "https://github.com/apache/parquet-java"),
+    ("java", "parquet-uncompressed", "https://github.com/apache/parquet-java"),
+    ("java", "orc", "https://github.com/apache/orc"),
+    ("java", "orc-uncompressed", "https://github.com/apache/orc"),
+    ("java", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
 
 ]
 
@@ -1640,6 +1646,52 @@ SPECIFICS: dict[str, str] = {
         "nested_table is not an SBE body. The signal wire order is fixed "
         "fields, then the legs group, then symbol and venue. No compliance decoder."
     ),
+    "arrow-ipc-java": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-vector 19.0.0 "
+        "ArrowStreamWriter inside the bytes API, not the Arrow file format "
+        "and not arrow-dataset. The schema is built in prepare. Row-to-column "
+        "conversion stays inside serializeBytes. table_project loads "
+        "f_float_0 only. No compliance decoder."
+    ),
+    "parquet-java": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times parquet-avro 1.18.1 "
+        "AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so "
+        "this row sets CompressionCodecName.SNAPPY. table_project sets "
+        "AvroReadSupport requested projection to f_float_0. No compliance decoder."
+    ),
+    "parquet-uncompressed-java": (
+        "This is the same parquet-avro writer as parquet, with "
+        "CompressionCodecName.UNCOMPRESSED. The name is the override. "
+        "No compliance decoder."
+    ),
+    "orc-java": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. This row times orc-core 2.3.1 (classifier nohive). "
+        "OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). "
+        "orc-uncompressed sets CompressionKind.NONE. Both rows set "
+        "blockPadding(false) so a small file is not padded toward the 256MB "
+        "HDFS block. table_project includes f_float_0 only. No compliance decoder."
+    ),
+    "orc-uncompressed-java": (
+        "This is the same orc-core writer as orc, with CompressionKind.NONE "
+        "and blockPadding(false). The name is the override. No compliance decoder."
+    ),
+    "sbe-java": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Java flyweight "
+        "inside serializeBytes. Agrona is the runtime. The generator jar is "
+        "sbe-all, copied from Maven at build time. It encodes table, "
+        "table_project, and signal. nested_table is not an SBE body. The "
+        "signal wire order is fixed fields, then the legs group, then symbol "
+        "and venue. No compliance decoder."
+    ),
 }
 
 # (language, name) -> SPECIFICS key. Default: try the name, then a heuristic.
@@ -1705,6 +1757,12 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("rust", "parquet"): "parquet-rust",
     ("rust", "parquet-uncompressed"): "parquet-uncompressed-rust",
     ("rust", "sbe"): "sbe-rust",
+    ("java", "arrow-ipc"): "arrow-ipc-java",
+    ("java", "parquet"): "parquet-java",
+    ("java", "parquet-uncompressed"): "parquet-uncompressed-java",
+    ("java", "orc"): "orc-java",
+    ("java", "orc-uncompressed"): "orc-uncompressed-java",
+    ("java", "sbe"): "sbe-java",
     ("javascript", "ion-js"): "ion-js",
     ("go", "ion-go"): "ion-go",
     ("csharp", "Amazon.IonDotnet"): "ion-dotnet",

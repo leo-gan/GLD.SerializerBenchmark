@@ -104,7 +104,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | C# | **47** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **35** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
 | Go | **26** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
-| Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
+| Java | **27** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **21** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
 | Mojo | **13** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |

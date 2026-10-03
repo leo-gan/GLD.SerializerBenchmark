@@ -9,6 +9,7 @@ import benchmark.fb.Message;
 import benchmark.fb.Strings;
 import benchmark.fb.Telemetry;
 import benchmark.model.Fixture;
+import benchmark.model.v2.V2Rows;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 import java.nio.ByteBuffer;
@@ -65,10 +66,9 @@ public final class FlatBuffersSer implements BenchSerializer {
   @Override
   public Object deserializeBytes(byte[] data) {
     ByteBuffer bb = ByteBuffer.wrap(data);
-    if (batch) {
-      return unpackList(bb);
-    }
-    return unpackOne(bb);
+    Object out = batch ? unpackList(bb) : unpackOne(bb);
+    if ("table_project".equals(typeId)) return V2Rows.float0(out);
+    return out;
   }
 
   @Override
@@ -83,6 +83,9 @@ public final class FlatBuffersSer implements BenchSerializer {
       case "telemetry" -> packTelemetry((benchmark.model.v2.Telemetry) value);
       case "strings" -> packStrings((benchmark.model.v2.Strings) value);
       case "event" -> packEvent((benchmark.model.v2.Event) value);
+      case "table", "table_project" -> FbV2.packTable(builder, (benchmark.model.v2.TableRow) value);
+      case "nested_table" -> FbV2.packNested(builder, (benchmark.model.v2.NestedRow) value);
+      case "signal" -> FbV2.packSignal(builder, (benchmark.model.v2.Signal) value);
       default -> throw new IllegalArgumentException(typeId);
     };
   }
@@ -104,6 +107,7 @@ public final class FlatBuffersSer implements BenchSerializer {
           builder, benchmark.fb.BatchStrings.createItemsVector(builder, offs));
       case "event" -> benchmark.fb.BatchEvent.createBatchEvent(
           builder, benchmark.fb.BatchEvent.createItemsVector(builder, offs));
+      case "table", "table_project", "nested_table", "signal" -> FbV2.packBatch(builder, offs);
       default -> throw new IllegalArgumentException(typeId);
     };
   }
@@ -178,6 +182,9 @@ public final class FlatBuffersSer implements BenchSerializer {
       case "telemetry" -> fromTelemetry(Telemetry.getRootAsTelemetry(bb));
       case "strings" -> fromStrings(Strings.getRootAsStrings(bb));
       case "event" -> fromEvent(Event.getRootAsEvent(bb));
+      case "table", "table_project" -> FbV2.readTable(bb);
+      case "nested_table" -> FbV2.readNested(bb);
+      case "signal" -> FbV2.readSignal(bb);
       default -> throw new IllegalArgumentException(typeId);
     };
   }
@@ -214,6 +221,9 @@ public final class FlatBuffersSer implements BenchSerializer {
         for (int i = 0; i < b.itemsLength(); i++) out.add(fromEvent(b.items(i)));
         yield out;
       }
+      case "table", "table_project" -> FbV2.readTableBatch(bb);
+      case "nested_table" -> FbV2.readNestedBatch(bb);
+      case "signal" -> FbV2.readSignalBatch(bb);
       default -> throw new IllegalArgumentException(typeId);
     };
   }
