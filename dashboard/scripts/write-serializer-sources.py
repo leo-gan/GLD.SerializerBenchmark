@@ -267,6 +267,9 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("cpp", "orc", "https://github.com/apache/arrow"),
     ("cpp", "orc-uncompressed", "https://github.com/apache/arrow"),
     ("cpp", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("csharp", "arrow-ipc", "https://github.com/apache/arrow-dotnet"),
+    ("csharp", "parquet", "https://github.com/aloneguid/parquet-dotnet"),
+    ("csharp", "parquet-uncompressed", "https://github.com/aloneguid/parquet-dotnet"),
     ("rust", "arrow-ipc", "https://github.com/apache/arrow-rs"),
     ("rust", "parquet", "https://github.com/apache/arrow-rs"),
     ("rust", "parquet-uncompressed", "https://github.com/apache/arrow-rs"),
@@ -1612,6 +1615,30 @@ SPECIFICS: dict[str, str] = {
         "nested_table is not an SBE body. The signal wire order is fixed "
         "fields, then the legs group, then symbol and venue. No compliance decoder."
     ),
+    "arrow-ipc-csharp": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times Apache.Arrow 23.0.0 stream writer "
+        "and reader on the string path (Base64 of the IPC stream), not the "
+        "Arrow file format. Row-to-column conversion stays inside serialize. "
+        "table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no "
+        "net10.0 asset; the net10.0 project consumes the net8.0 asset. "
+        "No compliance decoder."
+    ),
+    "parquet-csharp": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times Parquet.Net 6.1.0 at the "
+        "library default, Snappy. The timed call is the string path (Base64 "
+        "of the Parquet bytes). table_project reads the FFloat0 data field. "
+        "The package has an explicit net10.0 asset. No compliance decoder."
+    ),
+    "parquet-uncompressed-csharp": (
+        "This is the same Parquet.Net writer as parquet, with "
+        "CompressionMethod.None. Encodings stay at the library default. The "
+        "name is the override. No compliance decoder."
+    ),
     "arrow-ipc-rust": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -1753,6 +1780,9 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("cpp", "orc"): "orc-cpp",
     ("cpp", "orc-uncompressed"): "orc-uncompressed-cpp",
     ("cpp", "sbe"): "sbe-cpp",
+    ("csharp", "arrow-ipc"): "arrow-ipc-csharp",
+    ("csharp", "parquet"): "parquet-csharp",
+    ("csharp", "parquet-uncompressed"): "parquet-uncompressed-csharp",
     ("rust", "arrow-ipc"): "arrow-ipc-rust",
     ("rust", "parquet"): "parquet-rust",
     ("rust", "parquet-uncompressed"): "parquet-uncompressed-rust",

@@ -18,6 +18,9 @@ namespace GLD.SerializerBenchmark
                 case "NetJSON":
                 case "Ceras":
                 case "SharpSerializer":
+                case "arrow-ipc":
+                case "parquet":
+                case "parquet-uncompressed":
                     return "adapted";
                 case "Json.Net":
                 case "Json.Net (Helper)":

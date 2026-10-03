@@ -12,6 +12,10 @@ namespace GLD.SerializerBenchmark
         /// <summary>B-6 honesty: native | text_on_stream | adapted (CSV StreamMode on stream rows).</summary>
         string StreamMode { get; }
         bool Supports(string testDataName);
+        /// <summary>
+        /// Fixture type id (table vs table_project share a CLR type). Called before Initialize.
+        /// </summary>
+        void BindFixture(string testDataName);
         void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
 
         /// <summary>

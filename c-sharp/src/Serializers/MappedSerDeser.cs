@@ -32,7 +32,11 @@ namespace GLD.SerializerBenchmark.Serializers
         }
 
         public override object ToDomain(object decoded)
-            => Binding.ToDomain(decoded);
+        {
+            // table_project deserialize already returned the f_float_0 sequence.
+            if (IsTableProject) return decoded;
+            return Binding.ToDomain(decoded);
+        }
 
         /// <summary>Timed path: prefer prepared native; else convert (should be rare).</summary>
         protected object NativeOf(object serializable)

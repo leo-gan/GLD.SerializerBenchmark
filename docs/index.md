@@ -50,7 +50,7 @@ Thirteen runners share the same fixtures and analysis rules.
 | Language | Serializers |
 |----------|------------:|
 | [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
-| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 38 |
+| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 50 |
 | [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
 | [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |

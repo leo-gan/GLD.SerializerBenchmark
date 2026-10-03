@@ -29,6 +29,12 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
+            if (args.Length > 0 && args[0].Equals("column-timing", System.StringComparison.OrdinalIgnoreCase))
+            {
+                System.Environment.Exit(SelfCheck.ColumnTiming());
+                return;
+            }
+
             var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
             var serializerFilter = args.Length > 1 ? args[1] : null;
             var testDataFilter = args.Length > 2 ? args[2] : null;
@@ -62,8 +68,27 @@ namespace GLD.SerializerBenchmark
                 };
             }
 
-            var allSerializers = new List<ISerDeser>
+            var allSerializers = CreateSerializers();
+
+            var testDataDescriptions = allTestDataDescriptions
+                .Where(td => string.IsNullOrEmpty(testDataFilter) || td.Name.Contains(testDataFilter, System.StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var serializers = SelectSerializers(allSerializers, serializerFilter);
+
+            if (testDataDescriptions.Count == 0 || serializers.Count == 0)
             {
+                System.Console.WriteLine("No test data or serializers matched the filters.");
+                return;
+            }
+
+            System.Console.WriteLine("[PROGRESS] Serializers: " + string.Join(",", serializers.Select(s => s.Name)));
+
+            Tester.Tests(serializers, testDataDescriptions, repetitions);
+        }
+
+        internal static List<ISerDeser> CreateSerializers() => new List<ISerDeser>
+        {
                 new BinarySerializer(),
                 new BondCompactSerializer(),
                 new BondFastSerializer(),
@@ -111,23 +136,27 @@ namespace GLD.SerializerBenchmark
                 new ShapeShiftTamlSerializerSer(),
                 new ShapeShiftTomlSerializerSer(),
                 new ShapeShiftYamlSerializerSer(),
-            };
+                new ArrowIpcSerializerSer(),
+                new ParquetColumnarSerializerSer(uncompressed: false),
+                new ParquetColumnarSerializerSer(uncompressed: true),
+        };
 
-            var testDataDescriptions = allTestDataDescriptions
-                .Where(td => string.IsNullOrEmpty(testDataFilter) || td.Name.Contains(testDataFilter, System.StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            var serializers = allSerializers
-                .Where(s => string.IsNullOrEmpty(serializerFilter) || s.Name.Contains(serializerFilter, System.StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (testDataDescriptions.Count == 0 || serializers.Count == 0)
+        /// <summary>
+        /// Empty selects all. A comma-separated filter is case-insensitive exact names.
+        /// No comma keeps substring matching.
+        /// </summary>
+        internal static List<ISerDeser> SelectSerializers(List<ISerDeser> all, string filter)
+        {
+            if (string.IsNullOrEmpty(filter))
+                return all;
+            if (filter.IndexOf(',') >= 0)
             {
-                System.Console.WriteLine("No test data or serializers matched the filters.");
-                return;
+                var wanted = new HashSet<string>(
+                    filter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    StringComparer.OrdinalIgnoreCase);
+                return all.Where(s => wanted.Contains(s.Name)).ToList();
             }
-
-            Tester.Tests(serializers, testDataDescriptions, repetitions);
+            return all.Where(s => s.Name.Contains(filter, System.StringComparison.OrdinalIgnoreCase)).ToList();
         }
     }
 }

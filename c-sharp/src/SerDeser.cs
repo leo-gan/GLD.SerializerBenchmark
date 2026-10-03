@@ -23,6 +23,17 @@ namespace GLD.SerializerBenchmark
 
         public virtual bool Supports(string testDataName) => true;
 
+        /// <summary>Run-config type id for this fixture. table and table_project share a CLR type.</summary>
+        public string FixtureName { get; private set; } = "";
+
+        public virtual void BindFixture(string testDataName)
+        {
+            FixtureName = testDataName ?? "";
+        }
+
+        protected bool IsTableProject =>
+            string.Equals(FixtureName, "table_project", StringComparison.Ordinal);
+
         public virtual void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {
             _primaryType = serializablePrimaryType;

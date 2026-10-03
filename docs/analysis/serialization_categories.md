@@ -116,7 +116,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
   - **C++:** `protobuf` (libprotobuf), `protobuf-wire` (in-tree), `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`, `sbe`
   - **Zig:** `protobuf` (Arwalk/zig-protobuf from the shared `.proto`), `flatbuffers` (nDimensional/zig-flatbuffers from the shared `.fbs`), `capnproto` (official C++ runtime from the shared `.capnp`)
 
-SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codecs: the body is word-aligned, and variable-length data is only at the end of a message or repeating group. Go, C++, Rust, and Java register `sbe` (sbe-tool 1.40.2 flyweights) for `signal`, `table`, and `table_project`. The wide `table` row is a legal SBE body because its strings are variable data at the end. `nested_table` is not. The signal wire order is fixed fields, then the `legs` group, then `symbol` and `venue`. 
+SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codecs: the body is word-aligned, and variable-length data is only at the end of a message or repeating group. Go, C++, Rust, and Java register `sbe` (sbe-tool 1.40.2 flyweights) for `signal`, `table`, and `table_project`. The wide `table` row is a legal SBE body because its strings are variable data at the end. `nested_table` is not. The signal wire order is fixed fields, then the `legs` group, then `symbol` and `venue`. C# does not register `sbe`: the generated flyweights import `Org.SbeTool.Sbe.Dll`, and no NuGet package provides that assembly on the 1.40.2 line. The project was not retargeted and the runtime was not vendored. 
 
 ### Columnar
 

@@ -22,7 +22,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
-            return JsonSerializer.Deserialize(serialized, _primaryType, Options);
+            var decoded = JsonSerializer.Deserialize(serialized, _primaryType, Options);
+            return IsTableProject ? ColumnarProject.FFloat0(decoded) : decoded;
         }
 
         public override void Serialize(object serializable, Stream outputStream)
@@ -35,7 +36,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            return JsonSerializer.Deserialize(inputStream, _primaryType, Options);
+            var decoded = JsonSerializer.Deserialize(inputStream, _primaryType, Options);
+            return IsTableProject ? ColumnarProject.FFloat0(decoded) : decoded;
         }
     }
 }

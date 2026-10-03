@@ -109,7 +109,7 @@ namespace GLD.SerializerBenchmark.Serializers
             _deMs.Write(bytes, 0, bytes.Length);
             _deMs.Position = 0;
             _reuse = _read(_reuse, _deDec);
-            return _reuse;
+            return IsTableProject ? ColumnarProject.FFloat0(_reuse) : _reuse;
         }
 
         public override void Serialize(object serializable, Stream outputStream)
@@ -120,7 +120,7 @@ namespace GLD.SerializerBenchmark.Serializers
             if (inputStream.CanSeek)
                 inputStream.Seek(0, SeekOrigin.Begin);
             _reuse = _read(_reuse, new BinaryDecoder(inputStream));
-            return _reuse;
+            return IsTableProject ? ColumnarProject.FFloat0(_reuse) : _reuse;
         }
 
         /// <summary>
