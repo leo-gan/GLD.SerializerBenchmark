@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "Table",
+  "namespace": "benchmark.v2",
+  "doc": "Wide flat row. table_project uses this record and reads f_float_0 only.",
+  "fields": [
+    {"name": "f_float_0", "type": "double"},
+    {"name": "f_float_1", "type": "double"},
+    {"name": "f_float_2", "type": "double"},
+    {"name": "f_float_3", "type": "double"},
+    {"name": "f_float_4", "type": "double"},
+    {"name": "f_float_5", "type": "double"},
+    {"name": "f_float_6", "type": "double"},
+    {"name": "f_float_7", "type": "double"},
+    {"name": "f_float_8", "type": "double"},
+    {"name": "f_float_9", "type": "double"},
+    {"name": "f_float_10", "type": "double"},
+    {"name": "f_float_11", "type": "double"},
+    {"name": "f_float_12", "type": "double"},
+    {"name": "f_float_13", "type": "double"},
+    {"name": "f_float_14", "type": "double"},
+    {"name": "f_float_15", "type": "double"},
+    {"name": "f_int_0", "type": "long"},
+    {"name": "f_int_1", "type": "long"},
+    {"name": "f_int_2", "type": "long"},
+    {"name": "f_int_3", "type": "long"},
+    {"name": "f_str_0", "type": "string"},
+    {"name": "f_str_1", "type": "string"}
+  ]
+}

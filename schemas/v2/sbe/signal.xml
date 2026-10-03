@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  SBE schema for the suite signal and table records.
+  The codec requires repeating groups before variable-length data, so Signal
+  lays the legs group out before symbol and venue. Field ids stay 1..11.
+  The domain and the protobuf/Avro records keep strings before legs.
+  nested_table is intentionally absent: a nested struct in the middle is not
+  an SBE body. Codegen output is produced by the language that compiles this.
+-->
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="benchmark.v2"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0.0"
+                   description="GLD.SerializerBenchmark signal and table"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="SBE message header">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <composite name="varStringEncoding">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+    </types>
+    <sbe:message name="Signal" id="1" description="Fixed block, then legs group, then strings">
+        <field name="seq" id="1" type="int64"/>
+        <field name="ts" id="2" type="int64"/>
+        <field name="price_mantissa" id="3" type="int64"/>
+        <field name="qty" id="4" type="int32"/>
+        <field name="flags" id="5" type="int32"/>
+        <group name="legs" id="8" dimensionType="groupSizeEncoding">
+            <field name="leg_id" id="9" type="int64"/>
+            <field name="leg_qty" id="10" type="int32"/>
+            <field name="leg_pad" id="11" type="int32"/>
+        </group>
+        <data name="symbol" id="6" type="varStringEncoding"/>
+        <data name="venue" id="7" type="varStringEncoding"/>
+    </sbe:message>
+    <sbe:message name="Table" id="2" description="16 float64, 4 int64, then 2 strings">
+        <field name="f_float_0" id="101" type="double"/>
+        <field name="f_float_1" id="102" type="double"/>
+        <field name="f_float_2" id="103" type="double"/>
+        <field name="f_float_3" id="104" type="double"/>
+        <field name="f_float_4" id="105" type="double"/>
+        <field name="f_float_5" id="106" type="double"/>
+        <field name="f_float_6" id="107" type="double"/>
+        <field name="f_float_7" id="108" type="double"/>
+        <field name="f_float_8" id="109" type="double"/>
+        <field name="f_float_9" id="110" type="double"/>
+        <field name="f_float_10" id="111" type="double"/>
+        <field name="f_float_11" id="112" type="double"/>
+        <field name="f_float_12" id="113" type="double"/>
+        <field name="f_float_13" id="114" type="double"/>
+        <field name="f_float_14" id="115" type="double"/>
+        <field name="f_float_15" id="116" type="double"/>
+        <field name="f_int_0" id="117" type="int64"/>
+        <field name="f_int_1" id="118" type="int64"/>
+        <field name="f_int_2" id="119" type="int64"/>
+        <field name="f_int_3" id="120" type="int64"/>
+        <data name="f_str_0" id="121" type="varStringEncoding"/>
+        <data name="f_str_1" id="122" type="varStringEncoding"/>
+    </sbe:message>
+</sbe:messageSchema>

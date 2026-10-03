@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "Signal",
+  "namespace": "benchmark.v2",
+  "doc": "Fixed fields, then variable strings, then a repeating group of fixed legs.",
+  "fields": [
+    {"name": "seq", "type": "long"},
+    {"name": "ts", "type": "long"},
+    {"name": "price_mantissa", "type": "long"},
+    {"name": "qty", "type": "int"},
+    {"name": "flags", "type": "int"},
+    {"name": "symbol", "type": "string"},
+    {"name": "venue", "type": "string"},
+    {
+      "name": "legs",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "SignalLeg",
+          "fields": [
+            {"name": "leg_id", "type": "long"},
+            {"name": "leg_qty", "type": "int"},
+            {"name": "leg_pad", "type": "int"}
+          ]
+        }
+      }
+    }
+  ]
+}
