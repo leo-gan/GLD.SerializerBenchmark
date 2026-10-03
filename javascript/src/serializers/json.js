@@ -1,5 +1,5 @@
 import fastJson from 'fast-json-stringify';
-import { pkgVersion, baseSupports, bufToUtf8 } from './common.js';
+import { pkgVersion, baseSupports, peerSupports, projectFFloat0, bufToUtf8 } from './common.js';
 
 let simdjson = null;
 try {
@@ -89,19 +89,26 @@ const v2JsonSchemas = {
   },
 };
 
+let jsonTypeId = null;
+
 export const jsonBuiltin = {
   name: 'JSON.stringify',
   version: `node-${process.versions.node}`,
   category: 'json',
-  supports: baseSupports,
-  prepare() {},
+  supports: peerSupports,
+  prepare(dataName) {
+    jsonTypeId = dataName;
+  },
   serialize(value) {
     // Optimal: single stringify; Buffer.from(string) is the Node wire representation.
     return Buffer.from(JSON.stringify(value), 'utf8');
   },
   deserialize(buf) {
     // Optimal: avoid double Buffer wrap when already a Buffer.
-    return JSON.parse(bufToUtf8(buf));
+    const value = JSON.parse(bufToUtf8(buf));
+    // Projection is inside the timed deserialize, including N=1.
+    if (jsonTypeId === 'table_project') return projectFFloat0(value);
+    return value;
   },
 };
 

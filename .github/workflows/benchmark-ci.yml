@@ -334,6 +334,14 @@ jobs:
           cd javascript
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. custom mode does not force
+      # the message data filter. The comma list is an exact-name allow-list.
+      - name: Run JavaScript columnar smoke
+        run: |
+          cd javascript
+          BENCHMARK_RUN_CONFIG="${GITHUB_WORKSPACE}/config/library/columnar-smoke.yaml" \
+            ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,JSON.stringify,protobufjs,flatbuffers,avsc"
+
   go-benchmark:
     needs: changes
     if: >-

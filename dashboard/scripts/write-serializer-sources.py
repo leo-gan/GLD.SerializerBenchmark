@@ -261,6 +261,9 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("go", "parquet", "https://github.com/apache/arrow-go"),
     ("go", "parquet-uncompressed", "https://github.com/apache/arrow-go"),
     ("go", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("javascript", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("javascript", "parquet", "https://github.com/hyparam/hyparquet-writer"),
+    ("javascript", "parquet-uncompressed", "https://github.com/hyparam/hyparquet-writer"),
     ("cpp", "arrow-ipc", "https://github.com/apache/arrow"),
     ("cpp", "parquet", "https://github.com/apache/arrow"),
     ("cpp", "parquet-uncompressed", "https://github.com/apache/arrow"),
@@ -1569,6 +1572,33 @@ SPECIFICS: dict[str, str] = {
         "SerializeBytes. It encodes table, table_project, and signal. "
         "nested_table is not an SBE body. No compliance decoder."
     ),
+    "arrow-ipc-js": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times the apache-arrow IPC stream writer "
+        "and reader (tableToIPC with type stream) inside the suite's bytes "
+        "mode, not the Arrow file format. Schema objects are selected in "
+        "prepare. Row-to-column conversion stays inside serialize. "
+        "table_project deserialize reads f_float_0 only. No compliance decoder."
+    ),
+    "parquet-js": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times hyparquet-writer "
+        "parquetWriteBuffer at the library default codec, Snappy, and "
+        "hyparquet 1.31.2 parquetReadObjects. A nested_table value (struct "
+        "plus a list of structs, int32 not widened) round-tripped, which is "
+        "why the row is registered. table_project passes columns "
+        "['f_float_0'] on read. SerializerVersion is the writer package. "
+        "No compliance decoder."
+    ),
+    "parquet-uncompressed-js": (
+        "This is the same hyparquet-writer path as parquet, with codec "
+        "UNCOMPRESSED. That switch changes the column codec metadata and the "
+        "bytes. Encodings stay at the library default. It is the same writer, "
+        "not a second Parquet library. No compliance decoder."
+    ),
     "arrow-ipc-cpp": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -1774,6 +1804,9 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("go", "parquet"): "parquet-go",
     ("go", "parquet-uncompressed"): "parquet-uncompressed-go",
     ("go", "sbe"): "sbe-go",
+    ("javascript", "arrow-ipc"): "arrow-ipc-js",
+    ("javascript", "parquet"): "parquet-js",
+    ("javascript", "parquet-uncompressed"): "parquet-uncompressed-js",
     ("cpp", "arrow-ipc"): "arrow-ipc-cpp",
     ("cpp", "parquet"): "parquet-cpp",
     ("cpp", "parquet-uncompressed"): "parquet-uncompressed-cpp",

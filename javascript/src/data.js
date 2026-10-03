@@ -1,15 +1,38 @@
 /**
  * Shared helpers for the JS suite.
  * Suite fixtures — re-export / helpers for data_v2.js
- * (message, document, telemetry, strings, event).
+ * (message, document, telemetry, strings, event,
+ * table, table_project, nested_table, signal).
  */
 
 import { makeOne, instances } from './data_v2.js';
 
 export { makeOne, instances };
 
-/** Official Data Model v2 suite type ids. */
-export const V2_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
+/** Official Data Model v2 suite type ids. Publication types, then columnar. */
+export const V2_TYPE_IDS = [
+  'message',
+  'document',
+  'telemetry',
+  'strings',
+  'event',
+  'table',
+  'table_project',
+  'nested_table',
+  'signal',
+];
+
+/**
+ * Value the runner compares after deserialize.
+ * table_project encodes the full row and returns f_float_0 only, including N=1.
+ */
+export function expectedForFidelity(typeId, value) {
+  if (typeId !== 'table_project') return value;
+  const rows = Array.isArray(value) ? value : [value];
+  const out = new Array(rows.length);
+  for (let i = 0; i < rows.length; i++) out[i] = rows[i].f_float_0;
+  return out;
+}
 
 /** Build one fixture per V2 type (seeded). */
 export function allFixturesV2(seed = 42) {
