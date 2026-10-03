@@ -5,11 +5,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -17,6 +19,14 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/ipc"
+	"github.com/apache/arrow-go/v18/arrow/memory"
+	"github.com/apache/arrow-go/v18/parquet/file"
+	"github.com/apache/arrow-go/v18/parquet/pqarrow"
+	sbe "serializer-benchmark-go/gen/sbe"
 
 	"github.com/amazon-ion/ion-go/ion"
 	"github.com/bytedance/sonic"
@@ -386,7 +396,147 @@ func builtin() []adapter {
 		{"protobuf", "protobuf", moduleVer("google.golang.org/protobuf"), decodeProtobuf},
 		{"hamba/avro", "avro", moduleVer("github.com/hamba/avro/v2"), decodeHambaAvro},
 		{"linkedin/goavro", "avro", moduleVer("github.com/linkedin/goavro/v2"), decodeGoAvro},
+		{"arrow-ipc", "arrow", moduleVer("github.com/apache/arrow-go/v18"), decodeArrowIPC},
+		{"parquet", "parquet", moduleVer("github.com/apache/arrow-go/v18"), decodeParquet},
+		{"parquet-uncompressed", "parquet", moduleVer("github.com/apache/arrow-go/v18"), decodeParquet},
+		{"sbe", "sbe", "1.40.2", decodeSBE},
 	}
+}
+
+func decodeArrowIPC(b []byte, _ string) (any, error) {
+	if len(b) == 0 {
+		return nil, fmt.Errorf("arrow-ipc: empty")
+	}
+	r, err := ipc.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Release()
+	var recs []arrow.RecordBatch
+	defer func() {
+		for _, rec := range recs {
+			rec.Release()
+		}
+	}()
+	for {
+		rec, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		rec.Retain()
+		recs = append(recs, rec)
+	}
+	return arrowRows(recs)
+}
+
+func decodeParquet(b []byte, _ string) (any, error) {
+	if len(b) == 0 {
+		return nil, fmt.Errorf("parquet: empty")
+	}
+	pf, err := file.NewParquetReader(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	defer pf.Close()
+	fr, err := pqarrow.NewFileReader(pf, pqarrow.ArrowReadProperties{}, memory.DefaultAllocator)
+	if err != nil {
+		return nil, err
+	}
+	rr, err := fr.GetRecordReader(context.Background(), nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer rr.Release()
+	var recs []arrow.RecordBatch
+	defer func() {
+		for _, rec := range recs {
+			rec.Release()
+		}
+	}()
+	for rr.Next() {
+		rec := rr.RecordBatch()
+		rec.Retain()
+		recs = append(recs, rec)
+	}
+	if err := rr.Err(); err != nil {
+		return nil, err
+	}
+	return arrowRows(recs)
+}
+
+func arrowRows(recs []arrow.RecordBatch) ([]any, error) {
+	rows := make([]any, 0)
+	for _, rec := range recs {
+		n := int(rec.NumRows())
+		for i := 0; i < n; i++ {
+			row := map[string]any{}
+			for c := 0; c < int(rec.NumCols()); c++ {
+				row[rec.Schema().Field(c).Name] = arrowValue(rec.Column(c), i)
+			}
+			rows = append(rows, row)
+		}
+	}
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("columnar: no rows")
+	}
+	return rows, nil
+}
+
+func arrowValue(col arrow.Array, i int) any {
+	if col.IsNull(i) {
+		return nil
+	}
+	switch a := col.(type) {
+	case *array.Int64:
+		return a.Value(i)
+	case *array.Int32:
+		return int64(a.Value(i))
+	case *array.Uint32:
+		return int64(a.Value(i))
+	default:
+		return col.ValueStr(i)
+	}
+}
+
+func decodeSBE(b []byte, _ string) (out any, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("sbe: %v", rec)
+		}
+	}()
+	if len(b) < int(sbe.MessageHeaderEncodedLength) {
+		return nil, fmt.Errorf("sbe: short header")
+	}
+	var hdr sbe.MessageHeader
+	hdr.Wrap(b, 0, 0, uint64(len(b)))
+	if hdr.TemplateId() != sbe.SignalSbeTemplateID {
+		return nil, fmt.Errorf("sbe: template %d", hdr.TemplateId())
+	}
+	var m sbe.Signal
+	m.WrapForDecode(b, sbe.MessageHeaderEncodedLength, uint64(hdr.BlockLength()), uint64(hdr.Version()), uint64(len(b)))
+	legs := []any{}
+	g := m.Legs()
+	for g.HasNext() {
+		g.Next()
+		legs = append(legs, map[string]any{
+			"leg_id":  g.Leg_id(),
+			"leg_qty": int64(g.Leg_qty()),
+			"leg_pad": int64(g.Leg_pad()),
+		})
+	}
+	return map[string]any{
+		"seq":             m.Seq(),
+		"ts":              m.Ts(),
+		"price_mantissa":  m.Price_mantissa(),
+		"qty":             int64(m.Qty()),
+		"flags":           int64(m.Flags()),
+		"legs":            legs,
+		"symbol":          m.Symbol(),
+		"venue":           m.Venue(),
+	}, nil
 }
 
 func avroSchemaJSON(schema string) string {

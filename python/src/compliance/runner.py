@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from .adapters import Adapter, builtin_adapters
-from .catalog import load_all_suites
+from .catalog import corpus_root, load_all_suites
 from .compare import preview, values_equal
 from .context import current_schema
 from .mapping import allowed_pairs, filter_adapters
@@ -67,6 +67,19 @@ def run_suites(
     return report
 
 
+def _corpus_present(fmt: str) -> bool:
+    """True when compliance/data/<fmt>/ exists.
+
+    A mapped pair for a format that has no corpus directory is an empty
+    compliance cell, not a missing adapter. Arrow, Parquet, ORC, and SBE
+    have corpora, so a mapped name without an adapter is a gap.
+    """
+    try:
+        return (corpus_root() / fmt).is_dir()
+    except OSError:
+        return False
+
+
 def _note_mapping_gaps(
     report: Report,
     adapters: list[Adapter],
@@ -82,6 +95,8 @@ def _note_mapping_gaps(
     want_fmt = {f.lower() for f in formats} if formats else None
     for name, fmt in sorted(mapped_pairs):
         if want_fmt and fmt.lower() not in want_fmt:
+            continue
+        if not _corpus_present(fmt):
             continue
         if (name, fmt) not in have:
             report.adapter_errors.append(

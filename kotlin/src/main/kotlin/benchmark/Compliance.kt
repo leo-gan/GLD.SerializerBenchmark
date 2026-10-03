@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.LinkedHashMap
 import java.time.Instant
 import kotlin.io.path.isDirectory
 import kotlin.io.path.readText
@@ -148,6 +149,133 @@ private fun adapters(): List<Adapter> {
             if (b.size < 8) error("too short")
             b.size
         },
+        Adapter("arrow-ipc", "arrow", Versions.of(org.apache.arrow.vector.ipc.ArrowStreamReader::class.java)) { b, _ ->
+            decodeArrow(b)
+        },
+        Adapter("parquet", "parquet", Versions.of(org.apache.parquet.hadoop.ParquetFileReader::class.java)) { b, _ ->
+            decodeParquet(b)
+        },
+        Adapter("parquet-uncompressed", "parquet", Versions.of(org.apache.parquet.hadoop.ParquetFileReader::class.java)) { b, _ ->
+            decodeParquet(b)
+        },
+        Adapter("orc", "orc", Versions.of(org.apache.orc.OrcFile::class.java)) { b, _ ->
+            decodeOrc(b)
+        },
+        Adapter("orc-uncompressed", "orc", Versions.of(org.apache.orc.OrcFile::class.java)) { b, _ ->
+            decodeOrc(b)
+        },
+        Adapter("sbe", "sbe", "1.40.2") { b, _ ->
+            decodeSbe(b)
+        },
+    )
+}
+
+private fun decodeArrow(data: ByteArray): List<Map<String, Any?>> {
+    if (data.isEmpty()) error("arrow-ipc: empty")
+    org.apache.arrow.memory.RootAllocator().use { alloc ->
+        org.apache.arrow.vector.ipc.ArrowStreamReader(java.io.ByteArrayInputStream(data), alloc).use { reader ->
+            val root = reader.vectorSchemaRoot
+            val rows = ArrayList<Map<String, Any?>>()
+            while (reader.loadNextBatch()) {
+                val vectors = root.fieldVectors
+                for (i in 0 until root.rowCount) {
+                    val row = LinkedHashMap<String, Any?>()
+                    for (vec in vectors) {
+                        var value: Any? = if (vec.isNull(i)) null else vec.getObject(i)
+                        if (value is Int) value = value.toLong()
+                        row[vec.name] = value
+                    }
+                    rows.add(row)
+                }
+            }
+            if (rows.isEmpty()) error("arrow-ipc: no rows")
+            return rows
+        }
+    }
+}
+
+private fun decodeParquet(data: ByteArray): List<Map<String, Any?>> {
+    if (data.isEmpty()) error("parquet: empty")
+    val tmp = Files.createTempFile("cmp-parquet-", ".parquet")
+    try {
+        Files.write(tmp, data)
+        val conf = org.apache.hadoop.conf.Configuration()
+        val path = org.apache.hadoop.fs.Path(tmp.toUri())
+        org.apache.parquet.hadoop.ParquetReader.builder(org.apache.parquet.hadoop.example.GroupReadSupport(), path)
+            .withConf(conf)
+            .build().use { reader ->
+                val rows = ArrayList<Map<String, Any?>>()
+                while (true) {
+                    val group = reader.read() ?: break
+                    val row = LinkedHashMap<String, Any?>()
+                    val type = group.type
+                    for (i in 0 until type.fieldCount) {
+                        val name = type.getFieldName(i)
+                        row[name] = group.getLong(name, 0)
+                    }
+                    rows.add(row)
+                }
+                if (rows.isEmpty()) error("parquet: no rows")
+                return rows
+            }
+    } finally {
+        Files.deleteIfExists(tmp)
+    }
+}
+
+private fun decodeOrc(data: ByteArray): List<Map<String, Any?>> {
+    if (data.isEmpty()) error("orc: empty")
+    val tmp = Files.createTempFile("cmp-orc-", ".orc")
+    try {
+        Files.write(tmp, data)
+        val conf = org.apache.hadoop.conf.Configuration()
+        val path = org.apache.hadoop.fs.Path(tmp.toUri())
+        val file = org.apache.orc.OrcFile.createReader(path, org.apache.orc.OrcFile.readerOptions(conf))
+        val type = file.schema
+        val names = type.fieldNames
+        file.rows().use { records ->
+            val batch = type.createRowBatch()
+            val rows = ArrayList<Map<String, Any?>>()
+            while (records.nextBatch(batch)) {
+                for (r in 0 until batch.size) {
+                    val row = LinkedHashMap<String, Any?>()
+                    for (c in names.indices) {
+                        val col = batch.cols[c] as org.apache.orc.storage.ql.exec.vector.LongColumnVector
+                        val idx = if (col.isRepeating) 0 else r
+                        row[names[c]] = col.vector[idx]
+                    }
+                    rows.add(row)
+                }
+            }
+            if (rows.isEmpty()) error("orc: no rows")
+            return rows
+        }
+    } finally {
+        Files.deleteIfExists(tmp)
+    }
+}
+
+private fun decodeSbe(data: ByteArray): Map<String, Any?> {
+    if (data.size < benchmark.v2.MessageHeaderDecoder.ENCODED_LENGTH) error("sbe: short header")
+    val buf = org.agrona.concurrent.UnsafeBuffer(data)
+    val header = benchmark.v2.MessageHeaderDecoder()
+    val dec = benchmark.v2.SignalDecoder()
+    dec.wrapAndApplyHeader(buf, 0, header)
+    val legs = ArrayList<Map<String, Any?>>()
+    val group = dec.legs()
+    repeat(group.count()) {
+        group.next()
+        legs.add(linkedMapOf("leg_id" to group.leg_id(), "leg_qty" to group.leg_qty().toLong(), "leg_pad" to group.leg_pad().toLong()))
+    }
+    return linkedMapOf(
+        "seq" to dec.seq(),
+        "ts" to dec.ts(),
+        "price_mantissa" to dec.price_mantissa(),
+        "qty" to dec.qty().toLong(),
+        "flags" to dec.flags().toLong(),
+        "legs" to legs,
+        "symbol" to dec.symbol(),
+        "venue" to dec.venue(),
     )
 }
 

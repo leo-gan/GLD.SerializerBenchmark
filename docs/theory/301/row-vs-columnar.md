@@ -93,13 +93,28 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 | Resource | Role |
 |----------|------|
-| Language benchmark runners | Publication matrix is **row-oriented** (`message`, `document`, `telemetry`, `strings`, `event`) |
-| [Test Data](../../analysis/test_data_configuration.md) | Those five types, plus `table`, `table_project`, `nested_table`, and `signal` |
-| [Columnar run config](../../../config/library/columnar.yaml) | The four new types. Timed only for the new serializers and a short peer list |
+| Language benchmark runners | `all@all` stays the five row types. `table`, `table_project`, `nested_table`, and `signal` are their own Dashboard data types |
+| [Test Data](../../analysis/test_data_configuration.md) | Those nine type ids |
+| [Columnar run config](../../../config/library/columnar.yaml) | The four columnar types. Timed for the new serializers and a short peer list |
 | [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own family. SBE sits with schema-driven, word-aligned codecs |
 | [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one family and one data type |
 
-**Important:** the publication matrix is still the five row types. Python, Go, JavaScript, C#, C++, Rust, Java, and Kotlin register columnar rows on `columnar.yaml`. ORC is registered in Python, C++, Java, and Kotlin. SBE is registered in Go, C++, Rust, Java, and Kotlin. Columnar timings appear on a language Dashboard only after that language publishes a `columnar.yaml` run. Until that snapshot exists, the slice has no columnar number. Absence of a number means “not measured here.” It does not mean the format is irrelevant for lakes. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`.
+**Important:** `all@all`, `all@1`, and `all@100` stay the five row types (`message`, `document`, `telemetry`, `strings`, `event`). The four columnar types are separate data types. Their groups come from a `columnar.yaml` run appended by `dashboard/scripts/splice-columnar-stats.py`. The five-type groups are the earlier published snapshot and were not recomputed.
+
+Spliced columnar serializers (peers measured in that same run also appear on those data types):
+
+| Language | Columnar serializers in the snapshot |
+|----------|--------------------------------------|
+| Python (50 repetitions; the run hit the 600s cap) | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` |
+| C++ | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
+| Rust | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `sbe` |
+| Go | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `sbe` |
+| Java | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
+| C# | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
+| JavaScript | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
+| Kotlin | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
+
+C++, Rust, Go, Java, C#, JavaScript, and Kotlin used 100 repetitions. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`. A language missing from the table is not in this snapshot. That absence does not mean the format is irrelevant for lakes.
 
 ---
 
@@ -118,7 +133,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 1. Classify the primary workload using the decision frame.
 2. If the path is analytical, prototype scan time and compression on a columnar layout. Compare that with dumping RPC rows.
 3. If the path is RPC, measure per-message latency with row codecs. Do not put lake formats on the code path that runs on every request under load.
-4. Treat Dashboard numbers as **row** codec orientation only. Do not treat them as lake rankings.
+4. Treat `all@all` as the five row types. Read `table`, `table_project`, `nested_table`, and `signal` for Arrow, Parquet, ORC, and SBE. Do not rank a columnar row against a row codec on `message`.
 5. Document a two-hop design if both patterns exist. Use row events on the bus. Use columnar data in the lake.
 
 ### Decision rule
@@ -136,7 +151,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 | Scan time and bytes read for the analytical job | Columnar effectiveness |
 | RPC 99th-percentile latency (*p99*) per message | Row-path reliability target |
 | Compression ratio on lake files | Storage economics |
-| Suite `total_median_ns` and `median_size_bytes` | Row-codec orientation only |
+| Suite `total_median_ns` and `median_size_bytes` | Row-codec orientation on a row data type. Columnar orientation on `table`, `table_project`, `nested_table`, and `signal` |
 | Cross-paradigm “winner” charts | Misleading for this decision |
 
 **Conclusion style:** “Ingest RPC uses Protobuf rows; the lake uses Parquet; we do not dual-use one codec for both jobs.”
@@ -164,5 +179,5 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 - **Access pattern** chooses row versus columnar more than fashion.
 - Services want row messages. Lakes and analytics want columnar storage. Use deliberate bridges between them.
-- Dashboard numbers inform **message codec** choice inside a language. They do not design lake architecture.
+- Dashboard `all@all` informs message codec choice inside a language. The columnar data types inform Arrow, Parquet, ORC, and SBE. Neither designs lake architecture.
 - Dual paths are normal. Use row for serve and columnar for analyze. That is not a design failure.

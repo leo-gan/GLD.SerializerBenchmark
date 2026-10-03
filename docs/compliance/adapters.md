@@ -19,6 +19,23 @@ For each case:
 
 Do **not** download suites at run time. Do **not** add a submodule.
 
+## Arrow, Parquet, ORC, and SBE
+
+These formats have corpora next to the other standards:
+
+| Format id | File | What a case checks |
+| --- | --- | --- |
+| `arrow` | `compliance/data/arrow/ipc-stream.json` | IPC stream: two `berth` rows, empty buffer, bad continuation, truncated metadata |
+| `parquet` | `compliance/data/parquet/file-format.json` | Uncompressed file: two `berth` rows, empty buffer, bad trailing magic, truncated footer |
+| `orc` | `compliance/data/orc/v1.json` | ORC v1: two `berth` rows, empty buffer, postscript length 0, truncated header |
+| `sbe` | `compliance/data/sbe/v1.0.json` | One raw Signal message: one leg, no legs, empty buffer, truncated block, wrong template id |
+
+The bytes are original cases for this suite (column name `berth`, symbol `kelp`, venue `harbor`). They are frozen in the JSON files. Do not regenerate them while scoring, and do not download another project’s suite.
+
+Each language decodes with its own reader: pyarrow, Arrow C++, arrow-rs, arrow-go, Apache Arrow Java, Apache.Arrow, hyparquet, parquet-java, Parquet.Net, orc-core, and the sbe-tool 1.40.2 codec generated for that language. `parquet` and `parquet-uncompressed` share that language’s Parquet reader. `orc` and `orc-uncompressed` share that language’s ORC reader. A language with no ORC or SBE library has no adapter and no cell.
+
+Python and C# record `mapped serializer has no <format> adapter` once `compliance/data/<format>/` exists. Do not score one library with another library’s decoder.
+
 ## Python
 
 Package: `python/src/compliance/`.
@@ -28,7 +45,8 @@ compliance.catalog     load the catalog
 compliance.adapters    json / orjson / msgspec / rapidjson / pydantic /
                        mashumaro / serpyco-rs / yaml / tomllib / cbor2 /
                        msgpack / protobuf / fastavro / bson / flexbuffers /
-                       amazon-ion / py-ubjson / newsmile / plistlib
+                       amazon-ion / py-ubjson / newsmile / plistlib /
+                       pyarrow (Arrow IPC, Parquet, ORC)
 
 JavaScript: `javascript/src/compliance.mjs`. Other languages have a
 `compliance` entry next to the bench runner (`go/compliance`,

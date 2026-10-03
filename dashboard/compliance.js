@@ -11,7 +11,6 @@ import {
   serializerNameHtml,
 } from './serializer-sources.js';
 import {
-  heatmapFromMatrix,
   languageOf as languageOfCell,
   matchesRow as matrixMatchesRow,
   parseRowIdentity,
@@ -24,10 +23,9 @@ import {
   formatLabel,
   noSpecEntries as computeNoSpecEntries,
   normalizeMatrixCell,
-  attachFormats,
   benchMapFromGroups,
+  complianceHeatmap,
   formatSubset,
-  padHeatmap,
   rosterEntries,
   rowIsUnscored,
   standardMenuOptions,
@@ -421,19 +419,13 @@ function renderHeatmap(matrix) {
   const extras = ui.format
     ? formatSubset(matrix, ui.format, group.language, group.benchVersions)
     : rosterEntries(group);
-  const { columns, rows } = attachFormats(
-    padHeatmap(
-      heatmapFromMatrix(matrix, {
-        format: ui.format,
-        serializerKey: ui.serializer,
-      }),
-      extras,
-      { serializerKey: ui.serializer },
-    ),
-    matrix,
-    group.language,
-    group.benchVersions,
-  );
+  const { columns, rows } = complianceHeatmap(matrix, {
+    format: ui.format,
+    serializerKey: ui.serializer,
+    language: group.language,
+    benchVersions: group.benchVersions,
+    extras,
+  });
   if (!rows.length) {
     return '<p class="section-help">No results for this standard.</p><div id="cmp-fail-panel" class="cmp-fail-panel" hidden></div>';
   }
@@ -445,7 +437,10 @@ function renderHeatmap(matrix) {
       const tds = columns
         .map((col) => {
           const acc = row.byStandard.get(col.key);
-          if (!acc) return '<td class="cmp-cell-empty">—</td>';
+          if (!acc) {
+            const title = col.unscored ? ' title="No validity corpus"' : '';
+            return `<td class="cmp-cell-empty"${title}>—</td>`;
+          }
           const judged = acc.passed + acc.failed;
           const rate = judged ? acc.passed / judged : null;
           return `<td class="${rateClass(rate)}">
@@ -634,8 +629,8 @@ function renderMain(root) {
       noSpec
         ? 'All language serializers minus those that belong to JSON, YAML, MessagePack, Protocol Buffers, or another public family. Private and XML/CSV codecs land here. Group list only — no pass/fail cells.'
         : allStandards
-          ? 'Every Overview serializer once. Family tags come from official docs. A scored cell means that language’s compliance runner decoded the catalog with that library. Empty cells mean the runner has no adapter for that pair yet. Click a scored cell to open failures.'
-          : 'Serializers that implement this family (from official docs). Columns are versions. Empty cells mean this language’s runner does not yet decode that catalog. Click a scored cell to open failures.'
+          ? 'Every Overview serializer once. Family tags come from official docs. A scored cell means that language’s compliance runner decoded the catalog with that library. Empty cells mean the runner has no adapter for that pair yet, or this suite has no validity corpus for that standard. Click a scored cell to open failures.'
+          : 'Serializers that implement this family (from official docs). Columns are versions. Empty cells mean this language’s runner does not yet decode that catalog, or the suite has no validity corpus for that standard. Click a scored cell to open failures.'
     }</p>
     ${renderHeatmap(matrix)}
   `;

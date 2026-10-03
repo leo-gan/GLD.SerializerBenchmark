@@ -11,6 +11,10 @@ using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
 using Google.Protobuf;
 using ProtoBuf;
+using Apache.Arrow;
+using Apache.Arrow.Ipc;
+using Parquet;
+using Parquet.Schema;
 
 namespace GLD.SerializerBenchmark
 {
@@ -123,7 +127,7 @@ namespace GLD.SerializerBenchmark
                     ["failed"] = f,
                     ["skipped"] = s,
                     ["errors"] = e,
-                    ["catalog_errors"] = Array.Empty<string>(),
+                    ["catalog_errors"] = System.Array.Empty<string>(),
                     ["serializer_errors"] = adapterErrs,
                 };
                 var head = JsonConvert.SerializeObject(meta, JsonWriteSettings).TrimEnd('}') + ",\"results\":";
@@ -181,6 +185,14 @@ namespace GLD.SerializerBenchmark
                 if (!have.Contains(key))
                 {
                     var parts = key.Split('\0');
+                    if (parts.Length < 2 || string.IsNullOrEmpty(parts[1]))
+                        continue;
+                    // No compliance/data/<fmt>/ directory means the standard is
+                    // catalogued but this suite has no validity corpus yet.
+                    // That is an empty cell, not a missing adapter.
+                    var fmtDir = Path.Combine(root, "compliance", "data", parts[1]);
+                    if (!Directory.Exists(fmtDir))
+                        continue;
                     errs.Add($"mapped serializer '{parts[0]}' has no {parts[1]} adapter");
                 }
             }
@@ -247,7 +259,90 @@ namespace GLD.SerializerBenchmark
                 new("MS Bond Fast", "bond", SerializerVersionRegistry.Resolve("MS Bond Fast"), DecodeBondBinary),
                 new("MS Bond Json", "bond", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("FlatSharp", "flatbuffers", SerializerVersionRegistry.Resolve("FlatSharp"), (b, _) => b.Length >= 4 ? (object)b.Length : throw new InvalidDataException("short")),
+                new("arrow-ipc", "arrow", SerializerVersionRegistry.Resolve("arrow-ipc"), DecodeArrowIpc),
+                new("parquet", "parquet", SerializerVersionRegistry.Resolve("parquet"), DecodeParquet),
+                new("parquet-uncompressed", "parquet", SerializerVersionRegistry.Resolve("parquet-uncompressed"), DecodeParquet),
             };
+        }
+
+        private static object DecodeArrowIpc(byte[] data, string schema)
+        {
+            using var reader = new ArrowStreamReader(new ReadOnlyMemory<byte>(data));
+            var rows = new List<Dictionary<string, object>>();
+            RecordBatch batch;
+            while ((batch = reader.ReadNextRecordBatch()) != null)
+            {
+                using (batch)
+                {
+                    for (int i = 0; i < batch.Length; i++)
+                    {
+                        var row = new Dictionary<string, object>();
+                        for (int c = 0; c < batch.ColumnCount; c++)
+                        {
+                            var field = batch.Schema.GetFieldByIndex(c);
+                            row[field.Name] = ArrowCell(batch.Column(c), i);
+                        }
+                        rows.Add(row);
+                    }
+                }
+            }
+            if (rows.Count == 0) throw new InvalidDataException("arrow-ipc: no rows");
+            return rows;
+        }
+
+        private static object ArrowCell(IArrowArray array, int index)
+        {
+            if (array.IsNull(index)) return null;
+            if (array is Int64Array i64) return i64.Values[index];
+            if (array is Int32Array i32) return (long)i32.Values[index];
+            throw new InvalidDataException("arrow column " + array.GetType().Name);
+        }
+
+        private static object DecodeParquet(byte[] data, string schema)
+        {
+            using var ms = new MemoryStream(data);
+            var reader = ParquetReader.CreateAsync(ms).GetAwaiter().GetResult();
+            try
+            {
+                var rows = new List<Dictionary<string, object>>();
+                var fields = reader.Schema.GetDataFields();
+                for (int g = 0; g < reader.RowGroupCount; g++)
+                {
+                    using var rg = reader.OpenRowGroupReader(g);
+                    int n = checked((int)rg.RowCount);
+                    var cols = new Dictionary<string, long?[]>();
+                    foreach (DataField field in fields)
+                    {
+                        // Arrow writes this column as optional, so Parquet.Net requires
+                        // definition levels. The nullable overload supplies that buffer.
+                        long?[] dest;
+                        if (field.MaxDefinitionLevel > 0)
+                        {
+                            dest = new long?[n];
+                            rg.ReadAsync(field, dest.AsMemory()).GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            var required = new long[n];
+                            rg.ReadAsync(field, required.AsMemory()).GetAwaiter().GetResult();
+                            dest = System.Array.ConvertAll(required, v => (long?)v);
+                        }
+                        cols[field.Name] = dest;
+                    }
+                    for (int i = 0; i < n; i++)
+                    {
+                        var row = new Dictionary<string, object>();
+                        foreach (var kv in cols) row[kv.Key] = kv.Value[i];
+                        rows.Add(row);
+                    }
+                }
+                if (rows.Count == 0) throw new InvalidDataException("parquet: no rows");
+                return rows;
+            }
+            finally
+            {
+                reader.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
         }
 
         /// <summary>Walk the datagram. Accept/reject follows the reader, not a POCO mapping.</summary>
@@ -472,7 +567,7 @@ namespace GLD.SerializerBenchmark
             if (enc == "hex")
             {
                 var compact = new string(input.Where(ch => !char.IsWhiteSpace(ch)).ToArray());
-                return compact.Length == 0 ? Array.Empty<byte>() : Convert.FromHexString(compact);
+                return compact.Length == 0 ? System.Array.Empty<byte>() : Convert.FromHexString(compact);
             }
             return Encoding.UTF8.GetBytes(input);
         }
@@ -575,7 +670,7 @@ namespace GLD.SerializerBenchmark
                 ["failed"] = f,
                 ["skipped"] = s,
                 ["errors"] = e,
-                ["catalog_errors"] = Array.Empty<string>(),
+                ["catalog_errors"] = System.Array.Empty<string>(),
                 ["serializer_errors"] = adapterErrs,
                 ["results"] = results,
             };

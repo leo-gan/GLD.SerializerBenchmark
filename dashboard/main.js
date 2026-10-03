@@ -35,6 +35,13 @@ import {
   serializerNameHtml,
   serializerSourceUrl,
 } from './serializer-sources.js';
+import {
+  SUITE_TYPE_IDS,
+  baseTypeId,
+  instanceCount,
+  compoundFixtureKey,
+  discoverFixtureOptions,
+} from './fixture-types.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -53,8 +60,6 @@ const GROUP_META_KEYS = new Set([
   'compounded',
   'compound_parts',
 ]);
-const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
-
 /** Named sample-filter policies (must match analysis FILTER_POLICY_IDS). */
 const FILTER_POLICY_FALLBACK = {
   all: {
@@ -95,12 +100,6 @@ function fixtureKey(g) {
     return `${base}@n=${Number(n)}`;
   }
   return base;
-}
-
-function baseTypeId(key) {
-  if (!key) return '';
-  const i = String(key).indexOf('@n=');
-  return i >= 0 ? String(key).slice(0, i) : String(key);
 }
 
 function pickPreferredFixture(options) {
@@ -1796,17 +1795,6 @@ function populateFixtureSelect(options, cfg = {}) {
  * - `total_median_ns` falls back to `avg_time_total_ns` when missing.
  */
 
-/** Instance count from group (column or @n= suffix). */
-function instanceCount(g) {
-  let n = g?.data_type_instance_count;
-  if (n != null && n !== '') {
-    const num = Number(n);
-    if (Number.isFinite(num) && num > 0) return num;
-  }
-  const m = String(g?.test_data ?? '').match(/@n=(\d+)/i);
-  return m ? Number(m[1]) : null;
-}
-
 /**
  * Data-type selection kinds:
  * - natural: message@n=1
@@ -1838,12 +1826,6 @@ function parseCompoundFixture(key) {
   const p = parseFixtureSelection(key);
   if (p.kind === 'batch_compound') return { base: p.base, nA: p.nA, nB: p.nB };
   return null;
-}
-
-function compoundFixtureKey(base, nA, nB) {
-  const a = Math.min(nA, nB);
-  const b = Math.max(nA, nB);
-  return `${base}@n=${a}+${b}`;
 }
 
 function isSyntheticFixture(key) {
@@ -2093,64 +2075,16 @@ function buildAllAllGroups(allGroups, mode) {
   return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
 }
 
-/** Natural + synthetic data-type keys for the Test Data dropdown. */
-function discoverFixtureOptions(allGroups) {
-  const natural = [
-    ...new Set(
-      (allGroups || [])
-        .map((g) => g.test_data)
-        .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
-    ),
-  ].sort();
-
-  const byBase = new Map();
-  const nsGlobal = new Set();
-  for (const g of allGroups || []) {
-    const base = baseTypeId(g.test_data);
-    if (!SUITE_TYPE_IDS.includes(base)) continue;
-    const n = instanceCount(g);
-    if (n == null) continue;
-    if (!byBase.has(base)) byBase.set(base, new Set());
-    byBase.get(base).add(n);
-    nsGlobal.add(n);
-  }
-
-  // Per-type batch compounds: message@n=1+100, …
-  const batchCompound = [];
-  for (const [base, ns] of byBase) {
-    if (ns.has(1) && ns.has(100)) {
-      batchCompound.push(compoundFixtureKey(base, 1, 100));
-    }
-  }
-  batchCompound.sort();
-
-  // Cross-type at fixed n
-  const allTypes = [];
-  if (nsGlobal.has(1)) allTypes.push('all@1');
-  if (nsGlobal.has(100)) allTypes.push('all@100');
-
-  // Everything
-  const allAll = natural.length ? ['all@all'] : [];
-
-  return {
-    natural,
-    batchCompound,
-    allTypes,
-    allAll,
-    all: [...natural, ...batchCompound, ...allTypes, ...allAll],
-  };
-}
-
 function fixtureOptionLabel(key) {
   const p = parseFixtureSelection(key);
   if (p.kind === 'batch_compound') {
     return `${p.base}@n=${p.nA}+${p.nB} (compounded batch)`;
   }
   if (p.kind === 'all_n') {
-    return `all@${p.n} (all data types, n=${p.n})`;
+    return `all@${p.n} (five row data types, n=${p.n})`;
   }
   if (p.kind === 'all_all') {
-    return 'all@all (all types × all n)';
+    return 'all@all (five row data types × all n)';
   }
   return key;
 }
@@ -3622,10 +3556,10 @@ function copyRosterMarkdown() {
         return `Scope: compounded batch ${state.currentTestData} · mode ${state.currentMode}`;
       }
       if (s.kind === 'all_n') {
-        return `Scope: all data types @ n=${s.n} · mode ${state.currentMode}`;
+        return `Scope: five row data types @ n=${s.n} · mode ${state.currentMode}`;
       }
       if (s.kind === 'all_all') {
-        return `Scope: all@all (all types × all n) · mode ${state.currentMode}`;
+        return `Scope: all@all (five row data types × all n) · mode ${state.currentMode}`;
       }
       return `Scope: data type ${state.currentTestData} · mode ${state.currentMode}`;
     })(),

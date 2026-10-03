@@ -121,7 +121,7 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 ## Test data
 
-Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event`.
+Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event` are the row matrix. Dashboard `all@all` averages those five only. `table`, `table_project`, `nested_table`, and `signal` are separate data types, timed by `config/library/columnar.yaml` and appended to the published snapshot by `dashboard/scripts/splice-columnar-stats.py`.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
 Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).

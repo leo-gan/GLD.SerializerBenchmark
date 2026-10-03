@@ -267,6 +267,27 @@ def _smile_decode(data: bytes) -> Any:
     return SmileDecoder().decode(data)
 
 
+def _arrow_ipc_decode(data: bytes) -> Any:
+    import pyarrow as pa
+
+    with pa.ipc.open_stream(pa.BufferReader(data)) as reader:
+        return reader.read_all().to_pylist()
+
+
+def _parquet_decode(data: bytes) -> Any:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    return pq.read_table(pa.BufferReader(data)).to_pylist()
+
+
+def _orc_decode(data: bytes) -> Any:
+    import pyarrow as pa
+    import pyarrow.orc as orc
+
+    return orc.read_table(pa.BufferReader(data)).to_pylist()
+
+
 def builtin_adapters() -> list[Adapter]:
     """Adapters that can be constructed; missing optional imports are skipped."""
     specs: list[tuple[str, str, DecodeFn, EncodeFn | None, str, str]] = [
@@ -312,6 +333,11 @@ def builtin_adapters() -> list[Adapter]:
         ("py-ubjson", "ubjson", _ubjson_decode, None, "py-ubjson (Draft 12)", "py-ubjson"),
         ("newsmile", "smile", _smile_decode, None, "newsmile SmileDecoder", "newsmile"),
         ("plistlib", "plist", _plist_decode, None, "Python stdlib plistlib", "stdlib"),
+        ("arrow-ipc", "arrow", _arrow_ipc_decode, None, "pyarrow IPC stream reader", "pyarrow"),
+        ("parquet", "parquet", _parquet_decode, None, "pyarrow Parquet reader", "pyarrow"),
+        ("parquet-uncompressed", "parquet", _parquet_decode, None, "pyarrow Parquet reader", "pyarrow"),
+        ("orc", "orc", _orc_decode, None, "pyarrow ORC reader", "pyarrow"),
+        ("orc-uncompressed", "orc", _orc_decode, None, "pyarrow ORC reader", "pyarrow"),
     ]
     out: list[Adapter] = []
     for name, fmt, dec, enc, notes, package in specs:

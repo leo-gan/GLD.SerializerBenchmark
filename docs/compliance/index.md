@@ -55,6 +55,12 @@ binary cousins** that this suite already benches.
 | HOCON | 1 | (catalog) |
 | Apple plist | XML, binary | `plistlib` |
 | ZON | 1 | (catalog) |
+| Arrow IPC | IPC stream | `arrow-ipc` |
+| Parquet | file format | `parquet`, `parquet-uncompressed` |
+| ORC | v1 | `orc`, `orc-uncompressed` |
+| SBE | 1.0 | `sbe` |
+
+Arrow IPC, Parquet, ORC v1, and SBE 1.0 have validity cases under `compliance/data/`. Each cell is that library’s own reader: accept means the reader decoded the case, and when the case names a value the decoded rows must match. A library that accepts a reject case fails that case. Python has no SBE row. Do not score one of these rows with another library's decoder.
 
 XML is out of scope (user request). Language-native and private
 binaries (pickle, gob, Kryo, …) are on the Dashboard under
@@ -78,9 +84,10 @@ not the examples from the spec PDF. See [legal provenance](legal.md).
 
 Official MIT/BSD suites are vendored (JSONTestSuite, yaml-test-suite,
 toml-test, msgpack-test-suite, cbor-wg vectors) plus original extras.
-A compliance **case** is not a suite **data type**. Data types stay
-`message`, `document`, `telemetry`, `strings`, and `event` — the
-benchmark sample shapes. See [Test data](../analysis/test_data_configuration.md).
+A compliance **case** is not a suite **data type**. Benchmark data types
+are the five row shapes (`message`, `document`, `telemetry`, `strings`,
+`event`) plus `table`, `table_project`, `nested_table`, and `signal`.
+See [Test data](../analysis/test_data_configuration.md).
 
 ## How to run
 

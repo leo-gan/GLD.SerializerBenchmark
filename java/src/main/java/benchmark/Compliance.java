@@ -220,7 +220,131 @@ public final class Compliance {
           com.google.flatbuffers.FlexBuffers.getRoot(java.nio.ByteBuffer.wrap(b));
       return root.toString();
     }));
+    out.add(new Adapter("arrow-ipc", "arrow", Versions.of(org.apache.arrow.vector.ipc.ArrowStreamReader.class), Compliance::decodeArrow));
+    out.add(new Adapter("parquet", "parquet", Versions.of(org.apache.parquet.hadoop.ParquetFileReader.class), Compliance::decodeParquet));
+    out.add(new Adapter("parquet-uncompressed", "parquet", Versions.of(org.apache.parquet.hadoop.ParquetFileReader.class), Compliance::decodeParquet));
+    out.add(new Adapter("orc", "orc", Versions.of(org.apache.orc.OrcFile.class), Compliance::decodeOrc));
+    out.add(new Adapter("orc-uncompressed", "orc", Versions.of(org.apache.orc.OrcFile.class), Compliance::decodeOrc));
+    out.add(new Adapter("sbe", "sbe", "1.40.2", Compliance::decodeSbe));
     return out;
+  }
+
+  private static List<Map<String, Object>> decodeArrow(byte[] data, String schema) throws Exception {
+    if (data.length == 0) throw new IllegalArgumentException("arrow-ipc: empty");
+    try (org.apache.arrow.memory.BufferAllocator alloc = new org.apache.arrow.memory.RootAllocator();
+        org.apache.arrow.vector.ipc.ArrowStreamReader reader =
+            new org.apache.arrow.vector.ipc.ArrowStreamReader(new java.io.ByteArrayInputStream(data), alloc)) {
+      org.apache.arrow.vector.VectorSchemaRoot root = reader.getVectorSchemaRoot();
+      List<Map<String, Object>> rows = new ArrayList<>();
+      while (reader.loadNextBatch()) {
+        int n = root.getRowCount();
+        List<org.apache.arrow.vector.FieldVector> vectors = root.getFieldVectors();
+        for (int i = 0; i < n; i++) {
+          Map<String, Object> row = new LinkedHashMap<>();
+          for (org.apache.arrow.vector.FieldVector vec : vectors) {
+            Object value = vec.isNull(i) ? null : vec.getObject(i);
+            if (value instanceof Integer number) value = number.longValue();
+            row.put(vec.getName(), value);
+          }
+          rows.add(row);
+        }
+      }
+      if (rows.isEmpty()) throw new IllegalArgumentException("arrow-ipc: no rows");
+      return rows;
+    }
+  }
+
+  private static List<Map<String, Object>> decodeParquet(byte[] data, String schema) throws Exception {
+    if (data.length == 0) throw new IllegalArgumentException("parquet: empty");
+    Path tmp = Files.createTempFile("cmp-parquet-", ".parquet");
+    try {
+      Files.write(tmp, data);
+      org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+      org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(tmp.toUri());
+      try (org.apache.parquet.hadoop.ParquetReader<org.apache.parquet.example.data.Group> reader =
+          org.apache.parquet.hadoop.ParquetReader.builder(new org.apache.parquet.hadoop.example.GroupReadSupport(), path)
+              .withConf(conf)
+              .build()) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        org.apache.parquet.example.data.Group group;
+        while ((group = reader.read()) != null) {
+          Map<String, Object> row = new LinkedHashMap<>();
+          org.apache.parquet.schema.GroupType type = group.getType();
+          for (int i = 0; i < type.getFieldCount(); i++) {
+            String name = type.getFieldName(i);
+            row.put(name, group.getLong(name, 0));
+          }
+          rows.add(row);
+        }
+        if (rows.isEmpty()) throw new IllegalArgumentException("parquet: no rows");
+        return rows;
+      }
+    } finally {
+      Files.deleteIfExists(tmp);
+    }
+  }
+
+  private static List<Map<String, Object>> decodeOrc(byte[] data, String schema) throws Exception {
+    if (data.length == 0) throw new IllegalArgumentException("orc: empty");
+    Path tmp = Files.createTempFile("cmp-orc-", ".orc");
+    try {
+      Files.write(tmp, data);
+      org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+      org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(tmp.toUri());
+      org.apache.orc.Reader file = org.apache.orc.OrcFile.createReader(path, org.apache.orc.OrcFile.readerOptions(conf));
+      org.apache.orc.TypeDescription type = file.getSchema();
+      List<String> names = type.getFieldNames();
+      try (org.apache.orc.RecordReader records = file.rows()) {
+        org.apache.orc.storage.ql.exec.vector.VectorizedRowBatch batch = type.createRowBatch();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        while (records.nextBatch(batch)) {
+          for (int r = 0; r < batch.size; r++) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            for (int c = 0; c < names.size(); c++) {
+              org.apache.orc.storage.ql.exec.vector.LongColumnVector col =
+                  (org.apache.orc.storage.ql.exec.vector.LongColumnVector) batch.cols[c];
+              int idx = col.isRepeating ? 0 : r;
+              row.put(names.get(c), col.vector[idx]);
+            }
+            rows.add(row);
+          }
+        }
+        if (rows.isEmpty()) throw new IllegalArgumentException("orc: no rows");
+        return rows;
+      }
+    } finally {
+      Files.deleteIfExists(tmp);
+    }
+  }
+
+  private static Map<String, Object> decodeSbe(byte[] data, String schema) {
+    if (data.length < benchmark.v2.MessageHeaderDecoder.ENCODED_LENGTH) {
+      throw new IllegalArgumentException("sbe: short header");
+    }
+    org.agrona.concurrent.UnsafeBuffer buf = new org.agrona.concurrent.UnsafeBuffer(data);
+    benchmark.v2.MessageHeaderDecoder header = new benchmark.v2.MessageHeaderDecoder();
+    benchmark.v2.SignalDecoder dec = new benchmark.v2.SignalDecoder();
+    dec.wrapAndApplyHeader(buf, 0, header);
+    Map<String, Object> row = new LinkedHashMap<>();
+    row.put("seq", dec.seq());
+    row.put("ts", dec.ts());
+    row.put("price_mantissa", dec.price_mantissa());
+    row.put("qty", (long) dec.qty());
+    row.put("flags", (long) dec.flags());
+    List<Map<String, Object>> legs = new ArrayList<>();
+    benchmark.v2.SignalDecoder.LegsDecoder group = dec.legs();
+    for (int i = 0, n = group.count(); i < n; i++) {
+      group.next();
+      Map<String, Object> leg = new LinkedHashMap<>();
+      leg.put("leg_id", group.leg_id());
+      leg.put("leg_qty", (long) group.leg_qty());
+      leg.put("leg_pad", (long) group.leg_pad());
+      legs.add(leg);
+    }
+    row.put("legs", legs);
+    row.put("symbol", dec.symbol());
+    row.put("venue", dec.venue());
+    return row;
   }
 
   private static Object decodeAvro(byte[] data, String schema) throws Exception {
