@@ -54,7 +54,8 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
-- **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs)
+- **50 serializers** in `Program.cs` (was 47). Added `arrow-ipc`, `parquet`, `parquet-uncompressed`.
+- **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar fixtures](#columnar-fixtures)); ORC; ParquetSharp
 
 ## Serializers
 
@@ -62,6 +63,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 |----------|----------|-----------------|
 | [Amazon.IonDotnet](https://github.com/amazon-ion/ion-dotnet) | Binary | Ion team .NET binary reader/writer (NuGet `Amazon.IonDotnet`); reflection over suite types; `forceFloat64` |
 | [Apache.Avro](https://github.com/apache/avro) | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
+| [arrow-ipc](https://github.com/apache/arrow-dotnet) | Columnar | Apache.Arrow **23.0.0** IPC **stream** (not the file format). String path is Base64 of those bytes. `table_project` reads the `FFloat0` value buffer only. Supports only `table`, `table_project`, `nested_table`, `signal`. No compliance decoder |
 | [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
 | [Ceras](https://github.com/rikimaru0345/Ceras) | Binary | Ceras |
 | [CsvHelper](https://github.com/JoshClose/CsvHelper) | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
@@ -89,6 +91,8 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [MS XmlSerializer](https://github.com/dotnet/runtime) | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
 | [NetJSON](https://github.com/rpgmaker/NetJSON) | JSON | NetJSON |
 | [NetSerializer](https://github.com/tomba/netserializer) | Binary | NetSerializer |
+| [parquet](https://github.com/aloneguid/parquet-dotnet) | Columnar | Parquet.Net **6.1.0** (explicit `net10.0`), library default **Snappy**. String path is Base64. `table_project` reads the `FFloat0` data field only. No compliance decoder |
+| [parquet-uncompressed](https://github.com/aloneguid/parquet-dotnet) | Columnar | Same Parquet.Net writer with `CompressionMethod.None`. String path is Base64. No compliance decoder |
 | [ProtoBuf](https://github.com/protobuf-net/protobuf-net) | Schema | protobuf-net |
 | [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text) | Binary | ServiceStack type serializer (non-JSON) |
 | [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
@@ -108,6 +112,35 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [YAXLib](https://github.com/sinairv/YAXLib) | XML | YAXLib |
 | [ZeroFormatter](https://github.com/neuecc/ZeroFormatter) | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
+### Columnar fixtures
+
+The three new rows time **bytes only**: the harness string path, which is Base64 of the IPC stream or Parquet payload. That Base64 encode and decode is inside the timer. The stream path is **adapted** (the same buffer is copied onto the harness `Stream`). It is not a native streaming writer, and it is not the number to quote for these rows. There is **no compliance decoder** for Arrow or Parquet.
+
+`Supports` on these rows is true only for `table`, `table_project`, `nested_table`, and `signal`. Older classes still default `Supports` to true. A columnar run without a comma-separated allow-list is forbidden: an empty filter selects all 50 names, and a filter with no comma is still a case-insensitive substring (`json` matches every JSON library). With a comma, names must match exactly, ignoring case. `json,` selects nothing. `protobuf,` selects only `ProtoBuf`, not `Google.Protobuf`, LightProto, or ShapeShift.Protobuf.
+
+Allow-list for this tree (sbe omitted), and the names it selects, in registration order:
+
+`FlatSharp`, `Google.Protobuf`, `Apache.Avro`, `System.Text.Json`, `arrow-ipc`, `parquet`, `parquet-uncompressed`
+
+`table_project` serialize writes every column. Deserialize returns only `FFloat0` as a sequence of length N. Apache.Arrow and Parquet.Net project that column. The four peers decode the whole value, then slice `FFloat0` inside deserialize. The runner compares against that column.
+
+`parquet` leaves compression at the library default (Snappy). `parquet-uncompressed` sets `CompressionMethod.None`. The byte payloads differ at N=100.
+
+Apache.Arrow 23.0.0 publishes `net462`, `net8.0`, and `netstandard2.0` (no `net10.0` asset). This project stays on `net10.0` and consumes the `net8.0` asset. Parquet.Net 6.1.0 publishes `net10.0` and `net8.0`.
+
+**sbe is not registered.** sbe-tool 1.40.2 accepts `schemas/v2/sbe/signal.xml` (fixed fields, then the legs group, then symbol and venue; `nested_table` is absent on purpose). The C# flyweights import `Org.SbeTool.Sbe.Dll`. No NuGet package provides that assembly on the 1.40.2 line. NuGet `sbe-tool` 1.23.1.1 (2021) is `net45` / `netstandard2.0` and ships `SBE.dll`, a different line. Maven `uk.co.real-logic:sbe-tool:1.40.2` is Java only. Generated code would also land in `Benchmark.V2`, which is already Google.Protobuf's `csharp_namespace`. The target was not retargeted, and the runtime was not vendored.
+
+`./scripts/run-benchmarks.sh smoke` is unchanged: it still forces the Json.Net / message filter and `config/library/smoke.yaml` (message + telemetry only). Columnar smoke:
+
+```bash
+cd c-sharp
+BENCHMARK_RUN_CONFIG=../config/library/columnar-smoke.yaml \
+  ./scripts/run-benchmarks.sh custom 2 \
+  "arrow-ipc,parquet,parquet-uncompressed,System.Text.Json,Google.Protobuf,FlatSharp,Apache.Avro"
+```
+
+The C# runner still times string and stream even when the YAML lists `io_modes: [bytes]`. Quote the string column for these rows. In-process checks (no second harness): `dotnet run --project src -c Release -- selfcheck`.
+
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
@@ -118,7 +151,11 @@ Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (te
 
 #### [Apache.Avro](https://github.com/apache/avro) · `1.12.2`
 
-Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
+Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library. Columnar fixtures use the same reflect path. `table_project` deserialize returns `FFloat0` after a full decode.
+
+#### [arrow-ipc](https://github.com/apache/arrow-dotnet) · `23.0.0`
+
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Apache.Arrow's stream writer and reader on the string path (Base64 of the IPC stream), not the Arrow file format. Row-to-column conversion stays inside serialize. `table_project` deserialize reads the `FFloat0` value buffer and does not build the other columns. There is no compliance decoder. The stream path is adapted. NuGet 23.0.0 has no `net10.0` lib; the suite consumes the `net8.0` asset from the `net10.0` project.
 
 #### [BinaryPack](https://github.com/Sergio0694/BinaryPack) · `1.0.3`
 
@@ -142,7 +179,7 @@ fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON 
 
 #### [FlatSharp](https://github.com/jamescourtney/FlatSharp) · `7.5.1`
 
-FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables.
+FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables. Columnar fixtures use hand-written `[FlatBufferTable]` types in `FlatSharpModels.cs` with the same slot order as the Python FlatBuffers schema. Shared `.fbs` files are not loaded. `table_project` deserialize returns `FFloat0` after a full decode.
 
 #### [FsPickler](https://github.com/mbraceproject/FsPickler) · `5.3.2`
 
@@ -154,7 +191,7 @@ FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET
 
 #### [Google.Protobuf](https://github.com/protocolbuffers/protobuf) · `3.36.2`
 
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format. This is the primary protobuf row. Columnar messages come from `benchmark_v2.proto` (`csharp_namespace` `Benchmark.V2`). `table_project` deserialize returns `FFloat0` after a full decode.
 
 #### [GroBuf](https://github.com/skbkontur/GroBuf) · `1.9.2`
 
@@ -228,6 +265,14 @@ NetJSON is a small, fast JSON serializer for .NET. It was created as a lighter a
 
 NetSerializer is a compact, fast binary serializer for .NET. It was written to pack predefined types with very little overhead compared to BinaryFormatter.
 
+#### [parquet](https://github.com/aloneguid/parquet-dotnet) · `6.1.0`
+
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Parquet.Net with the library default compression, Snappy. Encodings stay at the library default. The timed call is the string path: Base64 of the Parquet bytes. `table_project` deserialize reads the `FFloat0` data field only. There is no compliance decoder. The stream path is adapted. The package has an explicit `net10.0` asset.
+
+#### [parquet-uncompressed](https://github.com/aloneguid/parquet-dotnet) · `6.1.0`
+
+This is the same Parquet.Net writer as `parquet`, with `CompressionMethod.None`. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy. At N=100 the bytes differ from `parquet`. The timed call is the string path (Base64). There is no compliance decoder. The stream path is adapted.
+
 #### [ProtoBuf](https://github.com/protobuf-net/protobuf-net) · `2.4.9.1`
 
 protobuf-net was created so .NET could speak Protocol Buffers without Google's generated C# being the only path. The problem was protobuf's IDL-first workflow for POCO-heavy .NET code. It attributes existing types (`[ProtoContract]`) and generates or interprets a protobuf-compatible encoding.
@@ -282,7 +327,7 @@ SpanJson was created to serialize JSON on .NET using `Span<T>` and modern memory
 
 #### [System.Text.Json](https://github.com/dotnet/runtime) · `10.0.0.0`
 
-System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options.
+System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options. Columnar POCOs use that same string API. `table_project` deserialize returns `FFloat0` after a full decode.
 
 #### [Utf8Json](https://github.com/neuecc/Utf8Json) · `1.3.7`
 
@@ -326,7 +371,7 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labe
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | **arrow-ipc**, **parquet**, **parquet-uncompressed** (full IPC/Parquet buffer copied onto the harness stream; the honest columnar number is the string/bytes path), ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 | **Native text stream** | Library writes/reads `Stream` directly with its text codec API | ShapeShift.Json |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |

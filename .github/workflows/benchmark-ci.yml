@@ -196,6 +196,22 @@ jobs:
           cd c-sharp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # sbe is omitted (no Org.SbeTool.Sbe.Dll 1.40.2). No ORC row.
+      - name: Run C# columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-csharp-columnar
+        run: |
+          cd c-sharp
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,System.Text.Json,Google.Protobuf,FlatSharp,Apache.Avro"
+          err="../logs/csharp/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
+
   python-benchmark:
     needs: changes
     if: >-

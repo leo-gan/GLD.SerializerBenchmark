@@ -533,10 +533,25 @@
         "version": "1.6.4",
         "specifics": "ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary serializer for .NET, inspired by FlatBuffers/Cap'n Proto ideas. Dynamic IL is broken on .NET 8; this suite uses KeyTuple shapes."
       },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-dotnet",
+        "version": "23.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Apache.Arrow 23.0.0 stream writer and reader on the string path (Base64 of the IPC stream), not the Arrow file format. Row-to-column conversion stays inside serialize. table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no net10.0 asset; the net10.0 project consumes the net8.0 asset. No compliance decoder."
+      },
       "fastJson": {
         "source_url": "https://github.com/mgholam/fastJSON",
         "version": "2.4.0.4",
         "specifics": "fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON simple and dependency-light. This row times that compact implementation."
+      },
+      "parquet": {
+        "source_url": "https://github.com/aloneguid/parquet-dotnet",
+        "version": "6.1.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Parquet.Net 6.1.0 at the library default, Snappy. The timed call is the string path (Base64 of the Parquet bytes). table_project reads the FFloat0 data field. The package has an explicit net10.0 asset. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/aloneguid/parquet-dotnet",
+        "version": "6.1.0",
+        "specifics": "This is the same Parquet.Net writer as parquet, with CompressionMethod.None. Encodings stay at the library default. The name is the override. No compliance decoder."
       }
     },
     "go": {

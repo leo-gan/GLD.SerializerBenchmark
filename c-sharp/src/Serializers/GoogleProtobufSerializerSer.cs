@@ -34,7 +34,10 @@ namespace GLD.SerializerBenchmark.Serializers
         }
 
         public override object Deserialize(string serialized)
-            => _parser.ParseFrom(Convert.FromBase64String(serialized));
+        {
+            var msg = _parser.ParseFrom(Convert.FromBase64String(serialized));
+            return IsTableProject ? ColumnarProject.FFloat0(msg) : msg;
+        }
 
         public override void Serialize(object serializable, Stream outputStream)
             => ((IMessage)NativeOf(serializable)).WriteTo(outputStream);
@@ -42,7 +45,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            return _parser.ParseFrom(inputStream);
+            var msg = _parser.ParseFrom(inputStream);
+            return IsTableProject ? ColumnarProject.FFloat0(msg) : msg;
         }
     }
 }

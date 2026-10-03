@@ -43,6 +43,10 @@
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.*" />
     <PackageReference Include="Apache.Avro" Version="1.*" />
+    <!-- net8.0 / netstandard2.0 assets; consumed by net10.0. No net10-specific lib in 23.0.0. -->
+    <PackageReference Include="Apache.Arrow" Version="23.*" />
+    <!-- Explicit net10.0 asset. Library default compression is Snappy. -->
+    <PackageReference Include="Parquet.Net" Version="6.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
     <PackageReference Include="Hyperion" Version="0.12.*" />
