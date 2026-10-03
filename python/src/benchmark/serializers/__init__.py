@@ -1,4 +1,11 @@
 from .base import Serializer
+from .columnar_arrow import (
+    ArrowIpcSerializer,
+    OrcSerializer,
+    OrcUncompressedSerializer,
+    ParquetSerializer,
+    ParquetUncompressedSerializer,
+)
 from .json_orjson import OrjsonSerializer
 from .json_msgspec import MsgspecMessagePackSerializer, MsgspecSerializer
 from .json_rapidjson import RapidjsonSerializer
@@ -37,4 +44,9 @@ __all__ = [
     "PickleSerializer",
     "CloudpickleSerializer",
     "DillSerializer",
+    "ArrowIpcSerializer",
+    "ParquetSerializer",
+    "ParquetUncompressedSerializer",
+    "OrcSerializer",
+    "OrcUncompressedSerializer",
 ]

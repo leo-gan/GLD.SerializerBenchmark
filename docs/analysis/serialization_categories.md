@@ -124,7 +124,6 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
 - **Trade-offs:** a one-row batch pays header and alignment cost. A full materialization back into row objects hides the scan benefit. Compare `table_project` deserialize when the question is “read one column.”
 - **Suite types:** `table`, `table_project`, `nested_table`. Run config: `config/library/columnar.yaml`. The allow-list is the new rows plus a few existing peers. Other serializers stay on the five publication types.
 - **Examples in suite:**
-  - None yet.
   - **Python:** `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` (`pyarrow`). `parquet` uses pyarrow's default page compression (Snappy). `parquet-uncompressed` sets `compression="NONE"`. `orc` calls `pyarrow.orc.write_table` with no compression argument, which is uncompressed on pyarrow 25. `orc-uncompressed` passes that same uncompressed codec so the name still exists.
   - **Go:** `arrow-ipc`, `parquet`, `parquet-uncompressed` (`arrow-go` 18.8.0). arrow-go's writer default is uncompressed, so `parquet` sets Snappy and `parquet-uncompressed` leaves compression off. IPC `table_project` reads the `f_float_0` value buffer; that reader has no included-fields option. No ORC.
   - **JavaScript:** `arrow-ipc` (`apache-arrow` 21.2.0), `parquet`, `parquet-uncompressed` (`hyparquet-writer` 0.16.10, reader `hyparquet` 1.31.2). `parquet` is Snappy. `parquet-uncompressed` sets codec `UNCOMPRESSED`. `nested_table` round-tripped, which is why Parquet is registered. No SBE and no ORC.

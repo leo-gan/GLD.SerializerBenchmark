@@ -64,6 +64,7 @@ def test_full_runner_registry_size():
         "json", "orjson", "msgspec", "pydantic", "mashumaro", "serpyco-rs",
         "msgpack", "cbor2", "protobuf", "avro", "flatbuffers", "yaml",
         "pickle", "cloudpickle", "dill",
+        "arrow-ipc", "parquet", "parquet-uncompressed", "orc", "orc-uncompressed",
     ):
         assert required in names
 

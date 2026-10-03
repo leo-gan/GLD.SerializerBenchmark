@@ -18,6 +18,7 @@ import orjson
 
 from .base import Serializer
 from ..converters import to_dict
+from ..data_v2.fidelity import project_f_float_0
 
 
 class OrjsonSerializer(Serializer):
@@ -37,7 +38,10 @@ class OrjsonSerializer(Serializer):
         return orjson.dumps(obj)
 
     def deserialize_bytes(self, data: bytes) -> Any:
-        return orjson.loads(data)
+        decoded = orjson.loads(data)
+        if self._test_data_name == "table_project":
+            return project_f_float_0(decoded)
+        return decoded
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         stream.write(self.serialize_bytes(obj))

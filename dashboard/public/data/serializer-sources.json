@@ -1122,6 +1122,11 @@
         "version": "0.15.0",
         "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation."
       },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only."
+      },
       "avro": {
         "source_url": "https://github.com/fastavro/fastavro",
         "version": "1.12.2",
@@ -1184,10 +1189,30 @@
         "source_url": "https://github.com/FasterXML/smile-format-specification",
         "specifics": "Smile is FasterXML's binary JSON: Jackson-compatible data with a smaller, faster binary encoding. The problem was JSON text cost in JVM services that already used Jackson. Smile solves it with a documented binary JSON token stream."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times pyarrow.orc.write_table and read_table with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. table_project passes columns=['f_float_0'] on read."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib."
+      },
       "orjson": {
         "source_url": "https://github.com/ijl/orjson",
         "version": "3.12.0",
         "specifics": "orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times pyarrow.parquet.write_table and read_table with pyarrow's default page compression, Snappy. Encodings stay at the library default. table_project passes columns=['f_float_0'] on read."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy."
       },
       "pickle": {
         "source_url": "https://github.com/python/cpython/tree/main/Lib/pickle.py",

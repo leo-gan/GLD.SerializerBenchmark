@@ -11,12 +11,22 @@ import fastavro
 
 from .base import Serializer
 from ..converters import to_dict
+from ..data_v2.fidelity import project_f_float_0
 
 _SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "..", "schemas", "avro")
+_V2_AVRO_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "schemas", "v2", "avro")
+)
 
 
 def _load_schema(name: str) -> Dict[str, Any]:
     path = os.path.join(_SCHEMA_DIR, f"{name}.avsc")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _load_v2_schema(filename: str) -> Dict[str, Any]:
+    path = os.path.join(_V2_AVRO_DIR, filename)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -27,7 +37,11 @@ _SCHEMAS = {
     "telemetry": _load_schema("telemetry"),
     "strings": _load_schema("strings"),
     "event": _load_schema("event"),
+    "table": _load_v2_schema("table.avsc"),
+    "nested_table": _load_v2_schema("nested_table.avsc"),
+    "signal": _load_v2_schema("signal.avsc"),
 }
+_SCHEMAS["table_project"] = _SCHEMAS["table"]
 _PARSED = {k: fastavro.parse_schema(v) for k, v in _SCHEMAS.items()}
 
 
@@ -75,8 +89,12 @@ class AvroSerializer(Serializer):
             out: List[Any] = []
             while bio.tell() < len(data):
                 out.append(fastavro.schemaless_reader(bio, self._schema))
-            return out
-        return fastavro.schemaless_reader(bio, self._schema)
+            decoded: Any = out
+        else:
+            decoded = fastavro.schemaless_reader(bio, self._schema)
+        if self._name == "table_project":
+            return project_f_float_0(decoded)
+        return decoded
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         stream.write(self.serialize_bytes(obj))
