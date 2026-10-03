@@ -1,0 +1,10 @@
+[package]
+name = "benchmark_v2"
+version = "0.1.0"
+authors = ["sbetool"]
+description = "GLD.SerializerBenchmark signal and table"
+edition = "2021"
+
+[lib]
+name = "benchmark_v2"
+path = "src/lib.rs"

@@ -45,6 +45,11 @@ sha2 = "0.10"
 serde_yaml = "0.9"
 flate2 = "1"
 zstd = "0.13"
+# Columnar rows. Exact 60.0.0 (caret would float to 60.x).
+arrow = "=60.0.0"
+parquet = "=60.0.0"
+# SBE flyweights from schemas/v2/sbe/signal.xml (sbe-tool 1.40.2). Crate version stays 0.1.0.
+benchmark_v2 = { path = "gen/sbe" }
 
 [build-dependencies]
 prost-build = "0.13"

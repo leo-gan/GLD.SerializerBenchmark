@@ -251,6 +251,24 @@ jobs:
           cd rust
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Second smoke: the four columnar types are not in smoke.yaml.
+      # Comma-separated names are case-insensitive exact matches, so
+      # "parquet" does not also select parquet-uncompressed.
+      # Do not point smoke_run_config at this file.
+      - name: Run Rust columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-rust-columnar
+        run: |
+          cd rust
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,sbe,serde_json,prost,serde_avro_fast"
+          err="../logs/rust/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
+
   c-benchmark:
     needs: changes
     if: >-

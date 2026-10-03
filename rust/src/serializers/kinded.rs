@@ -85,6 +85,17 @@ macro_rules! impl_kinded_direct {
                         self.ser = $ser_event;
                         self.kind = BoundKind::Event;
                     }
+                    Fixture::Table(_)
+                    | Fixture::TableProject(_)
+                    | Fixture::NestedTable(_)
+                    | Fixture::Signal(_)
+                    | Fixture::Rows(_)
+                    | Fixture::Projected(_) => {
+                        return Err(::anyhow::anyhow!(
+                            "direct codec does not implement {}",
+                            fixture.name()
+                        ));
+                    }
                 }
                 Ok(())
             }

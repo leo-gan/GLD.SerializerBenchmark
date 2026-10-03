@@ -263,6 +263,10 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("cpp", "orc", "https://github.com/apache/arrow"),
     ("cpp", "orc-uncompressed", "https://github.com/apache/arrow"),
     ("cpp", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("rust", "arrow-ipc", "https://github.com/apache/arrow-rs"),
+    ("rust", "parquet", "https://github.com/apache/arrow-rs"),
+    ("rust", "parquet-uncompressed", "https://github.com/apache/arrow-rs"),
+    ("rust", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
 
 ]
 
@@ -1566,6 +1570,40 @@ SPECIFICS: dict[str, str] = {
         "nested_table is not an SBE body. The signal wire order is fixed "
         "fields, then the legs group, then symbol and venue. No compliance decoder."
     ),
+    "arrow-ipc-rust": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-rs 60.0.0 IPC stream writer "
+        "and reader inside the bytes API, not the Arrow file format. The "
+        "schema is chosen in prepare. The RecordBatch is built inside "
+        "serialize. table_project passes field index 0 to StreamReader::try_new. "
+        "No compliance decoder."
+    ),
+    "parquet-rust": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times arrow-rs 60 ArrowWriter. "
+        "arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets "
+        "Compression::SNAPPY. Encodings stay at the builder default. "
+        "table_project uses ProjectionMask::columns on f_float_0. "
+        "No compliance decoder."
+    ),
+    "parquet-uncompressed-rust": (
+        "This is the same arrow-rs Parquet writer as parquet, with "
+        "Compression::UNCOMPRESSED. Encodings stay at the builder default. "
+        "The name is the override. No compliance decoder."
+    ),
+    "sbe-rust": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight "
+        "inside serialize. The logged version is the generator, not the "
+        "vendored crate 0.1.0. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. The signal wire order is fixed "
+        "fields, then the legs group, then symbol and venue. No compliance decoder."
+    ),
 }
 
 # (language, name) -> SPECIFICS key. Default: try the name, then a heuristic.
@@ -1623,6 +1661,10 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("cpp", "orc"): "orc-cpp",
     ("cpp", "orc-uncompressed"): "orc-uncompressed-cpp",
     ("cpp", "sbe"): "sbe-cpp",
+    ("rust", "arrow-ipc"): "arrow-ipc-rust",
+    ("rust", "parquet"): "parquet-rust",
+    ("rust", "parquet-uncompressed"): "parquet-uncompressed-rust",
+    ("rust", "sbe"): "sbe-rust",
     ("javascript", "ion-js"): "ion-js",
     ("go", "ion-go"): "ion-go",
     ("csharp", "Amazon.IonDotnet"): "ion-dotnet",

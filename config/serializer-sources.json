@@ -1288,6 +1288,11 @@
       }
     },
     "rust": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-rs 60.0.0 IPC stream writer and reader inside the bytes API, not the Arrow file format. The schema is chosen in prepare. The RecordBatch is built inside serialize. table_project passes field index 0 to StreamReader::try_new. No compliance decoder."
+      },
       "bincode": {
         "source_url": "https://github.com/bincode-org/bincode",
         "version": "2.0.1",
@@ -1328,6 +1333,16 @@
         "version": "0.1.37",
         "specifics": "nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path."
       },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-rs 60 ArrowWriter. arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets Compression::SNAPPY. Encodings stay at the builder default. table_project uses ProjectionMask::columns on f_float_0. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "This is the same arrow-rs Parquet writer as parquet, with Compression::UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder."
+      },
       "postcard": {
         "source_url": "https://github.com/jamesmunns/postcard",
         "version": "1.1.3",
@@ -1347,6 +1362,11 @@
         "source_url": "https://github.com/3Hren/msgpack-rust",
         "version": "1.3.1",
         "specifics": "rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight inside serialize. The logged version is the generator, not the vendored crate 0.1.0. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       },
       "serde_avro_fast": {
         "source_url": "https://github.com/Ten0/serde_avro_fast",
