@@ -58,7 +58,7 @@ Thirteen runners share the same fixtures and analysis rules.
 | [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 26 |
 | [Mojo](mojo/) · [Dashboard](dashboard/?lang=mojo) | 13 |
 | [PHP](php/) · [Dashboard](dashboard/?lang=php) | 15 |
-| [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
+| [Python](python/) · [Dashboard](dashboard/?lang=python) | 23 |
 | [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
 | [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |

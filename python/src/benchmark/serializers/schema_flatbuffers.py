@@ -15,6 +15,7 @@ from typing import Any
 import flatbuffers
 
 from .base import Serializer
+from ..data_v2.fidelity import project_f_float_0
 from ..data_v2 import models as m
 
 
@@ -346,12 +347,186 @@ def _read_document(data: bytes) -> dict[str, Any]:
     }
 
 
+def _field(obj: Any, name: str, default: Any = None) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return getattr(obj, name, default)
+
+
+def _build_table(builder: flatbuffers.Builder, obj: Any) -> bytes:
+    floats = [float(_field(obj, f"f_float_{i}", 0.0) or 0.0) for i in range(16)]
+    ints = [int(_field(obj, f"f_int_{i}", 0) or 0) for i in range(4)]
+    s0 = str(_field(obj, "f_str_0", "") or "")
+    s1 = str(_field(obj, "f_str_1", "") or "")
+    builder.Clear()
+    off1 = builder.CreateString(s1)
+    off0 = builder.CreateString(s0)
+    builder.StartObject(22)
+    builder.PrependUOffsetTRelativeSlot(21, off1, 0)
+    builder.PrependUOffsetTRelativeSlot(20, off0, 0)
+    for i in range(3, -1, -1):
+        builder.PrependInt64Slot(16 + i, ints[i], 0)
+    for i in range(15, -1, -1):
+        builder.PrependFloat64Slot(i, floats[i], 0.0)
+    root = builder.EndObject()
+    builder.Finish(root)
+    return bytes(builder.Output())
+
+
+def _read_table(data: bytes) -> dict[str, Any]:
+    table = _root_table(data)
+
+    def f(slot: int) -> int:
+        return _vtable_field(data, table, slot)
+
+    out: dict[str, Any] = {}
+    for i in range(16):
+        off = f(i)
+        out[f"f_float_{i}"] = struct.unpack_from("<d", data, table + off)[0] if off else 0.0
+    for i in range(4):
+        off = f(16 + i)
+        out[f"f_int_{i}"] = struct.unpack_from("<q", data, table + off)[0] if off else 0
+    out["f_str_0"] = _read_string(data, table, f(20))
+    out["f_str_1"] = _read_string(data, table, f(21))
+    return out
+
+
+def _build_nested_table(builder: flatbuffers.Builder, obj: Any) -> bytes:
+    meta = _field(obj, "meta") or {}
+    items = _field(obj, "items") or []
+    did = str(_field(obj, "id", "") or "")
+    status = int(_field(obj, "status", 0) or 0)
+    if isinstance(meta, dict):
+        region = str(meta.get("region", "") or "")
+        version = int(meta.get("version", 0) or 0)
+    else:
+        region = str(meta.region or "")
+        version = int(meta.version)
+    builder.Clear()
+    sid = builder.CreateString(did)
+    sreg = builder.CreateString(region)
+    builder.StartObject(2)
+    builder.PrependInt32Slot(1, version, 0)
+    builder.PrependUOffsetTRelativeSlot(0, sreg, 0)
+    meta_off = builder.EndObject()
+    item_offs = []
+    for it in items:
+        if isinstance(it, dict):
+            sku = str(it.get("sku", "") or "")
+            qty = int(it.get("qty", 0) or 0)
+            price = int(it.get("price_minor", 0) or 0)
+        else:
+            sku, qty, price = str(it.sku or ""), int(it.qty), int(it.price_minor)
+        ssku = builder.CreateString(sku)
+        builder.StartObject(3)
+        builder.PrependInt64Slot(2, price, 0)
+        builder.PrependInt32Slot(1, qty, 0)
+        builder.PrependUOffsetTRelativeSlot(0, ssku, 0)
+        item_offs.append(builder.EndObject())
+    builder.StartVector(4, len(item_offs), 4)
+    for off in reversed(item_offs):
+        builder.PrependUOffsetTRelative(off)
+    ivec = builder.EndVector()
+    builder.StartObject(4)
+    builder.PrependUOffsetTRelativeSlot(3, ivec, 0)
+    builder.PrependUOffsetTRelativeSlot(2, meta_off, 0)
+    builder.PrependInt32Slot(1, status, 0)
+    builder.PrependUOffsetTRelativeSlot(0, sid, 0)
+    root = builder.EndObject()
+    builder.Finish(root)
+    return bytes(builder.Output())
+
+
+def _read_nested_table(data: bytes) -> dict[str, Any]:
+    # Same slot layout as document: id, status, meta, items.
+    return _read_document(data)
+
+
+def _build_signal(builder: flatbuffers.Builder, obj: Any) -> bytes:
+    legs = _field(obj, "legs") or []
+    symbol = str(_field(obj, "symbol", "") or "")
+    venue = str(_field(obj, "venue", "") or "")
+    builder.Clear()
+    venue_off = builder.CreateString(venue)
+    symbol_off = builder.CreateString(symbol)
+    leg_offs = []
+    for leg in legs:
+        if isinstance(leg, dict):
+            leg_id = int(leg.get("leg_id", 0) or 0)
+            leg_qty = int(leg.get("leg_qty", 0) or 0)
+            leg_pad = int(leg.get("leg_pad", 0) or 0)
+        else:
+            leg_id, leg_qty, leg_pad = int(leg.leg_id), int(leg.leg_qty), int(leg.leg_pad)
+        builder.StartObject(3)
+        builder.PrependInt32Slot(2, leg_pad, 0)
+        builder.PrependInt32Slot(1, leg_qty, 0)
+        builder.PrependInt64Slot(0, leg_id, 0)
+        leg_offs.append(builder.EndObject())
+    builder.StartVector(4, len(leg_offs), 4)
+    for off in reversed(leg_offs):
+        builder.PrependUOffsetTRelative(off)
+    legs_vec = builder.EndVector()
+    builder.StartObject(8)
+    builder.PrependUOffsetTRelativeSlot(7, legs_vec, 0)
+    builder.PrependUOffsetTRelativeSlot(6, venue_off, 0)
+    builder.PrependUOffsetTRelativeSlot(5, symbol_off, 0)
+    builder.PrependInt32Slot(4, int(_field(obj, "flags", 0) or 0), 0)
+    builder.PrependInt32Slot(3, int(_field(obj, "qty", 0) or 0), 0)
+    builder.PrependInt64Slot(2, int(_field(obj, "price_mantissa", 0) or 0), 0)
+    builder.PrependInt64Slot(1, int(_field(obj, "ts", 0) or 0), 0)
+    builder.PrependInt64Slot(0, int(_field(obj, "seq", 0) or 0), 0)
+    root = builder.EndObject()
+    builder.Finish(root)
+    return bytes(builder.Output())
+
+
+def _read_signal(data: bytes) -> dict[str, Any]:
+    table = _root_table(data)
+
+    def f(slot: int) -> int:
+        return _vtable_field(data, table, slot)
+
+    legs: list[dict[str, Any]] = []
+    loff = f(7)
+    if loff:
+        vec = table + loff + _uoffset_at(data, table + loff)
+        n = _uoffset_at(data, vec)
+        for i in range(n):
+            eoff = _uoffset_at(data, vec + 4 + i * 4)
+            leg = vec + 4 + i * 4 + eoff
+
+            def lf(slot: int, t: int = leg) -> int:
+                return _vtable_field(data, t, slot)
+
+            legs.append(
+                {
+                    "leg_id": struct.unpack_from("<q", data, leg + lf(0))[0] if lf(0) else 0,
+                    "leg_qty": struct.unpack_from("<i", data, leg + lf(1))[0] if lf(1) else 0,
+                    "leg_pad": struct.unpack_from("<i", data, leg + lf(2))[0] if lf(2) else 0,
+                }
+            )
+    return {
+        "seq": struct.unpack_from("<q", data, table + f(0))[0] if f(0) else 0,
+        "ts": struct.unpack_from("<q", data, table + f(1))[0] if f(1) else 0,
+        "price_mantissa": struct.unpack_from("<q", data, table + f(2))[0] if f(2) else 0,
+        "qty": struct.unpack_from("<i", data, table + f(3))[0] if f(3) else 0,
+        "flags": struct.unpack_from("<i", data, table + f(4))[0] if f(4) else 0,
+        "symbol": _read_string(data, table, f(5)),
+        "venue": _read_string(data, table, f(6)),
+        "legs": legs,
+    }
+
+
 _BUILDERS = {
     "message": (_build_message, _read_message),
     "strings": (_build_strings, _read_strings),
     "event": (_build_event, _read_event),
     "telemetry": (_build_telemetry, _read_telemetry),
     "document": (_build_document, _read_document),
+    "table": (_build_table, _read_table),
+    "table_project": (_build_table, _read_table),
+    "nested_table": (_build_nested_table, _read_nested_table),
+    "signal": (_build_signal, _read_signal),
 }
 
 
@@ -409,8 +584,12 @@ class FlatBuffersSerializer(Serializer):
                 o += 4
                 items.append(read(data[o : o + ln]))
                 o += ln
-            return items
-        return read(data)
+            decoded: Any = items
+        else:
+            decoded = read(data)
+        if self._type_id == "table_project":
+            return project_f_float_0(decoded)
+        return decoded
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         stream.write(self.serialize_bytes(obj))

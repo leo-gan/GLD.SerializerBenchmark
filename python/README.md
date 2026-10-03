@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Host benchmark runner evaluating **18 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **23 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -12,6 +12,7 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2`, `amazon-ion` | Compact binary, schema-optional. Ion is the official `amazon-ion` binary dump/load. |
 | **Text** | `yaml` | PyYAML. |
 | **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
+| **Columnar** | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` | pyarrow. IPC stream, Parquet, and ORC. Not the publication matrix. |
 | **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native pickle family. |
 
 ## Test data
@@ -23,6 +24,18 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | **telemetry** | Numeric bulk / measurements. |
 | **strings** | Homogeneous string list (allocation pressure). |
 | **event** | Event envelope with attributes. |
+| **table** | Wide flat row (16 float64, 4 int64, 2 strings). Columnar run only. |
+| **table_project** | Same row as `table`. Deserialize returns `f_float_0` only. |
+| **nested_table** | Struct plus a list of structs. |
+| **signal** | Fixed fields, then strings, then a repeating group. |
+
+`table`, `table_project`, `nested_table`, and `signal` are not in `default.yaml` or `smoke.yaml`. The columnar run is an allow-list: the five pyarrow rows plus `orjson`, `protobuf`, `flatbuffers`, and `avro`.
+
+```bash
+cd python
+BENCHMARK_RUN_CONFIG=../config/library/columnar-smoke.yaml \
+  ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,orc,orjson,protobuf,flatbuffers,avro"
+```
 
 Catalog: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.
 
@@ -31,7 +44,7 @@ Catalog: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.
 - **bytes mode**: Serializer produces/consumes `bytes` directly.
 - **stream mode**: Serializer writes to/reads from `io.BytesIO`.
 
-Every serializer is tested in **both modes**. Libraries without a native stream API adapt by writing the `bytes` output to `BytesIO`.
+The publication matrix tests every serializer in **both modes**. Libraries without a native stream API adapt by writing the `bytes` output to `BytesIO`. The columnar configs set `io_modes: [bytes]` only. Parquet and ORC need a seekable buffer for the footer, and the Arrow row is the IPC stream format written into that bytes API.
 
 ## Metrics
 
