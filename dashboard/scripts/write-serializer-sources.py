@@ -283,7 +283,12 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("java", "orc", "https://github.com/apache/orc"),
     ("java", "orc-uncompressed", "https://github.com/apache/orc"),
     ("java", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
-
+    ("kotlin", "arrow-ipc", "https://github.com/apache/arrow-java"),
+    ("kotlin", "parquet", "https://github.com/apache/parquet-java"),
+    ("kotlin", "parquet-uncompressed", "https://github.com/apache/parquet-java"),
+    ("kotlin", "orc", "https://github.com/apache/orc"),
+    ("kotlin", "orc-uncompressed", "https://github.com/apache/orc"),
+    ("kotlin", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
 ]
 
 # Shared origin stories: why the library exists, the problem, the solution.
@@ -1749,6 +1754,53 @@ SPECIFICS: dict[str, str] = {
         "signal wire order is fixed fields, then the legs group, then symbol "
         "and venue. No compliance decoder."
     ),
+    "arrow-ipc-kotlin": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This Kotlin row times arrow-vector 19.0.0 "
+        "ArrowStreamWriter inside the bytes API, not the Arrow file format "
+        "and not arrow-dataset. The schema is built in prepare. Row-to-column "
+        "conversion stays inside serialize. table_project loads f_float_0 "
+        "only. No compliance decoder."
+    ),
+    "parquet-kotlin": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This Kotlin row times parquet-avro 1.18.1 "
+        "AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so "
+        "this row sets CompressionCodecName.SNAPPY. table_project sets "
+        "AvroReadSupport requested projection to f_float_0. No compliance decoder."
+    ),
+    "parquet-uncompressed-kotlin": (
+        "This is the same parquet-avro writer as parquet, with "
+        "CompressionCodecName.UNCOMPRESSED. The name is the override. "
+        "No compliance decoder."
+    ),
+    "orc-kotlin": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. This Kotlin row times orc-core 2.3.1 (classifier nohive) and "
+        "orc-format 1.1.1 nohive. OrcConf.COMPRESS defaults to ZSTD, so orc "
+        "does not call compress(). orc-uncompressed sets CompressionKind.NONE. "
+        "Both rows set blockPadding(false) so a small file is not padded "
+        "toward the 256MB HDFS block. table_project includes f_float_0 only. "
+        "No compliance decoder."
+    ),
+    "orc-uncompressed-kotlin": (
+        "This is the same orc-core writer as orc, with CompressionKind.NONE "
+        "and blockPadding(false). The name is the override. No compliance decoder."
+    ),
+    "sbe-kotlin": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java "
+        "flyweight inside serialize. Agrona is the runtime. The generator jar "
+        "is sbe-all, copied from Maven at build time. It encodes table, "
+        "table_project, and signal. nested_table is not an SBE body. The "
+        "signal wire order is fixed fields, then the legs group, then symbol "
+        "and venue. No compliance decoder."
+    ),
 }
 
 # (language, name) -> SPECIFICS key. Default: try the name, then a heuristic.
@@ -1826,6 +1878,12 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("java", "orc"): "orc-java",
     ("java", "orc-uncompressed"): "orc-uncompressed-java",
     ("java", "sbe"): "sbe-java",
+    ("kotlin", "arrow-ipc"): "arrow-ipc-kotlin",
+    ("kotlin", "parquet"): "parquet-kotlin",
+    ("kotlin", "parquet-uncompressed"): "parquet-uncompressed-kotlin",
+    ("kotlin", "orc"): "orc-kotlin",
+    ("kotlin", "orc-uncompressed"): "orc-uncompressed-kotlin",
+    ("kotlin", "sbe"): "sbe-kotlin",
     ("javascript", "ion-js"): "ion-js",
     ("go", "ion-go"): "ion-go",
     ("csharp", "Amazon.IonDotnet"): "ion-dotnet",

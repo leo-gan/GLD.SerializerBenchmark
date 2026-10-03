@@ -1,5 +1,15 @@
 import com.google.protobuf.gradle.id
 import com.google.protobuf.gradle.proto
+import org.gradle.api.artifacts.ExternalModuleDependency
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.apache.avro:avro-compiler:1.12.1")
+    }
+}
 
 plugins {
     kotlin("jvm") version "2.1.20"
@@ -34,6 +44,12 @@ val kaml = "0.72.0"
 val msgpack = "0.9.8"
 val flatbuffers = "24.3.25"
 val capnproto = "0.1.16"
+val arrow = "19.0.0"
+val parquet = "1.18.1"
+val orc = "2.3.1"
+val orcFormat = "1.1.1"
+val sbeToolVersion = "1.40.2"
+val agrona = "2.6.1"
 val junit = "5.11.4"
 
 java {
@@ -55,6 +71,14 @@ application {
 
 repositories {
     mavenCentral()
+}
+
+// Arrow 19 pulls flatbuffers-java 25.2.10. The checked-in tables call
+// Constants.FLATBUFFERS_24_3_25(). Maven nearest-wins keeps 24.3.25; Gradle does not.
+configurations.configureEach {
+    resolutionStrategy {
+        force("com.google.flatbuffers:flatbuffers-java:$flatbuffers")
+    }
 }
 
 dependencies {
@@ -101,16 +125,123 @@ dependencies {
     implementation("org.apache.thrift:libthrift:$thrift")
     implementation("org.slf4j:slf4j-nop:2.0.13")
 
+    implementation("org.apache.arrow:arrow-vector:$arrow")
+    // arrow-vector marks the Netty allocator test-scoped; RootAllocator needs it at runtime.
+    implementation("org.apache.arrow:arrow-memory-netty:$arrow")
+    implementation("org.apache.parquet:parquet-avro:$parquet")
+    // nohive relocates hive-storage-api vectors to org.apache.orc.storage and calls
+    // org.apache.orc.protobuf. The default orc-format jar is compiled against
+    // com.google.protobuf, so this build uses orc-format nohive.
+    implementation("org.apache.orc:orc-core:$orc:nohive") {
+        exclude(group = "org.apache.orc", module = "orc-format")
+    }
+    implementation("org.apache.orc:orc-format:$orcFormat:nohive")
+    implementation("org.agrona:agrona:$agrona")
+
     testImplementation("org.junit.jupiter:junit-jupiter:$junit")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+val sbeAllDep =
+    (dependencies.create("uk.co.real-logic:sbe-all:$sbeToolVersion") as ExternalModuleDependency).apply {
+        isTransitive = false
+    }
+val sbeAllCfg = configurations.detachedConfiguration(sbeAllDep)
+
+val copySbeAll =
+    tasks.register<Copy>("copySbeAll") {
+        from(sbeAllCfg)
+        into(layout.buildDirectory.dir("sbe"))
+        rename { "sbe-all-$sbeToolVersion.jar" }
+    }
+
+val generateSbe =
+    tasks.register<Exec>("generateSbe") {
+        dependsOn(copySbeAll)
+        val schema = rootDir.resolve("../schemas/v2/sbe/signal.xml")
+        val jar = layout.buildDirectory.file("sbe/sbe-all-$sbeToolVersion.jar")
+        val outDir = layout.buildDirectory.dir("generated/sbe")
+        inputs.file(schema)
+        inputs.file(jar)
+        outputs.dir(outDir)
+        val javaBin =
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }.get().executablePath.asFile.absolutePath
+        executable = javaBin
+        doFirst { outDir.get().asFile.mkdirs() }
+        args(
+            "--add-opens",
+            "java.base/jdk.internal.misc=ALL-UNNAMED",
+            "-Dsbe.output.dir=${outDir.get().asFile.absolutePath}",
+            "-Dsbe.target.language=Java",
+            "-jar",
+            jar.get().asFile.absolutePath,
+            schema.absolutePath,
+        )
+    }
+
+// Protobuf owns package benchmark.v2. Rewrite the copied avsc namespace before SpecificCompiler.
+val generateAvro =
+    tasks.register("generateAvro") {
+        val schemaSrc = rootDir.resolve("../schemas/v2/avro")
+        val schemaDir = layout.buildDirectory.dir("avro-schema")
+        val outDir = layout.buildDirectory.dir("generated/avro")
+        inputs.files(
+            schemaSrc.resolve("table.avsc"),
+            schemaSrc.resolve("nested_table.avsc"),
+            schemaSrc.resolve("signal.avsc"),
+        )
+        outputs.dir(outDir)
+        doLast {
+            val dest = schemaDir.get().asFile
+            dest.mkdirs()
+            val names = listOf("table.avsc", "nested_table.avsc", "signal.avsc")
+            val rewritten =
+                names.map { name ->
+                    val text =
+                        schemaSrc.resolve(name).readText()
+                            .replace("\"namespace\": \"benchmark.v2\"", "\"namespace\": \"benchmark.v2.avro\"")
+                    val file = dest.resolve(name)
+                    file.writeText(text)
+                    file
+                }
+            val parser = org.apache.avro.Schema.Parser()
+            val schemas = rewritten.map { parser.parse(it) }
+            val compiler = org.apache.avro.compiler.specific.SpecificCompiler(schemas)
+            compiler.setStringType(org.apache.avro.generic.GenericData.StringType.String)
+            compiler.setFieldVisibility(
+                org.apache.avro.compiler.specific.SpecificCompiler.FieldVisibility.PRIVATE,
+            )
+            val output = outDir.get().asFile
+            output.mkdirs()
+            compiler.compileToDestination(dest, output)
+        }
+    }
+
 sourceSets {
     named("main") {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/avro"))
+            srcDir(layout.buildDirectory.dir("generated/sbe"))
+        }
         proto {
             srcDir("${rootDir}/../schemas/v2/protobuf")
         }
     }
+}
+
+tasks.named("compileJava") {
+    dependsOn(generateAvro, generateSbe)
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(generateAvro, generateSbe)
+}
+
+// KSP registers its task after the project is evaluated.
+tasks.matching { it.name == "kspKotlin" }.configureEach {
+    dependsOn(generateAvro, generateSbe)
 }
 
 protobuf {
@@ -149,6 +280,9 @@ tasks.processResources {
                 "msgpack" to msgpack,
                 "flatbuffers" to flatbuffers,
                 "capnproto" to capnproto,
+                "arrow" to arrow,
+                "parquet" to parquet,
+                "orc" to orc,
             )
         )
     }
@@ -163,7 +297,13 @@ tasks.test {
         "--add-opens", "java.base/java.text=ALL-UNNAMED",
         "--add-opens", "java.base/java.io=ALL-UNNAMED",
         "--add-opens", "java.base/java.nio=ALL-UNNAMED",
+        "--add-opens", "java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED",
+        "--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED",
     )
+    maxHeapSize = "2g"
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 tasks.shadowJar {
@@ -171,6 +311,8 @@ tasks.shadowJar {
     archiveClassifier.set("")
     archiveVersion.set("1.0.0-SNAPSHOT")
     mergeServiceFiles()
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    exclude("**/module-info.class")
     manifest {
         attributes["Main-Class"] = "benchmark.MainKt"
     }

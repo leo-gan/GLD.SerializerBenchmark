@@ -110,6 +110,9 @@ object Cells {
                     "telemetry" -> insts.map { it as Telemetry }.toMutableList()
                     "strings" -> insts.map { it as Strings }.toMutableList()
                     "event" -> insts.map { it as Event }.toMutableList()
+                    "table", "table_project" -> insts.map { it as TableRow }.toMutableList()
+                    "nested_table" -> insts.map { it as NestedRow }.toMutableList()
+                    "signal" -> insts.map { it as Signal }.toMutableList()
                     else -> insts
                 }
             }

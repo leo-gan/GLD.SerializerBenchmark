@@ -3,7 +3,10 @@ package benchmark.serializers
 import benchmark.model.v2.Document
 import benchmark.model.v2.Event
 import benchmark.model.v2.Message
+import benchmark.model.v2.NestedRow
+import benchmark.model.v2.Signal
 import benchmark.model.v2.Strings
+import benchmark.model.v2.TableRow
 import benchmark.model.v2.Telemetry
 import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.serialization.KSerializer
@@ -12,6 +15,11 @@ import kotlinx.serialization.serializer
 
 /** Helpers for typed empty targets, list TypeReferences, and kotlinx serializers. */
 object TypeUtil {
+    val ORIGINAL_IDS = setOf("message", "document", "telemetry", "strings", "event")
+    val COLUMNAR_IDS = setOf("table", "table_project", "nested_table", "signal")
+
+    fun originalOrColumnar(id: String): Boolean = id in ORIGINAL_IDS || id in COLUMNAR_IDS
+
     fun isList(value: Any): Boolean = value is List<*>
 
     fun elementClass(value: Any): Class<*> {
@@ -30,6 +38,9 @@ object TypeUtil {
             is Telemetry -> object : TypeReference<List<Telemetry>>() {}
             is Strings -> object : TypeReference<List<Strings>>() {}
             is Event -> object : TypeReference<List<Event>>() {}
+            is TableRow -> object : TypeReference<List<TableRow>>() {}
+            is NestedRow -> object : TypeReference<List<NestedRow>>() {}
+            is Signal -> object : TypeReference<List<Signal>>() {}
             else -> object : TypeReference<List<Any>>() {}
         }
     }
@@ -52,6 +63,9 @@ object TypeUtil {
             is Telemetry -> Telemetry.serializer() as KSerializer<Any>
             is Strings -> Strings.serializer() as KSerializer<Any>
             is Event -> Event.serializer() as KSerializer<Any>
+            is TableRow -> TableRow.serializer() as KSerializer<Any>
+            is NestedRow -> NestedRow.serializer() as KSerializer<Any>
+            is Signal -> Signal.serializer() as KSerializer<Any>
             else -> serializer(value::class.java) as KSerializer<Any>
         }
     }
