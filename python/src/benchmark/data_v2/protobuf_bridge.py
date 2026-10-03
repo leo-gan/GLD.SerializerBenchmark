@@ -6,7 +6,19 @@ import os
 import sys
 from typing import Any, List, Type, Union
 
-from .models import Document, DocumentItem, DocumentMeta, Event, EventAttr, Message, Strings, Telemetry
+from .models import (
+    Document,
+    DocumentItem,
+    DocumentMeta,
+    Event,
+    EventAttr,
+    Message,
+    NestedRow,
+    Signal,
+    Strings,
+    TableRow,
+    Telemetry,
+)
 
 # python/generated is on path when running as package (same as v1 protobuf).
 _gen_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "generated"))
@@ -43,6 +55,15 @@ def message_class_for(type_id: str, batch: bool) -> Type[Any] | None:
         ("strings", True): pb2.BatchStrings,
         ("event", False): pb2.Event,
         ("event", True): pb2.BatchEvent,
+        ("table", False): pb2.Table,
+        ("table", True): pb2.BatchTable,
+        # table_project encodes the same Table. The runner expects f_float_0 only.
+        ("table_project", False): pb2.Table,
+        ("table_project", True): pb2.BatchTable,
+        ("nested_table", False): pb2.NestedRow,
+        ("nested_table", True): pb2.BatchNestedRow,
+        ("signal", False): pb2.Signal,
+        ("signal", True): pb2.BatchSignal,
     }
     return table.get((type_id, batch))
 
@@ -102,6 +123,42 @@ def to_pb(obj: Any) -> Any:
             row.key = a.key
             row.value = a.value
         return e
+    if isinstance(obj, TableRow):
+        m = pb2.Table()
+        for i in range(16):
+            setattr(m, f"f_float_{i}", getattr(obj, f"f_float_{i}"))
+        for i in range(4):
+            setattr(m, f"f_int_{i}", getattr(obj, f"f_int_{i}"))
+        m.f_str_0 = obj.f_str_0
+        m.f_str_1 = obj.f_str_1
+        return m
+    if isinstance(obj, NestedRow):
+        d = pb2.NestedRow()
+        d.id = obj.id
+        d.status = obj.status
+        d.meta.region = obj.meta.region
+        d.meta.version = obj.meta.version
+        for it in obj.items:
+            row = d.items.add()
+            row.sku = it.sku
+            row.qty = it.qty
+            row.price_minor = it.price_minor
+        return d
+    if isinstance(obj, Signal):
+        m = pb2.Signal()
+        m.seq = obj.seq
+        m.ts = obj.ts
+        m.price_mantissa = obj.price_mantissa
+        m.qty = obj.qty
+        m.flags = obj.flags
+        m.symbol = obj.symbol
+        m.venue = obj.venue
+        for leg in obj.legs:
+            row = m.legs.add()
+            row.leg_id = leg.leg_id
+            row.leg_qty = leg.leg_qty
+            row.leg_pad = leg.leg_pad
+        return m
     raise TypeError(f"unsupported v2 type for protobuf: {type(obj)}")
 
 
@@ -116,4 +173,10 @@ def _batch_for_item(item: Any) -> Any:
         return pb2.BatchStrings()
     if isinstance(item, Event):
         return pb2.BatchEvent()
+    if isinstance(item, TableRow):
+        return pb2.BatchTable()
+    if isinstance(item, NestedRow):
+        return pb2.BatchNestedRow()
+    if isinstance(item, Signal):
+        return pb2.BatchSignal()
     raise TypeError(type(item))

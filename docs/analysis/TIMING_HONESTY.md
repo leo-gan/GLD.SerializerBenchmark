@@ -73,11 +73,16 @@ Building that object is **prepare**. Writing it out is **serialize**.
 7. **The row name must match the timed functions.**  
    A row named `simdjson` may use simdjson on decode. If encode is `nlohmann::json::dump`, the article and the inventory must say so. A row named `google-protobuf` must call that library’s writer on the timed encode.
 
+8. **Columnar layouts and SBE keep row-to-layout conversion on the clock.**  
+   For `table`, `table_project`, `nested_table`, and `signal`, building an Arrow record batch, Parquet or ORC columns, or an SBE flyweight from suite rows is **serialize** work. Schema objects, writer properties, and SBE codegen stay in `prepare` or in the build. Pre-building the batch in `prepare` and timing a byte copy hides the cost this family measures. This overrides rule 3 for these four type ids only.  
+   `TimeDeser` for `table`, `nested_table`, and `signal` materializes domain rows. `TimeDeser` for `table_project` materializes `f_float_0` only. Row peers may fully decode and then slice that column. That decode stays on the clock.
+
 ## Allowed exceptions (must be labelled)
 
 | Exception | Why it exists | How to label it |
 |-----------|---------------|-----------------|
 | Parse-only library (no public encoder) | simdjson is a parser | Encode is another JSON writer, timed. Decode is the parser. The 401 simdjson page is the model. |
+| Columnar and SBE layout conversion | Shredding rows into columns, or packing an SBE body, is the format | Rule 8. Schema compile stays in `prepare`. The conversion stays in `serialize`. `table_project` deserialize returns one column. |
 | C# in-memory path is a `string` | Many .NET APIs return strings | Binary codecs often Base64 that string. Both sides of a C# pair must do the same. Do not compare those nanoseconds to a Rust `Vec<u8>` row. |
 | Envelope / teaching wrapper | C `ubj` wraps custom-binary | The 401 page must say the envelope is the measured extra work. |
 | In-place layout used as a classical decoder | rkyv `from_bytes` builds an owned struct | The 401 rkyv page must say `access` is not timed. |

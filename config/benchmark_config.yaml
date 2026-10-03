@@ -98,6 +98,22 @@ test_data:
       category: envelope
       description: "Event envelope with attributes"
       supports_circular: false
+    - name: table
+      category: columnar_flat
+      description: "Wide flat row (16 float64, 4 int64, 2 trailing strings). Columnar run config only."
+      supports_circular: false
+    - name: table_project
+      category: columnar_project
+      description: "Same row as table; deserialize returns f_float_0 only. Columnar run config only."
+      supports_circular: false
+    - name: nested_table
+      category: columnar_nested
+      description: "Struct plus list of structs. Columnar run config only."
+      supports_circular: false
+    - name: signal
+      category: aligned_record
+      description: "Fixed fields, then variable strings, then a repeating group. Columnar run config only."
+      supports_circular: false
 
 # -----------------------------------------------------------------------------
 # Dual-mode I/O contract (every language implements both when applicable)

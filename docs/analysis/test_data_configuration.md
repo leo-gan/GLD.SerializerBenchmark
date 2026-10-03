@@ -12,7 +12,9 @@ Think of it as the **shared homework assignment**. Each language implements the 
 | Default matrix | [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) |
 | Smoke matrix | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
 
-**Type ids:** `message` · `document` · `telemetry` · `strings` · `event`
+**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal`
+
+The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The last four run only from `columnar.yaml` / `columnar-smoke.yaml`, and only for an explicit serializer allow-list: the columnar and SBE rows registered in that language, plus one JSON peer, the primary Protobuf row, one FlatBuffers or Cap’n Proto row when the tree already has one, and the Avro row when the tree already has one.
 
 How times are cleaned and summarized is separate: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
@@ -23,7 +25,7 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 By the end of this page you should be able to:
 
 1. Define **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Sketch the five default data types and what each stresses.
+2. Sketch the five publication data types, and the four columnar / aligned types, and what each stresses.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
 ---
@@ -34,7 +36,7 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as �
 
 | Term | Meaning | Examples |
 |------|---------|----------|
-| **data type** (also **type id**) | Which *kind* of sample object we serialize | `message`, `document`, `telemetry`, `strings`, `event` |
+| **data type** (also **type id**) | Which *kind* of sample object we serialize | `message`, `table`, `signal` |
 | **type config** | Size and shape knobs for **one** instance of that type | `field_count: 8`, `points: 32` |
 | **instance** | One concrete object of a data type | one `message` record |
 | **batch size** (`data_type_instance_count`) | How many instances go into **one** serialize/deserialize call | `1` or `100` |
@@ -68,7 +70,7 @@ cells = W × C                             # cartesian product
 | Axis | Owns |
 |------|------|
 | `type_id` + `type_config` | Shape of **one** instance |
-| `data_type_instance_count` | How many instances in **one** serialize/deserialize call (`1` = single object, `N` = batch) |
+| `data_type_instance_count` | How many instances in **one** serialize/deserialize call (`1` = single object, `N` = batch). A type row in a run config may set its own list and override the file-level list. |
 | `seed` | Within-language deterministic generation (master `reproducibility.random_seed`) |
 | compression | Runner post-steps on encoded bytes (**not** part of `type_config`) |
 
@@ -99,6 +101,8 @@ payload = instances[0] if N == 1 and adapter prefers a scalar else instances
 ---
 
 ## The five default types
+
+These five are the publication matrix. Columnar and aligned-record types follow them.
 
 ### message
 
@@ -169,6 +173,62 @@ Event {
 
 Default: `attr_count: 4`, `include_payload_bytes: 0`.
 
+### table
+
+A wide flat row of named scalars. One instance is one row. `data_type_instance_count` is the table’s row count. Strings are last so the same record is a legal SBE body.
+
+| Fields | Type |
+|--------|------|
+| `f_float_0` … `f_float_15` | float64 |
+| `f_int_0` … `f_int_3` | int64 |
+| `f_str_0`, `f_str_1` | utf8 string |
+
+Default: `string_len: {min:3,max:16}`, `int_range: {min:0,max:1000000}`, `duplication: 0.5`.
+
+`duplication` repeats string values **across rows**. The vocabulary is built from `(seed, type_id)` only. Each instance index then draws from that vocabulary. There are no nulls.
+
+Fidelity is full-row equality after materializing domain rows.
+
+### table_project
+
+The same fields and the same default `type_config` as `table`, so `TypeConfigHash` matches. Serialize writes all 22 columns. Deserialize returns `f_float_0` as `float64[N]`, including when N is 1. Fidelity compares that vector. A full-row result fails fidelity.
+
+Read `TimeDeser` for this type. `TimeSer` is still the full-table write, so `TimeSerAndDeser` is dominated by the write.
+
+### nested_table
+
+A struct plus a list of structs. This is the shredding case for Arrow, Parquet, and ORC.
+
+```text
+NestedRow {
+  id: utf8
+  status: int32
+  meta: { region: string, version: int32 }
+  items: [ { sku: string, qty: int32, price_minor: int64 }, ... ]  // length = children
+}
+```
+
+Default: `children: 4`. SBE does not implement this type.
+
+### signal
+
+A fixed block, then variable strings, then one repeating group. This is the SBE record. Arrow, Parquet, and the row peers on the allow-list also encode it.
+
+```text
+Signal {
+  seq: int64
+  ts: int64
+  price_mantissa: int64
+  qty: int32
+  flags: int32
+  symbol: utf8
+  venue: utf8
+  legs: [ { leg_id: int64, leg_qty: int32, leg_pad: int32 }, ... ]  // length = group_count
+}
+```
+
+`leg_pad` is 0. It keeps each group body a fixed 16-byte block. Default: `group_count: 4`. Wire schemas are `schemas/v2/protobuf/benchmark_v2.proto`, `schemas/v2/avro/signal.avsc`, and `schemas/v2/sbe/signal.xml`. Protobuf and Avro keep the strings before `legs`. The SBE message puts the `legs` group before `symbol` and `venue`, because sbe-tool rejects a repeating group after variable-length data. Field ids are unchanged.
+
 ---
 
 ## Primitives
@@ -204,7 +264,13 @@ Prefer this wrapper over a package-level stream of top-level `repeated` messages
 | File | Matrix |
 |------|--------|
 | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) | `message`, `telemetry` × `[1]` |
-| [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) | five types × `[1, 100]` |
+| [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) | five publication types × `[1, 100]` |
+| [`config/library/columnar-smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar-smoke.yaml) | `table`, `table_project`, `nested_table`, `signal` × `[1]`, bytes, no post-compression |
+| [`config/library/columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) | `table` and `table_project` × `[1, 100, 10000]`; `nested_table` and `signal` × `[1, 100]`; bytes; no post-compression |
+
+`columnar.yaml` sets `compression.mode: none`. `Size` is the codec’s own byte length. Parquet’s default page codec is Snappy, so `parquet` is not a layout-only size. `parquet-uncompressed` turns page compression off. Arrow IPC stream bytes are uncompressed. Apache ORC’s C++ and Java writers default to Zlib. pyarrow’s `write_table` defaults to uncompressed, and the Python `orc` row follows that default. `orc-uncompressed` is the named override for languages whose default is Zlib; on pyarrow it is the same codec as `orc`.
+
+Call the columnar configs with `BENCHMARK_RUN_CONFIG`. They are not `smoke_run_config` or `default_run_config`. Pass a serializer name filter. The new type ids are not part of the global smoke matrix, so PHP, Zig, Mojo, Swift, and C are not required to generate them.
 
 Resolve a config to see the expanded cell list:
 
@@ -239,7 +305,7 @@ If a run overruns, reduce repetitions from 100 to 50. Hard cap: **600 seconds** 
 
 IDL and code generation: `schemas/v2/` and `scripts/schemas/generate-all.sh`.
 
-Logical fields on this page must stay aligned with `.proto` / `.avsc` field sets.
+Logical fields on this page must stay aligned with `.proto`, `.avsc`, and `schemas/v2/sbe/signal.xml`. `table_project` has no protobuf message of its own. Peers encode `Table` / `BatchTable` and project `f_float_0`.
 
 ---
 

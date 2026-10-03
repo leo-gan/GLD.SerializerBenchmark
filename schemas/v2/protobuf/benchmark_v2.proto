@@ -88,3 +88,79 @@ message Event {
 message BatchEvent {
   repeated Event items = 1;
 }
+
+// --- table: 16 float64, 4 int64, then 2 strings (SBE-legal order) ---
+// table_project reuses this message. Deserialize of that type returns f_float_0 only.
+message Table {
+  double f_float_0 = 1;
+  double f_float_1 = 2;
+  double f_float_2 = 3;
+  double f_float_3 = 4;
+  double f_float_4 = 5;
+  double f_float_5 = 6;
+  double f_float_6 = 7;
+  double f_float_7 = 8;
+  double f_float_8 = 9;
+  double f_float_9 = 10;
+  double f_float_10 = 11;
+  double f_float_11 = 12;
+  double f_float_12 = 13;
+  double f_float_13 = 14;
+  double f_float_14 = 15;
+  double f_float_15 = 16;
+  int64 f_int_0 = 17;
+  int64 f_int_1 = 18;
+  int64 f_int_2 = 19;
+  int64 f_int_3 = 20;
+  string f_str_0 = 21;
+  string f_str_1 = 22;
+}
+
+message BatchTable {
+  repeated Table items = 1;
+}
+
+// --- nested_table: struct + list (shredding). Not an SBE body. ---
+message NestedMeta {
+  string region = 1;
+  int32 version = 2;
+}
+
+message NestedItem {
+  string sku = 1;
+  int32 qty = 2;
+  int64 price_minor = 3;
+}
+
+message NestedRow {
+  string id = 1;
+  int32 status = 2;
+  NestedMeta meta = 3;
+  repeated NestedItem items = 4;
+}
+
+message BatchNestedRow {
+  repeated NestedRow items = 1;
+}
+
+// --- signal: fixed block, variable strings, then a repeating group ---
+message SignalLeg {
+  int64 leg_id = 1;
+  int32 leg_qty = 2;
+  int32 leg_pad = 3;
+}
+
+message Signal {
+  int64 seq = 1;
+  int64 ts = 2;  // epoch ms
+  int64 price_mantissa = 3;
+  int32 qty = 4;
+  int32 flags = 5;
+  string symbol = 6;
+  string venue = 7;
+  repeated SignalLeg legs = 8;
+}
+
+message BatchSignal {
+  repeated Signal items = 1;
+}

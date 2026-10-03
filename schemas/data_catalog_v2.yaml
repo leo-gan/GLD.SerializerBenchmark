@@ -77,3 +77,47 @@ types:
         min: 3
         max: 12
       include_payload_bytes: 0
+
+  # Columnar and aligned-record types. They are not in default.yaml or smoke.yaml.
+  # Run them from config/library/columnar.yaml with an explicit serializer allow-list.
+  table:
+    description: "Wide flat row: 16 float64, 4 int64, then 2 utf8 strings"
+    category: columnar_flat
+    default_type_config:
+      string_len:
+        min: 3
+        max: 16
+      int_range:
+        min: 0
+        max: 1000000
+      duplication: 0.5
+
+  table_project:
+    description: "Same row as table; deserialize returns f_float_0 only"
+    category: columnar_project
+    default_type_config:
+      string_len:
+        min: 3
+        max: 16
+      int_range:
+        min: 0
+        max: 1000000
+      duplication: 0.5
+
+  nested_table:
+    description: "One struct column plus a list of structs (shredding)"
+    category: columnar_nested
+    default_type_config:
+      children: 4
+      string_len:
+        min: 3
+        max: 12
+
+  signal:
+    description: "Fixed block, then variable strings, then a repeating group"
+    category: aligned_record
+    default_type_config:
+      group_count: 4
+      string_len:
+        min: 3
+        max: 12

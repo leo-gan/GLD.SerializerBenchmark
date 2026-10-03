@@ -93,12 +93,13 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 | Resource | Role |
 |----------|------|
-| Language benchmark runners | Predominantly **row-oriented message** codecs and fixtures |
-| [Test Data](../../analysis/test_data_configuration.md) | Record-shaped fixtures (`message`, `document`, `telemetry`, and others) |
-| [Serialization categories](../../analysis/serialization_categories.md) | Families for message codecs—not a Parquet engine benchmark |
-| [Using this suite](using-this-suite.md) | How to read message-level Dashboard numbers |
+| Language benchmark runners | Publication matrix is **row-oriented** (`message`, `document`, `telemetry`, `strings`, `event`) |
+| [Test Data](../../analysis/test_data_configuration.md) | Those five types, plus `table`, `table_project`, `nested_table`, and `signal` |
+| [Columnar run config](../../../config/library/columnar.yaml) | The four new types. Timed only for the new serializers and a short peer list |
+| [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own family. SBE sits with schema-driven, word-aligned codecs |
+| [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one family and one data type |
 
-**Important:** this suite is **not** a columnar engine benchmark. Absence of Parquet or Arrow from a language Dashboard slice means “not measured here.” It does not mean “irrelevant for lakes.”
+**Important:** the publication matrix is still the five row types. No language registers a columnar row yet. Columnar timings appear on a language Dashboard only after that language publishes a `columnar.yaml` run. Until that snapshot exists, the slice has no columnar number. Absence of a number means “not measured here.” It does not mean the format is irrelevant for lakes. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`.
 
 ---
 

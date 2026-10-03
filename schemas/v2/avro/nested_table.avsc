@@ -1,0 +1,36 @@
+{
+  "type": "record",
+  "name": "NestedRow",
+  "namespace": "benchmark.v2",
+  "doc": "Struct plus a list of structs. Measures columnar shredding. Not an SBE body.",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "status", "type": "int"},
+    {
+      "name": "meta",
+      "type": {
+        "type": "record",
+        "name": "NestedMeta",
+        "fields": [
+          {"name": "region", "type": "string"},
+          {"name": "version", "type": "int"}
+        ]
+      }
+    },
+    {
+      "name": "items",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "NestedItem",
+          "fields": [
+            {"name": "sku", "type": "string"},
+            {"name": "qty", "type": "int"},
+            {"name": "price_minor", "type": "long"}
+          ]
+        }
+      }
+    }
+  ]
+}
