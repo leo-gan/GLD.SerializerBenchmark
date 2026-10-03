@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (22)
+## Serializers (26)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -27,13 +27,17 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
 | protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; **stream adapted** (bytes-only API) |
 | hamba/avro | Schema | `github.com/hamba/avro/v2` | frozen `API` + schema cache; **native stream** `NewEncoder`/`NewDecoder` |
-| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `BinaryFromNative`; **stream adapted** (OCF is different format) |
+| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `BinaryFromNative`; **stream adapted** (OCF is different format). Original five type ids only |
+| arrow-ipc | Columnar | `github.com/apache/arrow-go/v18` | IPC **stream** bytes (not the file format). Schema in `Prepare`. Record batch built inside `SerializeBytes`. `table_project` reads the `f_float_0` value buffer. **Stream adapted**. No compliance decoder |
+| parquet | Columnar | `github.com/apache/arrow-go/v18` | `pqarrow` file. arrow-go's writer default is uncompressed; this row sets **Snappy**. `table_project` passes column index 0. Schema in `Prepare`. **Stream adapted**. No compliance decoder |
+| parquet-uncompressed | Columnar | `github.com/apache/arrow-go/v18` | Same writer with compression off. **Stream adapted**. No compliance decoder |
+| sbe | Fixed wire | sbe-tool `1.40.2` | Go flyweight filled inside `SerializeBytes` (not in `Prepare`). `table`, `table_project`, `signal`. No `nested_table`. **Stream adapted**. No compliance decoder |
 
 ### Call-path contract
 
 1. `Prepare(fixture)` — untimed  
 2. `SerializeBytes` / `DeserializeBytes` — timed  
-3. Stream: **native** (library `io.Reader`/`io.Writer` APIs) or **adapted** (`Marshal`→`Write` / `ReadAll`→`Unmarshal`) via `StreamMode`
+3. Stream: **native** (library `io.Reader`/`io.Writer` APIs) or **adapted** (`Marshal`→`Write` / `ReadAll`→`Unmarshal`) via `StreamMode`. Columnar rows time the bytes API. Their adapted stream methods must not crash. There is no compliance decoder.
 
 ### Not registered (by design)
 
@@ -43,8 +47,8 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Test data
 
-Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`  
-(smoke filter default: `message`).
+Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`, `table`, `table_project`, `nested_table`, `signal`  
+(smoke filter default: `message`. The four columnar ids are not in the default or smoke run config.)
 
 ## Run
 
@@ -66,3 +70,4 @@ Analysis: `analyze-benchmarks -l go`.
 
 - `scripts/generate-protobuf.sh` regenerates Data Model v2 protobuf bindings into `gen/pbv2/`.  
 - Generated code under `gen/pbv2/` is committed for offline builds.
+- `gen/sbe/` is the sbe-tool 1.40.2 Go flyweight for `schemas/v2/sbe/signal.xml` (package `benchmark_v2`). Regenerate only with that jar. Do not reorder the XML.

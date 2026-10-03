@@ -257,6 +257,10 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("python", "parquet-uncompressed", "https://github.com/apache/arrow"),
     ("python", "orc", "https://github.com/apache/arrow"),
     ("python", "orc-uncompressed", "https://github.com/apache/arrow"),
+    ("go", "arrow-ipc", "https://github.com/apache/arrow-go"),
+    ("go", "parquet", "https://github.com/apache/arrow-go"),
+    ("go", "parquet-uncompressed", "https://github.com/apache/arrow-go"),
+    ("go", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
     ("cpp", "arrow-ipc", "https://github.com/apache/arrow"),
     ("cpp", "parquet", "https://github.com/apache/arrow"),
     ("cpp", "parquet-uncompressed", "https://github.com/apache/arrow"),
@@ -1524,6 +1528,38 @@ SPECIFICS: dict[str, str] = {
         "`encode_doc` and `decode_bytes` on a document built from the "
         "suite value."
     ),
+    "arrow-ipc-go": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-go's IPC stream writer and "
+        "reader inside the suite's bytes mode, not the Arrow file format. "
+        "Record batches are built inside SerializeBytes. table_project reads "
+        "the f_float_0 value buffer only, because arrow-go's ipc.Reader has "
+        "no included-fields option. No compliance decoder."
+    ),
+    "parquet-go": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times arrow-go pqarrow. "
+        "arrow-go WriterProperties defaults to uncompressed, so this row sets "
+        "Snappy, which is the suite's parquet page codec. table_project "
+        "passes column index 0 to GetRecordReader. The schema is prepared "
+        "untimed. The batch is built inside SerializeBytes. No compliance decoder."
+    ),
+    "parquet-uncompressed-go": (
+        "This is the same arrow-go pqarrow writer as parquet, with compression "
+        "left off (Codecs.Uncompressed). Encodings stay at the library default. "
+        "The name is the override. No compliance decoder."
+    ),
+    "sbe-go": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Go flyweight inside "
+        "SerializeBytes. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. No compliance decoder."
+    ),
     "arrow-ipc-cpp": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -1655,6 +1691,10 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "parquet-uncompressed"): "parquet-uncompressed",
     ("python", "orc"): "orc",
     ("python", "orc-uncompressed"): "orc-uncompressed",
+    ("go", "arrow-ipc"): "arrow-ipc-go",
+    ("go", "parquet"): "parquet-go",
+    ("go", "parquet-uncompressed"): "parquet-uncompressed-go",
+    ("go", "sbe"): "sbe-go",
     ("cpp", "arrow-ipc"): "arrow-ipc-cpp",
     ("cpp", "parquet"): "parquet-cpp",
     ("cpp", "parquet-uncompressed"): "parquet-uncompressed-cpp",

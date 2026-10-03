@@ -351,6 +351,23 @@ jobs:
           cd go
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. The comma list is an exact-name
+      # allow-list. SBE sources are committed, so this job does not need a JDK.
+      - name: Run Go columnar smoke
+        env:
+          GOTOOLCHAIN: auto
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-columnar
+        run: |
+          cd go
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,sbe,encoding/json,protobuf,hamba/avro"
+          err="../logs/go/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
+
   java-benchmark:
     needs: changes
     if: >-

@@ -5,7 +5,7 @@ title: "Go"
 Go
 ===
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro). `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **26** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
 
@@ -31,7 +31,7 @@ Go’s garbage collector is designed for short pauses, but allocation still matt
 
 ### Suite-specific gotchas
 
-**protobuf** and **linkedin/goavro** have no native stream API in this suite. Their stream rows are **adapted**: the timed path is still bytes, then a write or read of those bytes.
+**protobuf**, **linkedin/goavro**, **arrow-ipc**, **parquet**, **parquet-uncompressed**, and **sbe** have no native stream API on the bytes payload this suite times. Their stream rows are **adapted**: the timed path is still bytes, then a write or read of those bytes. The columnar rows are bytes-only measurements. There is no compliance decoder.
 
 These times cannot be ranked against another language.
 
@@ -63,7 +63,11 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | [linkedin/goavro](https://github.com/linkedin/goavro) | Schema | goavro/v2 | BinaryFromNative maps | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed |
 | [mongo-bson](https://github.com/mongodb/mongo-go-driver) | Document | mongo-driver/bson | Encoder+JSON tags | native | Batch wrap `{items}`; length-prefixed stream read |
 | [pelletier/go-toml](https://github.com/pelletier/go-toml) | TOML | go-toml/v2 | Marshal/Unmarshal | native | Batch wrapped `{items}` untimed |
+| [arrow-ipc](https://github.com/apache/arrow-go) | Columnar | arrow-go/v18 | Schema in prepare | **adapted** | IPC stream bytes, not the file format. Record batch built inside SerializeBytes. `table_project` reads the `f_float_0` buffer. No compliance decoder |
+| [parquet](https://github.com/apache/arrow-go) | Columnar | arrow-go/v18 | Schema in prepare | **adapted** | pqarrow file. Snappy is set explicitly (arrow-go's writer default is uncompressed). `table_project` passes column 0. No compliance decoder |
+| [parquet-uncompressed](https://github.com/apache/arrow-go) | Columnar | arrow-go/v18 | Schema in prepare | **adapted** | Same writer with compression off. No compliance decoder |
 | [protobuf](https://github.com/protocolbuffers/protobuf-go) | Schema | protobuf + gen | Message in prepare | **adapted** | MarshalAppend; ToDomain untimed; no native stream API |
+| [sbe](https://github.com/aeron-io/simple-binary-encoding) | Fixed wire | sbe-tool 1.40.2 | type id in Prepare | **adapted** | Flyweight filled inside SerializeBytes. `table`, `table_project`, `signal`. No `nested_table`. No compliance decoder |
 | [segmentio/encoding/json](https://github.com/segmentio/encoding) | JSON | segmentio/encoding | drop-in API | native | Production fork |
 | [shamaton/msgpack](https://github.com/shamaton/msgpack) | MessagePack | msgpack/v3 | Marshal/Unmarshal | **native** | Stream `MarshalWrite`/`UnmarshalRead` |
 | [shamaton/msgpack (array)](https://github.com/shamaton/msgpack) | MessagePack | msgpack/v3 | MarshalAsArray/UnmarshalAsArray | **native** | Struct-as-array (no field-name keys); stream `MarshalWriteAsArray`/`UnmarshalReadAsArray` |
@@ -181,7 +185,7 @@ for rep:
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
-- **Stream adapted** only for **protobuf** and **linkedin/goavro** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
+- **Stream adapted** for **protobuf**, **linkedin/goavro**, **arrow-ipc**, **parquet**, **parquet-uncompressed**, and **sbe**. OCF, gRPC, and the Arrow file format would change the wire format. The other registered Go codecs use **native** stream APIs. Columnar rows time the bytes API only. There is no compliance decoder.
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
 Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).

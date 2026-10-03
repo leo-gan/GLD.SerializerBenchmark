@@ -29,5 +29,10 @@ func All() []BenchSerializer {
 		newGoogleProtobuf(),
 		newHambaAvro(),
 		newLinkedInGoavro(),
+		// Columnar / fixed-wire. Stable order.
+		newArrowIPC(),
+		newParquet(),
+		newParquetUncompressed(),
+		newSBE(),
 	}
 }

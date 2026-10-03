@@ -18,7 +18,7 @@ case " $VALID_MODES custom " in
   *" $MODE "*) ;;
   *)
     echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
-    echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
+    echo "  dataFilter type_ids: message|document|telemetry|strings|event|table|table_project|nested_table|signal (smoke default: message)"
     exit 1
     ;;
 esac
@@ -44,7 +44,11 @@ if ! command -v go >/dev/null 2>&1; then
   echo "[ERROR] go not found. Run: ./scripts/install-host-requirements.sh go" >&2
   exit 1
 fi
+# GOPATH/bin is needed for protoc-gen-go. It can also hold an older go than the
+# one already selected on PATH (this machine: 1.22.10 vs the module toolchain).
+go_bin_dir="$(dirname "$(command -v go)")"
 export PATH="$(go env GOPATH 2>/dev/null)/bin:${PATH:-}"
+export PATH="${go_bin_dir}:${PATH}"
 
 echo "[INFO] Building Go benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$GO_DIR"

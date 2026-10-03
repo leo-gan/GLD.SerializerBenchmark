@@ -99,7 +99,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 | [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own family. SBE sits with schema-driven, word-aligned codecs |
 | [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one family and one data type |
 
-**Important:** the publication matrix is still the five row types. Python, C++, and Rust register columnar rows on `columnar.yaml`. ORC is registered in Python and C++. SBE is registered in C++ and Rust. Columnar timings appear on a language Dashboard only after that language publishes a `columnar.yaml` run. Until that snapshot exists, the slice has no columnar number. Absence of a number means “not measured here.” It does not mean the format is irrelevant for lakes. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`.
+**Important:** the publication matrix is still the five row types. Python, Go, C++, and Rust register columnar rows on `columnar.yaml`. ORC is registered in Python and C++. SBE is registered in Go, C++, and Rust. Columnar timings appear on a language Dashboard only after that language publishes a `columnar.yaml` run. Until that snapshot exists, the slice has no columnar number. Absence of a number means “not measured here.” It does not mean the format is irrelevant for lakes. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`.
 
 ---
 
