@@ -1,6 +1,7 @@
 package benchmark.serializers
 
 import benchmark.model.Fixture
+import benchmark.model.v2.V2Rows
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -19,6 +20,7 @@ class KotlinxJsonSer : BenchSerializer {
     private val json = Json { encodeDefaults = true }
     private lateinit var serializer: KSerializer<Any>
     private val baos = ByteArrayOutputStream(4096)
+    private var typeId: String = ""
 
     override fun name() = "kotlinx-json"
 
@@ -28,7 +30,10 @@ class KotlinxJsonSer : BenchSerializer {
 
     override fun nativeKind() = "message"
 
+    override fun supports(testDataName: String) = TypeUtil.originalOrColumnar(testDataName)
+
     override fun prepare(fx: Fixture) {
+        typeId = fx.name
         serializer = TypeUtil.kotlinxSerializer(fx.value)
         baos.reset()
     }
@@ -40,7 +45,7 @@ class KotlinxJsonSer : BenchSerializer {
     }
 
     override fun deserializeBytes(data: ByteArray): Any =
-        json.decodeFromStream(serializer, ByteArrayInputStream(data))
+        project(json.decodeFromStream(serializer, ByteArrayInputStream(data)))
 
     override fun serializeStream(fx: Fixture, out: OutputStream): Int {
         val cos = CountingOutputStream(out)
@@ -48,5 +53,9 @@ class KotlinxJsonSer : BenchSerializer {
         return cos.count
     }
 
-    override fun deserializeStream(input: InputStream): Any = json.decodeFromStream(serializer, input)
+    override fun deserializeStream(input: InputStream): Any = project(json.decodeFromStream(serializer, input))
+
+    /** Full decode, then f_float_0. Columnar codecs project inside the format. */
+    private fun project(decoded: Any): Any =
+        if (typeId == "table_project") V2Rows.float0(decoded) else decoded
 }

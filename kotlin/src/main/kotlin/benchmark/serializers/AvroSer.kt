@@ -1,6 +1,7 @@
 package benchmark.serializers
 
 import benchmark.model.Fixture
+import benchmark.model.v2.V2Rows
 import org.apache.avro.Schema
 import org.apache.avro.io.BinaryDecoder
 import org.apache.avro.io.BinaryEncoder
@@ -25,6 +26,7 @@ class AvroSer : BenchSerializer {
     private val baos = ByteArrayOutputStream(4096)
     private var encoder: BinaryEncoder? = null
     private var decoder: BinaryDecoder? = null
+    private var typeId: String = ""
 
     override fun name() = "avro"
 
@@ -34,7 +36,10 @@ class AvroSer : BenchSerializer {
 
     override fun nativeKind() = "schema"
 
+    override fun supports(testDataName: String) = TypeUtil.originalOrColumnar(testDataName)
+
     override fun prepare(fx: Fixture) {
+        typeId = fx.name
         schema =
             if (TypeUtil.isList(fx.value)) {
                 Schema.createArray(ReflectData.get().getSchema(TypeUtil.elementClass(fx.value)))
@@ -58,7 +63,7 @@ class AvroSer : BenchSerializer {
 
     override fun deserializeBytes(data: ByteArray): Any {
         decoder = DecoderFactory.get().binaryDecoder(data, decoder)
-        return reader.read(null, decoder)
+        return project(reader.read(null, decoder))
     }
 
     override fun serializeStream(fx: Fixture, out: OutputStream): Int {
@@ -71,6 +76,9 @@ class AvroSer : BenchSerializer {
 
     override fun deserializeStream(input: InputStream): Any {
         decoder = DecoderFactory.get().binaryDecoder(input, decoder)
-        return reader.read(null, decoder)
+        return project(reader.read(null, decoder))
     }
+
+    private fun project(decoded: Any): Any =
+        if (typeId == "table_project") V2Rows.float0(decoded) else decoded
 }

@@ -55,7 +55,7 @@ Thirteen runners share the same fixtures and analysis rules.
 | [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |
 | [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 25 |
-| [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 26 |
+| [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 32 |
 | [Mojo](mojo/) · [Dashboard](dashboard/?lang=mojo) | 13 |
 | [PHP](php/) · [Dashboard](dashboard/?lang=php) | 15 |
 | [Python](python/) · [Dashboard](dashboard/?lang=python) | 23 |
