@@ -38,7 +38,72 @@ export function applyDimensionLabels(group, labels) {
   return group;
 }
 
-/** Dropdown values. All is first. Other ids are sorted. */
+export const NO_SERIALIZERS_SEP = '--no serializers--';
+export const NO_SERIALIZERS_SEP_ID = '__no-serializers__';
+
+function compareStandardLabels(a, b, labelOf) {
+  return labelOf(a).localeCompare(labelOf(b), undefined, { sensitivity: 'base' });
+}
+
+/**
+ * Standard dropdown for one language.
+ * All, then standards that have a serializer here (sorted), then a disabled
+ * separator, then standards that have none here (sorted).
+ *
+ * @param {object} args
+ * @param {object[]} [args.groups] rows for this language (any data type)
+ * @param {object} [args.labels] dimension-labels.json
+ * @param {string} [args.language]
+ * @param {string[]} [args.allStandardIds] every known standard id
+ * @param {(id: string) => string} [args.labelOf]
+ */
+export function benchmarkStandardMenu({
+  groups = [],
+  labels = null,
+  language = '',
+  allStandardIds = [],
+  labelOf = (id) => id,
+} = {}) {
+  const present = new Set();
+  const langMap = (labels && labels.standards && labels.standards[language]) || {};
+  for (const standard of Object.values(langMap)) {
+    if (standard) present.add(standard);
+  }
+  for (const group of groups || []) {
+    if (!group || !group.standard) continue;
+    if (language && group.language && group.language !== language) continue;
+    present.add(group.standard);
+  }
+
+  const universe = new Set(allStandardIds.filter(Boolean));
+  if (labels && labels.standards) {
+    for (const map of Object.values(labels.standards)) {
+      for (const standard of Object.values(map || {})) {
+        if (standard) universe.add(standard);
+      }
+    }
+  }
+  for (const standard of present) universe.add(standard);
+
+  const populated = [];
+  const empty = [];
+  for (const id of universe) {
+    if (id === 'all' || id === NO_SERIALIZERS_SEP_ID) continue;
+    (present.has(id) ? populated : empty).push(id);
+  }
+  populated.sort((a, b) => compareStandardLabels(a, b, labelOf));
+  empty.sort((a, b) => compareStandardLabels(a, b, labelOf));
+
+  const items = [{ id: 'all', label: 'All', disabled: false }];
+  for (const id of populated) items.push({ id, label: labelOf(id), disabled: false });
+  if (empty.length) {
+    items.push({ id: NO_SERIALIZERS_SEP_ID, label: NO_SERIALIZERS_SEP, disabled: true });
+    for (const id of empty) items.push({ id, label: labelOf(id), disabled: false });
+  }
+  return items;
+}
+
+/** @deprecated flat ids; the menu uses benchmarkStandardMenu. */
 export function standardSelectOptions(groups) {
   const ids = new Set();
   for (const group of groups || []) {
