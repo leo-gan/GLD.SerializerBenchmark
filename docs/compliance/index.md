@@ -16,16 +16,29 @@ as `#compliance/{lang}/{serializer}` (example:
 | You want… | Go here |
 |-----------|---------|
 | How to read a FAIL line | [Reading failures](reading-results.md) |
-| JSON RFC 4627 / 7159 / 8259 and I-JSON | [JSON](json.md) |
-| YAML 1.1 / 1.2 / 1.2.2 | [YAML](yaml.md) |
-| TOML 0.5 / 1.0 / 1.1 | [TOML](toml.md) |
-| CBOR RFC 7049 / 8949 | [CBOR](cbor.md) |
-| MessagePack 2008 / 2013 / 2017 | [MessagePack](msgpack.md) |
-| Protocol Buffers / Avro / BSON / FlatBuffers | [Protocol Buffers](protobuf.md), [Avro](avro.md), [BSON](bson.md), [FlatBuffers](flatbuffers.md) |
-| Amazon Ion 1.0 / 1.1 | [Amazon Ion](ion.md) |
-| UBJSON Draft 8 / 9 / 12 | [UBJSON](ubjson.md) |
-| Smile 1.0 / shared / 1.0.4 | [Smile](smile.md) |
-| Thrift, Cap’n Proto, Bond, Bebop, HOCON, plist, ZON | catalogs under `compliance/data/` |
+| Amazon Ion | [Amazon Ion](ion.md) |
+| Arrow IPC | [Arrow IPC](arrow.md) |
+| Avro | [Avro](avro.md) |
+| Bebop | [Bebop](bebop.md) |
+| Bond | [Bond](bond.md) |
+| BSON | [BSON](bson.md) |
+| Cap'n Proto | [Cap'n Proto](capnp.md) |
+| CBOR | [CBOR](cbor.md) |
+| FlatBuffers | [FlatBuffers](flatbuffers.md) |
+| HOCON | [HOCON](hocon.md) |
+| JSON | [JSON](json.md) |
+| MessagePack | [MessagePack](msgpack.md) |
+| ORC | [ORC](orc.md) |
+| Parquet | [Parquet](parquet.md) |
+| Property List | [Property List](plist.md) |
+| Protocol Buffers | [Protocol Buffers](protobuf.md) |
+| SBE | [SBE](sbe.md) |
+| Smile | [Smile](smile.md) |
+| Thrift | [Thrift](thrift.md) |
+| TOML | [TOML](toml.md) |
+| UBJSON | [UBJSON](ubjson.md) |
+| YAML | [YAML](yaml.md) |
+| ZON | [ZON](zon.md) |
 | Plug in another language | [Language adapters](adapters.md) |
 | Why we did not vendor suite X | [Legal provenance](legal.md) |
 
@@ -36,29 +49,29 @@ binary cousins** that this suite already benches.
 
 | Format | Versions in the corpus | Typical Python serializers |
 |--------|------------------------|-------------------------|
-| JSON | RFC 4627, RFC 7159, RFC 8259, plus I-JSON (RFC 7493) | `json`, `orjson`, `msgspec`, `rapidjson` |
-| YAML | 1.1, 1.2, 1.2.2 | PyYAML `safe_load` |
-| TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
-| CBOR | RFC 7049, RFC 8949 | `cbor2` |
-| MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
-| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` (every language runner now has a Doc adapter) |
-| Avro | 1.8, 1.11, 1.12 | `fastavro` |
-| BSON | 1.0, 1.1, 1.1 decimal128 | `bson` / pymongo |
-| FlatBuffers | FlexBuffers, tables, file-id | `flexbuffers` |
 | Amazon Ion | 1.0 text, 1.0 binary, 1.1 | `amazon-ion` |
-| UBJSON | Draft 8, Draft 9, Draft 12 | `py-ubjson` |
+| Arrow IPC | IPC stream | `arrow-ipc` |
+| Avro | 1.8, 1.11, 1.12 | `fastavro` |
+| Bebop | 1 | JS `bebop` (limited) |
+| Bond | compact, fast | (catalog) |
+| BSON | 1.0, 1.1, 1.1 decimal128 | `bson` / pymongo |
+| Cap'n Proto | encoding, packed | (catalog; needs generated code) |
+| CBOR | RFC 7049, RFC 8949 | `cbor2` |
+| FlatBuffers | FlexBuffers, tables, file-id | `flexbuffers` |
+| HOCON | 1 | (catalog) |
+| JSON | RFC 4627, RFC 7159, RFC 8259, plus I-JSON (RFC 7493) | `json`, `orjson`, `msgspec`, `rapidjson` |
+| MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
+| ORC | v1 | `orc`, `orc-uncompressed` |
+| Parquet | file format | `parquet`, `parquet-uncompressed` |
+| Property List | XML, binary | `plistlib` |
+| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` (every language runner now has a Doc adapter) |
+| SBE | 1.0 | `sbe` |
 | Smile | 1.0, 1.0 shared names, 1.0.4 | `newsmile` |
 | Thrift | binary, compact | (catalog; Python adapter not wired) |
-| Cap’n Proto | encoding, packed | (catalog; needs generated code) |
-| Bond | compact, fast | (catalog) |
-| Bebop | 1 | JS `bebop` (limited) |
-| HOCON | 1 | (catalog) |
-| Apple plist | XML, binary | `plistlib` |
+| TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
+| UBJSON | Draft 8, Draft 9, Draft 12 | `py-ubjson` |
+| YAML | 1.1, 1.2, 1.2.2 | PyYAML `safe_load` |
 | ZON | 1 | (catalog) |
-| Arrow IPC | IPC stream | `arrow-ipc` |
-| Parquet | file format | `parquet`, `parquet-uncompressed` |
-| ORC | v1 | `orc`, `orc-uncompressed` |
-| SBE | 1.0 | `sbe` |
 
 Arrow IPC, Parquet, ORC v1, and SBE 1.0 have validity cases under `compliance/data/`. Each cell is that library’s own reader: accept means the reader decoded the case, and when the case names a value the decoded rows must match. A library that accepts a reject case fails that case. Python has no SBE row. Do not score one of these rows with another library's decoder.
 
