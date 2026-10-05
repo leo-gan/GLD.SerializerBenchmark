@@ -111,3 +111,48 @@ def optional_io_index(dimensions: dict[str, Any] | None = None) -> dict[tuple[st
             raise DimensionError(f"duplicate optional I/O opt-in: {key}")
         out[key] = row
     return out
+
+
+_LABEL_CACHE: dict[str, Any] = {}
+
+
+def _standards_and_dimensions() -> tuple[dict[str, Any], dict[str, Any]]:
+    if "standards" not in _LABEL_CACHE:
+        _LABEL_CACHE["standards"] = load_standards()
+        _LABEL_CACHE["dimensions"] = load_dimensions()
+    return _LABEL_CACHE["standards"], _LABEL_CACHE["dimensions"]
+
+
+def label_result_group(group: dict[str, Any], *, strict: bool = False) -> dict[str, Any]:
+    """Set data_set and standard on one result group.
+
+    Unknown serializers become standard None unless strict is set.
+    Unknown type ids always raise.
+    """
+    standards, dimensions = _standards_and_dimensions()
+    raw = str(group.get("test_data") or "")
+    base = raw.split("@", 1)[0]
+    group["data_set"] = data_set_for_type(base)
+    try:
+        group["standard"] = standard_for(
+            str(group.get("language") or ""),
+            str(group.get("serializer") or ""),
+            standards,
+            dimensions,
+        )
+    except DimensionError:
+        if strict:
+            raise
+        group["standard"] = None
+    return group
+
+
+def label_stats_document(doc: dict[str, Any]) -> int:
+    """Label every group in a published stats document. Strict."""
+    n = 0
+    for group in doc.get("groups") or []:
+        if not isinstance(group, dict):
+            continue
+        label_result_group(group, strict=True)
+        n += 1
+    return n

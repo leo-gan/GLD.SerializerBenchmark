@@ -37,11 +37,17 @@ import {
 } from './serializer-sources.js';
 import {
   SUITE_TYPE_IDS,
+  COLUMNAR_TYPE_IDS,
   baseTypeId,
   instanceCount,
   compoundFixtureKey,
   discoverFixtureOptions,
 } from './fixture-types.js';
+import {
+  applyDimensionLabels,
+  matchesStandard,
+  standardSelectOptions,
+} from './dimension-labels.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -190,6 +196,7 @@ const metricAccordionOpen = {};
 let state = {
   currentLanguage: 'csharp',
   currentTestData: '',
+  currentStandard: 'all',
   currentMode: '',
   displayMetric: 'ops', // charts / ranking toolbar
   /** Detailed Analytics only: 'ops' | 'time' (independent of displayMetric). */
@@ -297,6 +304,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCharts();
   applyUiFromState();
   await loadSerializerSources();
+  await loadDimensionLabels();
   await loadHistoryList();
   await probeLogsAvailability();
   await loadLanguageData(state.currentLanguage);
@@ -349,6 +357,7 @@ function saveSettings() {
   const payload = {
     currentLanguage: state.currentLanguage,
     currentTestData: state.currentTestData,
+    currentStandard: state.currentStandard,
     currentMode: state.currentMode,
     displayMetric: state.displayMetric,
     rosterMetric: state.rosterMetric,
@@ -382,6 +391,9 @@ function applySavedSettings(saved) {
     state.currentLanguage = saved.currentLanguage;
   }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
+  if (typeof saved.currentStandard === 'string' && saved.currentStandard) {
+    state.currentStandard = saved.currentStandard;
+  }
   if (typeof saved.currentMode === 'string') {
     state.currentMode = normalizeMode(saved.currentMode) || saved.currentMode;
   }
@@ -440,6 +452,7 @@ function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
   if (p.has('data')) state.currentTestData = p.get('data');
+  if (p.has('standard')) state.currentStandard = p.get('standard') || 'all';
   if (p.has('mode')) state.currentMode = normalizeMode(p.get('mode')) || p.get('mode');
   if (p.get('metric') === 'ops' || p.get('metric') === 'time') state.displayMetric = p.get('metric');
   if (p.get('scope') === 'cross' || p.get('scope') === 'same') state.compareScope = p.get('scope');
@@ -460,6 +473,9 @@ function syncUrlFromState() {
     const p = new URLSearchParams();
     p.set('lang', state.currentLanguage);
     if (state.currentTestData) p.set('data', state.currentTestData);
+    if (state.currentStandard && state.currentStandard !== 'all') {
+      p.set('standard', state.currentStandard);
+    }
     const mode = normalizeMode(state.currentMode) || state.currentMode;
     if (mode) p.set('mode', mode);
     p.set('metric', state.displayMetric);
@@ -630,6 +646,12 @@ function setupEventListeners() {
   };
   document.getElementById('data-select')?.addEventListener('change', onDataChange);
   document.getElementById('same-data-select')?.addEventListener('change', onDataChange);
+
+  document.getElementById('standard-select')?.addEventListener('change', (e) => {
+    state.currentStandard = e.target.value || 'all';
+    saveSettings();
+    filterAndRefresh();
+  });
 
   const onModeChange = (e) => {
     state.currentMode = e.target.value;
@@ -1420,6 +1442,8 @@ const GROUP_IDENTITY_KEYS = new Set([
   'mode',
   'language',
   'serializer_version',
+  'standard',
+  'data_set',
   'StreamMode',
   'variants',
 ]);
@@ -1451,10 +1475,13 @@ function expandVariantGroups(slimGroups, catalog) {
       'mode',
       'language',
       'serializer_version',
+      'standard',
+      'data_set',
     ]) {
       if (k in g) identity[k] = g[k];
     }
     if (g.StreamMode != null) identity.StreamMode = g.StreamMode;
+    applyDimensionLabels(identity, dimensionLabels);
 
     for (const [pid, metrics] of Object.entries(variants)) {
       if (!metrics || typeof metrics !== 'object') continue;
@@ -1469,6 +1496,7 @@ function expandVariantGroups(slimGroups, catalog) {
         filter,
         test_data: fixtureKey({ ...identity, ...metrics }),
       };
+      applyDimensionLabels(row, dimensionLabels);
       if (!byPolicy[pid]) byPolicy[pid] = [];
       byPolicy[pid].push(row);
     }
@@ -1574,6 +1602,7 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
     });
     populateSelect('mode-select', modeOptions, modeDisplayLabel);
     populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
+    populateStandardSelect();
 
     if (!testDataOptions.includes(state.currentTestData)) {
       state.currentTestData =
@@ -1739,6 +1768,34 @@ function populateSelect(id, options, labelFn) {
  * @param {string[]} options
  * @param {{ selectId?: string, previous?: string }} [cfg]
  */
+let dimensionLabels = null;
+
+async function loadDimensionLabels() {
+  try {
+    const response = await fetch('data/dimension-labels.json');
+    if (!response.ok) return;
+    dimensionLabels = await response.json();
+  } catch (e) {
+    console.warn('Could not load dimension labels:', e);
+  }
+}
+
+function populateStandardSelect() {
+  const sel = document.getElementById('standard-select');
+  if (!sel) return;
+  const options = standardSelectOptions(state.allGroups);
+  const prev = state.currentStandard || 'all';
+  sel.innerHTML = '';
+  for (const id of options) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id === 'all' ? 'All' : id;
+    sel.appendChild(opt);
+  }
+  state.currentStandard = options.includes(prev) ? prev : 'all';
+  sel.value = state.currentStandard;
+}
+
 function populateFixtureSelect(options, cfg = {}) {
   const selectId = cfg.selectId || 'data-select';
   const sel = document.getElementById(selectId);
@@ -1763,8 +1820,27 @@ function populateFixtureSelect(options, cfg = {}) {
     sep.textContent = label;
     sel.appendChild(sep);
   };
+  const addDataSetGroup = (label, items) => {
+    if (!items.length) return;
+    const group = document.createElement('optgroup');
+    group.label = label;
+    items.forEach((o) => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = fixtureOptionLabel(o);
+      group.appendChild(opt);
+    });
+    sel.appendChild(group);
+  };
 
-  natural.forEach(addOpt);
+  const suiteNatural = natural.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
+  const columnarNatural = natural.filter((o) => COLUMNAR_TYPE_IDS.includes(baseTypeId(o)));
+  const otherNatural = natural.filter(
+    (o) => !suiteNatural.includes(o) && !columnarNatural.includes(o),
+  );
+  addDataSetGroup('Suite', suiteNatural);
+  addDataSetGroup('Columnar', columnarNatural);
+  otherNatural.forEach(addOpt);
   if (batchCompound.length) {
     addSep('── compounded batch ──');
     batchCompound.forEach(addOpt);
@@ -1858,6 +1934,8 @@ function averageGroupsForSerializer(serializer, entries, meta) {
     }
   }
   if (version) row.serializer_version = version;
+  if (entries[0]?.standard) row.standard = entries[0].standard;
+  if (entries[0]?.data_set) row.data_set = entries[0].data_set;
 
   const streamModes = [
     ...new Set(
@@ -2089,12 +2167,17 @@ function fixtureOptionLabel(key) {
   return key;
 }
 
+function groupsMatchingStandard(groups) {
+  return (groups || []).filter((g) => matchesStandard(g, state.currentStandard));
+}
+
 function resolveFixtureGroups() {
   const sel = parseFixtureSelection(state.currentTestData);
   const mode = state.currentMode;
+  const allGroups = groupsMatchingStandard(state.allGroups);
   if (sel.kind === 'batch_compound') {
     return buildCompoundedFixtureGroups(
-      state.allGroups,
+      allGroups,
       sel.base,
       sel.nA,
       sel.nB,
@@ -2102,12 +2185,12 @@ function resolveFixtureGroups() {
     );
   }
   if (sel.kind === 'all_n') {
-    return buildAllTypesAtNGroups(state.allGroups, sel.n, mode);
+    return buildAllTypesAtNGroups(allGroups, sel.n, mode);
   }
   if (sel.kind === 'all_all') {
-    return buildAllAllGroups(state.allGroups, mode);
+    return buildAllAllGroups(allGroups, mode);
   }
-  return state.allGroups.filter(
+  return allGroups.filter(
     (g) =>
       g.test_data === state.currentTestData &&
       normalizeMode(g.mode) === normalizeMode(mode)
@@ -2563,7 +2646,7 @@ function initCrossLangControls() {
  */
 function filterGroupsForCrossLang(groups) {
   const modeNorm = state.xlMode;
-  const modeGroups = (groups || []).filter(
+  const modeGroups = groupsMatchingStandard(groups || []).filter(
     (g) => normalizeMode(g.mode) === modeNorm
   );
   // Normalize mode field so builders can match with exact equality
@@ -3262,6 +3345,9 @@ function renderTable() {
     const displayName = serializerLabelFromGroup(r);
     const lang = r.language || state.currentLanguage || '';
     let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
+    if (r.standard) {
+      nameHtml += ` <span class="badge badge-slate">${escapeHtml(r.standard)}</span>`;
+    }
     if (isBaseline) {
       nameHtml += ' <span class="badge badge-cyan">Baseline</span>';
     }

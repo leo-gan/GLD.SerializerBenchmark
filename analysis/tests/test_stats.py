@@ -463,6 +463,8 @@ def test_multi_policy_all_four_and_export_payload():
     assert "variants" in sample
     assert set(sample["variants"]) == set(FILTER_POLICY_IDS)
     assert "serializer" in sample and "avg_ops_per_sec" not in sample
+    assert sample["standard"] == "json"
+    assert sample["data_set"] == "suite"
     assert "avg_ops_per_sec" in sample["variants"][DEFAULT_FILTER_POLICY]
     # D: catalog text not repeated per group
     fb = sample["variants"][DEFAULT_FILTER_POLICY].get("filter") or {}
