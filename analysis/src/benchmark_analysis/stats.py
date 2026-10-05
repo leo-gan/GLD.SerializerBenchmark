@@ -1344,6 +1344,10 @@ def build_stats_export_payload(
 
         slim_groups.append({**identity, "variants": variants})
 
+    from benchmark_analysis.fold_io import fold_io_groups
+
+    slim_groups = fold_io_groups(slim_groups)
+
     missing = [
         f"{g.get('language')}/{g.get('serializer')}"
         for g in slim_groups

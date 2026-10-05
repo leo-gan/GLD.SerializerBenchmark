@@ -42,15 +42,16 @@ function rowCounts(groups) {
 }
 
 /** Five-type group counts from the snapshots before the columnar append. */
+// One parent row per serializer after I/O fold (bytes+stream are no longer two groups).
 const ROW_COUNTS = {
-  python: { message: 72, document: 72, telemetry: 72, strings: 72, event: 72 },
-  cpp: { message: 116, document: 116, telemetry: 116, strings: 116, event: 116 },
-  csharp: { message: 188, document: 184, telemetry: 184, strings: 184, event: 188 },
-  go: { message: 88, document: 88, telemetry: 88, strings: 88, event: 88 },
-  java: { message: 84, document: 84, telemetry: 84, strings: 84, event: 84 },
-  rust: { message: 69, document: 69, telemetry: 69, strings: 71, event: 69 },
+  python: { message: 36, document: 36, telemetry: 36, strings: 36, event: 36 },
+  cpp: { message: 58, document: 58, telemetry: 58, strings: 58, event: 58 },
+  csharp: { message: 94, document: 92, telemetry: 92, strings: 92, event: 94 },
+  go: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
+  java: { message: 42, document: 42, telemetry: 42, strings: 42, event: 42 },
+  rust: { message: 35, document: 35, telemetry: 35, strings: 36, event: 35 },
   javascript: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
-  kotlin: { message: 104, document: 104, telemetry: 104, strings: 104, event: 104 },
+  kotlin: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
 };
 
 const RUN_IDS = {
@@ -168,13 +169,12 @@ test('spliced snapshots keep the five-type matrix and add columnar groups', () =
   }
 });
 
-test('C# columnar snapshot keeps string and Stream', () => {
+test('C# columnar snapshot is one published parent per cell', () => {
   const stats = loadJsonGz('stats_csharp_latest.json.gz');
   const modes = new Set(
     stats.groups.filter((g) => g.serializer === 'arrow-ipc').map((g) => g.mode),
   );
-  assert.ok(modes.has('string'), `modes ${[...modes].join(',')}`);
-  assert.ok([...modes].some((mode) => String(mode).toLowerCase() === 'stream'));
+  assert.deepEqual([...modes], ['published']);
 });
 
 test('columnar standards render a version column of empty cells', () => {
