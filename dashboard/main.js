@@ -193,6 +193,8 @@ const METRIC_PRESETS = {
 /** Open metric accordion groups (name -> bool). */
 const metricAccordionOpen = {};
 
+const expandedParents = new Set();
+
 let state = {
   currentLanguage: 'csharp',
   currentTestData: '',
@@ -1497,6 +1499,20 @@ function expandVariantGroups(slimGroups, catalog) {
         test_data: fixtureKey({ ...identity, ...metrics }),
       };
       applyDimensionLabels(row, dimensionLabels);
+      row.io_parent = g.io_parent || '';
+      row.optional = (Array.isArray(g.optional) ? g.optional : []).map((child) => {
+        const childMetrics = (child.variants && child.variants[pid]) || {};
+        return {
+          level: child.level,
+          mode: child.mode,
+          StreamMode: child.StreamMode,
+          serializer: g.serializer,
+          language: identity.language,
+          test_data: row.test_data,
+          io_child: true,
+          ...childMetrics,
+        };
+      });
       if (!byPolicy[pid]) byPolicy[pid] = [];
       byPolicy[pid].push(row);
     }
@@ -1990,7 +2006,6 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
   const want = new Set([nA, nB]);
   const matched = (allGroups || []).filter((g) => {
     if (baseTypeId(g.test_data) !== base) return false;
-    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     const n = instanceCount(g);
     return n != null && want.has(n);
   });
@@ -2048,7 +2063,6 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
 function buildAllTypesAtNGroups(allGroups, n, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     return instanceCount(g) === n;
   });
 
@@ -2105,7 +2119,7 @@ function buildAllTypesAtNGroups(allGroups, n, mode) {
 function buildAllAllGroups(allGroups, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    return normalizeMode(g.mode) === normalizeMode(mode);
+    return true;
   });
 
   const bySer = new Map();
@@ -2190,11 +2204,7 @@ function resolveFixtureGroups() {
   if (sel.kind === 'all_all') {
     return buildAllAllGroups(allGroups, mode);
   }
-  return allGroups.filter(
-    (g) =>
-      g.test_data === state.currentTestData &&
-      normalizeMode(g.mode) === normalizeMode(mode)
-  );
+  return allGroups.filter((g) => g.test_data === state.currentTestData);
 }
 
 function filterAndRefresh() {
@@ -2645,10 +2655,8 @@ function initCrossLangControls() {
  * (supports natural, batch compound, all@1/all@100, all@all).
  */
 function filterGroupsForCrossLang(groups) {
-  const modeNorm = state.xlMode;
-  const modeGroups = groupsMatchingStandard(groups || []).filter(
-    (g) => normalizeMode(g.mode) === modeNorm
-  );
+  const modeNorm = 'published';
+  const modeGroups = groupsMatchingStandard(groups || []);
   // Normalize mode field so builders can match with exact equality
   const normalized = modeGroups.map((g) => ({ ...g, mode: modeNorm }));
 
@@ -3296,7 +3304,7 @@ function renderTable() {
   const help = document.getElementById('detailed-analytics-help');
   if (help) {
     const scope = parseFixtureSelection(state.currentTestData);
-    let scopeNote = ' Full roster for the current language, data type, and mode.';
+    let scopeNote = ' Full roster for the current language, data type, and standard.';
     if (scope.kind === 'batch_compound') {
       scopeNote =
         ` <strong>Compounded batch</strong>: mean of <code>${escapeHtml(scope.base)}@n=${scope.nA}</code> and <code>${escapeHtml(scope.base)}@n=${scope.nB}</code>.`;
@@ -3348,10 +3356,29 @@ function renderTable() {
     if (r.standard) {
       nameHtml += ` <span class="badge badge-slate">${escapeHtml(r.standard)}</span>`;
     }
+    if (r.io_parent === 'average') {
+      nameHtml += ' <span class="badge badge-slate">avg</span>';
+    }
     if (isBaseline) {
       nameHtml += ' <span class="badge badge-cyan">Baseline</span>';
     }
     tdName.innerHTML = nameHtml;
+    const children = Array.isArray(r.optional) ? r.optional : [];
+    const expandKey = `${lang}|${r.serializer}|${r.test_data}`;
+    if (children.length) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tab-btn chart-tool-btn';
+      btn.textContent = expandedParents.has(expandKey) ? 'Hide' : 'I/O';
+      btn.title = 'Show the I/O levels under this average or raw-byte parent';
+      btn.addEventListener('click', () => {
+        if (expandedParents.has(expandKey)) expandedParents.delete(expandKey);
+        else expandedParents.add(expandKey);
+        renderTable();
+      });
+      tdName.appendChild(document.createTextNode(' '));
+      tdName.appendChild(btn);
+    }
     tdName.title = r.serializer_version
       ? `${r.serializer} @ ${r.serializer_version}`
       : r.serializer;
@@ -3387,8 +3414,43 @@ function renderTable() {
     });
 
     tbody.appendChild(tr);
+    if (children.length && expandedParents.has(expandKey)) {
+      children.forEach((child) => tbody.appendChild(renderChildRow(child, metricKeys, scales, baselineGroup)));
+    }
   });
   updateSortIndicators();
+}
+
+function renderChildRow(child, metricKeys, scales, baselineGroup) {
+  const tr = document.createElement('tr');
+  tr.className = 'roster-child-row';
+  const tdName = document.createElement('td');
+  tdName.className = 'str';
+  const level = child.level || child.mode || 'level';
+  const honesty = child.StreamMode ? ` (${child.StreamMode})` : '';
+  tdName.textContent = `${level}${honesty}`;
+  tr.appendChild(tdName);
+  const tdHonesty = document.createElement('td');
+  tdHonesty.className = 'str roster-col-honesty';
+  tr.appendChild(tdHonesty);
+  metricKeys.forEach(({ key, higherIsBetter }) => {
+    const td = document.createElement('td');
+    if (key.startsWith('ops_')) td.classList.add('roster-col-ops');
+    if (key.startsWith('total_')) td.classList.add('roster-col-latency');
+    const enriched = withOpsDerivedStats(child);
+    const v = enriched[key];
+    if (v === null || v === undefined) {
+      td.textContent = '—';
+      td.classList.add('num', 'sm-missing');
+      tr.appendChild(td);
+      return;
+    }
+    const cell = formatRosterRelativeCell(enriched, key, higherIsBetter, scales, baselineGroup, false);
+    td.textContent = cell.text;
+    td.className = (td.className + ' ' + cell.className).trim();
+    tr.appendChild(td);
+  });
+  return tr;
 }
 
 function renderCompareMatrix() {

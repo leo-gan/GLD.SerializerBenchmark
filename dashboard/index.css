@@ -1164,7 +1164,13 @@ select:focus {
 }
 
 /* Pareto highlight instead of Frontier column */
+#analytics-table tbody tr.roster-child-row td.str {
+  padding-left: 1.6rem;
+  color: var(--text-muted);
+}
+
 #analytics-table tbody tr.roster-pareto-row td {
+
   background: rgba(26, 115, 232, 0.06);
 }
 #analytics-table tbody tr.roster-pareto-row td.str strong {
