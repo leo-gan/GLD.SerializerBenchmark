@@ -210,18 +210,29 @@ nav:
   - Experiments: experiments/index.md
   - Compliance:
       - Overview: compliance/index.md
-      - JSON: compliance/json.md
-      - YAML: compliance/yaml.md
-      - TOML: compliance/toml.md
-      - CBOR: compliance/cbor.md
-      - MessagePack: compliance/msgpack.md
-      - Protocol Buffers: compliance/protobuf.md
-      - Avro: compliance/avro.md
-      - BSON: compliance/bson.md
-      - FlatBuffers: compliance/flatbuffers.md
       - Amazon Ion: compliance/ion.md
-      - UBJSON: compliance/ubjson.md
+      - Arrow IPC: compliance/arrow.md
+      - Avro: compliance/avro.md
+      - Bebop: compliance/bebop.md
+      - Bond: compliance/bond.md
+      - BSON: compliance/bson.md
+      - Cap'n Proto: compliance/capnp.md
+      - CBOR: compliance/cbor.md
+      - FlatBuffers: compliance/flatbuffers.md
+      - HOCON: compliance/hocon.md
+      - JSON: compliance/json.md
+      - MessagePack: compliance/msgpack.md
+      - ORC: compliance/orc.md
+      - Parquet: compliance/parquet.md
+      - Property List: compliance/plist.md
+      - Protocol Buffers: compliance/protobuf.md
+      - SBE: compliance/sbe.md
       - Smile: compliance/smile.md
+      - Thrift: compliance/thrift.md
+      - TOML: compliance/toml.md
+      - UBJSON: compliance/ubjson.md
+      - YAML: compliance/yaml.md
+      - ZON: compliance/zon.md
       - Reading failures: compliance/reading-results.md
       - Language adapters: compliance/adapters.md
       - Legal provenance: compliance/legal.md
