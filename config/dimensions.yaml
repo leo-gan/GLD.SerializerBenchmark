@@ -1,0 +1,83 @@
+# Dimension contract for the benchmark.
+# Labels on rows the suite already produces. Not an extra timed loop.
+# Standard ids live in compliance/serializer-standards.json.
+# Data set membership lives on each type in schemas/data_catalog_v2.yaml.
+schema: gld.serializer-benchmark.dimensions/1
+
+standards:
+  catalog: compliance/serializer-standards.json
+  # Empty compliance list. Those codecs stay on the leaderboard and stay unscored.
+  empty_value: custom
+  # More than one compliance id: one timed row, this primary id.
+  primary:
+    csharp:
+      "MS Bond Json": json
+
+data_sets:
+  ids: [suite, columnar]
+
+# Optional I/O. The publication default stays one in-memory level.
+# A second level is stored only for opt_in, and only when honesty is
+# native or text_on_stream. adapted is never a second level.
+# java, kotlin, swift, and rust stay in-memory until their runners
+# measure a real second API (interleaved schedule, thin copy, native at N>1).
+optional_io:
+  threshold_percent: 10
+  instance_count: 100
+  filter_policy: iqr_1.5
+  honesty: [native, text_on_stream]
+  excluded_languages: [java, kotlin, swift, rust]
+  # Same payload (size ratio within same_size_ratio of 1): the parent value
+  # is the arithmetic mean of the two levels' medians. Rankings use that mean.
+  # The table toggles into the two levels.
+  same_size_ratio: 0.02
+  parent_when_same_size: average
+  # Size ratio about 3/4 (C# Base64 string vs raw bytes): the parent is the
+  # raw-byte level. The string level is the child. Do not average them.
+  base64_size_ratio: 0.75
+  base64_size_tolerance: 0.05
+  parent_when_base64: raw_bytes
+  standard_filter_default: all
+  # First opt-in from published stats_*_latest iqr_1.5, suite types, N=100.
+  # Inverse-variance pool of fixture log median-ratios. SE of each median
+  # from its IQR. |pool| > 10% and the 95% CI excludes 0.
+  # level: stream = second API, same size. level: string = Base64 child.
+  opt_in:
+    - {language: c, serializer: ion-c, level: stream, stream_mode: native}
+    - {language: c, serializer: yyjson, level: stream, stream_mode: native}
+    - {language: cpp, serializer: arduinojson, level: stream, stream_mode: native}
+    - {language: cpp, serializer: cereal, level: stream, stream_mode: native}
+    - {language: cpp, serializer: rapidjson, level: stream, stream_mode: native}
+    - {language: csharp, serializer: BinaryPack, level: string, stream_mode: native}
+    - {language: csharp, serializer: FlatSharp, level: string, stream_mode: native}
+    - {language: csharp, serializer: Google.Protobuf, level: string, stream_mode: native}
+    - {language: csharp, serializer: GroBuf, level: string, stream_mode: native}
+    - {language: csharp, serializer: Hyperion, level: string, stream_mode: native}
+    - {language: csharp, serializer: LightProto, level: string, stream_mode: native}
+    - {language: csharp, serializer: "MS Binary", level: string, stream_mode: native}
+    - {language: csharp, serializer: "MS Bond Compact", level: string, stream_mode: native}
+    - {language: csharp, serializer: "MS Bond Fast", level: string, stream_mode: native}
+    - {language: csharp, serializer: "MS DataContract", level: string, stream_mode: text_on_stream}
+    - {language: csharp, serializer: MemoryPack, level: string, stream_mode: native}
+    - {language: csharp, serializer: MessagePack-CSharp, level: string, stream_mode: native}
+    - {language: csharp, serializer: Migrant, level: string, stream_mode: native}
+    - {language: csharp, serializer: Nerdbank.MessagePack, level: string, stream_mode: native}
+    - {language: csharp, serializer: NetSerializer, level: string, stream_mode: native}
+    - {language: csharp, serializer: ProtoBuf, level: string, stream_mode: native}
+    - {language: csharp, serializer: ShapeShift.Json, level: stream, stream_mode: native}
+    - {language: csharp, serializer: ShapeShift.MsgPack, level: string, stream_mode: native}
+    - {language: csharp, serializer: ZeroFormatter, level: string, stream_mode: native}
+    - {language: go, serializer: encoding/json, level: stream, stream_mode: native}
+    - {language: go, serializer: fxamacker/cbor, level: stream, stream_mode: native}
+    - {language: go, serializer: goccy/go-json, level: stream, stream_mode: native}
+    - {language: go, serializer: hamba/avro, level: stream, stream_mode: native}
+    - {language: go, serializer: jsoniter, level: stream, stream_mode: native}
+    - {language: go, serializer: kelindar/binary, level: stream, stream_mode: native}
+    - {language: go, serializer: segmentio/encoding/json, level: stream, stream_mode: native}
+    - {language: go, serializer: shamaton/msgpack, level: stream, stream_mode: native}
+    - {language: go, serializer: "shamaton/msgpack (array)", level: stream, stream_mode: native}
+    - {language: go, serializer: sonic, level: stream, stream_mode: native}
+    - {language: go, serializer: ugorji/cbor, level: stream, stream_mode: native}
+    - {language: go, serializer: ugorji/json, level: stream, stream_mode: native}
+    - {language: go, serializer: ugorji/msgpack, level: stream, stream_mode: native}
+    - {language: go, serializer: vmihailenco/msgpack, level: stream, stream_mode: native}

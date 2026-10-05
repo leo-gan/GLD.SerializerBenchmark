@@ -133,6 +133,24 @@ If stream and bytes (or string) times are almost the same, check the language **
 
 ---
 
+## Dimension contract
+
+Standard and Data Set are labels on rows the suite already measures. The machine-readable contract is [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it does not already support.
+
+| Dimension | Where it comes from | Values |
+|-----------|---------------------|--------|
+| **Standard** | [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) | `json`, `avro`, `parquet`, … |
+| **Data Set** | `data_set` on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) | `suite` (message, document, telemetry, strings, event) and `columnar` (table, table_project, nested_table, signal) |
+| **Data Type** | the type id, child of its Data Set | `message`, `table`, … |
+
+An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.
+
+**Optional I/O.** The publication matrix times the in-memory API. A second level is kept only for the opt-in list in the contract: native or text-on-stream, batch N=100, absolute pooled median gap over 10%, and the 95% CI excludes 0. Adapted stream is not a second level. Java, Kotlin, Swift, and Rust stay on the in-memory row until their runners measure a real second API.
+
+When both stored levels have the same payload size, the parent row is the arithmetic mean of the two medians, and the table opens into the two levels. Rankings use that mean. When the string path is Base64 of the raw bytes (size ratio about 3/4), the parent is the raw-byte measurement and the string path is the child. Those two payloads are not averaged.
+
+---
+
 ## Part 2 — Run modes (how heavy the experiment is) {#part-2-run-modes-how-heavy-the-experiment-is}
 
 ### Why several run modes?
