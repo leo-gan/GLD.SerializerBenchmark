@@ -18,7 +18,7 @@ By the end of this page you should be able to:
 
 1. Name the families and one real example of each registered family.
 2. Decide which family fits a simple product question (public API, schema contract, same-process cache, columnar scan, …).
-3. State the comparison rule: **same language + same family + same data type** before crowning a winner.
+3. State the comparison rule: **same language + same standard + same data set + same data type** before crowning a winner. The families on this page are orientation. The benchmark dimension is the compliance standard id.
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable. Columnar numbers on `table` are a different question from JSON numbers on `message`.
 
@@ -150,7 +150,7 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
 
 ## Reading results fairly
 
-- Default comparison: **same language + same family + same data type + same mode**.
+- Default comparison: **same language + same standard + same data set + same data type**. Rank the parent row. Families on this page are coarser than the standard id (`yaml` is its own standard).
 - Schema-driven formats often lead on size and throughput *within a language*—that is not a universal ranking.
 - **C** uses real library APIs when dependencies are built (`fetch-and-build-deps.sh`); read the [C Overview](../c/index.md) for visitor domain shape, `protobuf-wire` (in-tree, not Google upb), and payload-wrapped rows (`ubj`, flatcc, avro-c).
 - Metrics live on the [Dashboard](../dashboard/), not on this page.

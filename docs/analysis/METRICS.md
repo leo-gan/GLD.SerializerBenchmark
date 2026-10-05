@@ -57,11 +57,13 @@ These fields are written by each language benchmark runner. Column order (v1.2+)
 
 ## Analysis group metrics (after cleaning)
 
-After warmup drop and optional outlier filter, analysis groups rows by:
+After warmup drop and optional outlier filter, analysis publishes one parent group:
 
 ```text
-(Language, SerializerName, TestDataName, StringOrStream)
+(Language, SerializerName, Standard, DataSet, TestDataName, DataTypeInstanceCount)
 ```
+
+`StringOrStream` stays on the raw CSV row. It is not part of the published group. When a serializer has an optional I/O level, that level hangs off the parent as `optional[]`. The parent number is the arithmetic mean of the two levels when they have the same payload size. A C# Base64 pair keeps the raw-byte level as the parent.
 
 ### Speed
 
