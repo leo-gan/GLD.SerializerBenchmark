@@ -12,7 +12,7 @@ Codecs that “win” microbenchmarks by allocating per field can lose the relia
 
 ## Short answer
 
-Treat **allocation and copy behavior** as first-class when choosing among implementations in a family. See [implementation variance](implementation-variance.md). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point. Validate under concurrency with **your** runtime GC settings and payload shape. See 201 [encode/decode cost](../201/encode-decode-cost.md). Format brand does not determine GC pressure. Implementation and shape do.
+Treat **allocation and copy behavior** as first-class when choosing among implementations of one standard. See [implementation variance](implementation-variance.md). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point. Validate under concurrency with **your** runtime GC settings and payload shape. See 201 [encode/decode cost](../201/encode-decode-cost.md). Format brand does not determine GC pressure. Implementation and shape do.
 
 In other words: a library that is slightly slower on the mean but allocates far less can win the production latency budget.
 
@@ -87,12 +87,12 @@ Many published tables emphasize central tendency. **You** still owe a concurrent
 
 ## Experiments
 
-**Question:** Under production-shaped load, is encode/decode **allocation pressure** (not mean time alone) driving p99 risk for candidate libraries in the same family?
+**Question:** Under production-shaped load, is encode/decode **allocation pressure** (beyond mean time alone) driving p99 risk for candidate libraries on the same standard?
 
 ### Setup
 
-1. Fix **one language**, **one paradigm family**, and **one fixture** close to production shape. One example is a deep graph versus dense `Telemetry`. See [using this suite](using-this-suite.md).
-2. Shortlist two or three implementations from the language **Dashboard** slice. Stay in the same family. Note versions.
+1. Fix **one language**, **one standard**, and **one data type** close to production shape. One example is a deep graph versus dense `Telemetry`. See [using this suite](using-this-suite.md).
+2. Shortlist two or three implementations from the language **Dashboard** slice. Stay on that standard. Note versions.
 3. Confirm the benchmark runner reports useful signals. Or attach wall times yourself. Optionally attach `MemoryPeakBytes` or tracemalloc (Python). Also attach a **process profiler** for allocation rate and GC pauses outside pure means.
 4. Configure a load path that reuses your service concurrency model. Include workers and pool sizes. Do not rely only on single-threaded suite loops.
 

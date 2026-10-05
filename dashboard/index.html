@@ -10,7 +10,7 @@
   <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="dash-view-overview">
 
   <header class="site-header">
     <div class="header-bar">
@@ -54,10 +54,8 @@
         </li>
       </ul>
       <ul class="nav-links section-nav" aria-label="Dashboard sections">
-        <li class="active"><a href="#dashboard" id="nav-dash-link">Overview</a></li>
-        <li><a href="#detailed-analytics" id="nav-table-link">Details</a></li>
+        <li class="active"><a href="#overview" id="nav-dash-link">Overview</a></li>
         <li><a href="#compare" id="nav-compare-link">Compare</a></li>
-        <li><a href="#history-custom" id="nav-history-link">History</a></li>
         <li><a href="#experiments" id="nav-experiments-link">Experiments</a></li>
         <li><a href="#compliance" id="nav-compliance-link">Compliance</a></li>
       </ul>
@@ -101,15 +99,10 @@
           </select>
         </div>
 
-        <span class="filter-label filter-label-primary" title="Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal.">Data set:</span>
-        <div class="select-wrapper">
-          <select id="dataset-select" aria-label="Select data set">
-            <option value="suite">Suite</option>
-            <option value="columnar">Columnar</option>
-          </select>
-        </div>
+        <span class="filter-label filter-label-primary" id="dataset-label">Data set:</span>
+        <span id="dataset-value" class="dataset-value" role="status" aria-live="polite" aria-labelledby="dataset-label" title="Follows the selected standard. Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal.">Suite</span>
 
-        <span class="filter-label filter-label-primary" title="Data types in the selected data set">Data type:</span>
+        <span class="filter-label filter-label-primary" title="Data types measured for the selected standard">Data type:</span>
         <div class="select-wrapper">
           <select id="data-select" aria-label="Select data type">
             <!-- Dynamically populated -->
@@ -147,6 +140,11 @@
          href="../analysis/CLAIMS_AND_REPLICATION/">L1</a>
       <span class="run-meta-sep" aria-hidden="true">·</span>
       <span id="run-meta-text" class="run-meta-text"></span>
+      <button type="button" id="run-picker-toggle" class="run-config-toggle"
+              aria-expanded="false" aria-controls="history-custom"
+              title="Choose a logged run or upload stats">
+        Choose run
+      </button>
       <button type="button" id="run-config-toggle" class="run-config-toggle"
               aria-expanded="false" aria-controls="run-config-panel">
         Run configuration
@@ -393,6 +391,7 @@
     <section class="glass-panel" id="history-custom">
       <div class="chart-header">
         <h2 class="chart-title">History &amp; Custom Runs</h2>
+        <button type="button" id="run-picker-close" class="tab-btn chart-tool-btn">Close</button>
       </div>
       <p class="section-help">Load a past run from local logs (dev server) or upload a stats JSON file (works on GitHub Pages too).</p>
 

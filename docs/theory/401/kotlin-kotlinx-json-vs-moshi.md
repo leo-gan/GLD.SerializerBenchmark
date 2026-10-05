@@ -10,7 +10,7 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=kotlin&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=kotlin&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [Kotlin overview](../../kotlin/)
 

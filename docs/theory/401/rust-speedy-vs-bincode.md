@@ -10,7 +10,7 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data (`speedy:0.8.7`, `bincode:2.0.1`). They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=rust&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=bincode#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=bincode#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [Rust overview](../../rust/)
 

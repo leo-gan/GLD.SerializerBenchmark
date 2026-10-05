@@ -86,6 +86,11 @@ export function updateCharts(groups, paretoNames, metric) {
   }
 }
 
+export function resizeCharts() {
+  scatterChartInstance?.resize();
+  barChartInstance?.resize();
+}
+
 export function exportScatterPng() {
   if (!scatterChartInstance) return null;
   return scatterChartInstance.toBase64Image('image/png', 1);

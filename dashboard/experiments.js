@@ -210,6 +210,9 @@ async function loadPayload(id, payloadPath) {
 
 function setExperimentsView(on) {
   document.body.classList.toggle('dash-view-experiments', on);
+  if (on) {
+    document.body.classList.remove('dash-view-overview', 'dash-view-compare', 'dash-view-compliance');
+  }
   const expLink = document.getElementById('nav-experiments-link');
   if (expLink) expLink.parentElement?.classList.toggle('active', on);
   if (on) {

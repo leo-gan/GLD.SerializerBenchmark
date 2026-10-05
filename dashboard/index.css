@@ -278,6 +278,34 @@ body {
   }
 }
 
+/* One tab is one view. The filter bar stays on Overview and Compare. */
+#compare,
+#history-custom {
+  display: none;
+}
+
+body.dash-view-compare #compare {
+  display: block;
+}
+
+body.dash-view-overview.dash-run-open #history-custom {
+  display: block;
+}
+
+body.dash-view-compare .summary-grid,
+body.dash-view-compare .charts-grid,
+body.dash-view-compare #detailed-analytics,
+body.dash-view-compare #orientation-banner,
+body.dash-view-compare #run-meta,
+body.dash-view-compare .toolbar > .tabs {
+  display: none !important;
+}
+
+/* Language is the shared filter. Compare does not repeat it. */
+#compare-same-panel .same-lang-wrap {
+  display: none;
+}
+
 /* Main Container Layout (High Density) */
 .container {
   max-width: 1440px;
@@ -397,6 +425,23 @@ body {
   font-weight: 500;
   border-color: #c5cae9;
   background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
+}
+
+/* Data set follows the standard. Same box as a primary select, no chevron. */
+.filter-group-primary .dataset-value {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+  border: 1px solid #c5cae9;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
+  padding: 0.3rem 0.6rem;
+  cursor: default;
+  user-select: none;
 }
 
 .filter-group-secondary {

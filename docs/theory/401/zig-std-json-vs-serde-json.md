@@ -6,7 +6,7 @@ Zig’s interesting property in this suite is **comptime reflection**. `std.json
 
 This page opens the two timed JSON wrappers on the suite **document** fixture (one shop order). After you have a published Zig Dashboard slice, quote those numbers here. Until then, treat the table as a **call-site map**, not a ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=zig&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=std.json&ser=std.json&ser=serde.json#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=zig&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=std.json&ser=std.json&ser=serde.json#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [Zig overview](../../zig/)
 

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  dashboardRunPanelOpen,
+  dashboardViewFromHash,
   formatComplianceHash,
   formatExperimentsHash,
   parseComplianceHash,
@@ -77,4 +79,18 @@ test('experiments hash: list, detail, and language', () => {
     '#experiments/01-json-library-bakeoff/python',
   );
   assert.equal(parseExperimentsHash('#dashboard').view, 'suite');
+});
+
+test('dashboard view hash maps the four tabs', () => {
+  assert.equal(dashboardViewFromHash(''), 'overview');
+  assert.equal(dashboardViewFromHash('#overview'), 'overview');
+  assert.equal(dashboardViewFromHash('#dashboard'), 'overview');
+  assert.equal(dashboardViewFromHash('#detailed-analytics'), 'overview');
+  assert.equal(dashboardViewFromHash('#history-custom'), 'overview');
+  assert.equal(dashboardRunPanelOpen('#history-custom'), true);
+  assert.equal(dashboardRunPanelOpen('#overview'), false);
+  assert.equal(dashboardViewFromHash('#compare'), 'compare');
+  assert.equal(dashboardViewFromHash('#experiments'), 'experiments');
+  assert.equal(dashboardViewFromHash('#experiments/01-json-library-bakeoff/python'), 'experiments');
+  assert.equal(dashboardViewFromHash('#compliance/python/orjson/json'), 'compliance');
 });

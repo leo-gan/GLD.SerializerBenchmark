@@ -10,7 +10,10 @@
  * Experiments already had #experiments/{id}. Language is optional:
  *   #experiments/{id}/{lang}
  *
- * Overview / Details / Compare keep query params (?lang=&data=&mode=&ser=).
+ * Overview and Compare share query params (?lang=&data=&mode=&ser=).
+ * #overview, #dashboard, and #detailed-analytics are the Overview view.
+ * #history-custom opens Overview with the run panel.
+ * #compare is the Compare view.
  */
 
 export function parseComplianceHash(raw) {
@@ -57,6 +60,21 @@ export function formatExperimentsHash({ id = '', lang = '' } = {}) {
   if (!id) return '#experiments';
   if (lang) return `#experiments/${encodeURIComponent(id)}/${encodeURIComponent(lang)}`;
   return `#experiments/${encodeURIComponent(id)}`;
+}
+
+/** Which dashboard tab a hash shows: overview, compare, experiments, or compliance. */
+export function dashboardViewFromHash(raw) {
+  const body = String(raw || '').replace(/^#/, '').split('?')[0];
+  if (body === 'compare' || body.startsWith('compare/')) return 'compare';
+  if (body === 'experiments' || body.startsWith('experiments/')) return 'experiments';
+  if (body === 'compliance' || body.startsWith('compliance/')) return 'compliance';
+  return 'overview';
+}
+
+/** #history-custom is Overview with the run picker open. */
+export function dashboardRunPanelOpen(raw) {
+  const body = String(raw || '').replace(/^#/, '').split('?')[0];
+  return body === 'history-custom';
 }
 
 function safeDecode(value) {

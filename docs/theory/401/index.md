@@ -8,7 +8,7 @@ This course teaches how Protocol Buffers works at the byte level. You will also 
 | **Sibling** | [301 production judgment](../301/index.md) — *whether / which*, not *how bytes* |
 | **Suite** | [Add a serializer](../../analysis/ADDING_A_SERIALIZER.md) · [Dashboard](../../dashboard/) |
 
-**Protocol Buffers** is a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective walks through that wire format first. It then follows the paths taken by Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself. After that, ten language articles compare the libraries that lead on this suite’s document fixture by reading their timed functions, not by repeating the 201 format essays.
+**Protocol Buffers** is one **standard** in this suite, and a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective studies that one standard down to the bytes. The [compliance catalog](../../compliance/) lists the other standards. The wire article comes first, then the paths taken by the Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself. After that, ten language articles compare the libraries that lead on this suite’s document fixture by reading their timed functions, not by repeating the 201 format essays.
 
 The course is for people who want to implement, debug, or deeply integrate codecs. It is not only for people who choose a format from a list of options. You do not need to have written a serializer from scratch already. You do need intermediate reading comfort in at least one of the languages used in this suite. You also need a working memory of schema-dependent binary ideas from Serialization 201.
 
@@ -68,31 +68,33 @@ The table below lists every article in this course. For each article, it states 
 
 These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/). Both call sites in a pair must follow the same [timing contract](../../analysis/TIMING_HONESTY.md).
 
-The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, a Dashboard row that does not time the library named in the row, and the Kotlin pairs that keep JSON or keep a schema format while changing the library.
+The **Standard** column is the contract each side implements. When both sides share a standard, the gap is the library. When the column names two standards, the gap mixes the encoding and the library. **Custom** is the Dashboard bucket for a library with no public spec. A same-standard “Open this slice” link sets that Standard. A link that names two standards opens on **All**, so both columns stay on the chart.
 
-| Article | You should be able to… |
-|---------|------------------------|
-| [Python: msgspec-msgpack vs orjson](python-msgspec-vs-orjson.md) | Show why a positional MessagePack Struct decodes faster than Rust JSON over dictionaries |
-| [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | Hold the library still and isolate JSON tokens from MessagePack type codes |
-| [Python: orjson vs json](python-orjson-vs-json.md) | Show why the same 448-byte JSON can differ by a factor of five |
-| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Show why generated `write_to` plus fixed-width integers is faster than Serde plus variable-length integers |
-| [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | Show compactness as a width choice that can stay on Serde |
-| [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
-| [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
-| [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
-| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is nlohmann `dump` and whose decode is simdjson parse plus a DOM walk |
-| [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
-| [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
-| [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
-| [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
-| [Kotlin: kotlinx-json vs Moshi](kotlin-kotlinx-json-vs-moshi.md) | Show why the same 440-byte JSON can differ between kotlinx.serialization and a generated Moshi adapter |
-| [Kotlin: FlatBuffers vs protobuf](kotlin-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream on the Kotlin harness |
-| [PHP: JSON vs protobuf](php-json-vs-protobuf.md) | Show that PHP’s native JSON engine is faster than official userland protobuf, even though JSON is larger |
-| [Zig: std.json vs serde.json](zig-std-json-vs-serde-json.md) | Show two comptime JSON call sites on the same suite document |
-| [Mojo: EmberJson vs mojo-avro](mojo-emberjson-vs-avro.md) | Show JSON text vs Avro binary on the same suite document |
-| [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |
-| [JavaScript: three Protocol Buffers libraries](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
-| [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream |
+The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, a Dashboard row that times a different library than the row name, and the Kotlin pairs that keep JSON or keep a schema format while changing the library.
+
+| Article | Standard | You should be able to… |
+|---------|----------|------------------------|
+| [Python: msgspec-msgpack vs orjson](python-msgspec-vs-orjson.md) | MessagePack and JSON | Show why a positional MessagePack Struct decodes faster than Rust JSON over dictionaries |
+| [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | JSON and MessagePack | Hold the library still and isolate JSON tokens from MessagePack type codes |
+| [Python: orjson vs json](python-orjson-vs-json.md) | JSON | Show why the same 448-byte JSON can differ by a factor of five |
+| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Custom | Show why generated `write_to` plus fixed-width integers is faster than Serde plus variable-length integers |
+| [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | Custom | Show compactness as a width choice that can stay on Serde |
+| [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Custom | Show that in-place access only helps if the timed path uses it |
+| [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Custom and UBJSON | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
+| [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Custom | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
+| [C++: the simdjson row](cpp-simdjson-wrapper.md) | JSON | Read a Dashboard row whose encode is nlohmann `dump` and whose decode is simdjson parse plus a DOM walk |
+| [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Custom and Bond | Show positional IL stores versus a type-and-identifier prefix on every field |
+| [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Custom and Avro | Show two cached positional plans, and why the Avro schema walk costs a little more |
+| [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Custom and Protocol Buffers | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
+| [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | Custom and Protocol Buffers | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
+| [Kotlin: kotlinx-json vs Moshi](kotlin-kotlinx-json-vs-moshi.md) | JSON | Show why the same 440-byte JSON can differ between kotlinx.serialization and a generated Moshi adapter |
+| [Kotlin: FlatBuffers vs protobuf](kotlin-flatbuffers-vs-protobuf.md) | FlatBuffers and Protocol Buffers | Show why vtable loads can beat a smaller Protocol Buffers stream on the Kotlin harness |
+| [PHP: JSON vs protobuf](php-json-vs-protobuf.md) | JSON and Protocol Buffers | Show that PHP’s native JSON engine is faster than official userland protobuf, even though JSON is larger |
+| [Zig: std.json vs serde.json](zig-std-json-vs-serde-json.md) | JSON | Show two comptime JSON call sites on the same suite document |
+| [Mojo: EmberJson vs mojo-avro](mojo-emberjson-vs-avro.md) | JSON and Avro | Show JSON text vs Avro binary on the same suite document |
+| [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | JSON and Protocol Buffers | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |
+| [JavaScript: three Protocol Buffers libraries](javascript-three-protobufs.md) | Protocol Buffers | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
+| [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | FlatBuffers and Protocol Buffers | Show why vtable loads can beat a smaller Protocol Buffers stream |
 
 **Suggested path.** This order matches the self-check below. The side navigation lists the same pages.
 
@@ -151,7 +153,7 @@ Use the following checklist to test yourself after you finish the modules.
 2. Explain pack/unpack **ownership** in one of Python, Rust, or C. Who allocates? Who frees? What must stay valid during the call?
 3. State when **nanopb** is preferable to **protobuf-c**, and when the reverse is true. See [nanopb compare](protobuf-c-nanopb-compare.md).
 4. Design a three-language encode/decode **matrix test**. Say when bit-identity (`memcmp` of encodings) is required. Say when logical equality is enough. See [cross-language fidelity](protobuf-cross-language-fidelity.md).
-5. Open one language-comparison article. Quote the two timed functions. State whether the speed gap is an **encoding** difference (the bytes on the wire), an **implementation** difference (how the library writes those bytes), or a **runner** difference (work moved into untimed `prepare`).
+5. Open one language-comparison article. Quote the two timed functions. State whether the speed gap is an **encoding** difference (the bytes on the wire), an **implementation** difference (how the library writes those bytes), or a **runner** difference (work moved into untimed `prepare`). When both call sites share a standard, the gap is the library. When the Standard column names two contracts, the encoding is part of the gap.
 
 ## Where to go next
 

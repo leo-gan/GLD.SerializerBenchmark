@@ -14,6 +14,7 @@ By the end of this theory track you should be able to:
 2. Read the history of data formats as answers to real problems, not as a list of product names.
 3. Choose a format for a specific kind of work by using the right lens. One lens is data work. Another lens is services and systems.
 4. Connect the ideas in these pages to measured libraries in this multi-language benchmark suite.
+5. Name the standard a library implements, and tell that name apart from the family it belongs to.
 
 Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/). Language **Overview** pages list the roster and caveats. For how those numbers are produced, see [Benchmarks](../../analysis/index.md).
 
@@ -32,7 +33,7 @@ Why is this necessary? Inside a running program, data is often a web of pointers
 
 ## Three lenses
 
-The same family of formats appears under three perspectives on purpose. Each document answers a different question:
+The same formats appear under three perspectives on purpose. Each document answers a different question:
 
 | Lens | Primary question | Best if you care about… |
 |------|------------------|-------------------------|
@@ -45,7 +46,7 @@ The same family of formats appears under three perspectives on purpose. Each doc
 1. Skim the **shared trade-offs** below. This takes about ten minutes.
 2. Read the **[historical perspective](historical_perspective.md)** once for the big picture.
 3. Deep-dive the lens that matches your work. Choose either **[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**.
-4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use.
+4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use. On the Dashboard, set **Language** and **Standard** before you read a ranking.
 5. When you need *mechanisms* (how formats work under the hood), work through the **[Serialization 201](../201/index.md)** track:
     1. [Memory layout](../201/memory-layout.md)
     2. [Encode/decode cost](../201/encode-decode-cost.md)
@@ -103,6 +104,26 @@ Think of a spreadsheet. A **row-oriented** format stores one complete row after 
 - **Language-native:** Tied to one runtime. Examples include `pickle` and Java serialization. These are convenient inside a tight trust boundary. They are dangerous or unusable across languages. They are also unsafe on untrusted inputs.
 
 A **trust boundary** is any place where data leaves a fully controlled environment and may be influenced by someone else. A public network request is one example.
+
+## Family, standard, and library
+
+The five axes above describe the job. The Dashboard filters by the standard’s name.
+
+A **family** is a way of thinking about the job: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map.
+
+A **standard** is a named contract, such as JSON, Avro, or Arrow IPC. Several libraries can implement one standard. The Dashboard **Standard** control is that name. The [compliance catalog](../../compliance/) is where each name is defined.
+
+A **library** is one implementation of a standard in one language. `orjson` and Python’s `json` module are both the JSON standard. The speed gap between them is the library.
+
+| Pair | Family | Standards |
+|------|--------|-----------|
+| JSON and YAML | Text | JSON and YAML |
+| Protocol Buffers and Avro | Schema-driven | Protocol Buffers and Avro |
+| Arrow IPC, Parquet, and ORC | Columnar | Arrow IPC, Parquet, and ORC |
+
+**SBE** (Simple Binary Encoding) keeps the three labels separate. It sits in the schema-driven family. Its data set is Columnar. Its standard is SBE.
+
+Libraries with no public spec, such as `pickle`, `bincode`, and the in-tree custom binaries, use the Dashboard standard **Custom**. On the Compliance view those same libraries are **\* No public spec**, and that view does not score them.
 
 ---
 

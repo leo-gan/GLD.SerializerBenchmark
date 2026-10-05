@@ -136,7 +136,7 @@ Logical value: `id = 42`, `label = "x"`.
 | Schemaless binary | Python `msgpack` / `cbor2`; JavaScript `msgpackr` / `cbor-x`; Go MessagePack/CBOR libraries; Rust `rmp-serde` / CBOR crates; C mpack/msgpack/cbor variants |
 | Schema-driven | Protocol Buffers bindings where registered; other IDL or schema codecs per language |
 
-Compare **within one language**. Prefer same-family charts when asking whether a library is competitive in its class. Cross-family ranking tables are decision inputs only when the workload genuinely lies on the boundary. See [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/).
+Compare **within one language and one standard**. MessagePack and CBOR are standards. Protocol Buffers is a standard. A family chart is the first cut. A cross-standard ranking is a decision input when the workload sits on the boundary between two contracts. See [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/).
 
 ---
 
