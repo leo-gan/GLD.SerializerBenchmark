@@ -37,11 +37,12 @@ import {
 } from './serializer-sources.js';
 import {
   SUITE_TYPE_IDS,
-  COLUMNAR_TYPE_IDS,
   baseTypeId,
   instanceCount,
   compoundFixtureKey,
+  dataSetForFixture,
   discoverFixtureOptions,
+  fixturesForDataSet,
 } from './fixture-types.js';
 import {
   applyDimensionLabels,
@@ -198,6 +199,7 @@ const expandedParents = new Set();
 
 let state = {
   currentLanguage: 'csharp',
+  currentDataSet: 'suite',
   currentTestData: '',
   currentStandard: 'all',
   currentMode: '',
@@ -283,8 +285,27 @@ function syncLanguageSelects() {
   });
 }
 
+function syncDatasetSelect() {
+  const el = document.getElementById('dataset-select');
+  if (el && [...el.options].some((o) => o.value === state.currentDataSet)) {
+    el.value = state.currentDataSet;
+  }
+}
+
+function refreshCrossLangForSharedFilters() {
+  if (!state.crossLangLoaded) return;
+  state.xlTestData = state.currentTestData;
+  if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
+  else pruneCrossLangSelection();
+  refreshCrossLangAddSerializerOptions();
+  renderCrossLangSelection();
+  updateXlBaselineSelect();
+  renderCompareMatrix();
+  updateCompareStatusLine();
+}
+
 function syncFixtureModeSelects() {
-  ['data-select', 'same-data-select'].forEach((id) => {
+  ['data-select'].forEach((id) => {
     const el = document.getElementById(id);
     if (el && [...el.options].some((o) => o.value === state.currentTestData)) {
       el.value = state.currentTestData;
@@ -359,6 +380,7 @@ function loadSettings() {
 function saveSettings() {
   const payload = {
     currentLanguage: state.currentLanguage,
+    currentDataSet: state.currentDataSet,
     currentTestData: state.currentTestData,
     currentStandard: state.currentStandard,
     currentMode: state.currentMode,
@@ -393,7 +415,13 @@ function applySavedSettings(saved) {
   if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
     state.currentLanguage = saved.currentLanguage;
   }
+  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar')) {
+    state.currentDataSet = saved.currentDataSet;
+  }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
+  if (!saved.currentDataSet && state.currentTestData) {
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+  }
   if (typeof saved.currentStandard === 'string' && saved.currentStandard) {
     state.currentStandard = saved.currentStandard;
   }
@@ -454,7 +482,13 @@ function applySavedSettings(saved) {
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
+  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar')) {
+    state.currentDataSet = p.get('dataset');
+  }
   if (p.has('data')) state.currentTestData = p.get('data');
+  if (!p.has('dataset') && state.currentTestData) {
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+  }
   if (p.has('standard')) state.currentStandard = p.get('standard') || 'all';
   if (p.has('mode')) state.currentMode = normalizeMode(p.get('mode')) || p.get('mode');
   if (p.get('metric') === 'ops' || p.get('metric') === 'time') state.displayMetric = p.get('metric');
@@ -475,6 +509,7 @@ function syncUrlFromState() {
   try {
     const p = new URLSearchParams();
     p.set('lang', state.currentLanguage);
+    if (state.currentDataSet) p.set('dataset', state.currentDataSet);
     if (state.currentTestData) p.set('data', state.currentTestData);
     if (state.currentStandard && state.currentStandard !== 'all') {
       p.set('standard', state.currentStandard);
@@ -643,17 +678,36 @@ function setupEventListeners() {
 
   const onDataChange = (e) => {
     state.currentTestData = e.target.value;
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+    syncDatasetSelect();
     syncFixtureModeSelects();
     saveSettings();
     filterAndRefresh();
+    refreshCrossLangForSharedFilters();
   };
   document.getElementById('data-select')?.addEventListener('change', onDataChange);
-  document.getElementById('same-data-select')?.addEventListener('change', onDataChange);
+
+  document.getElementById('dataset-select')?.addEventListener('change', (e) => {
+    state.currentDataSet = e.target.value === 'columnar' ? 'columnar' : 'suite';
+    const discovered = discoverFixtureOptions(state.allGroups);
+    const keys = fixturesForDataSet(discovered.all, state.currentDataSet);
+    if (!keys.includes(state.currentTestData)) {
+      const natural = keys.filter((key) => parseFixtureSelection(key).kind === 'natural');
+      state.currentTestData = pickPreferredFixture(natural) || keys[0] || '';
+    }
+    applyFilterPolicyToAllGroups({ refreshSelectors: true });
+    syncDatasetSelect();
+    syncFixtureModeSelects();
+    saveSettings();
+    filterAndRefresh();
+    refreshCrossLangForSharedFilters();
+  });
 
   document.getElementById('standard-select')?.addEventListener('change', (e) => {
     state.currentStandard = e.target.value || 'all';
     saveSettings();
     filterAndRefresh();
+    refreshCrossLangForSharedFilters();
   });
 
   const onModeChange = (e) => {
@@ -856,19 +910,6 @@ function setupEventListeners() {
     const open = body && body.hidden;
     openMetricsPanel(!!open);
     setMetricsPresetActive('custom');
-  });
-
-  // Cross-lang filters
-  document.getElementById('xl-data-select')?.addEventListener('change', (e) => {
-    state.xlTestData = e.target.value;
-    if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
-    else pruneCrossLangSelection();
-    refreshCrossLangAddSerializerOptions();
-    renderCrossLangSelection();
-    updateXlBaselineSelect();
-    renderCompareMatrix();
-    saveSettings();
-    updateCompareStatusLine();
   });
 
   document.getElementById('xl-mode-select')?.addEventListener('change', (e) => {
@@ -1607,23 +1648,23 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
 
   if (refreshSelectors) {
     const discovered = discoverFixtureOptions(state.allGroups);
-    const testDataOptions = discovered.all;
+    if (state.currentTestData && !state.currentDataSet) {
+      state.currentDataSet = dataSetForFixture(state.currentTestData);
+    }
+    const testDataOptions = fixturesForDataSet(discovered.all, state.currentDataSet || 'suite');
     const modeOptions = [
       ...new Set(state.allGroups.map((g) => normalizeMode(g.mode)).filter(Boolean)),
     ];
 
     populateFixtureSelect(testDataOptions);
-    populateFixtureSelect(testDataOptions, {
-      selectId: 'same-data-select',
-      previous: state.currentTestData,
-    });
+    syncDatasetSelect();
     populateSelect('mode-select', modeOptions, modeDisplayLabel);
     populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
     populateStandardSelect();
 
     if (!testDataOptions.includes(state.currentTestData)) {
-      state.currentTestData =
-        pickPreferredFixture(discovered.natural) || testDataOptions[0] || '';
+      const natural = testDataOptions.filter((key) => parseFixtureSelection(key).kind === 'natural');
+      state.currentTestData = pickPreferredFixture(natural) || testDataOptions[0] || '';
     }
     const wantMode = normalizeMode(state.currentMode) || state.currentMode;
     if (modeOptions.includes(wantMode)) {
@@ -1845,27 +1886,7 @@ function populateFixtureSelect(options, cfg = {}) {
     sep.textContent = label;
     sel.appendChild(sep);
   };
-  const addDataSetGroup = (label, items) => {
-    if (!items.length) return;
-    const group = document.createElement('optgroup');
-    group.label = label;
-    items.forEach((o) => {
-      const opt = document.createElement('option');
-      opt.value = o;
-      opt.textContent = fixtureOptionLabel(o);
-      group.appendChild(opt);
-    });
-    sel.appendChild(group);
-  };
-
-  const suiteNatural = natural.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
-  const columnarNatural = natural.filter((o) => COLUMNAR_TYPE_IDS.includes(baseTypeId(o)));
-  const otherNatural = natural.filter(
-    (o) => !suiteNatural.includes(o) && !columnarNatural.includes(o),
-  );
-  addDataSetGroup('Suite', suiteNatural);
-  addDataSetGroup('Columnar', columnarNatural);
-  otherNatural.forEach(addOpt);
+  natural.forEach(addOpt);
   if (batchCompound.length) {
     addSep('── compounded batch ──');
     batchCompound.forEach(addOpt);
@@ -2609,11 +2630,8 @@ function initCrossLangControls() {
   const dataTypes = discovered.all;
   const modes = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
 
-  // Same grouped options as top toolbar Test Data (natural + compounds)
-  populateFixtureSelect(dataTypes, {
-    selectId: 'xl-data-select',
-    previous: state.xlTestData,
-  });
+  // Compare uses the Overview data type. Keep xlTestData aligned for any leftover reader.
+  state.xlTestData = state.currentTestData;
 
   const modeSel = document.getElementById('xl-mode-select');
   if (modeSel) {
@@ -2626,24 +2644,14 @@ function initCrossLangControls() {
     });
   }
 
-  if (!dataTypes.includes(state.xlTestData)) {
-    state.xlTestData =
-      pickPreferredFixture(discovered.natural) || dataTypes[0] || '';
+  if (!state.currentTestData) {
+    state.currentTestData = pickPreferredFixture(discovered.natural) || dataTypes[0] || '';
   }
+  state.xlTestData = state.currentTestData;
   if (!modes.includes(state.xlMode)) {
     state.xlMode = modes.includes('bytes') ? 'bytes' : modes[0] || '';
   }
-  const xd = document.getElementById('xl-data-select');
   const xm = document.getElementById('xl-mode-select');
-  if (xd && [...xd.options].some((o) => o.value === state.xlTestData)) {
-    xd.value = state.xlTestData;
-  } else if (xd && xd.options.length) {
-    const first = [...xd.options].find((o) => !o.disabled && o.value);
-    if (first) {
-      xd.value = first.value;
-      state.xlTestData = first.value;
-    }
-  }
   if (xm) xm.value = state.xlMode;
 
   const langSel = document.getElementById('xl-add-lang');
@@ -2669,7 +2677,7 @@ function filterGroupsForCrossLang(groups) {
   // Normalize mode field so builders can match with exact equality
   const normalized = modeGroups.map((g) => ({ ...g, mode: modeNorm }));
 
-  const sel = parseFixtureSelection(state.xlTestData);
+  const sel = parseFixtureSelection(state.currentTestData);
   if (sel.kind === 'batch_compound') {
     return buildCompoundedFixtureGroups(
       normalized,
@@ -2685,7 +2693,7 @@ function filterGroupsForCrossLang(groups) {
   if (sel.kind === 'all_all') {
     return buildAllAllGroups(normalized, modeNorm);
   }
-  return normalized.filter((g) => g.test_data === state.xlTestData);
+  return normalized.filter((g) => g.test_data === state.currentTestData);
 }
 
 function findCrossLangGroup(lang, serializer) {
