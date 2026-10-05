@@ -128,6 +128,6 @@ To refresh published numbers after a local run, pack Dashboard data with `python
 
 Prefer:
 
-> **Same language + same [category](serialization_categories.md) + same data type + same I/O mode**
+> **Same language + same standard + same data set + same data type**
 
 Absolute times across languages (for example “Python vs C++”) mix runtimes, garbage collectors, and allocators. Those numbers can still be informative as a rough direction, but they are not a precise ranking. Details live under [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

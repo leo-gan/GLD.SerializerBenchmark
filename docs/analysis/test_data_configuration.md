@@ -36,7 +36,8 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as â
 
 | Term | Meaning | Examples |
 |------|---------|----------|
-| **data type** (also **type id**) | Which *kind* of sample object we serialize | `message`, `table`, `signal` |
+| **data set** | Parent of the data type. A serializer is measured on the sets it supports | `suite`, `columnar` |
+| **data type** (also **type id**) | Which *kind* of sample object we serialize. It belongs to one data set | `message` (suite), `table` (columnar), `signal` (columnar) |
 | **type config** | Size and shape knobs for **one** instance of that type | `field_count: 8`, `points: 32` |
 | **instance** | One concrete object of a data type | one `message` record |
 | **batch size** (`data_type_instance_count`) | How many instances go into **one** serialize/deserialize call | `1` or `100` |
