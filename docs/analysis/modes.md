@@ -145,7 +145,7 @@ Standard and Data Set are labels on rows the suite already measures. The machine
 
 An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.
 
-**Optional I/O.** The publication matrix times the in-memory API. A second level is kept only for the opt-in list in the contract: native or text-on-stream, batch N=100, absolute pooled median gap over 10%, and the 95% CI excludes 0. Adapted stream is not a second level. Java, Kotlin, Swift, and Rust stay on the in-memory row until their runners measure a real second API.
+**Optional I/O.** Under this contract the publication matrix times the in-memory API. A second level is kept only for the opt-in list in the contract: native or text-on-stream, batch N=100, absolute pooled median gap over 10%, and the 95% CI excludes 0. Adapted stream is not a second level. Java, Kotlin, Swift, and Rust stay on the in-memory row until their runners measure a real second API.
 
 When both stored levels have the same payload size, the parent row is the arithmetic mean of the two medians, and the table opens into the two levels. Rankings use that mean. When the string path is Base64 of the raw bytes (size ratio about 3/4), the parent is the raw-byte measurement and the string path is the child. Those two payloads are not averaged.
 
