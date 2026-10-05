@@ -136,6 +136,14 @@ def main():
             except Exception as e:
                 print(f"Error loading stats JSON: {e}")
 
+        if stats_data.get("groups"):
+            src = os.path.join(repo_root, "analysis", "src")
+            if src not in sys.path:
+                sys.path.insert(0, src)
+            from benchmark_analysis.dimensions import label_stats_document
+            labeled = label_stats_document(stats_data)
+            print(f"Labeled {labeled} {lang} groups with standard and data_set")
+
         # Multi-policy stats as gzip only (schema 2.2; recommendation A).
         # Dashboard prefers stats_<lang>_latest.json.gz over plain JSON.
         dest_stats_path = os.path.join(target_data_dir, f"stats_{lang}_latest.json")

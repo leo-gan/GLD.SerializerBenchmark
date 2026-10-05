@@ -9,6 +9,8 @@ import pytest
 from benchmark_analysis.dimensions import (
     DimensionError,
     data_set_for_type,
+    label_result_group,
+    label_stats_document,
     load_dimensions,
     load_standards,
     optional_io_index,
@@ -77,3 +79,28 @@ def test_opt_in_rows_name_real_serializers():
     assert dims["optional_io"]["parent_when_base64"] == "raw_bytes"
     assert dims["optional_io"]["standard_filter_default"] == "all"
     assert dims["optional_io"]["threshold_percent"] == 10
+
+
+def test_label_stats_document_sets_standard_and_data_set():
+    doc = {
+        "language": "c",
+        "groups": [
+            {"language": "c", "serializer": "yyjson", "test_data": "message"},
+            {"language": "c", "serializer": "custom-binary", "test_data": "table"},
+            {"language": "csharp", "serializer": "MS Bond Json", "test_data": "document"},
+        ],
+    }
+    assert label_stats_document(doc) == 3
+    assert doc["groups"][0]["standard"] == "json"
+    assert doc["groups"][0]["data_set"] == "suite"
+    assert doc["groups"][1]["standard"] == "custom"
+    assert doc["groups"][1]["data_set"] == "columnar"
+    assert doc["groups"][2]["standard"] == "json"
+
+
+def test_unknown_serializer_is_unlabeled_until_publish():
+    group = label_result_group(
+        {"language": "c", "serializer": "not-a-serializer", "test_data": "message"}
+    )
+    assert group["data_set"] == "suite"
+    assert group["standard"] is None
