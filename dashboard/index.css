@@ -278,6 +278,34 @@ body {
   }
 }
 
+/* One tab is one view. The filter bar stays on Overview and Compare. */
+#compare,
+#history-custom {
+  display: none;
+}
+
+body.dash-view-compare #compare {
+  display: block;
+}
+
+body.dash-view-overview.dash-run-open #history-custom {
+  display: block;
+}
+
+body.dash-view-compare .summary-grid,
+body.dash-view-compare .charts-grid,
+body.dash-view-compare #detailed-analytics,
+body.dash-view-compare #orientation-banner,
+body.dash-view-compare #run-meta,
+body.dash-view-compare .toolbar > .tabs {
+  display: none !important;
+}
+
+/* Language is the shared filter. Compare does not repeat it. */
+#compare-same-panel .same-lang-wrap {
+  display: none;
+}
+
 /* Main Container Layout (High Density) */
 .container {
   max-width: 1440px;

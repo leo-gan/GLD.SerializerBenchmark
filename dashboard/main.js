@@ -12,6 +12,7 @@ import {
   getRankSort,
   exportScatterPng,
   exportBarPng,
+  resizeCharts,
 } from './charts.js';
 import { paretoOptimalGroups } from './pareto.js';
 import {
@@ -51,6 +52,7 @@ import {
   matchesStandard,
 } from './dimension-labels.js';
 import { formatLabel, scoredFormatIds } from './compliance-groups.js';
+import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -632,6 +634,52 @@ function updateCompareStatusLine() {
   if (metricsEl) metricsEl.textContent = String(m);
 }
 
+const DASH_VIEW_NAV = {
+  overview: 'nav-dash-link',
+  compare: 'nav-compare-link',
+  experiments: 'nav-experiments-link',
+  compliance: 'nav-compliance-link',
+};
+
+let dashViewName = '';
+
+/** Show exactly one tab. Overview and Compare share the filter bar. */
+function applyDashView() {
+  const hash = window.location.hash || '';
+  const view = dashboardViewFromHash(hash);
+  const runOpen = view === 'overview' && dashboardRunPanelOpen(hash);
+  const entered = view !== dashViewName;
+  dashViewName = view;
+  for (const name of Object.keys(DASH_VIEW_NAV)) {
+    document.body.classList.toggle(`dash-view-${name}`, name === view);
+  }
+  document.body.classList.toggle('dash-run-open', runOpen);
+  const navId = DASH_VIEW_NAV[view];
+  document.querySelectorAll('.section-nav li').forEach((li) => {
+    li.classList.toggle('active', !!li.querySelector(`#${navId}`));
+  });
+  document.getElementById('run-picker-toggle')?.setAttribute('aria-expanded', runOpen ? 'true' : 'false');
+  if (runOpen) {
+    requestAnimationFrame(() => {
+      document.getElementById('history-custom')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else if (view === 'overview' && hash === '#detailed-analytics') {
+    requestAnimationFrame(() => {
+      document.getElementById('detailed-analytics')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else if (entered) {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  if (view === 'overview') {
+    requestAnimationFrame(() => resizeCharts());
+  }
+}
+
+function closeRunPanel() {
+  if (!dashboardRunPanelOpen(window.location.hash)) return;
+  window.location.hash = '#overview';
+}
+
 function setupEventListeners() {
   document.getElementById('filter-policy-select')?.addEventListener('change', (e) => {
     setFilterPolicy(e.target.value);
@@ -954,7 +1002,7 @@ function setupEventListeners() {
   document.getElementById('btn-copy-roster-md')?.addEventListener('click', () => copyRosterMarkdown());
   document.getElementById('btn-copy-compare-md')?.addEventListener('click', () => copyCompareMarkdown());
 
-  // Section-nav smooth scroll; close mobile drawer on any nav click
+  // Section tabs switch views. Experiments and Compliance set their own hashes.
   const closeMobileNav = () => {
     document.getElementById('main-nav')?.classList.remove('open');
     document.getElementById('nav-toggle')?.setAttribute('aria-expanded', 'false');
@@ -962,15 +1010,24 @@ function setupEventListeners() {
 
   document.querySelectorAll('.section-nav a').forEach((link) => {
     link.addEventListener('click', (e) => {
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('#')) {
-        e.preventDefault();
-        document.querySelectorAll('.section-nav li').forEach((li) => li.classList.remove('active'));
-        link.parentElement.classList.add('active');
-        document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        closeMobileNav();
+      const href = link.getAttribute('href') || '';
+      if (!href.startsWith('#')) return;
+      closeMobileNav();
+      if (href.startsWith('#experiments') || href.startsWith('#compliance')) {
+        queueMicrotask(() => applyDashView());
+        return;
       }
+      e.preventDefault();
+      if (window.location.hash !== href) window.location.hash = href;
+      else applyDashView();
     });
+  });
+
+  document.getElementById('run-picker-toggle')?.addEventListener('click', () => {
+    window.location.hash = dashboardRunPanelOpen(window.location.hash) ? '#overview' : '#history-custom';
+  });
+  document.getElementById('run-picker-close')?.addEventListener('click', () => {
+    closeRunPanel();
   });
 
   document.querySelectorAll('.site-links a').forEach((link) => {
@@ -1445,6 +1502,7 @@ async function loadHistoricalRunIntoDashboard(runId) {
     state.currentRunErrors = '';
     processStatsData({ groups });
     updateRunMeta();
+    closeRunPanel();
     showNotification(`Successfully loaded run ${runId}`, 'success');
   } catch (error) {
     console.error(error);
@@ -3811,6 +3869,7 @@ function handleFileUpload(file) {
         status.style.color = 'var(--color-green)';
         status.textContent = `Successfully loaded ${file.name}`;
       }
+      closeRunPanel();
       showNotification(`Loaded ${file.name} successfully.`, 'success');
     } catch (err) {
       if (status) {
@@ -3984,3 +4043,6 @@ function showNotification(msg, type) {
     setTimeout(() => notif.remove(), 300);
   }, 2800);
 }
+
+window.addEventListener('hashchange', applyDashView);
+applyDashView();

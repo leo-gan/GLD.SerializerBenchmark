@@ -171,6 +171,9 @@ function parseHash() {
 
 function setComplianceView(on) {
   document.body.classList.toggle('dash-view-compliance', on);
+  if (on) {
+    document.body.classList.remove('dash-view-overview', 'dash-view-compare', 'dash-view-experiments');
+  }
   const link = document.getElementById('nav-compliance-link');
   if (link) link.parentElement?.classList.toggle('active', on);
   if (on) {
