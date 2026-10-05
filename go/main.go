@@ -255,6 +255,12 @@ func main() {
 	if len(resolved.Execution.IOModes) > 0 {
 		modes = resolved.Execution.IOModes
 	}
+	optStream := optionalStreamNames("go")
+	var present []string
+	for _, ser := range sers {
+		present = append(present, ser.Name())
+	}
+	modes = modesWithOptionalStream(modes, optStream, present)
 	for _, c := range resolved.Cells {
 		if df != "" && !strings.Contains(strings.ToLower(c.TypeID), strings.ToLower(df)) {
 			continue
@@ -341,6 +347,9 @@ func main() {
 				}
 				for pos, p := range order {
 					if failed[p.ser.Name()] {
+						continue
+					}
+					if mode == "stream" && !optStream[p.ser.Name()] {
 						continue
 					}
 					ser := p.ser

@@ -156,3 +156,32 @@ def label_stats_document(doc: dict[str, Any]) -> int:
         label_result_group(group, strict=True)
         n += 1
     return n
+
+
+def optional_stream_names(language: str, dimensions: dict[str, Any] | None = None) -> set[str]:
+    """Serializers in this language that may emit a stream row."""
+    return {name for (lang, name) in optional_io_index(dimensions) if lang == language}
+
+
+def io_modes_for_language(
+    configured: list[str] | None,
+    language: str,
+    present_names: set[str] | None = None,
+    dimensions: dict[str, Any] | None = None,
+) -> list[str]:
+    """Publication modes. Stream is appended only when an opt-in serializer is present."""
+    modes = [str(m) for m in (configured or []) if m]
+    if not modes:
+        modes = ["bytes"]
+    opt = optional_stream_names(language, dimensions)
+    names = present_names if present_names is not None else opt
+    if (opt & set(names)) and "stream" not in modes:
+        modes.append("stream")
+    return modes
+
+
+def include_in_mode(language: str, serializer: str, mode: str, dimensions: dict[str, Any] | None = None) -> bool:
+    """Stream rows are emitted only for the opt-in list. Other modes stay."""
+    if str(mode).strip().lower() != "stream":
+        return True
+    return serializer in optional_stream_names(language, dimensions)

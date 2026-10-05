@@ -1,6 +1,7 @@
 /* Data Model v2: resolve cells, map onto existing fixture kinds, FULL serializer registry.
  * B-1 schedule: prepare once per cell; mode → rep → Fisher–Yates serializers (default). */
 #include "bench.h"
+#include "optional_io.h"
 #include "schedule.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -347,6 +348,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                 serializer_t *S = &sers[si];
                 for (int mi = 0; mi < n_modes; mi++) {
                     const char *mode = modes[mi];
+                    if (mode[0] == 's' && !bench_optional_stream("c", S->name)) continue;
                     int had_error = 0;
                     for (int r = 0; r < repetitions; r++) {
                         if (had_error) break;
@@ -369,7 +371,9 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                     int elig_n = 0;
                     for (int ri = 0; ri < ready_n; ri++) {
                         int si = ready_idx[ri];
-                        if (!failed[si]) elig[elig_n++] = si;
+                        if (failed[si]) continue;
+                        if (mode[0] == 's' && !bench_optional_stream("c", sers[si].name)) continue;
+                        elig[elig_n++] = si;
                     }
                     if (elig_n == 0) continue;
                     uint64_t shuf_seed = schedule_derive_seed(

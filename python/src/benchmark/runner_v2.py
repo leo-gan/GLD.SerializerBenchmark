@@ -278,7 +278,13 @@ def run_v2(
     print(f"[PROGRESS] schedule={schedule_strategy} record_run_order={record_run_order}")
     print(f"[PROGRESS] soft_budget≈{soft}s hard_cap={hard}s → {ts_file}")
 
-    io_modes = (resolved.get("execution") or {}).get("io_modes") or ["bytes", "stream"]
+    from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
+
+    io_modes = io_modes_for_language(
+        (resolved.get("execution") or {}).get("io_modes"),
+        "python",
+        {s.name for s in serializers},
+    )
     compress_mode = (resolved.get("compression") or {}).get("mode") or "none"
     run_order = 0
     hard_stop = False
@@ -345,6 +351,8 @@ def run_v2(
                     break
                 serializer, serializable, expected, tip, size_gz, size_zstd = pack
                 for mode in io_modes:
+                    if not include_in_mode("python", ser_name, mode):
+                        continue
                     run_order = _run_reps_v2(
                         serializer,
                         serializable,
@@ -376,7 +384,11 @@ def run_v2(
                         print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
                         hard_stop = True
                         break
-                    pool = [nm for nm in eligible_names if nm not in failed_runtime]
+                    pool = [
+                        nm
+                        for nm in eligible_names
+                        if nm not in failed_runtime and include_in_mode("python", nm, mode)
+                    ]
                     order_names = shuffle_serializer_names(
                         pool,
                         base_seed=seed,
