@@ -278,7 +278,15 @@ def run_v2(
     print(f"[PROGRESS] schedule={schedule_strategy} record_run_order={record_run_order}")
     print(f"[PROGRESS] soft_budget≈{soft}s hard_cap={hard}s → {ts_file}")
 
-    from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
+    try:
+        from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
+    except ImportError:
+        root_dims = _repo_root()
+        if root_dims:
+            src = str(root_dims / "analysis" / "src")
+            if src not in sys.path:
+                sys.path.insert(0, src)
+        from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
 
     io_modes = io_modes_for_language(
         (resolved.get("execution") or {}).get("io_modes"),
