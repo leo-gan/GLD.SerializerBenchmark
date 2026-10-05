@@ -80,3 +80,15 @@ export function discoverFixtureOptions(allGroups) {
     all: [...natural, ...batchCompound, ...allTypes, ...allAll],
   };
 }
+
+/** suite or columnar for a data-type menu key, including all@n compounds. */
+export function dataSetForFixture(key) {
+  const s = String(key || '');
+  if (!s || s === 'all@all' || /^all@/i.test(s)) return 'suite';
+  return COLUMNAR_TYPE_IDS.includes(baseTypeId(s)) ? 'columnar' : 'suite';
+}
+
+/** Menu keys that belong to one data set. */
+export function fixturesForDataSet(keys, dataSet) {
+  return (keys || []).filter((key) => dataSetForFixture(key) === dataSet);
+}

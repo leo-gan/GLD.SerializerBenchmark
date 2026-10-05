@@ -101,7 +101,15 @@
           </select>
         </div>
 
-        <span class="filter-label filter-label-primary" title="Payload shape (suite data type), e.g. message@n=1">Data type:</span>
+        <span class="filter-label filter-label-primary" title="Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal.">Data set:</span>
+        <div class="select-wrapper">
+          <select id="dataset-select" aria-label="Select data set">
+            <option value="suite">Suite</option>
+            <option value="columnar">Columnar</option>
+          </select>
+        </div>
+
+        <span class="filter-label filter-label-primary" title="Data types in the selected data set">Data type:</span>
         <div class="select-wrapper">
           <select id="data-select" aria-label="Select data type">
             <!-- Dynamically populated -->
@@ -296,10 +304,6 @@
           <span class="badge badge-slate" id="compare-scope-badge" hidden>Same language</span>
 
           <div class="filter-group compare-lab-filters-inline" id="compare-same-filters">
-            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
-            <div class="select-wrapper">
-              <select id="same-data-select" aria-label="Same-language data type"></select>
-            </div>
             <span class="filter-label">Baseline</span>
             <div class="select-wrapper">
               <select id="compare-baseline-select" aria-label="Baseline serializer"></select>
@@ -307,10 +311,6 @@
           </div>
 
           <div class="filter-group compare-lab-filters-inline" id="compare-xl-filters" hidden>
-            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
-            <div class="select-wrapper">
-              <select id="xl-data-select" aria-label="Cross-language data type"></select>
-            </div>
             <span class="filter-label">Baseline</span>
             <div class="select-wrapper">
               <select id="compare-xl-baseline-select" aria-label="Cross-language baseline"></select>
