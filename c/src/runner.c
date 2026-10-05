@@ -1,4 +1,5 @@
 #include "bench.h"
+#include "optional_io.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -91,6 +92,7 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
 
             for (int mi = 0; mi < 2; mi++) {
                 const char *mode = modes[mi];
+                if (mode[0] == 's' && !bench_optional_stream("c", S->name)) continue;
                 int had_error = 0;
                 /* Log every successful rep including r==0 (warmup). Analysis drops warmup later. */
                 for (int r = 0; r < repetitions; r++) {

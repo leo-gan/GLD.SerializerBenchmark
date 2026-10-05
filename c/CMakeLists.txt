@@ -22,6 +22,7 @@ set(BENCH_SOURCES
   src/compress.c
   src/batch_cell.c
   src/runner.c
+  src/optional_io.c
   src/register_serializers.c
   src/v2_codec.c
   src/serializers/ser_custom_binary.c

@@ -130,8 +130,17 @@ namespace GLD.SerializerBenchmark
 
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
                 instanceCount, typeConfigHash, prepareFailed);
-            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors,
-                instanceCount, typeConfigHash, prepareFailed);
+            var streamSerializers = new List<ISerDeser>();
+            foreach (var serializer in serializers)
+            {
+                if (OptionalIo.IsStreamOptIn(serializer.Name))
+                    streamSerializers.Add(serializer);
+            }
+            if (streamSerializers.Count > 0)
+            {
+                TestsOnRepetition(testDataDescription, true, repetitions, streamSerializers, logStorage, errors,
+                    instanceCount, typeConfigHash, prepareFailed);
+            }
         }
 
         // Shared across stream trials in this process; keyed per serializer (B-1 interleaving).

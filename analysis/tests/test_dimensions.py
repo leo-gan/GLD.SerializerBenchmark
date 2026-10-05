@@ -104,3 +104,19 @@ def test_unknown_serializer_is_unlabeled_until_publish():
     )
     assert group["data_set"] == "suite"
     assert group["standard"] is None
+
+
+def test_optional_io_text_matches_the_contract():
+    from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language, optional_stream_names
+    text = (_REPO / "config" / "optional-io.txt").read_text(encoding="utf-8").splitlines()
+    dims = load_dimensions()
+    expected = []
+    for row in dims["optional_io"]["opt_in"]:
+        expected.append(f"{row['language']}\t{row['serializer']}")
+    assert text == sorted(expected)
+    assert "sonic" in optional_stream_names("go", dims)
+    assert io_modes_for_language(["bytes"], "go", {"sonic"}, dims) == ["bytes", "stream"]
+    assert io_modes_for_language(["bytes"], "python", {"orjson"}, dims) == ["bytes"]
+    assert include_in_mode("go", "sonic", "stream", dims) is True
+    assert include_in_mode("go", "encoding/gob", "stream", dims) is False
+    assert include_in_mode("go", "encoding/gob", "bytes", dims) is True

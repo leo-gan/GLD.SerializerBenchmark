@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -15,6 +16,50 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+static std::unordered_set<std::string> optional_stream_names() {
+  std::unordered_set<std::string> out;
+  fs::path dir = fs::current_path();
+  fs::path file;
+  for (;;) {
+    fs::path cand = dir / "config" / "optional-io.txt";
+    if (fs::exists(cand)) {
+      file = cand;
+      break;
+    }
+    if (!dir.has_parent_path() || dir == dir.root_path()) break;
+    dir = dir.parent_path();
+  }
+  if (file.empty()) return out;
+  std::ifstream in(file);
+  std::string line;
+  while (std::getline(in, line)) {
+    auto tab = line.find('\t');
+    if (tab == std::string::npos) continue;
+    if (line.substr(0, tab) != "cpp") continue;
+    auto name = line.substr(tab + 1);
+    if (!name.empty()) out.insert(name);
+  }
+  return out;
+}
+
+static std::vector<std::string> modes_with_optional_stream(
+    std::vector<std::string> modes, const std::unordered_set<std::string>& opt,
+    const std::vector<std::unique_ptr<bench::ISerializer>>& sers) {
+  bool hit = false;
+  for (const auto& ser : sers) {
+    if (opt.count(ser->name())) {
+      hit = true;
+      break;
+    }
+  }
+  if (!hit) return modes;
+  for (const auto& mode : modes) {
+    if (mode == "stream") return modes;
+  }
+  modes.push_back("stream");
+  return modes;
+}
 
 static uint64_t now_ns() {
   using clock = std::chrono::steady_clock;
@@ -166,7 +211,9 @@ int main(int argc, char** argv) {
   auto resolved = bench::load_resolved(run_cfg, seed);
   seed = resolved.seed;
   auto modes = resolved.io_modes;
-  if (modes.empty()) modes = {"bytes", "stream"};
+  if (modes.empty()) modes = {"bytes"};
+  const auto opt_stream = optional_stream_names();
+  modes = modes_with_optional_stream(std::move(modes), opt_stream, sers);
 
   std::vector<std::pair<bench::Fixture, const bench::Cell*>> work;
   for (const auto& c : resolved.cells) {
@@ -242,6 +289,7 @@ int main(int argc, char** argv) {
         for (auto& p : ready) {
           if (failed.count(p.ser->name())) continue;
           for (const auto& mode : modes) {
+            if (mode == "stream" && !opt_stream.count(p.ser->name())) continue;
             bool had_error = false;
             for (int i = 0; i < reps; ++i) {
               if (had_error) break;
@@ -264,7 +312,9 @@ int main(int argc, char** argv) {
             std::vector<std::string> pool;
             pool.reserve(ready.size());
             for (const auto& p : ready) {
-              if (!failed.count(p.ser->name())) pool.push_back(p.ser->name());
+              if (failed.count(p.ser->name())) continue;
+              if (mode == "stream" && !opt_stream.count(p.ser->name())) continue;
+              pool.push_back(p.ser->name());
             }
             auto order = bench::shuffle_serializer_names(pool, seed, fx.type_id, fx.instance_count,
                                                          fx.type_config_hash, mode, i);
