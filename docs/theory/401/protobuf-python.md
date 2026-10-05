@@ -254,7 +254,7 @@ input bytes (or memoryview — underlying buffer must remain valid for the call)
 | suite generated `*_pb2.py` modules | Generated suite messages—not MiniUser |
 | Log name | `protobuf` |
 | Pin | `protobuf>=7.34.1,<8` |
-| [Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf&ser=protobuf#detailed-analytics) | Cost under whatever backend the environment selected |
+| [Open this slice on the Dashboard](../../dashboard/?lang=python&standard=protobuf&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf&ser=protobuf#detailed-analytics) | Standard Protocol Buffers, cost under whatever backend the environment selected |
 
 The benchmark runner keeps domain-to-Message conversion **out** of the timed path so Dashboard numbers compare codec work, not model mapping. Do not rank Python against Rust or C from the Dashboard alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 

@@ -10,7 +10,7 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=python&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [Python overview](../../python/)
 

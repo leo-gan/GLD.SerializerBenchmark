@@ -113,58 +113,70 @@ nav:
           - Compression vs format: theory/201/compression-is-not-a-format.md
       - 301:
           - Overview: theory/301/index.md
-          - Trust boundaries: theory/301/trust-boundaries.md
-          - Untrusted input: theory/301/untrusted-input.md
-          - Payload surfaces: theory/301/payload-surfaces.md
-          - Two schema cultures: theory/301/two-schema-cultures.md
-          - Schema registries: theory/301/schema-registries.md
-          - Public API contracts: theory/301/public-api-contracts.md
-          - Versioning in the wild: theory/301/versioning-in-the-wild.md
-          - Row vs columnar: theory/301/row-vs-columnar.md
-          - Polyglot estates: theory/301/polyglot-estates.md
-          - RPC and messaging: theory/301/rpc-and-messaging.md
-          - Zero-copy in production: theory/301/zero-copy-in-production.md
-          - Caching and queues: theory/301/caching-and-queues.md
-          - Using this suite: theory/301/using-this-suite.md
-          - Implementation variance: theory/301/implementation-variance.md
-          - Latency tails and GC: theory/301/latency-tails-and-gc.md
-          - Compression as system choice: theory/301/compression-as-system-choice.md
-          - "Case: public REST API": theory/301/case-public-rest-api.md
-          - "Case: internal RPC": theory/301/case-internal-rpc.md
-          - "Case: event backbone": theory/301/case-event-stream.md
-          - "Case: analytics lake": theory/301/case-analytics-lake.md
-          - "Case: polyglot boundary": theory/301/case-polyglot-boundary.md
-          - "Case: faster postmortem": theory/301/case-faster-postmortem.md
+          - Trust:
+              - Trust boundaries: theory/301/trust-boundaries.md
+              - Untrusted input: theory/301/untrusted-input.md
+              - Payload surfaces: theory/301/payload-surfaces.md
+          - Contracts:
+              - Two schema cultures: theory/301/two-schema-cultures.md
+              - Schema registries: theory/301/schema-registries.md
+              - Public API contracts: theory/301/public-api-contracts.md
+              - Versioning in the wild: theory/301/versioning-in-the-wild.md
+          - Workload:
+              - Row vs columnar: theory/301/row-vs-columnar.md
+              - Polyglot estates: theory/301/polyglot-estates.md
+              - RPC and messaging: theory/301/rpc-and-messaging.md
+              - Zero-copy in production: theory/301/zero-copy-in-production.md
+              - Caching and queues: theory/301/caching-and-queues.md
+          - Measurement:
+              - Using this suite: theory/301/using-this-suite.md
+              - Implementation variance: theory/301/implementation-variance.md
+              - Latency tails and GC: theory/301/latency-tails-and-gc.md
+              - Compression as system choice: theory/301/compression-as-system-choice.md
+          - Capstones:
+              - "Case: public REST API": theory/301/case-public-rest-api.md
+              - "Case: internal RPC": theory/301/case-internal-rpc.md
+              - "Case: event backbone": theory/301/case-event-stream.md
+              - "Case: analytics lake": theory/301/case-analytics-lake.md
+              - "Case: polyglot boundary": theory/301/case-polyglot-boundary.md
+              - "Case: faster postmortem": theory/301/case-faster-postmortem.md
       - 401:
           - Overview: theory/401/index.md
-          - Protobuf wire format: theory/401/protobuf-wire-format.md
-          - "Python: google.protobuf": theory/401/protobuf-python.md
-          - "Rust: prost": theory/401/protobuf-rust-prost.md
-          - "C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
-          - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
-          - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
-          - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
-          - "Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
-          - "Python: msgspec JSON vs MessagePack": theory/401/python-msgspec-json-vs-msgpack.md
-          - "Python: orjson vs json": theory/401/python-orjson-vs-json.md
-          - "Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
-          - "Rust: Speedy vs Postcard": theory/401/rust-speedy-vs-postcard.md
-          - "Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
-          - "C: custom-binary vs ubj": theory/401/c-custom-binary-vs-ubj.md
-          - "C++: Bitsery vs YAS": theory/401/cpp-bitsery-vs-yas.md
-          - "C++: the simdjson row": theory/401/cpp-simdjson-wrapper.md
-          - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
-          - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
-          - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
-          - "Kotlin: Protostuff vs protobuf": theory/401/kotlin-protostuff-vs-protobuf.md
-          - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
-          - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
-          - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
-          - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
-          - "Mojo: EmberJson vs mojo-avro": theory/401/mojo-emberjson-vs-avro.md
-          - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
-          - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
-          - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
+          - Protocol Buffers:
+              - Protobuf wire format: theory/401/protobuf-wire-format.md
+              - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
+              - "Python: google.protobuf": theory/401/protobuf-python.md
+              - "Rust: prost": theory/401/protobuf-rust-prost.md
+              - "C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
+              - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
+              - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
+          - Python:
+              - "Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
+              - "Python: msgspec JSON vs MessagePack": theory/401/python-msgspec-json-vs-msgpack.md
+              - "Python: orjson vs json": theory/401/python-orjson-vs-json.md
+          - Rust:
+              - "Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
+              - "Rust: Speedy vs Postcard": theory/401/rust-speedy-vs-postcard.md
+              - "Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
+          - C and C++:
+              - "C: custom-binary vs ubj": theory/401/c-custom-binary-vs-ubj.md
+              - "C++: Bitsery vs YAS": theory/401/cpp-bitsery-vs-yas.md
+              - "C++: the simdjson row": theory/401/cpp-simdjson-wrapper.md
+          - Java and Kotlin:
+              - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
+              - "Kotlin: Protostuff vs protobuf": theory/401/kotlin-protostuff-vs-protobuf.md
+              - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
+              - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
+          - JavaScript:
+              - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
+              - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
+          - Other languages:
+              - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
+              - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
+              - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
+              - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
+              - "Mojo: EmberJson vs mojo-avro": theory/401/mojo-emberjson-vs-avro.md
+              - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
   - Languages:
       # Alphabetical by display name. One-child nest so languages-nav.js
       # can inject a Dashboard sibling (flat items have no children).

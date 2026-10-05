@@ -53,7 +53,7 @@ This matters because option D maximizes local microbenchmark wins. It minimizes 
 
 **Prefer A** if the organization will own one shared proto code repository for many projects and continuous-integration breaking checks. See [two schema cultures](two-schema-cultures.md) and [multi-language systems (polyglot estates)](polyglot-estates.md). **Prefer B** if debug and simplicity outweigh density and requests per second allow. Still enforce a schema. Use the [public API contracts](public-api-contracts.md) pattern internally. **C** is acceptable only with explicit schema docs and tests that check every language implements the same contract. **Reject D**.
 
-Pick **implementations per language** via the Dashboard within the chosen family. See [implementation variance](implementation-variance.md).
+Pick **implementations per language** via the Dashboard on the chosen standard. See [implementation variance](implementation-variance.md).
 
 ---
 

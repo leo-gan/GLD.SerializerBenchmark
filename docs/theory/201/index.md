@@ -21,7 +21,7 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
+**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one standard and one language when you can. A family is the first cut, and the standard is the cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
 
 ---
 
@@ -59,7 +59,7 @@ These articles explain where the meaning of a field lives, and how systems stay 
 
 ### Families in practice
 
-These articles compare common binary families and specialized layout designs you will meet in real systems.
+These articles compare common binary mechanisms and specialized layout designs you will meet in real systems. MessagePack, CBOR, Protocol Buffers, and FlatBuffers are **standards**. A family groups them. The spec for each name is the [compliance catalog](../../compliance/). These articles stay about mechanisms.
 
 - [Dynamic vs IDL binary](dynamic-vs-idl-binary.md)
 - [Zero-copy](zero-copy.md)

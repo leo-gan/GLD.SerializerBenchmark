@@ -21,7 +21,7 @@ Even as a first-year student, you can use this page to see how format choice aff
 
 ## Four families (aligned with this suite)
 
-The benchmark suite groups serializers into paradigms. Compare **within one paradigm and within one language** before crowning a global winner. Different families solve different problems.
+The benchmark suite groups serializers into families for orientation. The Dashboard compares within **one standard and one language**. Different families solve different problems. JSON and YAML can share the text family and still be different standards. Columnar formats such as Arrow IPC, Parquet, and ORC are the fifth family on [Serialization categories](../../analysis/serialization_categories.md). This lens is about services, so the table stays with the four families you meet on an API or an RPC hop.
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
@@ -213,7 +213,7 @@ user2.ParseFromString(data)
 
 ## Key takeaways
 
-1. **Pick a paradigm first**, then a library. The suite categories exist to prevent unfair cross-paradigm comparisons.  
+1. **Pick a family, then a standard, then a library.** [Serialization categories](../../analysis/serialization_categories.md) is the family map. The Dashboard **Standard** control is the comparison cell.  
 2. **Public edge is not the same as the internal code that runs on every request under load.** JSON at the boundary and binary inside is a normal, historical pattern.  
 
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  

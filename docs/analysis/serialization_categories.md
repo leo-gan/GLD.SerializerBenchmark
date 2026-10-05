@@ -20,7 +20,7 @@ By the end of this page you should be able to:
 2. Decide which family fits a simple product question (public API, schema contract, same-process cache, columnar scan, …).
 3. State the comparison rule: **same language + same standard + same data set + same data type** before crowning a winner. The families on this page are orientation. The benchmark dimension is the compliance standard id.
 
-**Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable. Columnar numbers on `table` are a different question from JSON numbers on `message`.
+**Rule of thumb:** compare serializers within one language, one standard, one data set, and one data type. A family is the first cut. It is coarser than the standard id (`yaml` is its own standard). Columnar numbers on `table` are a different question from JSON numbers on `message`.
 
 Registered counts live on each language Overview page. This page does not repeat them.
 
@@ -55,6 +55,7 @@ Work through these questions in order:
 3. **Single language / runtime, complex graphs, and fully trusted data?**
    - **Yes** → Language-native (only inside a hard trust boundary).
    - **No** → Schemaless binary.
+4. **Which standard inside that family?** JSON, YAML, and TOML are different contracts. Protocol Buffers, Avro, and FlatBuffers are different contracts. Arrow IPC, Parquet, and ORC are different contracts. SBE sits in the schema-driven family, its data set is Columnar, and its standard is SBE. Open the [Dashboard](../dashboard/) on that standard.
 
 Product-oriented guidance: [engineering perspective](../theory/101/engineer_perspective.md).
 

@@ -61,7 +61,7 @@ This matters because “internal” does not mean “native is fine.” It means
 
 ## Recommendation (under these constraints)
 
-**Prefer A (Protobuf-class IDL binary)** for the high-load hop. The record shape is stable. Two compiled languages share the hop. Evolution uses field numbers and continuous-integration breaking-change checks. See [two schema cultures](two-schema-cultures.md). Select **implementations per language** with the Dashboard in the schema-driven family. See [implementation variance](implementation-variance.md).
+**Prefer A (Protobuf-class IDL binary)** for the high-load hop. The record shape is stable. Two compiled languages share the hop. Evolution uses field numbers and continuous-integration breaking-change checks. See [two schema cultures](two-schema-cultures.md). Select **implementations per language** with the Dashboard on the standard Protocol Buffers. See [implementation variance](implementation-variance.md).
 
 **Keep B** as an alternative if the team refuses IDL tooling *and* will fund validation and compatibility tests. Those tests must be equivalent to a registry or IDL process. That combination is rare on high-requests-per-second money paths.
 
@@ -83,7 +83,7 @@ This matters because “internal” does not mean “native is fine.” It means
 
 ### Procedure
 
-1. Take a fair suite slice per family. See [using this suite](using-this-suite.md).
+1. Take a fair suite slice for each standard you are still considering. See [using this suite](using-this-suite.md).
 2. Load-test shortlisted implementations at target QPS. Record p99 and CPU.
 3. Score evolution needs. Include field adds and multi-service rollout.
 4. Apply trust constraints. Note internal mesh versus any plan to expose the hop.
@@ -105,7 +105,7 @@ This matters because “internal” does not mean “native is fine.” It means
 | Suite median serialize/deserialize and size | Shortlist |
 | Schema evolution pain (qualitative plus incident count) | Long-term cost |
 | `mean_fidelity` | Correctness |
-| Cross-family leaderboard | Do not use raw |
+| A chart that mixes standards | Leave it out of the decision |
 
 ---
 
@@ -120,5 +120,5 @@ This matters because “internal” does not mean “native is fine.” It means
 ## Key takeaways
 
 - Internal high-QPS **stable records** lean toward **schema-driven IDL**. They do not lean toward native codecs.
-- The suite picks **libraries per language** after the family is fixed.
+- The suite picks **libraries per language** after the standard is fixed.
 - Evolution process is part of the recommendation. It is not an afterthought.

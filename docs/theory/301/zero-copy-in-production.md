@@ -73,7 +73,7 @@ A game-state blob of 100KB or more is read by many services. Each request needs 
 |----------|------|
 | Language **Overview** | Whether FlatBuffers-class entries are registered |
 | **Dashboard** | Same-language comparison; note validation settings if documented |
-| [Using this suite](using-this-suite.md) | Fair paradigm-local reads |
+| [Using this suite](using-this-suite.md) | Fair reads on one language and one standard |
 
 Absence from a language benchmark runner means “not measured.” It does not mean “bad technology.”
 
