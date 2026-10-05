@@ -42,7 +42,8 @@ import {
   compoundFixtureKey,
   dataSetForFixture,
   discoverFixtureOptions,
-  fixturesForDataSet,
+  pickPreferredFixture,
+  resolveStandardDataSet,
 } from './fixture-types.js';
 import {
   applyDimensionLabels,
@@ -108,19 +109,6 @@ function fixtureKey(g) {
     return `${base}@n=${Number(n)}`;
   }
   return base;
-}
-
-function pickPreferredFixture(options) {
-  if (!options || !options.length) return '';
-  const preferred = [];
-  for (const id of SUITE_TYPE_IDS) {
-    preferred.push(`${id}@n=1`, id, `${id}@n=100`);
-  }
-  for (const p of preferred) {
-    if (options.includes(p)) return p;
-  }
-  const cleaned = options.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
-  return cleaned[0] || options[0] || '';
 }
 
 const LANGUAGE_CATALOG = [
@@ -286,10 +274,9 @@ function syncLanguageSelects() {
 }
 
 function syncDatasetSelect() {
-  const el = document.getElementById('dataset-select');
-  if (el && [...el.options].some((o) => o.value === state.currentDataSet)) {
-    el.value = state.currentDataSet;
-  }
+  const el = document.getElementById('dataset-value');
+  if (!el) return;
+  el.textContent = state.currentDataSet === 'columnar' ? 'Columnar' : 'Suite';
 }
 
 function refreshCrossLangForSharedFilters() {
@@ -687,24 +674,11 @@ function setupEventListeners() {
   };
   document.getElementById('data-select')?.addEventListener('change', onDataChange);
 
-  document.getElementById('dataset-select')?.addEventListener('change', (e) => {
-    state.currentDataSet = e.target.value === 'columnar' ? 'columnar' : 'suite';
-    const discovered = discoverFixtureOptions(state.allGroups);
-    const keys = fixturesForDataSet(discovered.all, state.currentDataSet);
-    if (!keys.includes(state.currentTestData)) {
-      const natural = keys.filter((key) => parseFixtureSelection(key).kind === 'natural');
-      state.currentTestData = pickPreferredFixture(natural) || keys[0] || '';
-    }
+  document.getElementById('standard-select')?.addEventListener('change', (e) => {
+    state.currentStandard = e.target.value || 'all';
     applyFilterPolicyToAllGroups({ refreshSelectors: true });
     syncDatasetSelect();
     syncFixtureModeSelects();
-    saveSettings();
-    filterAndRefresh();
-    refreshCrossLangForSharedFilters();
-  });
-
-  document.getElementById('standard-select')?.addEventListener('change', (e) => {
-    state.currentStandard = e.target.value || 'all';
     saveSettings();
     filterAndRefresh();
     refreshCrossLangForSharedFilters();
@@ -1647,25 +1621,43 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
   state.allGroups = groups;
 
   if (refreshSelectors) {
-    const discovered = discoverFixtureOptions(state.allGroups);
-    if (state.currentTestData && !state.currentDataSet) {
-      state.currentDataSet = dataSetForFixture(state.currentTestData);
+    populateStandardSelect();
+    const resolved = resolveStandardDataSet({
+      groups: state.allGroups,
+      standard: state.currentStandard,
+      testData: state.currentTestData,
+    });
+    if (resolved.keepType) {
+      state.currentDataSet = dataSetForFixture(state.currentTestData) || state.currentDataSet || 'suite';
+      const dataSel = document.getElementById('data-select');
+      if (!dataSel || dataSel.options.length === 0) {
+        const languageMenu = resolveStandardDataSet({
+          groups: state.allGroups,
+          standard: 'all',
+          testData: state.currentTestData,
+        });
+        if (!languageMenu.keepType) {
+          populateFixtureSelect(languageMenu.keys, {
+            groupByDataSet: languageMenu.sets.length > 1,
+            previous: state.currentTestData,
+          });
+        }
+      }
+    } else {
+      state.currentDataSet = resolved.dataSet;
+      state.currentTestData = resolved.testData;
+      populateFixtureSelect(resolved.keys, {
+        groupByDataSet: resolved.sets.length > 1,
+        previous: state.currentTestData,
+      });
     }
-    const testDataOptions = fixturesForDataSet(discovered.all, state.currentDataSet || 'suite');
     const modeOptions = [
       ...new Set(state.allGroups.map((g) => normalizeMode(g.mode)).filter(Boolean)),
     ];
 
-    populateFixtureSelect(testDataOptions);
     syncDatasetSelect();
     populateSelect('mode-select', modeOptions, modeDisplayLabel);
     populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
-    populateStandardSelect();
-
-    if (!testDataOptions.includes(state.currentTestData)) {
-      const natural = testDataOptions.filter((key) => parseFixtureSelection(key).kind === 'natural');
-      state.currentTestData = pickPreferredFixture(natural) || testDataOptions[0] || '';
-    }
     const wantMode = normalizeMode(state.currentMode) || state.currentMode;
     if (modeOptions.includes(wantMode)) {
       state.currentMode = wantMode;
@@ -1869,35 +1861,50 @@ function populateFixtureSelect(options, cfg = {}) {
   const prev = cfg.previous != null ? cfg.previous : sel.value || state.currentTestData;
   sel.innerHTML = '';
 
-  const natural = options.filter((o) => parseFixtureSelection(o).kind === 'natural');
-  const batchCompound = options.filter((o) => parseFixtureSelection(o).kind === 'batch_compound');
-  const allTypes = options.filter((o) => parseFixtureSelection(o).kind === 'all_n');
-  const allAll = options.filter((o) => parseFixtureSelection(o).kind === 'all_all');
+  const appendFixtureOptions = (parent, keys) => {
+    const natural = keys.filter((o) => parseFixtureSelection(o).kind === 'natural');
+    const batchCompound = keys.filter((o) => parseFixtureSelection(o).kind === 'batch_compound');
+    const allTypes = keys.filter((o) => parseFixtureSelection(o).kind === 'all_n');
+    const allAll = keys.filter((o) => parseFixtureSelection(o).kind === 'all_all');
+    const addOpt = (o) => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = fixtureOptionLabel(o);
+      parent.appendChild(opt);
+    };
+    const addSep = (label) => {
+      const sep = document.createElement('option');
+      sep.disabled = true;
+      sep.textContent = label;
+      parent.appendChild(sep);
+    };
+    natural.forEach(addOpt);
+    if (batchCompound.length) {
+      addSep('── compounded batch ──');
+      batchCompound.forEach(addOpt);
+    }
+    if (allTypes.length) {
+      addSep('── compounded data types ──');
+      allTypes.forEach(addOpt);
+    }
+    if (allAll.length) {
+      addSep('── compounded all ──');
+      allAll.forEach(addOpt);
+    }
+  };
 
-  const addOpt = (o) => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    opt.textContent = fixtureOptionLabel(o);
-    sel.appendChild(opt);
-  };
-  const addSep = (label) => {
-    const sep = document.createElement('option');
-    sep.disabled = true;
-    sep.textContent = label;
-    sel.appendChild(sep);
-  };
-  natural.forEach(addOpt);
-  if (batchCompound.length) {
-    addSep('── compounded batch ──');
-    batchCompound.forEach(addOpt);
-  }
-  if (allTypes.length) {
-    addSep('── compounded data types ──');
-    allTypes.forEach(addOpt);
-  }
-  if (allAll.length) {
-    addSep('── compounded all ──');
-    allAll.forEach(addOpt);
+  if (cfg.groupByDataSet) {
+    const addGroup = (label, keys) => {
+      if (!keys.length) return;
+      const group = document.createElement('optgroup');
+      group.label = label;
+      appendFixtureOptions(group, keys);
+      sel.appendChild(group);
+    };
+    addGroup('Suite', options.filter((key) => dataSetForFixture(key) === 'suite'));
+    addGroup('Columnar', options.filter((key) => dataSetForFixture(key) === 'columnar'));
+  } else {
+    appendFixtureOptions(sel, options);
   }
 
   if ([...sel.options].some((o) => o.value === prev)) {

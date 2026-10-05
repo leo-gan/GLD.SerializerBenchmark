@@ -399,6 +399,23 @@ body {
   background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
 }
 
+/* Data set follows the standard. Same box as a primary select, no chevron. */
+.filter-group-primary .dataset-value {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+  border: 1px solid #c5cae9;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
+  padding: 0.3rem 0.6rem;
+  cursor: default;
+  user-select: none;
+}
+
 .filter-group-secondary {
   padding-left: 0.55rem;
   border-left: 1px solid var(--border-color);

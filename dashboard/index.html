@@ -101,15 +101,10 @@
           </select>
         </div>
 
-        <span class="filter-label filter-label-primary" title="Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal.">Data set:</span>
-        <div class="select-wrapper">
-          <select id="dataset-select" aria-label="Select data set">
-            <option value="suite">Suite</option>
-            <option value="columnar">Columnar</option>
-          </select>
-        </div>
+        <span class="filter-label filter-label-primary" id="dataset-label">Data set:</span>
+        <span id="dataset-value" class="dataset-value" role="status" aria-live="polite" aria-labelledby="dataset-label" title="Follows the selected standard. Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal.">Suite</span>
 
-        <span class="filter-label filter-label-primary" title="Data types in the selected data set">Data type:</span>
+        <span class="filter-label filter-label-primary" title="Data types measured for the selected standard">Data type:</span>
         <div class="select-wrapper">
           <select id="data-select" aria-label="Select data type">
             <!-- Dynamically populated -->
