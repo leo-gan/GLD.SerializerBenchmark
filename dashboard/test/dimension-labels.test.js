@@ -5,6 +5,9 @@ import {
   dataSetForTypeId,
   matchesStandard,
   standardForSerializer,
+  benchmarkStandardMenu,
+  NO_SERIALIZERS_SEP,
+  NO_SERIALIZERS_SEP_ID,
   standardSelectOptions,
 } from '../dimension-labels.js';
 
@@ -52,4 +55,30 @@ test('All is the default standard option and a filter keeps one standard', () =>
   assert.equal(matchesStandard(groups[0], 'all'), true);
   assert.equal(matchesStandard(groups[1], 'json'), false);
   assert.equal(matchesStandard(groups[0], 'json'), true);
+});
+
+
+test('Standard menu is All, populated standards, then standards with no serializers', () => {
+  const items = benchmarkStandardMenu({
+    language: 'csharp',
+    labels,
+    allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
+    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'Custom' }[id] || id),
+  });
+  const ids = items.map((item) => item.id);
+  assert.equal(ids[0], 'all');
+  const sep = ids.indexOf(NO_SERIALIZERS_SEP_ID);
+  assert.ok(sep > 1);
+  assert.equal(items[sep].disabled, true);
+  assert.equal(items[sep].label, NO_SERIALIZERS_SEP);
+  const populated = ids.slice(1, sep);
+  const empty = ids.slice(sep + 1);
+  assert.deepEqual(populated, ['json']);
+  assert.ok(empty.includes('arrow'));
+  assert.ok(empty.includes('toml'));
+  assert.ok(empty.includes('parquet'));
+  assert.ok(empty.includes('avro'));
+  assert.ok(empty.includes('custom'));
+  const emptyLabels = items.slice(sep + 1).map((item) => item.label);
+  assert.deepEqual(emptyLabels, [...emptyLabels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
 });

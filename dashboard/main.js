@@ -45,9 +45,10 @@ import {
 } from './fixture-types.js';
 import {
   applyDimensionLabels,
+  benchmarkStandardMenu,
   matchesStandard,
-  standardSelectOptions,
 } from './dimension-labels.js';
+import { formatLabel, scoredFormatIds } from './compliance-groups.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -1799,16 +1800,24 @@ async function loadDimensionLabels() {
 function populateStandardSelect() {
   const sel = document.getElementById('standard-select');
   if (!sel) return;
-  const options = standardSelectOptions(state.allGroups);
+  const items = benchmarkStandardMenu({
+    groups: state.allGroups,
+    labels: dimensionLabels,
+    language: state.currentLanguage,
+    allStandardIds: scoredFormatIds(),
+    labelOf: (id) => (id === 'custom' ? 'Custom' : formatLabel(id)),
+  });
+  const selectable = items.filter((item) => !item.disabled).map((item) => item.id);
   const prev = state.currentStandard || 'all';
   sel.innerHTML = '';
-  for (const id of options) {
+  for (const item of items) {
     const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = id === 'all' ? 'All' : id;
+    opt.value = item.id;
+    opt.textContent = item.label;
+    opt.disabled = !!item.disabled;
     sel.appendChild(opt);
   }
-  state.currentStandard = options.includes(prev) ? prev : 'all';
+  state.currentStandard = selectable.includes(prev) ? prev : 'all';
   sel.value = state.currentStandard;
 }
 
