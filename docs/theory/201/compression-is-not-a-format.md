@@ -80,6 +80,7 @@ Examples of structure reducing size **using knowledge of the model**:
 | Enumerations | Store a small integer instead of a long string label | Status codes, units |
 | Columnar layout | Store one column contiguously; encode and compress per column | Parquet, ORC ([data science perspective](../101/data_science_perspective.md)) |
 | Domain encoding | Differences of timestamps; dictionary codes for categories | Analytics and telemetry |
+| Bit-packing | Put several small values into one byte, using only the bits each value needs | Integers with a known range, and low-precision samples ([Bit width is not bus width](bit-width-and-bus-width.md)) |
 
 These representations remain **interpretable under format rules**. A gzip bitstream alone is not a data schema.
 

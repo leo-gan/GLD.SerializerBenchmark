@@ -56,6 +56,8 @@ You do not need detailed processor microarchitecture for this course. The essent
 | Text string in C (`char *`) | Pointer width (often 8 bytes on 64-bit processes) | An **address** of character data elsewhere—not the characters themselves |
 | Text string in Python, Java, C#, or JavaScript | A **reference** to a heap object | Length, character data, and type metadata live in that object, not as one simple blob at the variable |
 
+That table is about **addressable host values** on a typical desktop or server. A format may store a value in fewer bits than one byte. Hardware may move many bytes in one transfer. Those are different questions. [Bit width is not bus width](bit-width-and-bus-width.md) separates them.
+
 **Integer example (before endianness).** The integer 305 419 896 is commonly written in hexadecimal as `0x12345678`. As a 32-bit integer it occupies **four** bytes. Which address receives `0x12` versus `0x78` is a matter of **endianness**, discussed below. The teaching point is simple: **the value is not stored as the decimal characters** `3` `0` `5` … unless you deliberately use a text format such as JSON.
 
 **Floating-point example.** The value `1.5` as a 32-bit binary float is a specific 32-bit pattern defined by IEEE 754. It is not the three characters `1`, `.`, and `5`. Text is appropriate for human display. Processors perform arithmetic on the binary pattern.
@@ -357,6 +359,7 @@ The **Dashboard** therefore reflects the cost of *those* contracts. JSON text, M
 - Assuming that because little-endian hosts are common, endianness no longer matters. **Embedded systems, network equipment, and file formats** still need a written rule.
 - Confusing **host layout** with **zero-copy wire layout**. The latter is designed, versioned, and free of host pointers into another process’s heap.
 - Transmitting language-native serializations of object graphs across a trust boundary. See security notes in the [engineering perspective](../101/engineer_perspective.md).
+- Treating a wide bus, such as a cache line or a memory transfer, as a reason to abandon bytes as the unit of the format. A contiguous buffer of bytes already fills that transfer. See [Bit width is not bus width](bit-width-and-bus-width.md).
 
 ---
 
@@ -368,5 +371,6 @@ The **Dashboard** therefore reflects the cost of *those* contracts. JSON text, M
 - Zero-copy formats still define a layout. They make that layout readable in place instead of rebuilding a full object graph.
 - Multi-language systems need an agreed encoding, not merely a shared C header file.
 - Measure real codecs on representative payloads. A local memory-copy microbenchmark is not an interchange strategy.
+- Hardware moves many bytes in one transfer. The interchange unit stays the byte. A value narrower than a byte is a separate choice. See [Bit width is not bus width](bit-width-and-bus-width.md).
 
 ---

@@ -84,6 +84,7 @@ Several ideas sound similar to message zero-copy but solve different problems:
 | Memory-mapped columnar formats (Arrow, Parquet access paths) | Zero-copy *columns* for analytical workloads—a different problem domain ([data science perspective](../101/data_science_perspective.md)) |
 | `span` / buffer views on ordinary codecs | Reduce copies without adopting a full zero-copy message format |
 | Protocol Buffers with arenas or pooling | Fast creation of full language objects in memory, or reduced allocation. This is not the same layout model. |
+| Values packed into shared bytes | Several values share one byte. Reading one of them means extracting bits. That is different from loading an aligned field directly from the buffer ([Bit width is not bus width](bit-width-and-bus-width.md)). |
 
 ---
 

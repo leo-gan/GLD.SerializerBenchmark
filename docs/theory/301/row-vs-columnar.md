@@ -164,6 +164,7 @@ C++, Rust, Go, Java, C#, JavaScript, and Kotlin used 100 repetitions. Do not ran
 - Arrow zero-copy handoff between two specific engines.
 - Optimal partition and layout design for your lake.
 - Whether micro-batch columnar encoding of events is worth the complexity.
+- Columns whose values use fewer than eight bits, such as model weights stored that way, and whether a wider hardware bus changes the cost of encoding. See [Bit width is not bus width](../201/bit-width-and-bus-width.md).
 
 ---
 
