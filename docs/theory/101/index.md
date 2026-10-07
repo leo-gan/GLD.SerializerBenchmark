@@ -48,7 +48,7 @@ The same formats appear under three perspectives on purpose. Each document answe
 3. Deep-dive the lens that matches your work. Choose either **[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**.
 4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use. On the Dashboard, set **Language** and **Standard** before you read a ranking.
 5. When you need *mechanisms* (how formats work under the hood), work through the **[Serialization 201](../201/index.md)** track:
-    1. [Memory layout](../201/memory-layout.md)
+    1. [Memory layout](../201/memory-layout.md). If a value is narrower than a byte, or someone argues that a wide bus should change the format, continue with the optional page [Bit width is not bus width](../201/bit-width-and-bus-width.md).
     2. [Encode/decode cost](../201/encode-decode-cost.md)
     3. [Self-describing vs schema](../201/self-describing-vs-schema-dependent.md)
     4. [Schema evolution](../201/schema-evolution.md)

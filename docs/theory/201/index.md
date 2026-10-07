@@ -27,11 +27,12 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 
 ## Suggested order (MVP path)
 
-The table below gives a suggested order for a first pass through Serialization 201. Each row states what you should be able to explain after reading that article.
+The table below gives a suggested order for a first pass through Serialization 201. Each row states what you should be able to explain after reading that article. The optional row sits after memory layout. It is not part of the first pass.
 
 | Step | Article | You should be able to… |
 |------|---------|------------------------|
 | 1 | [Memory layout](memory-layout.md) | Explain why dumping raw process memory is not a portable interchange format |
+| optional | [Bit width is not bus width](bit-width-and-bus-width.md) | Explain the difference between how many bits a value needs, the byte a program indexes, and the wide chunk of bytes hardware moves at once |
 | 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parsing structure, converting numbers, allocating, copying). Do not say only that “JSON is slow.” |
 | 3 | [Self-describing vs schema](self-describing-vs-schema-dependent.md) | Say whether field identity lives in the payload itself or in a shared contract outside the message |
 | 4 | [Schema evolution](schema-evolution.md) | Plan additive changes that keep older readers and writers working during a rollout |
@@ -48,6 +49,7 @@ The table below gives a suggested order for a first pass through Serialization 2
 These articles explain how values become bytes, and where the time and memory go when you encode or decode them.
 
 - [Memory layout](memory-layout.md)
+- [Bit width is not bus width](bit-width-and-bus-width.md) (optional). Read this when a value is narrower than a byte, or when someone suggests matching the serializer to a wide bus.
 - [Encode/decode cost](encode-decode-cost.md)
 
 ### Contracts & change

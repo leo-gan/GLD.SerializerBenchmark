@@ -168,6 +168,7 @@ Schema-driven remote-procedure-call formats show up when machine-learning **serv
 | Portable inference across languages | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, framework export formats, or dedicated model servers |
 | Bundle preprocessing and model for one Python service | Still better with a versioned registry and immutable artifact IDs than ad-hoc pickles in chat threads |
 | Audit and compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
+| Quantized weights shared across runtimes | A file that records how many bits each number uses, how the numbers are grouped, and the multiplier that turns those bits back into approximate real values. Loading the file must not run code. The order on disk and the order a matrix calculation expects can differ ([Bit width is not bus width](../201/bit-width-and-bus-width.md)). |
 
 ### Experiments versus production
 

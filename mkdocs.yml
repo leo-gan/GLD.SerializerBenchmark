@@ -105,6 +105,7 @@ nav:
       - 201:
           - Overview: theory/201/index.md
           - Memory layout: theory/201/memory-layout.md
+          - Bit width is not bus width: theory/201/bit-width-and-bus-width.md
           - Encode/decode cost: theory/201/encode-decode-cost.md
           - Self-describing vs schema: theory/201/self-describing-vs-schema-dependent.md
           - Schema evolution: theory/201/schema-evolution.md
