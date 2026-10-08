@@ -102,7 +102,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 |----------|--------------------------|----------|-----------|
 | C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
 | C# | **50** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
-| C++ | **35** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
+| C++ | **39** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
 | Go | **30** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **27** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **29** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
@@ -116,7 +116,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 
 † In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.
 
-‡ C++ registers **35** on this machine when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers (**30** here; Boost.Serialization is not installed).
+‡ C++ registers **39** on this machine when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers (**34** here; Boost.Serialization is not installed).
 
 **Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, and `mojo`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
 

@@ -370,6 +370,10 @@ export const CATALOG = [
   { language: "mojo", name: "dagr-regular", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "mojo", name: "dagr-frozen", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "mojo", name: "dagr-frozen-packed", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "cpp", name: "dagr-packed", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "cpp", name: "dagr-regular", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "cpp", name: "dagr-frozen", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "cpp", name: "dagr-frozen-packed", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

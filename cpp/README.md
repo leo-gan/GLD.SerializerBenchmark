@@ -4,13 +4,13 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 Native C++20 benchmark runner emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, nanoseconds).
 
-## Serializers (35 with Arrow)
+## Serializers (39 with Arrow)
 
 See [docs/cpp/index.md](../docs/cpp/index.md) for the inventory, optimal call paths, and **C vs C++ dual-use** notes.
 
-Includes official **libprotobuf** (`protobuf`) plus in-tree **protobuf-wire**.
+Includes official **libprotobuf** (`protobuf`) plus in-tree **protobuf-wire**, and the four **Dagr** layout rows (`dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`) from the header-only code generated into `cpp/dagr_gen/` (regenerate in `schemas/v2/dagr/` with `dagr build --schema schema_cpp.py --receipt dagr_cpp.lock.json`).
 
-With Arrow 25.0.1 on `ARROW_ROOT`, this machine registers **35** codecs: **29** existing rows (Boost.Serialization is not installed; avro-c and Cap'n Proto are) plus `sbe` and `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
+With Arrow 25.0.1 on `ARROW_ROOT`, this machine registers **39** codecs: **33** existing rows (the four Dagr rows included; Boost.Serialization is not installed; avro-c and Cap'n Proto are) plus `sbe` and `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
 
 Columnar and SBE rows time `serialize_bytes` / `deserialize_bytes`. Building the Arrow table and filling the SBE flyweight happen inside the timed serialize call. Stream entry points are adapted wrappers around those bytes. The columnar run config is bytes only. There is no compliance decoder for `table`, `table_project`, `nested_table`, or `signal`.
 

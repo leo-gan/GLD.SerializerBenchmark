@@ -745,7 +745,11 @@
       ],
       "sbe": [
         "sbe"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "swift": {
       "Foundation.JSONEncoder": [

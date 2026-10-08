@@ -26,11 +26,24 @@ dagr verify                          # detect hand-edits of generated files
 
 | Language | Generated code |
 |----------|----------------|
-| Rust | `rust/dagr_gen/` (crate `benchmark_v2`) |
+| Rust | `rust/dagr_gen/` (crate `dagr_benchmark_v2`; upstream's SBE crate is `benchmark_v2`) |
 | Swift | `swift/DagrGen/` (package `BenchmarkV2`) |
 | Go | `go/gen/dagrv2/` |
 | JavaScript | `javascript/src/generated/dagr/` (TypeScript) |
 | Python | `python/generated/dagr/` |
 | Mojo | `mojo/src/gen/dagr/` |
+| C++ | `cpp/dagr_gen/` (header-only, namespace `benchmark_v2`; from `schema_cpp.py`, see below) |
+
+The C++ target is newer than the current dagr-cli release, so it lives in a library of its
+own: `schema_cpp.py` imports the same 20 graphs from `schema.py` and has its own receipt,
+`dagr_cpp.lock.json`. Rebuild it with a dagr-cli from Dagr's main branch; the other targets
+and `dagr.lock.json` are left alone:
+
+```bash
+pip install git+https://codeberg.org/mzaks/dagr
+cd schemas/v2/dagr && dagr build --schema schema_cpp.py --receipt dagr_cpp.lock.json
+```
+
+Fold the `Cpp(...)` target into `schema.py` once a dagr-cli release ships it.
 
 Never edit generated files. Change `schema.py` and rebuild.

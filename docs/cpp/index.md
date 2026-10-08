@@ -5,7 +5,7 @@ title: "C++"
 C++
 ===
 
-C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers, SBE), and **columnar** Arrow IPC, Parquet, and ORC.
+C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers, SBE, Dagr), and **columnar** Arrow IPC, Parquet, and ORC.
 
 ## Runtime
 
@@ -51,7 +51,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 - Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
 - Apache Arrow 25.0.1: optional prebuilt prefix (`-DARROW_ROOT=` or `ARROW_ROOT`). Same feature set as the jammy apt packages `libarrow-dev` and `libparquet-dev` 25.0.1-1. Not FetchContent. ORC is inside `libarrow`. A missing prefix skips the Arrow rows and still builds the other serializers.
 - SBE 1.40.2: header-only codecs vendored in `cpp/gen/sbe/` from `schemas/v2/sbe/signal.xml`
-- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **35** codecs (**29** existing rows plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
+- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **39** codecs (**33** existing rows, the four Dagr rows included, plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
 
 ## Serializers
 
@@ -67,6 +67,10 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [cereal](https://github.com/USCiLab/cereal) | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
 | [cista](https://github.com/felixguendling/cista) | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
 | [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Binary | harness | length-prefixed fields | Baseline; stream adapted |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | direct builder / lazy reader | Direct value structs built in prepare (like protobuf's messages); `direct::build` into one reused `dagr::Builder` timed; lazy accessors → domain timed; N>1 suite frame; stream adapted |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | arena serializer / lazy reader | Regular (vtable) nodes; generated arena built in prepare; `Arena::serialize` into a reused builder and caches timed; lazy accessors → domain timed; N>1 suite frame |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | arena serializer / lazy reader | Frozen nodes; same call path as dagr-regular |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | direct builder / lazy reader | Frozen+packed nodes; same call path as dagr-packed |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
 | [glaze](https://github.com/stephenberry/glaze) | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
@@ -136,6 +140,22 @@ Cista++ serializes C++ object graphs as offset-based, pointer-free images. The p
 #### [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `harness`
 
 This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler.
+
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable). The C++ code is header-only, generated from `schemas/v2/dagr/schema_cpp.py` (the same graphs as `schema.py`) into `cpp/dagr_gen/`.
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable). The C++ code is header-only, generated from `schemas/v2/dagr/schema_cpp.py` (the same graphs as `schema.py`) into `cpp/dagr_gen/`.
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution). The C++ code is header-only, generated from `schemas/v2/dagr/schema_cpp.py` (the same graphs as `schema.py`) into `cpp/dagr_gen/`.
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). The C++ code is header-only, generated from `schemas/v2/dagr/schema_cpp.py` (the same graphs as `schema.py`) into `cpp/dagr_gen/`.
 
 #### [flatbuffers](https://github.com/google/flatbuffers) · `flatbuffers`
 
