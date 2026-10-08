@@ -1,9 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   applyDimensionLabels,
   dataSetForTypeId,
   matchesStandard,
+  missingRegisteredRows,
   standardForSerializer,
   benchmarkStandardMenu,
   NO_SERIALIZERS_SEP,
@@ -81,4 +85,46 @@ test('Standard menu is All, populated standards, then standards with no serializ
   assert.ok(empty.includes('custom'));
   const emptyLabels = items.slice(sep + 1).map((item) => item.label);
   assert.deepEqual(emptyLabels, [...emptyLabels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+});
+
+const DAGR = ['dagr-frozen', 'dagr-frozen-packed', 'dagr-packed', 'dagr-regular'];
+
+test('missing registered rows keep the standard filter and skip measured names', () => {
+  const registrations = [
+    { language: 'cpp', serializer: 'bitsery', standard: 'custom' },
+    { language: 'cpp', serializer: 'nlohmann_json', standard: 'json' },
+    { language: 'cpp', serializer: 'dagr-packed', standard: 'custom' },
+    { language: 'cpp', serializer: 'dagr-regular', standard: 'custom' },
+    { language: 'rust', serializer: 'dagr-packed', standard: 'custom' },
+  ];
+  const custom = missingRegisteredRows({
+    language: 'cpp',
+    selectedStandard: 'custom',
+    measuredNames: ['bitsery', 'nlohmann_json'],
+    registrations,
+    testData: 'message@n=1',
+  });
+  assert.deepEqual(custom.map((row) => row.serializer), ['dagr-packed', 'dagr-regular']);
+  assert.equal(custom[0].unmeasured, true);
+  assert.equal(custom[0].test_data, 'message@n=1');
+  assert.equal(custom[0].standard, 'custom');
+
+  const jsonOnly = missingRegisteredRows({
+    language: 'cpp',
+    selectedStandard: 'json',
+    measuredNames: ['bitsery'],
+    registrations,
+  });
+  assert.deepEqual(jsonOnly.map((row) => row.serializer), ['nlohmann_json']);
+  assert.equal(jsonOnly.some((row) => row.serializer.startsWith('dagr-')), false);
+});
+
+test('dimension labels map every Dagr row to custom', () => {
+  const path = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'dimension-labels.json');
+  const labels = JSON.parse(readFileSync(path, 'utf8'));
+  for (const lang of ['python', 'javascript', 'go', 'rust', 'cpp', 'swift', 'mojo']) {
+    for (const name of DAGR) {
+      assert.equal(labels.standards[lang][name], 'custom', `${lang}/${name}`);
+    }
+  }
 });

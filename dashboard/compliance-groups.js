@@ -4,14 +4,18 @@
  * Membership is many-to-many: one serializer may belong to several
  * Standard families (JSON and YAML, JSON and MessagePack, …).
  *
- * All            = bench roster ∪ every scored name (one row per serializer).
+ * All            = bench roster ∪ scored names ∪ registered catalog names
+ *                  (one row per serializer). `registered` defaults to []
+ *                  so a bench-only caller keeps its previous roster.
  * Standard S     = serializers listed under S in
  *                  compliance/serializer-standards.json (same file the
  *                  runners use), plus any that have live matrix cells for S.
  *                  Subsets may overlap; a multi-standard name is in each.
+ *                  A registered name is classified the same way.
  * * No public spec = All − ∪(every Standard). Classification, not “has a
  *                  live catalog run”, decides membership — mpack is
- *                  MessagePack even with empty cells.
+ *                  MessagePack even with empty cells. A registered name
+ *                  whose list is empty stays here when no run measured it.
  */
 import {
   heatmapFromMatrix,
@@ -151,6 +155,7 @@ export function complianceHeatmap(matrix, {
   language = '',
   benchVersions = {},
   extras = [],
+  registered = [],
 } = {}) {
   return withPublishedStandardColumns(
     attachFormats(
@@ -162,6 +167,7 @@ export function complianceHeatmap(matrix, {
       matrix,
       language,
       benchVersions,
+      registered,
     ),
     format,
   );
@@ -204,19 +210,19 @@ export function standardOptionIds() {
 }
 
 /** True when this language's roster has at least one serializer in the family. */
-export function standardHasSerializers(format, { language = '', benchVersions = {}, matrix = [] } = {}) {
-  return formatSubset(matrix, format, language, benchVersions).length > 0;
+export function standardHasSerializers(format, { language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
+  return formatSubset(matrix, format, language, benchVersions, registered).length > 0;
 }
 
 /**
  * Standard dropdown items after All:
  *   populated families (sorted) → * No public spec → disabled separator → empty families (sorted).
  */
-export function standardMenuOptions({ language = '', benchVersions = {}, matrix = [] } = {}) {
+export function standardMenuOptions({ language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
   const populated = [];
   const empty = [];
   for (const id of scoredFormatIds()) {
-    if (standardHasSerializers(id, { language, benchVersions, matrix })) populated.push(id);
+    if (standardHasSerializers(id, { language, benchVersions, matrix, registered })) populated.push(id);
     else empty.push(id);
   }
   const items = [
@@ -278,15 +284,36 @@ export function entriesFromBenchMap(benchVersions, language = '') {
 }
 
 /**
- * All-serializers set for a language (or every language when language is
- * empty / 'all'): Overview bench names plus any scored compliance name.
+ * Catalog rows that are not in the bench or the matrix yet.
+ * Accepts `{language, name}` (compliance catalog) or `{language, serializer}`.
  */
-export function rosterEntries({ language = '', benchVersions = {}, matrix = [] } = {}) {
+export function entriesFromRegistered(registered, language = '') {
+  const out = [];
+  const seen = new Set();
+  const want = language && language !== 'all' ? language : '';
+  for (const row of Array.isArray(registered) ? registered : []) {
+    if (!row || typeof row !== 'object') continue;
+    const lang = String(row.language || '');
+    const name = row.serializer || row.name || '';
+    if (!lang || !name) continue;
+    if (want && lang !== want) continue;
+    pushUnique(out, seen, normalizeEntry({ language: lang, serializer: name }));
+  }
+  return out;
+}
+
+/**
+ * All-serializers set for a language (or every language when language is
+ * empty / 'all'): Overview bench names, scored compliance names, and any
+ * registered catalog names the caller passes.
+ */
+export function rosterEntries({ language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
   const out = [];
   const seen = new Set();
   for (const entry of [
     ...entriesFromBenchMap(benchVersions, language),
     ...entriesFromMatrix(matrix, language),
+    ...entriesFromRegistered(registered, language),
   ]) {
     pushUnique(out, seen, entry);
   }
@@ -311,7 +338,7 @@ function addFormats(map, entry, formats) {
  * serializer key → set of format families (classification ∪ live cells).
  * A key with size > 1 is a multi-standard serializer.
  */
-export function formatsBySerializer(matrix, language = '', benchVersions = {}) {
+export function formatsBySerializer(matrix, language = '', benchVersions = {}, registered = []) {
   const map = new Map();
   for (const cell of Array.isArray(matrix) ? matrix : []) {
     const fmt = String(cell.format || '');
@@ -323,6 +350,7 @@ export function formatsBySerializer(matrix, language = '', benchVersions = {}) {
   for (const entry of [
     ...entriesFromBenchMap(benchVersions, language),
     ...entriesFromMatrix(matrix, language),
+    ...entriesFromRegistered(registered, language),
   ]) {
     addFormats(map, entry, classifySerializer(entry.language, entry.serializer));
   }
@@ -335,7 +363,7 @@ export function formatListForKey(matrix, key, language = '') {
 }
 
 /** Serializers that belong to a Standard (classified or live cells). Overlaps allowed. */
-export function formatSubset(matrix, format, language = '', benchVersions = {}) {
+export function formatSubset(matrix, format, language = '', benchVersions = {}, registered = []) {
   const out = [];
   const seen = new Set();
   if (!format || format === NO_SPEC) return out;
@@ -348,6 +376,7 @@ export function formatSubset(matrix, format, language = '', benchVersions = {}) 
   for (const entry of [
     ...entriesFromBenchMap(benchVersions, language),
     ...entriesFromMatrix(matrix, language),
+    ...entriesFromRegistered(registered, language),
   ]) {
     if (classifySerializer(entry.language, entry.serializer).includes(format)) {
       pushUnique(out, seen, entry);
@@ -361,20 +390,20 @@ export function formatSubset(matrix, format, language = '', benchVersions = {}) 
   return out;
 }
 
-export function scoredEntries(matrix, language = '', benchVersions = {}) {
+export function scoredEntries(matrix, language = '', benchVersions = {}, registered = []) {
   const out = [];
   const seen = new Set();
-  const membership = formatsBySerializer(matrix, language, benchVersions);
-  for (const entry of rosterEntries({ language, benchVersions, matrix })) {
+  const membership = formatsBySerializer(matrix, language, benchVersions, registered);
+  for (const entry of rosterEntries({ language, benchVersions, matrix, registered })) {
     if (membership.get(entry.key)?.size) pushUnique(out, seen, entry);
   }
   return out;
 }
 
 /** All − ∪(every Standard). Multi-standard names are in the union once. */
-export function noSpecEntries({ language = '', benchVersions = {}, matrix = [] } = {}) {
-  const scored = new Set(scoredEntries(matrix, language, benchVersions).map((e) => e.key));
-  return rosterEntries({ language, benchVersions, matrix }).filter((e) => !scored.has(e.key));
+export function noSpecEntries({ language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
+  const scored = new Set(scoredEntries(matrix, language, benchVersions, registered).map((e) => e.key));
+  return rosterEntries({ language, benchVersions, matrix, registered }).filter((e) => !scored.has(e.key));
 }
 
 export function padHeatmap(heat, extras, { serializerKey = '' } = {}) {
@@ -403,8 +432,8 @@ export function padHeatmap(heat, extras, { serializerKey = '' } = {}) {
 }
 
 /** Copy each row's format families onto `row.formats` (sorted). */
-export function attachFormats(heat, matrix, language = '', benchVersions = {}) {
-  const byKey = formatsBySerializer(matrix, language, benchVersions);
+export function attachFormats(heat, matrix, language = '', benchVersions = {}, registered = []) {
+  const byKey = formatsBySerializer(matrix, language, benchVersions, registered);
   const rows = (heat?.rows || []).map((row) => ({
     ...row,
     formats: [...(byKey.get(row.key) || [])].sort((a, b) =>
@@ -429,17 +458,17 @@ export function rowIsUnscored(row) {
  * sides. Standard options themselves may overlap.
  * Returns { all, scored, noSpec, membership, issues }.
  */
-export function auditComplianceGroups({ language = '', benchVersions = {}, matrix = [] } = {}) {
-  const all = rosterEntries({ language, benchVersions, matrix });
-  const scored = scoredEntries(matrix, language, benchVersions);
-  const noSpec = noSpecEntries({ language, benchVersions, matrix });
-  const membership = formatsBySerializer(matrix, language, benchVersions);
+export function auditComplianceGroups({ language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
+  const all = rosterEntries({ language, benchVersions, matrix, registered });
+  const scored = scoredEntries(matrix, language, benchVersions, registered);
+  const noSpec = noSpecEntries({ language, benchVersions, matrix, registered });
+  const membership = formatsBySerializer(matrix, language, benchVersions, registered);
   const allKeys = new Set(all.map((e) => e.key));
   const scoredKeys = new Set(scored.map((e) => e.key));
   const noSpecKeys = new Set(noSpec.map((e) => e.key));
   const issues = [];
 
-  const menu = standardMenuOptions({ language, benchVersions, matrix });
+  const menu = standardMenuOptions({ language, benchVersions, matrix, registered });
   const noSpecAt = menu.findIndex((item) => item.id === NO_SPEC);
   const sepAt = menu.findIndex((item) => item.id === EMPTY_STANDARDS_SEP_ID);
   if (noSpecAt < 0) {
@@ -487,7 +516,7 @@ export function auditComplianceGroups({ language = '', benchVersions = {}, matri
   const union = new Set();
   let subsetSum = 0;
   for (const fmt of scoredFormatIds()) {
-    const subset = formatSubset(matrix, fmt, language, benchVersions);
+    const subset = formatSubset(matrix, fmt, language, benchVersions, registered);
     subsetSum += subset.length;
     for (const e of subset) union.add(e.key);
   }
@@ -517,7 +546,7 @@ export function auditComplianceGroups({ language = '', benchVersions = {}, matri
       issues.push(`membership key missing from All: ${lang}/${serializer}`);
     }
     for (const fmt of fmts) {
-      const hit = formatSubset(matrix, fmt, language, benchVersions).some((e) => e.key === key);
+      const hit = formatSubset(matrix, fmt, language, benchVersions, registered).some((e) => e.key === key);
       if (!hit) {
         const { language: lang, serializer } = parseRowIdentity(key);
         issues.push(`${lang}/${serializer} has ${fmt} cells but is missing from that Standard subset`);

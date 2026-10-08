@@ -50,7 +50,9 @@ import {
   applyDimensionLabels,
   benchmarkStandardMenu,
   matchesStandard,
+  missingRegisteredRows,
 } from './dimension-labels.js';
+import { registeredEntries } from './compliance-classify.js';
 import { formatLabel, scoredFormatIds } from './compliance-groups.js';
 import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 
@@ -208,6 +210,8 @@ let state = {
   filterPolicy: DEFAULT_FILTER_POLICY,
   defaultFilterPolicy: DEFAULT_FILTER_POLICY,
   filteredGroups: [],
+  /** Registered suite serializers with no row in the published run. Not charted. */
+  unmeasuredGroups: [],
   paretoSerializerNames: [],
   serializerNames: [],
   detailSerializers: [],
@@ -848,8 +852,8 @@ function setupEventListeners() {
   });
 
   document.getElementById('detail-ser-select-all')?.addEventListener('click', () => {
-    // Same-language only: add all (capped)
-    state.detailSerializers = state.serializerNames.slice(0, MAX_COMPARE_COLUMNS);
+    // Same-language only: add measured rows (capped). Unmeasured names stay opt-in.
+    state.detailSerializers = namesWithMeasurements().slice(0, MAX_COMPARE_COLUMNS);
     if (
       state.compareBaseline &&
       !state.detailSerializers.includes(state.compareBaseline) &&
@@ -2302,29 +2306,72 @@ function resolveFixtureGroups() {
   return allGroups.filter((g) => g.test_data === state.currentTestData);
 }
 
+/**
+ * Suite rows for registered serializers that have no public spec and no
+ * published measurement. Scored families stay off this list: a compliance
+ * adapter with no timing row is not a benchmark gap, and Arrow, Parquet,
+ * ORC, and SBE belong to the columnar data set.
+ * `measuredNames` is the whole snapshot, so a serializer that ran on another
+ * data type is not repeated here as "not measured".
+ */
+function overviewUnmeasuredGroups() {
+  if (!state.currentTestData || dataSetForFixture(state.currentTestData) !== 'suite') return [];
+  const language = state.currentLanguage || '';
+  const labelMap = dimensionLabels?.standards?.[language] || {};
+  const registrations = registeredEntries(language)
+    .filter((row) => !row.formats || row.formats.length === 0)
+    .map((row) => ({
+      language: row.language,
+      serializer: row.serializer,
+      standard: labelMap[row.serializer] || 'custom',
+    }));
+  return missingRegisteredRows({
+    language,
+    selectedStandard: state.currentStandard,
+    measuredNames: state.allGroups.map((g) => g.serializer),
+    registrations,
+    testData: state.currentTestData,
+  });
+}
+
+/** Serializer names that have a measured row in the current Overview filter. */
+function namesWithMeasurements() {
+  const measured = new Set(state.filteredGroups.map((g) => g.serializer));
+  return state.serializerNames.filter((name) => measured.has(name));
+}
+
 function filterAndRefresh() {
   state.filteredGroups = resolveFixtureGroups();
+  state.unmeasuredGroups = overviewUnmeasuredGroups();
 
-  state.serializerNames = [
+  const measuredNames = [
     ...new Set(state.filteredGroups.map((g) => g.serializer)),
+  ];
+  state.serializerNames = [
+    ...new Set([
+      ...measuredNames,
+      ...state.unmeasuredGroups.map((g) => g.serializer),
+    ]),
   ].sort((a, b) => a.localeCompare(b));
 
   calculateParetoFrontier();
 
-  // Baseline default
-  if (!state.compareBaseline || !state.serializerNames.includes(state.compareBaseline)) {
+  // Baseline and the default Compare seed stay on measured rows.
+  const measuredInView = namesWithMeasurements();
+  if (!state.compareBaseline || !measuredInView.includes(state.compareBaseline)) {
     state.compareBaseline =
-      state.paretoSerializerNames[0] || state.serializerNames[0] || '';
+      state.paretoSerializerNames[0] || measuredInView[0] || '';
   }
 
-  // Detail serializers default: baseline + a few others (capped)
+  // Detail serializers default: baseline + a few others (capped).
+  // A name the user already added, including an unmeasured one, stays.
   state.detailSerializers = state.detailSerializers.filter((s) =>
     state.serializerNames.includes(s)
   );
   if (!state.detailSerializers.length) {
     const seed = state.paretoSerializerNames.length
       ? state.paretoSerializerNames
-      : state.serializerNames;
+      : measuredInView;
     state.detailSerializers = seed.slice(0, Math.min(6, seed.length));
   }
   if (state.compareBaseline && !state.detailSerializers.includes(state.compareBaseline)) {
@@ -3071,11 +3118,17 @@ function setChartEmptyVisible(empty) {
 
 function updateKPIs() {
   const total = state.filteredGroups.length;
-  document.getElementById('kpi-total').textContent = formatIntGrouped(total);
+  const unpublished = (state.unmeasuredGroups || []).length;
+  document.getElementById('kpi-total').textContent = formatIntGrouped(total + unpublished);
   setChartEmptyVisible(total === 0);
 
   if (total === 0) {
-    setKpiEmpty('No data for this filter');
+    setKpiEmpty(unpublished ? 'No published run for this filter' : 'No data for this filter');
+    if (unpublished) {
+      document.getElementById('kpi-total').textContent = formatIntGrouped(unpublished);
+      const note = document.getElementById('kpi-fastest-val');
+      if (note) note.textContent = 'Registered, not measured — no timing row in this snapshot';
+    }
     return;
   }
 
@@ -3117,7 +3170,11 @@ function updateKPIs() {
 }
 
 function groupForSerializer(name) {
-  return state.filteredGroups.find((g) => g.serializer === name) || null;
+  return (
+    state.filteredGroups.find((g) => g.serializer === name) ||
+    (state.unmeasuredGroups || []).find((g) => g.serializer === name) ||
+    null
+  );
 }
 
 function populateBaselineSelect() {
@@ -3127,16 +3184,17 @@ function populateBaselineSelect() {
   ].filter(Boolean);
   if (!sels.length) return;
 
-  if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
+  const baselineNames = namesWithMeasurements();
+  if (state.compareBaseline && baselineNames.includes(state.compareBaseline)) {
     // keep
-  } else if (state.serializerNames.length) {
+  } else if (baselineNames.length) {
     state.compareBaseline =
-      state.paretoSerializerNames[0] || state.serializerNames[0] || '';
+      state.paretoSerializerNames[0] || baselineNames[0] || '';
   }
 
   sels.forEach((sel) => {
     sel.innerHTML = '';
-    state.serializerNames.forEach((name) => {
+    baselineNames.forEach((name) => {
       const opt = document.createElement('option');
       opt.value = name;
       const g = groupForSerializer(name);
@@ -3148,7 +3206,7 @@ function populateBaselineSelect() {
       opt.title = href ? `${full} · ${href}` : full;
       sel.appendChild(opt);
     });
-    if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
+    if (state.compareBaseline && baselineNames.includes(state.compareBaseline)) {
       sel.value = state.compareBaseline;
     }
   });
@@ -3324,9 +3382,14 @@ function renderTable() {
     table.classList.toggle('view-stream', showHonesty);
   }
 
-  // Enrich with derived ops stats for sort + cells
-  let rows = state.filteredGroups
-    .filter((g) => (g.serializer || '').toLowerCase().includes(state.searchQuery))
+  // Enrich with derived ops stats for sort + cells.
+  // Unmeasured catalog rows stay out of filteredGroups so charts, Pareto, and KPIs ignore them.
+  const query = state.searchQuery;
+  let rows = [
+    ...state.filteredGroups,
+    ...(state.unmeasuredGroups || []),
+  ]
+    .filter((g) => (g.serializer || '').toLowerCase().includes(query))
     .map(withOpsDerivedStats);
 
   rows.sort((a, b) => {
@@ -3386,7 +3449,12 @@ function renderTable() {
   const help = document.getElementById('detailed-analytics-help');
   if (help) {
     const scope = parseFixtureSelection(state.currentTestData);
+    const unpublished = rows.filter((r) => r.unmeasured).length;
     let scopeNote = ' Full roster for the current language, data type, and standard.';
+    if (unpublished) {
+      scopeNote +=
+        ' Registered serializers with no published run are marked not measured and left out of the charts.';
+    }
     if (scope.kind === 'batch_compound') {
       scopeNote =
         ` <strong>Compounded batch</strong>: mean of <code>${escapeHtml(scope.base)}@n=${scope.nA}</code> and <code>${escapeHtml(scope.base)}@n=${scope.nB}</code>.`;
@@ -3437,6 +3505,9 @@ function renderTable() {
     let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
     if (r.standard) {
       nameHtml += ` <span class="badge badge-slate">${escapeHtml(r.standard)}</span>`;
+    }
+    if (r.unmeasured) {
+      nameHtml += ' <span class="badge badge-slate">not measured</span>';
     }
     if (r.io_parent === 'average') {
       nameHtml += ' <span class="badge badge-slate">avg</span>';
@@ -3741,7 +3812,7 @@ function escapeHtml(str) {
 
 function copyRosterMarkdown() {
   const metricSpecs = rosterMetricKeys();
-  const rows = state.filteredGroups
+  const rows = [...state.filteredGroups, ...(state.unmeasuredGroups || [])]
     .map(withOpsDerivedStats)
     .sort((a, b) => a.serializer.localeCompare(b.serializer));
   const latVals = [];
@@ -3801,6 +3872,8 @@ function copyRosterMarkdown() {
     const opt = state.paretoSerializerNames.includes(r.serializer) ? 'yes' : '';
     const isBaseline = baselineGroup && r.serializer === baselineGroup.serializer;
     const cells = metricSpecs.map(({ key, higherIsBetter }) => {
+      const v = r[key];
+      if (v === null || v === undefined) return '—';
       const cell = formatRosterRelativeCell(
         r,
         key,
@@ -3812,7 +3885,9 @@ function copyRosterMarkdown() {
       return cell.text;
     });
     const name =
-      serializerLabelFromGroup(r) + (isBaseline ? ' (baseline)' : '');
+      serializerLabelFromGroup(r) +
+      (isBaseline ? ' (baseline)' : '') +
+      (r.unmeasured ? ' (not measured)' : '');
     const honestyCell = showHonesty ? ` ${honestyDisplayLabel(r.StreamMode)} |` : '';
     lines.push(`| ${name} |${honestyCell} ${cells.join(' | ')} | ${opt} |`);
   });

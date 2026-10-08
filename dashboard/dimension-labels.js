@@ -116,3 +116,35 @@ export function matchesStandard(group, selected) {
   if (!selected || selected === 'all') return true;
   return group?.standard === selected;
 }
+
+/**
+ * Registered serializers that the current published run did not measure.
+ * Charts stay on measured rows. These are table placeholders only.
+ * A row is kept when its standard matches the Overview filter.
+ */
+export function missingRegisteredRows({
+  language = '',
+  selectedStandard = 'all',
+  measuredNames = [],
+  registrations = [],
+  testData = '',
+} = {}) {
+  const measured = new Set(measuredNames);
+  const out = [];
+  for (const row of registrations || []) {
+    if (!row || row.language !== language) continue;
+    const name = row.serializer || row.name || '';
+    if (!name || measured.has(name)) continue;
+    const group = {
+      language,
+      serializer: name,
+      standard: row.standard || '',
+      test_data: testData,
+      unmeasured: true,
+    };
+    if (!matchesStandard(group, selectedStandard)) continue;
+    out.push(group);
+  }
+  out.sort((a, b) => a.serializer.localeCompare(b.serializer));
+  return out;
+}

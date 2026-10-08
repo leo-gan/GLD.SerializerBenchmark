@@ -31,6 +31,7 @@ import {
   standardMenuOptions,
 } from './compliance-groups.js';
 import { formatComplianceHash, parseComplianceHash } from './dash-hash.js';
+import { CATALOG } from './compliance-catalog.js';
 
 const DATA_URL = 'data/compliance.json.gz';
 const DATA_URL_PLAIN = 'data/compliance.json';
@@ -111,6 +112,7 @@ function groupingArgs(lang = ui.lang) {
     language: !lang || lang === ALL_LANG ? '' : lang,
     benchVersions: benchVersions || {},
     matrix: Array.isArray(payload?.matrix) ? payload.matrix : [],
+    registered: CATALOG,
   };
 }
 
@@ -420,7 +422,7 @@ function renderHeatmap(matrix) {
   if (ui.format === NO_SPEC) return renderNoSpecHeatmap();
   const group = groupingArgs();
   const extras = ui.format
-    ? formatSubset(matrix, ui.format, group.language, group.benchVersions)
+    ? formatSubset(matrix, ui.format, group.language, group.benchVersions, group.registered)
     : rosterEntries(group);
   const { columns, rows } = complianceHeatmap(matrix, {
     format: ui.format,
@@ -428,6 +430,7 @@ function renderHeatmap(matrix) {
     language: group.language,
     benchVersions: group.benchVersions,
     extras,
+    registered: group.registered,
   });
   if (!rows.length) {
     return '<p class="section-help">No results for this standard.</p><div id="cmp-fail-panel" class="cmp-fail-panel" hidden></div>';
@@ -570,15 +573,15 @@ function renderMain(root) {
     ? noSpecList.map((e) => e.key)
     : allStandards
       ? roster.map((e) => e.key)
-      : formatSubset(matrix, ui.format, group.language, group.benchVersions).map((e) => e.key);
+      : formatSubset(matrix, ui.format, group.language, group.benchVersions, group.registered).map((e) => e.key);
   const namesInList = serializers.map((key) => parseRowIdentity(key).serializer || key);
 
   root.innerHTML = `
     <div class="cmp-header">
       <h2 class="chart-title">Compliance</h2>
       <p class="section-help">
-        Same serializers as the Overview timings, scored against the published
-        format spec instead of a stopwatch.
+        Registered serializers, including ones with no published timing run,
+        scored against the published format spec instead of a stopwatch.
         <a href="../compliance/">How the catalog is built</a>
       </p>
     </div>
@@ -586,7 +589,7 @@ function renderMain(root) {
       Each cell asks: did this library accept what the spec requires, and reject
       what it forbids? The inputs are the official parse tests for that format,
       plus cases written from the spec text. XML is not scored. Standard → All
-      lists every Overview serializer once. A library that speaks more than
+      lists every registered serializer once. A library that speaks more than
       one family appears under each of those Standards and still only once
       in All. * No public spec is All minus the union of those families.
     </p>
