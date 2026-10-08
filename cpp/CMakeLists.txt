@@ -286,7 +286,7 @@ set(DAGR_RECEIPT ${CMAKE_CURRENT_SOURCE_DIR}/../schemas/v2/dagr/dagr.lock.json)
 set(DAGR_TOOL_VERSION "unknown")
 if(EXISTS ${DAGR_RECEIPT})
   file(READ ${DAGR_RECEIPT} _dagr_receipt)
-  string(JSON _dagr_tool GET "${_dagr_receipt}" provenance tool_version)   # "dagr 2026.10.0"
+  string(JSON _dagr_tool GET "${_dagr_receipt}" provenance tool_version)   # "dagr 2026.10.1"
   string(REGEX REPLACE "^dagr " "" DAGR_TOOL_VERSION "${_dagr_tool}")
 endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${DAGR_RECEIPT})

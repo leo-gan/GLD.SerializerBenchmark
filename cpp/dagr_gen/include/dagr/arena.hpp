@@ -321,6 +321,28 @@ class Describer {
   std::size_t max_depth_;
 };
 
+namespace detail {
+template <class R, class T, class = void>
+struct has_copy_to : std::false_type {};
+template <class R, class T>
+struct has_copy_to<R, T, std::void_t<decltype(std::declval<const R&>().copy_to(std::declval<T*>(), std::size_t{}))>>
+    : std::true_type {};
+}  // namespace detail
+
+/// `out` becomes the elements of a numeric array range (spec/43): one block copy where the
+/// range has `copy_to` and its wire form allows it, iteration otherwise.
+template <class T, class R>
+inline void assign_elements(std::vector<T>& out, const R& range) {
+  if constexpr (detail::has_copy_to<R, T>::value) {
+    out.resize(range.size());
+    out.resize(range.copy_to(out.data(), out.size()));
+  } else {
+    out.clear();
+    out.reserve(range.size());
+    for (const auto& e : range) out.push_back(e);
+  }
+}
+
 /// FNV-1a, 64-bit.
 inline std::uint64_t fnv1a(std::string_view text) noexcept {
   std::uint64_t h = 0xcbf29ce484222325ull;

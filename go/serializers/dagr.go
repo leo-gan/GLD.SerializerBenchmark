@@ -82,7 +82,7 @@ var (
 )
 
 // dagrToolVersion is the generator version recorded in the committed receipt
-// schemas/v2/dagr/dagr.lock.json (provenance.tool_version "dagr 2026.10.0" → "2026.10.0") — the
+// schemas/v2/dagr/dagr.lock.json (provenance.tool_version "dagr 2026.10.1" → "2026.10.1") — the
 // Go analogue of rust/build.rs's DAGR_VERSION. The generated code is vendored as a local
 // module, so build info carries no version for it. go:embed cannot reach outside the Go
 // module, so the receipt is read once at runtime from the repository root (the runner
@@ -411,11 +411,8 @@ func getTelemetry(buf []byte) (modelv2.Telemetry, error) {
 	for i := range t.Tags {
 		t.Tags[i], _ = tags.Next()
 	}
-	vals := a.ValuesIter()
-	t.Values = make([]float64, vals.Len())
-	for i := range t.Values {
-		t.Values[i], _ = vals.Next()
-	}
+	// one block copy: `values` is `raw` (Dagr spec/43)
+	t.Values = a.ValuesAppendTo([]float64{})
 	return t, nil
 }
 

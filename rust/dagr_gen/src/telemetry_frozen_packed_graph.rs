@@ -321,7 +321,7 @@ fn _restore_telemetry<'arena, G: TelemetryFrozenPackedGraphGraph>(
         let (_cnt_values, _clb_values) = crate::dagr_runtime::read_leb(data, _cur)?;
         _cur += _clb_values;
         let mut _arr_values = Vec::with_capacity(_cnt_values as usize);
-        _arr_values = crate::dagr_runtime::PackedF64Array::new(data, _cur - _clb_values)?.iter().collect::<Result<Vec<_>, _>>()?;
+        _arr_values = crate::dagr_runtime::PackedF64Array::new(data, _cur - _clb_values)?.to_vec()?;
         _cur = _arr_end_values;
         _cur = _arr_end_values;
         _arr_values

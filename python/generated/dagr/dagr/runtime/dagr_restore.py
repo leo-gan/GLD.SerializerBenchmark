@@ -36,6 +36,7 @@ from .dagr_model import (DagrNode, DagrUnion, runtime_graph, indexed_items, inde
 from .dagr_defaults import synth_default as _synth_default
 
 import contextlib
+import struct
 
 
 # ── Optional NumPy zero-copy views over contiguous native-LE numeric arrays ────
@@ -77,6 +78,26 @@ def _array_view(mv, k, offset, count):
     except ImportError:
         return None
     return np.frombuffer(mv, dtype=_NPY_ARRAY_DTYPE[k], count=count, offset=offset)
+
+#: spec/43: struct codes of the element kinds a block read can unpack in one call (f16 too —
+#: Python widens it to float either way; bf16 has no struct code).
+_BLOCK_CODE = {"u8": "B", "i8": "b", "u16": "H", "i16": "h", "u32": "I", "i32": "i",
+               "u64": "Q", "i64": "q", "f16": "e", "f32": "f", "f64": "d"}
+
+
+def _bulk_array(mv, k, offset, count):
+    """A ``count``-element native-LE block at ``offset`` read in one go (spec/43): the
+    zero-copy NumPy view when views are on, else one ``struct.unpack_from`` into a list.
+    ``None`` — the caller then reads element by element, raising where it always did — when
+    ``k`` has no block form or the block does not fit the buffer."""
+    view = _array_view(mv, k, offset, count)
+    if view is not None:
+        return view
+    code = _BLOCK_CODE.get(k)
+    if code is None or offset < 0 or offset + count * _SCALAR_WIDTH[k] > len(mv):
+        return None
+    return list(struct.unpack_from(f"<{count}{code}", mv, offset))
+
 
 _INT_WIDTH = {"u8": 1, "i8": 1, "u16": 2, "i16": 2, "u32": 4, "i32": 4, "u64": 8, "i64": 8}
 _UNSIGNED = {"u8", "u16", "u32", "u64"}
@@ -503,7 +524,7 @@ def _restore_packed_int_array(mv, k, p, awo):
         count, q = read_leb(mv, p)
         nil = 0
         if not awo:                             # contiguous raw bytes → zero-copy view
-            view = _array_view(mv, k, q, count)
+            view = _bulk_array(mv, k, q, count)
             if view is not None:
                 return view
         if awo:
@@ -519,7 +540,7 @@ def _restore_packed_int_array(mv, k, p, awo):
     count_raw, q = read_leb(mv, p)
     count, tag = count_raw >> 2, count_raw & 3
     if tag == 1 and not awo:                    # all-raw contiguous native-LE → zero-copy view
-        view = _array_view(mv, k, q, count)
+        view = _bulk_array(mv, k, q, count)
         if view is not None:
             return view
     nil = 0
@@ -549,7 +570,7 @@ def _restore_packed_float_array(mv, k, p, awo):
     c, q = read_leb(mv, p)
     count, mode = c >> 2, c & 3
     if mode == 1 and not awo:                   # raw native-LE contiguous → zero-copy view
-        view = _array_view(mv, k, q, count)
+        view = _bulk_array(mv, k, q, count)
         if view is not None:
             return view
     nil = 0
@@ -811,7 +832,7 @@ def _restore_array(graph, mv, t, pos, seen, awo):
         count, p = read_leb(mv, pos)
         nil, p = _nil_bitset(count, p)
         if not awo:                                          # contiguous native-LE → zero-copy view
-            view = _array_view(mv, k, p, count)
+            view = _bulk_array(mv, k, p, count)
             if view is not None:
                 return view
         width, reader = _SCALAR_WIDTH[k], _SCALAR[k]

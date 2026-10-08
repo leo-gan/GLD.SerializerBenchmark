@@ -159,7 +159,7 @@ public final class DagrSerializer: BenchSerializer {
     }
 
     /// Generator version from the committed receipt
-    /// (`provenance.tool_version: "dagr 2026.10.0"` → `2026.10.0`).
+    /// (`provenance.tool_version: "dagr 2026.10.1"` → `2026.10.1`).
     static func receiptVersion() -> String {
         let rel = "schemas/v2/dagr/dagr.lock.json"
         let candidates = [
@@ -264,7 +264,7 @@ enum DagrBridge {
         let t = try TelemetryGraph.lazyRoot(from: data, at: start)
         return Telemetry(
             source: t.source ?? "", ts: t.ts ?? 0,
-            tags: Array(t.tags), values: Array(t.values)
+            tags: Array(t.tags), values: t.values.toArray()  // one block copy (Dagr spec/43)
         )
     }
 

@@ -20,10 +20,10 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources) |
 | mojo-ion | Binary | leo-gan/gld-ion 0.2.0 | Ion 1.0 binary `encode` / `decode` on a document (vendored sources) |
 | mojo-smile | Binary | leo-gan/gld-smile 0.2.0 | Smile `encode_doc` / `decode_bytes` on a document (vendored sources) |
-| dagr-packed | Schema | dagr 2026.10.0 (generator) | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`: generated direct builder into one reused `Builder` (`write_{root}_graph_direct`), lazy reader decode (`read_{root}_root`) |
-| dagr-regular | Schema | dagr 2026.10.0 (generator) | Same schema, `<Type>RegularGraph` (all nodes `regular`, vtables): no direct builder for this layout, so the suite value is copied into the generated arena and written with `write_{root}_graph(b, arena)` into a reused per-graph `Builder` (both timed); lazy reader decode |
-| dagr-frozen | Schema | dagr 2026.10.0 (generator) | Same schema, `<Type>FrozenGraph` (all nodes `frozen`, fixed layout, no evolution): generated arena + `write_{root}_graph` into a reused `Builder` (both timed); lazy reader decode |
-| dagr-frozen-packed | Schema | dagr 2026.10.0 (generator) | Same schema, `<Type>FrozenPackedGraph` (all nodes `frozen` + `packed`): generated direct builder into one reused `Builder`, like `dagr-packed`; lazy reader decode |
+| dagr-packed | Schema | dagr 2026.10.1 (generator) | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`: generated direct builder into one reused `Builder` (`write_{root}_graph_direct`), lazy reader decode (`read_{root}_root`) |
+| dagr-regular | Schema | dagr 2026.10.1 (generator) | Same schema, `<Type>RegularGraph` (all nodes `regular`, vtables): no direct builder for this layout, so the suite value is copied into the generated arena and written with `write_{root}_graph(b, arena)` into a reused per-graph `Builder` (both timed); lazy reader decode |
+| dagr-frozen | Schema | dagr 2026.10.1 (generator) | Same schema, `<Type>FrozenGraph` (all nodes `frozen`, fixed layout, no evolution): generated arena + `write_{root}_graph` into a reused `Builder` (both timed); lazy reader decode |
+| dagr-frozen-packed | Schema | dagr 2026.10.1 (generator) | Same schema, `<Type>FrozenPackedGraph` (all nodes `frozen` + `packed`): generated direct builder into one reused `Builder`, like `dagr-packed`; lazy reader decode |
 | arrow-ipc | Columnar | leo-gan/gld-arrow 0.2.0 | IPC stream `encode_ipc_stream` / `decode_ipc_stream` on columnar types (vendored sources) |
 | parquet | Columnar | leo-gan/gld-parquet 0.2.0 | Parquet file with Snappy pages (vendored sources) |
 | parquet-uncompressed | Columnar | leo-gan/gld-parquet 0.2.0 | Same writer with page compression off |

@@ -257,12 +257,7 @@ func restoreTelemetry(acc TelemetryAccessor, a *Arena, seen map[dagr.SeenKey]uin
 	var tmpValues dagr.Opt[[]float64]
 	{
 		if cnt, ok := acc.ValuesLen(); ok {
-			s := make([]float64, cnt)
-			it := acc.ValuesIter()
-			for i := 0; i < cnt; i++ {
-				e, _ := it.Next()
-				s[i] = e
-			}
+			s := acc.ValuesAppendTo(make([]float64, 0, cnt))
 			tmpValues = dagr.Some(s)
 		}
 	}

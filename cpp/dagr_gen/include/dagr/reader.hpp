@@ -501,6 +501,20 @@ inline std::optional<Span<const T>> aligned_view(Bytes b, std::size_t base, std:
   return Span<const T>(reinterpret_cast<const T*>(p), count);
 }
 
+/// Copies `count` native little-endian elements at `base` into `out` with one `memcpy`
+/// (spec/43). False, copying nothing, on a big-endian host or when the block does not
+/// fit the buffer: the caller then reads element by element, which is what iteration
+/// yields for the same bytes.
+template <class T>
+inline bool copy_le(Bytes b, std::size_t base, std::size_t count, T* out) noexcept {
+  static_assert(std::is_arithmetic<T>::value, "copy_le is for numeric element types");
+  if (count == 0) return true;
+  if (!detail::host_little_endian) return false;
+  if (count > remaining(b, base) / sizeof(T)) return false;
+  std::memcpy(out, b.data() + base, count * sizeof(T));
+  return true;
+}
+
 // ── Packed nodes (spec 07) ─────────────────────────────────────────────────────
 
 /// The entries of the packed block whose length LEB is at `start`. A block that does not

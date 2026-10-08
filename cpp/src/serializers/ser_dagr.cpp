@@ -170,8 +170,9 @@ Telemetry read_telemetry(const A& a) {
     for (const std::string_view s : *tags) t.tags.emplace_back(s);
   }
   if (const auto values = a.values()) {
-    t.values.reserve(values->size());
-    for (const double v : *values) t.values.push_back(v);
+    // one block copy: `values` is `raw`, so its elements are one native-LE block (Dagr spec/43)
+    t.values.resize(values->size());
+    t.values.resize(values->copy_to(t.values.data(), t.values.size()));
   }
   return t;
 }

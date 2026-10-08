@@ -204,10 +204,7 @@ def _dec_telemetry[o: ImmOrigin](buf: Span[UInt8, o]) raises -> Telemetry:
     var values = List[Float64]()
     var ov = t.values()
     if ov:
-        var arr = ov.value()
-        values.reserve(len(arr))
-        for i in range(len(arr)):
-            values.append(arr.get(i))
+        values = ov.value().to_list()   # one block copy (Dagr spec/43)
     return Telemetry(_s(t.source()), t.ts().or_else(0), tags^, values^)
 
 
@@ -235,8 +232,8 @@ struct DagrRegularSer(Movable):
     var _hint: Int   # last output size: pre-reserves the batch output buffer
 
     def __init__(out self):
-        # Generator version from schemas/v2/dagr/dagr.lock.json ("tool_version": "dagr 2026.10.0").
-        self.version = "2026.10.0"
+        # Generator version from schemas/v2/dagr/dagr.lock.json ("tool_version": "dagr 2026.10.1").
+        self.version = "2026.10.1"
         self._bm = Builder[_VT_MESSAGE](hint=64)
         self._bs = Builder[_VT_STRINGS](hint=64)
         self._bd = Builder[_VT_DOCUMENT](hint=64)

@@ -1835,10 +1835,35 @@ func _decodePackedFloat64(tag: UInt8, from data: Data, at payloadStart: Int) thr
 // ── Numeric array restore helpers (inline format) ────────────────────────────
 // Format: [LEB(count)] [elem[0]..elem[N-1]] (LE raw bytes, W = MemoryLayout<T>.size each).
 
+// spec/43: `count` native-LE elements of `width` bytes at raw-buffer offset `offset`, copied
+// as ONE block into a new array. nil — the caller then reads element by element — unless
+// T is a fixed-width integer or binary float exactly `width` bytes wide (never Bool: not
+// every byte is a valid Bool), the host is little-endian and the block fits the buffer.
+func _bulkLE<T>(_ type: T.Type, from data: Data, offset: Int, count: Int, width: Int) -> [T]? {
+    #if _endian(little)
+    guard MemoryLayout<T>.size == width,
+          T.self is any FixedWidthInteger.Type || T.self is any BinaryFloatingPoint.Type,
+          offset >= 0, count >= 0 else { return nil }
+    if count == 0 { return [] }
+    return data.withUnsafeBytes { (b: UnsafeRawBufferPointer) -> [T]? in
+        guard offset <= b.count, count <= (b.count - offset) / width else { return nil }
+        let src = UnsafeRawBufferPointer(rebasing: b[offset ..< offset + count * width])
+        return [T](unsafeUninitializedCapacity: count) { dst, n in
+            UnsafeMutableRawBufferPointer(dst).copyMemory(from: src)
+            n = count
+        }
+    }
+    #else
+    return nil
+    #endif
+}
+
 func _restoreNumericArray<T: ArenaGraphRestorable>(type: T.Type, from data: Data, at pos: Int) throws -> [T] {
     let (countU64, cLen) = try restoreLEB(from: data, at: pos)
     let count = Int(countU64); let W = MemoryLayout<T>.size
     let base = pos + cLen
+    // `T.restore` reads at a raw-buffer offset; so does the block copy (spec/43)
+    if let bulk = _bulkLE(T.self, from: data, offset: base, count: count, width: W) { return bulk }
     var arr = [T](); arr.reserveCapacity(count)
     for i in 0..<count { arr.append(try T.restore(from: data, at: base + i * W)) }
     return arr
@@ -2328,6 +2353,11 @@ func _restorePackedIntArray<T>(from data: Foundation.Data, at countPos: Int, raw
     guard countPos >= 0, let (c, cB) = try? restoreLEB(from: data, at: countPos) else { return [] }
     let count = Int(c) >> 2; let tag = Int(c) & 3
     let encStart = countPos + cB
+    // tag 1: every element raw — one block copy (spec/43); `_readRawLE` positions are
+    // buffer indices, relative to startIndex
+    if tag == 1, let bulk = _bulkLE(T.self, from: data, offset: encStart - data.startIndex, count: count, width: rawWidth) {
+        return bulk
+    }
     var result = [T](); result.reserveCapacity(count)
     var p = encStart + (tag == 2 ? (count + 7) / 8 : 0)
     for i in 0..<count {
@@ -2393,6 +2423,11 @@ func _restorePackedFloatArray<T>(from data: Foundation.Data, at countPos: Int,
                                  _ dec: (Foundation.Data, Int) throws -> (T, Int)) throws -> [T] {
     guard countPos >= 0, let (c, cB) = try? restoreLEB(from: data, at: countPos) else { return [] }
     let count = Int(c) >> 2
+    // mode 1 (from the wire): every element raw — one block copy (spec/43)
+    if Int(c) & 3 == 1,
+       let bulk = _bulkLE(T.self, from: data, offset: countPos + cB - data.startIndex, count: count, width: MemoryLayout<T>.size) {
+        return bulk
+    }
     var result = [T](); result.reserveCapacity(count)
     var p = countPos + cB
     for _ in 0..<count { let (v, b) = try dec(data, p); result.append(v); p += b }
@@ -3725,6 +3760,128 @@ extension VtableUtf8ArrayAccessor: DagrArrayAccessorSequence {}
 extension VtableDataArrayAccessor: DagrArrayAccessorSequence {}
 extension VtableUtf8OptArrayAccessor: DagrArrayAccessorSequence {}
 extension VtableDataOptArrayAccessor: DagrArrayAccessorSequence {}
+
+// spec/43: bulk reads — `toArray()` copies a native-LE block in one go.
+extension VtableU8ArrayAccessor {
+    public func toArray() -> [UInt8] {
+        if _elemStart >= 0, let b = _bulkLE(UInt8.self, from: _data, offset: _elemStart, count: count, width: 1) { return b }
+        return Array(self)
+    }
+}
+extension PackedU8ArrayAccessor {
+    public func toArray() -> [UInt8] {
+        if _start >= 0, let b = _bulkLE(UInt8.self, from: _data, offset: _start - _data.startIndex, count: count, width: 1) { return b }
+        return Array(self)
+    }
+}
+extension VtableI8ArrayAccessor {
+    public func toArray() -> [Int8] {
+        if _elemStart >= 0, let b = _bulkLE(Int8.self, from: _data, offset: _elemStart, count: count, width: 1) { return b }
+        return Array(self)
+    }
+}
+extension PackedI8ArrayAccessor {
+    public func toArray() -> [Int8] {
+        if _start >= 0, let b = _bulkLE(Int8.self, from: _data, offset: _start - _data.startIndex, count: count, width: 1) { return b }
+        return Array(self)
+    }
+}
+extension VtableU16ArrayAccessor {
+    public func toArray() -> [UInt16] {
+        if _elemStart >= 0, let b = _bulkLE(UInt16.self, from: _data, offset: _elemStart, count: count, width: 2) { return b }
+        return Array(self)
+    }
+}
+extension PackedU16ArrayAccessor {
+    public func toArray() -> [UInt16] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(UInt16.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 2) { return b }
+        return Array(self)
+    }
+}
+extension VtableI16ArrayAccessor {
+    public func toArray() -> [Int16] {
+        if _elemStart >= 0, let b = _bulkLE(Int16.self, from: _data, offset: _elemStart, count: count, width: 2) { return b }
+        return Array(self)
+    }
+}
+extension PackedI16ArrayAccessor {
+    public func toArray() -> [Int16] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(Int16.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 2) { return b }
+        return Array(self)
+    }
+}
+extension VtableU32ArrayAccessor {
+    public func toArray() -> [UInt32] {
+        if _elemStart >= 0, let b = _bulkLE(UInt32.self, from: _data, offset: _elemStart, count: count, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension PackedU32ArrayAccessor {
+    public func toArray() -> [UInt32] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(UInt32.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension VtableI32ArrayAccessor {
+    public func toArray() -> [Int32] {
+        if _elemStart >= 0, let b = _bulkLE(Int32.self, from: _data, offset: _elemStart, count: count, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension PackedI32ArrayAccessor {
+    public func toArray() -> [Int32] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(Int32.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension VtableU64ArrayAccessor {
+    public func toArray() -> [UInt64] {
+        if _elemStart >= 0, let b = _bulkLE(UInt64.self, from: _data, offset: _elemStart, count: count, width: 8) { return b }
+        return Array(self)
+    }
+}
+extension PackedU64ArrayAccessor {
+    public func toArray() -> [UInt64] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(UInt64.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 8) { return b }
+        return Array(self)
+    }
+}
+extension VtableI64ArrayAccessor {
+    public func toArray() -> [Int64] {
+        if _elemStart >= 0, let b = _bulkLE(Int64.self, from: _data, offset: _elemStart, count: count, width: 8) { return b }
+        return Array(self)
+    }
+}
+extension PackedI64ArrayAccessor {
+    public func toArray() -> [Int64] {
+        if _pos >= 0, let (c, cB) = try? restoreLEB(from: _data, at: _pos), Int(c) & 3 == 1, let b = _bulkLE(Int64.self, from: _data, offset: _pos + cB - _data.startIndex, count: Int(c) >> 2, width: 8) { return b }
+        return Array(self)
+    }
+}
+extension VtableF32ArrayAccessor {
+    public func toArray() -> [Float] {
+        if _elemStart >= 0, let b = _bulkLE(Float.self, from: _data, offset: _elemStart, count: count, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension PackedF32ArrayAccessor {
+    public func toArray() -> [Float] {
+        if _start >= 0, _mode == 1, let b = _bulkLE(Float.self, from: _data, offset: _start - _data.startIndex, count: count, width: 4) { return b }
+        return Array(self)
+    }
+}
+extension VtableF64ArrayAccessor {
+    public func toArray() -> [Double] {
+        if _elemStart >= 0, let b = _bulkLE(Double.self, from: _data, offset: _elemStart, count: count, width: 8) { return b }
+        return Array(self)
+    }
+}
+extension PackedF64ArrayAccessor {
+    public func toArray() -> [Double] {
+        if _start >= 0, _mode == 1, let b = _bulkLE(Double.self, from: _data, offset: _start - _data.startIndex, count: count, width: 8) { return b }
+        return Array(self)
+    }
+}
 
 // ── DataSink runtime types ────────────────────────────────────────────────────
 

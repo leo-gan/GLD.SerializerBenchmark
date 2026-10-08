@@ -131,7 +131,7 @@ enum DagrLayoutBridge {
         // Vtable array accessors are not Sequences (unlike the packed ones): index them.
         return Telemetry(
             source: try t.source ?? "", ts: try t.ts ?? 0,
-            tags: (0..<tags.count).map { tags[$0] }, values: (0..<values.count).map { values[$0] }
+            tags: (0..<tags.count).map { tags[$0] }, values: values.toArray()  // one block copy (Dagr spec/43)
         )
     }
 
@@ -223,7 +223,7 @@ enum DagrLayoutBridge {
         // Vtable array accessors are not Sequences (unlike the packed ones): index them.
         return Telemetry(
             source: try t.source ?? "", ts: try t.ts ?? 0,
-            tags: (0..<tags.count).map { tags[$0] }, values: (0..<values.count).map { values[$0] }
+            tags: (0..<tags.count).map { tags[$0] }, values: values.toArray()  // one block copy (Dagr spec/43)
         )
     }
 
@@ -311,7 +311,7 @@ enum DagrLayoutBridge {
         let t = try TelemetryFrozenPackedGraph.lazyRoot(from: data, at: start)
         return Telemetry(
             source: t.source ?? "", ts: t.ts ?? 0,
-            tags: Array(t.tags), values: Array(t.values)
+            tags: Array(t.tags), values: t.values.toArray()  // one block copy (Dagr spec/43)
         )
     }
 

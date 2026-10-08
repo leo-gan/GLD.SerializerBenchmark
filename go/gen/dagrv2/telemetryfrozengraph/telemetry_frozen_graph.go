@@ -159,6 +159,17 @@ func (a TelemetryAccessor) Values() ([]float64, bool) {
 	return dagr.DecodeArray(a.buf, base, count, 8, dagr.ReadF64), true
 }
 
+// ValuesAppendTo appends the array to dst — one block copy where the elements are
+// native-width little-endian values (spec/43).
+func (a TelemetryAccessor) ValuesAppendTo(dst []float64) []float64 {
+	pl := a.p[3]
+	if pl < 0 {
+		return dst
+	}
+	base, count := dagr.ArrayPayload(a.buf, pl)
+	return dagr.AppendArray(dst, a.buf, base, count, 8, dagr.ReadF64)
+}
+
 func (a TelemetryAccessor) ValuesLen() (int, bool) {
 	pl := a.p[3]
 	if pl < 0 {

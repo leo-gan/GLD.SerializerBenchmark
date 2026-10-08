@@ -36,10 +36,7 @@ def _restore_telemetry[co: ImmOrigin, ao: Origin[mut=False], //](ref [ao] a: Tel
         _wa[]._arr_telemetry[i].tags = List[String]()
     var _oa3 = acc.values()
     if _oa3:
-        var _l3 = List[Float64]()
-        for _k3 in range(len(_oa3.value())):
-            _l3.append(_oa3.value().get(_k3))
-        _wa[]._arr_telemetry[i].values = _l3^
+        _wa[]._arr_telemetry[i].values = _oa3.value().to_list()
     else:
         _wa[]._arr_telemetry[i].values = List[Float64]()
     return h

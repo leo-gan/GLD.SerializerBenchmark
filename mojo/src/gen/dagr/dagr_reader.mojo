@@ -90,6 +90,22 @@ def _bounds(buf: Span[UInt8, _], at: Int, width: Int) raises:
         raise Error("outsideOfBuffer")
 
 
+# spec/43: `count` native-LE elements of `width` bytes at `base`, copied as ONE block into a
+# new List — the reader's mirror of the writer's `store_raw_block`. Raises `outsideOfBuffer`
+# (like the element reads) when the block does not fit; the count is checked before anything
+# is allocated, so a hostile count cannot ask for a huge List. `width` is the in-memory width
+# of `Scalar[dt]` (every caller passes it).
+def copy_le_block[dt: DType, width: Int](buf: Span[UInt8, _], base: Int, count: Int) raises -> List[Scalar[dt]]:
+    if count < 0 or count > len(buf):
+        raise Error("outsideOfBuffer")
+    _bounds(buf, base, count * width)
+    var out = List[Scalar[dt]](unsafe_uninit_length=count)
+    if count > 0:
+        unsafe_memcpy(dest=out.unsafe_ptr().unsafe_bitcast[UInt8](),
+                      src=buf.unsafe_ptr().unsafe_offset(base), count=count * width)
+    return out^
+
+
 def read_u8(buf: Span[UInt8, _], at: Int) raises -> UInt8:
     _bounds(buf, at, 1)
     return buf.unsafe_ptr()[unsafe_offset=at]   # `_bounds` already raised on OOB; skip Span's recheck
@@ -301,6 +317,11 @@ struct OwnedArray[T: Copyable & Deinitable](Copyable, Movable, Sized):
     def into_list(deinit self) -> List[Self.T]:
         return self.items^
 
+    # Every element as a List (a copy; `into_list` moves) — the bulk-read surface every
+    # value array shares (spec/43).
+    def to_list(self) -> List[Self.T]:
+        return self.items.copy()
+
 
 # Lazy view over a packed FLOAT value array. Unlike the eager `OwnedArray` (which
 # decodes every element up front), this reads only the header at construction, so
@@ -378,14 +399,16 @@ struct PackedFloatArray[o: ImmOrigin, dt: DType, width: Int](
     def get(self, i: Int) raises -> Scalar[Self.dt]:   # OwnedArray-compatible accessor
         return self[i]
 
+    # Every element as a List (spec/43: one block copy in raw mode). Same as `into_list`.
+    def to_list(self) raises -> List[Scalar[Self.dt]]:
+        return self.into_list()
+
     def into_list(self) raises -> List[Scalar[Self.dt]]:
+        comptime if Self.dt == DType.float32 or Self.dt == DType.float64:
+            if self._raw:                              # one native-LE block (spec/43)
+                return copy_le_block[Self.dt, Self.width](self.buf, self._base, self._count)
         var out = List[Scalar[Self.dt]](capacity=self._count)
         var p = self._base
-        comptime if Self.dt == DType.float32 or Self.dt == DType.float64:
-            if self._raw:                              # fixed-width fast path
-                for i in range(self._count):
-                    out.append(self._read(p, i)[0]); p += Self.width
-                return out^
         for i in range(self._count):                   # packed / half: variable-width walk
             var v = self._read(p, i)
             out.append(v[0]); p += v[1]
@@ -400,6 +423,8 @@ def decode_packed_int_array[dt: DType, width: Int, signed: Bool](buf: Span[UInt8
     var count = Int(c[0]) >> 2
     var tag = Int(c[0]) & 3
     var enc_start = at + c[1]
+    if tag == 1:                                    # all raw: one native-LE block (spec/43)
+        return copy_le_block[dt, width](buf, enc_start, count)
     var p = enc_start + ((count + 7) // 8 if tag == 2 else 0)
     if tag == 2:
         _bounds(buf, enc_start, (count + 7) // 8)   # guard the enc-bitset region once
@@ -427,12 +452,7 @@ def decode_packed_int_array[dt: DType, width: Int, signed: Bool](buf: Span[UInt8
 # Packed u8/i8 array: plain `[LEB count][raw bytes]` (single-path, no count-tag).
 def decode_byte_array[dt: DType](buf: Span[UInt8, _], at: Int) raises -> List[Scalar[dt]]:
     var c = read_leb(buf, at)
-    var count = Int(c[0])
-    var p = at + c[1]
-    var out = List[Scalar[dt]]()
-    for i in range(count):
-        out.append((buf.unsafe_ptr().unsafe_offset(p + i)).unsafe_bitcast[Scalar[dt]]().unsafe_load[alignment=1]())
-    return out^
+    return copy_le_block[dt, 1](buf, at + c[1], Int(c[0]))   # one block (spec/43)
 
 
 # Packed float array `[LEB (count<<2)|mode][elems]`: mode 0 = self-describing packed
@@ -442,6 +462,8 @@ def decode_packed_f32_array(buf: Span[UInt8, _], at: Int) raises -> List[Float32
     var count = Int(c[0]) >> 2
     var mode = Int(c[0]) & 3
     var p = at + c[1]
+    if mode == 1:                                   # raw: one native-LE block (spec/43)
+        return copy_le_block[DType.float32, 4](buf, p, count)
     var out = List[Float32]()
     for _ in range(count):
         if mode == 1:
@@ -456,6 +478,8 @@ def decode_packed_f64_array(buf: Span[UInt8, _], at: Int) raises -> List[Float64
     var count = Int(c[0]) >> 2
     var mode = Int(c[0]) & 3
     var p = at + c[1]
+    if mode == 1:                                   # raw: one native-LE block (spec/43)
+        return copy_le_block[DType.float64, 8](buf, p, count)
     var out = List[Float64]()
     for _ in range(count):
         if mode == 1:
@@ -948,6 +972,10 @@ struct NumArray[o: ImmOrigin, dt: DType, width: Int](Copyable, Movable, Implicit
         return (
             self.buf.unsafe_ptr().unsafe_offset(self.base + i * Self.width)
         ).unsafe_bitcast[Scalar[Self.dt]]().unsafe_load[alignment=1]()
+
+    # Every element as a List — one native-LE block copy (spec/43).
+    def to_list(self) raises -> List[Scalar[Self.dt]]:
+        return copy_le_block[Self.dt, Self.width](self.buf, self.base, self.count)
 
 
 # Bool array: `[LEB count][bitset ceil(count/8)]` — bit i = element i. `base` = the

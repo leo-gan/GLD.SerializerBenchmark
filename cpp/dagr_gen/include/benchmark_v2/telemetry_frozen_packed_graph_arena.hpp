@@ -398,9 +398,7 @@ struct Serde {
       std::optional<std::vector<double>> o;
       if (const auto got = acc.values()) {
         std::vector<double> v{};
-        v.clear();
-        v.reserve((*got).size());
-        for (const auto& e : (*got)) v.push_back(e);
+        dagr::assign_elements(v, (*got));
         o = std::move(v);
       }
       (*dagr::slot(a.telemetry_store_, dagr::handle_index(h))).values = std::move(o);

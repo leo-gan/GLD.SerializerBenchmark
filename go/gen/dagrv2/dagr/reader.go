@@ -14,6 +14,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"math"
+	"slices"
 	"unsafe"
 )
 
@@ -263,11 +264,36 @@ func Bit(buf []byte, base int, i int) bool {
 // new slice via `rd`. Allocates; the zero-copy alternative is the per-element `At`
 // getter (or the aligned view, spec 12).
 func DecodeArray[T any](buf []byte, base, count, width int, rd func([]byte, int) T) []T {
-	out := make([]T, count)
-	for i := range out {
-		out[i] = rd(buf, base+i*width)
+	return AppendArray(make([]T, 0, count), buf, base, count, width, rd)
+}
+
+// AppendArray appends `count` fixed-width elements at buf[base:] to dst: one block copy
+// when they are native-width little-endian values (spec/43), `rd` per element otherwise.
+func AppendArray[T any](dst []T, buf []byte, base, count, width int, rd func([]byte, int) T) []T {
+	n := len(dst)
+	dst = slices.Grow(dst, count)[:n+count]
+	if !CopyLE(dst[n:], buf, base, width) {
+		for i := 0; i < count; i++ {
+			dst[n+i] = rd(buf, base+i*width)
+		}
 	}
-	return out
+	return dst
+}
+
+// CopyLE copies len(dst) elements of `width` bytes at buf[base:] into dst as ONE block
+// (spec/43). false — nothing copied — unless T is exactly `width` bytes, the host is
+// little-endian and the block fits buf; the caller then reads element by element.
+// T must be a fixed-width numeric type (every caller passes one).
+func CopyLE[T any](dst []T, buf []byte, base, width int) bool {
+	n := len(dst)
+	if n == 0 {
+		return true
+	}
+	if !hostLittleEndian || int(unsafe.Sizeof(dst[0])) != width || base < 0 || base > len(buf) || n > (len(buf)-base)/width {
+		return false
+	}
+	copy(unsafe.Slice((*byte)(unsafe.Pointer(&dst[0])), n*width), buf[base:base+n*width])
+	return true
 }
 
 // ── Packed nodes (spec 07) ─────────────────────────────────────────────────────

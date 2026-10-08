@@ -23,6 +23,7 @@
 #include <iterator>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 
 #include "dagr/reader.hpp"
 
@@ -188,6 +189,18 @@ class FixedArray : public IndexedRange<FixedArray<C>, typename C::value_type> {
   constexpr std::size_t size() const noexcept { return count_; }
   typename C::value_type operator[](std::size_t i) const noexcept {
     return i < count_ ? C::read(buf_, base_ + i * C::width) : typename C::value_type{};
+  }
+  /// The first `min(size(), capacity)` elements into `out`; returns how many. One block
+  /// copy where the wire width is the value's (every numeric array but f16 / bf16 and
+  /// enums), element by element otherwise (spec/43).
+  std::size_t copy_to(typename C::value_type* out, std::size_t capacity) const noexcept {
+    using V = typename C::value_type;
+    const std::size_t n = count_ < capacity ? count_ : capacity;
+    if constexpr (std::is_arithmetic<V>::value && sizeof(V) == C::width) {
+      if (copy_le(buf_, base_, n, out)) return n;
+    }
+    for (std::size_t i = 0; i < n; ++i) out[i] = (*this)[i];
+    return n;
   }
 
  private:

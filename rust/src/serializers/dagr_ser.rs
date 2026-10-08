@@ -518,10 +518,8 @@ macro_rules! lazy_decoders {
                         let arr = t.tags()?;
                         collect_exact(arr.len(), arr.iter().map(|r| r.map(str::to_owned)))?
                     },
-                    values: {
-                        let arr = t.values()?;
-                        collect_exact(arr.len(), arr.iter())?
-                    },
+                    // one block copy: `values` is `raw` (Dagr spec/43)
+                    values: t.values()?.to_vec()?,
                 }))
             }
 

@@ -288,6 +288,25 @@ func (a TelemetryAccessor) ValuesAll() iter.Seq[float64] {
 	}
 }
 
+// ValuesAppendTo appends the array to dst — one block copy when every element is
+// stored raw (spec/43), the cursor otherwise.
+func (a TelemetryAccessor) ValuesAppendTo(dst []float64) []float64 {
+	pl := a.p[3]
+	if pl >= 0 {
+		_, blb := dagr.ReadLEB(a.buf, pl)
+		c := pl + blb
+		h, hb := dagr.ReadLEB(a.buf, c)
+		if int(h)&3 == 1 {
+			return dagr.AppendArray(dst, a.buf, c+hb, int(h)>>2, 8, dagr.ReadF64)
+		}
+	}
+	it := a.ValuesIter()
+	for v, ok := it.Next(); ok; v, ok = it.Next() {
+		dst = append(dst, v)
+	}
+	return dst
+}
+
 // Telemetry is a plain value record (spec 11 §4: no arena).
 type Telemetry struct {
 	Source dagr.Opt[string]
@@ -321,12 +340,7 @@ func restoreTelemetry(acc TelemetryAccessor) Telemetry {
 	}
 	{
 		if cnt, ok := acc.ValuesLen(); ok {
-			s := make([]float64, cnt)
-			it := acc.ValuesIter()
-			for i := 0; i < cnt; i++ {
-				e, _ := it.Next()
-				s[i] = e
-			}
+			s := acc.ValuesAppendTo(make([]float64, 0, cnt))
 			rec.Values = dagr.Some(s)
 		}
 	}

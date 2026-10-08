@@ -523,6 +523,70 @@ _impl_read_le!(u8,1); _impl_read_le!(i8,1); _impl_read_le!(u16,2); _impl_read_le
 _impl_read_le!(u32,4); _impl_read_le!(i32,4); _impl_read_le!(u64,8); _impl_read_le!(i64,8);
 _impl_read_le!(f32,4); _impl_read_le!(f64,8);
 
+// spec/43: `out.len()` native-LE elements at `base`, copied as ONE block. False (nothing
+// copied) on a big-endian target or when the block does not fit `data` — the caller then
+// reads element by element, which yields what iteration yields for the same bytes.
+#[inline]
+pub fn copy_le_block<T: ReadLe>(data: &[u8], base: usize, out: &mut [T]) -> bool {
+    #[cfg(target_endian = "little")]
+    {
+        let nb = match out.len().checked_mul(T::W) { Some(n) => n, None => return false };
+        if base.checked_add(nb).map_or(true, |e| e > data.len()) { return false; }
+        // SAFETY: the source range is in bounds (checked above); `T` is a primitive numeric
+        // (every bit pattern valid) and a byte copy has no alignment precondition.
+        unsafe { core::ptr::copy_nonoverlapping(data.as_ptr().add(base), out.as_mut_ptr() as *mut u8, nb); }
+        true
+    }
+    #[cfg(not(target_endian = "little"))]
+    { let _ = (data, base, out); false }
+}
+
+// spec/43: `count` native-LE elements at `base` as a new Vec, one block copy; None when the
+// block does not fit `data` or on a big-endian target.
+#[cfg(not(dagr_no_alloc))]
+pub fn vec_le<T: ReadLe>(data: &[u8], base: usize, count: usize) -> Option<Vec<T>> {
+    let nb = count.checked_mul(T::W)?;
+    if base.checked_add(nb).map_or(true, |e| e > data.len()) { return None; }
+    #[cfg(target_endian = "little")]
+    {
+        let mut v: Vec<T> = Vec::with_capacity(count);
+        // SAFETY: as in `copy_le_block`; the Vec has capacity for `count` elements.
+        unsafe {
+            core::ptr::copy_nonoverlapping(data.as_ptr().add(base), v.as_mut_ptr() as *mut u8, nb);
+            v.set_len(count);
+        }
+        Some(v)
+    }
+    #[cfg(not(target_endian = "little"))]
+    { None }
+}
+
+// spec/43: the bulk read of a numeric array accessor whose elements are one native-LE block
+// starting at `self.base` — always (`dagr_bulk!(T, ty)`) or when a header field is 1 (the
+// tag / mode, `dagr_bulk!(T, ty, field)`). `copy_to` fills a prefix of `out`, `to_vec` the
+// whole array; both fall back to iteration (and its errors) when the block does not fit.
+macro_rules! dagr_bulk {
+    ($a:ident,$ty:ty) => { dagr_bulk!(@impl $a, $ty, |_s: &$a<'_>| true); };
+    ($a:ident,$ty:ty,$f:ident) => { dagr_bulk!(@impl $a, $ty, |s: &$a<'_>| s.$f == 1); };
+    (@impl $a:ident,$ty:ty,$bulk:expr) => {
+        impl<'a> $a<'a> {
+            /// The first `min(len, out.len())` elements into `out`; returns how many.
+            pub fn copy_to(&self, out: &mut [$ty]) -> Result<usize, DagrError> {
+                let n = core::cmp::min(self.len, out.len());
+                if ($bulk)(self) && copy_le_block(self.data, self.base, &mut out[..n]) { return Ok(n); }
+                for (slot, v) in out[..n].iter_mut().zip(self.iter()) { *slot = v?; }
+                Ok(n)
+            }
+            /// Every element, as a Vec.
+            #[cfg(not(dagr_no_alloc))]
+            pub fn to_vec(&self) -> Result<Vec<$ty>, DagrError> {
+                if ($bulk)(self) { if let Some(v) = vec_le::<$ty>(self.data, self.base, self.len) { return Ok(v); } }
+                self.iter().collect()
+            }
+        }
+    };
+}
+
 // Required native fixed-width array restore, materialized with a single memcpy on LE
 // (the read-side mirror of the store memcpy). The wire source may be unaligned; the
 // dest Vec<T> is aligned, and a byte memcpy is alignment-agnostic — so copying INTO
@@ -2329,6 +2393,10 @@ dagr_pk_encf!(PackedBf16Array,PackedBf16ArrayIter,PackedBf16OptArray,PackedBf16O
 dagr_pk_float!(PackedF32Array,PackedF32ArrayIter,PackedF32OptArray,PackedF32OptArrayIter,f32,read_packed_f32,read_f32,4);
 dagr_pk_float!(PackedF64Array,PackedF64ArrayIter,PackedF64OptArray,PackedF64OptArrayIter,f64,read_packed_f64,read_f64,8);
 dagr_pk_bool!(PackedBoolArray,PackedBoolArrayIter,PackedBoolOptArray,PackedBoolOptArrayIter);
+dagr_bulk!(PackedU8Array,u8); dagr_bulk!(PackedI8Array,i8);
+dagr_bulk!(PackedU16Array,u16,tag); dagr_bulk!(PackedU32Array,u32,tag); dagr_bulk!(PackedU64Array,u64,tag);
+dagr_bulk!(PackedI16Array,i16,tag); dagr_bulk!(PackedI32Array,i32,tag); dagr_bulk!(PackedI64Array,i64,tag);
+dagr_bulk!(PackedF32Array,f32,mode); dagr_bulk!(PackedF64Array,f64,mode);
 
 // Packed utf8/data arrays: [count][(LEB len + bytes)…]; optional adds a leading nil-bitset and
 // stores only the present (non-nil) elements packed. ITERATE-ONLY, yielding *borrowed* &str /
@@ -2530,5 +2598,9 @@ dagr_vt_fixed!(VtableBf16Array,VtableBf16ArrayIter,VtableBf16OptArray,VtableBf16
 dagr_vt_fixed!(VtableF32Array,VtableF32ArrayIter,VtableF32OptArray,VtableF32OptArrayIter,f32,read_f32,4);
 dagr_vt_fixed!(VtableF64Array,VtableF64ArrayIter,VtableF64OptArray,VtableF64OptArrayIter,f64,read_f64,8);
 dagr_vt_bool!(VtableBoolArray,VtableBoolArrayIter,VtableBoolOptArray,VtableBoolOptArrayIter);
+dagr_bulk!(VtableU8Array,u8); dagr_bulk!(VtableI8Array,i8); dagr_bulk!(VtableU16Array,u16);
+dagr_bulk!(VtableU32Array,u32); dagr_bulk!(VtableU64Array,u64); dagr_bulk!(VtableI16Array,i16);
+dagr_bulk!(VtableI32Array,i32); dagr_bulk!(VtableI64Array,i64); dagr_bulk!(VtableF32Array,f32);
+dagr_bulk!(VtableF64Array,f64);
 dagr_vt_slot!(VtableStrArray,VtableStrArrayIter,VtableStrOptArray,VtableStrOptArrayIter,&'a str,vt_str_at);
 dagr_vt_slot!(VtableBytesArray,VtableBytesArrayIter,VtableBytesOptArray,VtableBytesOptArrayIter,&'a [u8],vt_bytes_at);

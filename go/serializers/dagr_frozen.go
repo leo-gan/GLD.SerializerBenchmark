@@ -179,11 +179,8 @@ func getTelemetryFrozen(buf []byte) (modelv2.Telemetry, error) {
 	for i := range t.Tags {
 		t.Tags[i], _ = tags.Next()
 	}
-	vals := a.ValuesIter()
-	t.Values = make([]float64, vals.Len())
-	for i := range t.Values {
-		t.Values[i], _ = vals.Next()
-	}
+	// one block copy: `values` is `raw` (Dagr spec/43)
+	t.Values = a.ValuesAppendTo([]float64{})
 	return t, nil
 }
 

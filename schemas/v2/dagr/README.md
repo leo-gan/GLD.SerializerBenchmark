@@ -18,7 +18,7 @@ Field sets match [`../protobuf/benchmark_v2.proto`](../protobuf/benchmark_v2.pro
 ## Regenerate
 
 ```bash
-pip install dagr-cli==2026.10.0
+pip install dagr-cli==2026.10.1
 cd schemas/v2/dagr && dagr build     # rewrites every target below + dagr.lock.json
 dagr check                           # schema vs the committed receipt
 dagr verify                          # detect hand-edits of generated files

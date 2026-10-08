@@ -207,6 +207,14 @@ inline OptHeader opt_header(Bytes b, std::size_t c, bool tagged) noexcept {
 struct Pos {
   std::size_t p = npos;
 };
+
+/// The first `n` elements of a forward range into `out`, by iteration.
+template <class R, class T>
+inline std::size_t copy_each(const R& range, T* out, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (auto it = range.begin(); i < n && it != range.end(); ++it) out[i++] = *it;
+  return i;
+}
 struct PosIndex {
   std::size_t ci = 0;   // index among the PRESENT elements
 };
@@ -232,6 +240,14 @@ class PackedIntArray : public ForwardRange<PackedIntArray<C>, typename C::value_
     return out;
   }
   constexpr std::size_t size() const noexcept { return count_; }
+  /// The first `min(size(), capacity)` elements into `out`; returns how many. Tag 1 (every
+  /// element raw, spec 04 §5.1) is one block copy; tags 0 and 2 decode element by element
+  /// (spec/43).
+  std::size_t copy_to(typename C::value_type* out, std::size_t capacity) const noexcept {
+    const std::size_t n = count_ < capacity ? count_ : capacity;
+    if (tag_ == 1 && copy_le(buf_, enc_, n, out)) return n;
+    return detail::copy_each(*this, out, n);
+  }
 
  private:
   friend class ForwardRange<PackedIntArray<C>, typename C::value_type, detail::Pos>;
@@ -267,6 +283,14 @@ class PackedFloatArray : public ForwardRange<PackedFloatArray<C>, typename C::va
     return out;
   }
   constexpr std::size_t size() const noexcept { return count_; }
+  /// The first `min(size(), capacity)` elements into `out`; returns how many. Mode 1
+  /// (every element raw, spec 04 §5.2) is one block copy; the self-describing form
+  /// decodes element by element (spec/43).
+  std::size_t copy_to(typename C::value_type* out, std::size_t capacity) const noexcept {
+    const std::size_t n = count_ < capacity ? count_ : capacity;
+    if (raw_ && copy_le(buf_, base_, n, out)) return n;
+    return detail::copy_each(*this, out, n);
+  }
 
  private:
   friend class ForwardRange<PackedFloatArray<C>, typename C::value_type, detail::Pos>;
