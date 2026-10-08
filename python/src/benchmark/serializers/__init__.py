@@ -19,6 +19,7 @@ from .binary_ion import AmazonIonSerializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
+from .schema_dagr import DagrSerializer
 from .human_yaml import PyYamlSerializer
 from .native_pickle import PickleSerializer
 from .native_cloudpickle import CloudpickleSerializer
@@ -40,6 +41,7 @@ __all__ = [
     "ProtobufSerializer",
     "AvroSerializer",
     "FlatBuffersSerializer",
+    "DagrSerializer",
     "PyYamlSerializer",
     "PickleSerializer",
     "CloudpickleSerializer",

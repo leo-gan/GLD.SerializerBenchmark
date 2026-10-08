@@ -16,6 +16,10 @@ from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
+from bench.dagr_ser import DagrSer
+from bench.dagr_regular_ser import DagrRegularSer
+from bench.dagr_frozen_ser import DagrFrozenSer
+from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
 from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
@@ -229,6 +233,10 @@ def run() raises:
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
+    var dagr = DagrSer()
+    var dagr_reg = DagrRegularSer()
+    var dagr_frz = DagrFrozenSer()
+    var dagr_fp = DagrFrozenPackedSer()
     var bson = BsonSer()
     var ion = IonSer()
     var smile = SmileSer()
@@ -250,6 +258,10 @@ def run() raises:
     names.append(ion.name())
     names.append(smile.name())
     names.append(msgp.name())
+    names.append(dagr.name())
+    names.append(dagr_reg.name())
+    names.append(dagr_frz.name())
+    names.append(dagr_fp.name())
     names.append(arrow.name())
     names.append(parquet.name())
     names.append(parquet_raw.name())
@@ -314,6 +326,26 @@ def run() raises:
                     _ = yaml.serialize_bytes(fx)
                 elif nm == msgp.name():
                     _ = msgp.serialize_bytes(fx)
+                elif nm == dagr.name():
+                    if not dagr.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = dagr.serialize_bytes(fx)
+                elif nm == dagr_reg.name():
+                    if not dagr_reg.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = dagr_reg.serialize_bytes(fx)
+                elif nm == dagr_frz.name():
+                    if not dagr_frz.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = dagr_frz.serialize_bytes(fx)
+                elif nm == dagr_fp.name():
+                    if not dagr_fp.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = dagr_fp.serialize_bytes(fx)
                 elif nm == bson.name():
                     _ = bson.serialize_bytes(fx)
                 elif nm == ion.name():
@@ -459,6 +491,54 @@ def run() raises:
                             var buf = msgp.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = msgp.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == dagr.name():
+                            ver = dagr.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = dagr.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = dagr.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == dagr_reg.name():
+                            ver = dagr_reg.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = dagr_reg.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = dagr_reg.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == dagr_frz.name():
+                            ver = dagr_frz.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = dagr_frz.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = dagr_frz.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == dagr_fp.name():
+                            ver = dagr_fp.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = dagr_fp.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = dagr_fp.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

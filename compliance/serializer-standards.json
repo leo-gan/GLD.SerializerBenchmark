@@ -154,7 +154,11 @@
       ],
       "orc-uncompressed": [
         "orc"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -223,7 +227,11 @@
       ],
       "parquet-uncompressed": [
         "parquet"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "go": {
       "encoding/json": [
@@ -299,7 +307,11 @@
       ],
       "sbe": [
         "sbe"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "java": {
       "jackson": [
@@ -633,7 +645,11 @@
       ],
       "sbe": [
         "sbe"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -729,7 +745,11 @@
       ],
       "sbe": [
         "sbe"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -772,7 +792,11 @@
         "plist"
       ],
       "XMLCoder": [],
-      "BinaryCodable": []
+      "BinaryCodable": [],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "php": {
       "json": [
@@ -906,7 +930,11 @@
       ],
       "parquet-uncompressed": [
         "parquet"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     }
   }
 }

@@ -22,6 +22,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
+    // Dagr has no crate: the version is the generator's, from the committed receipt.
+    let receipt = manifest.join("../schemas/v2/dagr/dagr.lock.json");
+    let dagr_version = fs::read_to_string(&receipt)
+        .ok()
+        .and_then(|t| {
+            let rest = &t[t.find("\"tool_version\": \"dagr ")? + 22..];
+            Some(rest[..rest.find('"')?].to_string())
+        })
+        .unwrap_or_default();
+    println!("cargo:rustc-env=DAGR_VERSION={dagr_version}");
+    println!("cargo:rerun-if-changed={}", receipt.display());
+
     // Emit locked crate versions for CSV SerializerVersion (from Cargo.lock).
     write_dep_versions(&manifest)?;
     println!("cargo:rerun-if-changed=Cargo.lock");

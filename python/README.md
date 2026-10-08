@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Host benchmark runner evaluating **23 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **27 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -11,7 +11,7 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
 | **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2`, `amazon-ion` | Compact binary, schema-optional. Ion is the official `amazon-ion` binary dump/load. |
 | **Text** | `yaml` | PyYAML. |
-| **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
+| **Schema** | `protobuf`, `avro`, `flatbuffers`, `dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed` | Requires schemas / codegen (flatc for FlatBuffers, `dagr build` for Dagr — output committed under `generated/dagr/`). The four `dagr*` rows are one serializer over four node layouts: `packed`, regular (vtable), `frozen`, `frozen`+`packed`. |
 | **Columnar** | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` | pyarrow. IPC stream, Parquet, and ORC. Not the publication matrix. |
 | **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native pickle family. |
 

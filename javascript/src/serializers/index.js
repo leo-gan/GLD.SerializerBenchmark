@@ -11,6 +11,7 @@ import { schemaSerializers } from './schema.js';
 import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
 import { yamlSerializers } from './yaml.js';
+import { dagrSerializers } from './dagr.js';
 import { columnarSerializers } from './columnar.js';
 
 export const ALL_SERIALIZERS = [
@@ -20,6 +21,7 @@ export const ALL_SERIALIZERS = [
   ...nativeSerializers(),
   ...modernSerializers(),
   ...yamlSerializers(),
+  ...dagrSerializers(),
   ...columnarSerializers(),
 ];
 

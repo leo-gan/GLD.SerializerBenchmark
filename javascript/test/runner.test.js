@@ -314,3 +314,19 @@ test('parquet default codec is SNAPPY and UNCOMPRESSED changes bytes and metadat
   }
   assert.equal(metaA.schema.find((el) => el.name === 'price_minor').type, 'INT64');
 });
+
+test('dagr (all four node layouts) roundtrips all V2 types (single and batch) with a version', () => {
+  for (const name of ['dagr-packed', 'dagr-regular', 'dagr-frozen', 'dagr-frozen-packed']) {
+    const ser = ALL_SERIALIZERS.find((s) => s.name === name);
+    assert.ok(ser, `${name} registered`);
+    assert.match(ser.version, /^\d+\.\d+\.\d+/);
+    for (const fx of allFixturesV2(42)) {
+      if (!ser.supports(fx.name)) continue; // the columnar types have no Dagr schema
+      for (const value of [fx.value, [fx.value, makeOne(fx.name, {}, 7, 1), fx.value]]) {
+        ser.prepare(fx.name, value);
+        const out = asDomain(ser, ser.deserialize(ser.serialize(value)));
+        assert.ok(deepEqual(value, out), `${name}/${fx.name} fidelity mismatch: ${JSON.stringify(out)}`);
+      }
+    }
+  }
+});

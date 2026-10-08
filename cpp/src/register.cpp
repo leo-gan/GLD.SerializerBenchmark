@@ -41,6 +41,10 @@ SerializerPtr make_parquet_uncompressed();
 SerializerPtr make_orc();
 SerializerPtr make_orc_uncompressed();
 SerializerPtr make_sbe();
+SerializerPtr make_dagr_packed();         // Dagr, the four node layouts (ser_dagr.cpp)
+SerializerPtr make_dagr_regular();
+SerializerPtr make_dagr_frozen();
+SerializerPtr make_dagr_frozen_packed();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -86,6 +90,11 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_orc());
   add(v, make_orc_uncompressed());
   add(v, make_sbe());
+  // Dagr, the four node layouts (ser_dagr.cpp).
+  add(v, make_dagr_packed());
+  add(v, make_dagr_regular());
+  add(v, make_dagr_frozen());
+  add(v, make_dagr_frozen_packed());
   return v;
 }
 

@@ -5,7 +5,7 @@ title: "Go"
 Go
 ===
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **26** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **30** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
 
@@ -50,6 +50,10 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | direct builder / lazy reader | **adapted** | Direct value structs built in Prepare (like protobuf's toProto); `BuildAppend` timed; lazy accessors → domain timed; N>1 suite frame |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | arena serializer / lazy reader | **adapted** | Regular (vtable) nodes; generated arena built in Prepare; `AppendTo<Graph>` into one reused builder timed; lazy accessors → domain timed; N>1 suite frame |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | arena serializer / lazy reader | **adapted** | Frozen nodes; generated arena built in Prepare; `AppendTo<Graph>` into one reused builder timed; lazy accessors → domain timed; N>1 suite frame |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | direct builder / lazy reader | **adapted** | Frozen+packed nodes; same call path as dagr-packed (`BuildAppend` timed) |
 | [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) | Native | stdlib | registered types | native | Buffer Reset between encodes |
 | [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON | stdlib | struct tags | native | v1 API. Stream `SetEscapeHTML(false)` |
 | [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2) | JSON | stdlib | struct tags | native | v2 defaults. `MarshalWrite` / `UnmarshalRead` |
@@ -80,6 +84,22 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable).
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable).
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution).
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution).
 
 #### [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) · `go1.27.1`
 
@@ -185,7 +205,8 @@ for rep:
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
-- **Stream adapted** for **protobuf**, **linkedin/goavro**, **arrow-ipc**, **parquet**, **parquet-uncompressed**, and **sbe**. OCF, gRPC, and the Arrow file format would change the wire format. The other registered Go codecs use **native** stream APIs. Columnar rows time the bytes API only. There is no compliance decoder.
+- **Stream adapted** for **protobuf**, **linkedin/goavro**, **arrow-ipc**, **parquet**, **parquet-uncompressed**, **sbe**, and the four **dagr** rows. OCF, gRPC, and the Arrow file format would change the wire format. The other registered Go codecs use **native** stream APIs. Columnar rows time the bytes API only. There is no compliance decoder.
+- The four **dagr** rows have no Batch wrapper in their schema: multi-instance cells use the suite's cross-language frame (`u32 LE count` + `u32 LE len` + record, per instance — same as the Rust/C runners). Like **protobuf** (message built in Prepare), dagr-packed builds its direct value structs in Prepare. Unlike protobuf (`ToDomain` untimed), every dagr row materializes the domain value from the lazy reader **inside** the timer, so their decode does strictly more work at the suite boundary. **dagr-regular** and **dagr-frozen** have no direct builder (it exists only for packed-rooted graphs): their native model is the generated arena, built in Prepare, and the timed encode is the generated `AppendTo<Graph>(b, dst, root)` into one reused `dagr.Builder` (it resets the builder, stores the arena, frames the record and appends it to `dst`).
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
 Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).

@@ -23,7 +23,7 @@ Rust compiles to **native machine code**. There is no virtual machine and no gar
 
 ### What this suite runs
 
-The `--release` flag turns on optimizations. A `cargo run` without `--release` uses the Debug profile and is not comparable to the Dashboard. `prost` code is generated at build time by `build.rs`. Most rows go through **serde**, which is Rust’s shared serialize-and-deserialize trait. A few libraries (`minicbor`, `rkyv`, `nanoserde`, `speedy`, `prost`) use their own traits instead.
+The `--release` flag turns on optimizations. A `cargo run` without `--release` uses the Debug profile and is not comparable to the Dashboard. `prost` code is generated at build time by `build.rs`. Most rows go through **serde**, which is Rust’s shared serialize-and-deserialize trait. A few libraries (`minicbor`, `rkyv`, `nanoserde`, `speedy`, `prost`, `dagr`) use their own traits or generated code instead.
 
 ### What changes the numbers
 
@@ -69,6 +69,10 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | [rmp-serde](https://github.com/3Hren/msgpack-rust) | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Direct value structs built in `prepare` (like prost's messages); timed encode is `write_into` only; bytes copied out because Dagr writes back-to-front |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `regular` (vtable) node layout; no direct builder exists for it |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen` node layout; no direct builder exists for it |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen`+`packed` node layout; same call path as `dagr-packed` |
 | [sbe](https://github.com/aeron-io/simple-binary-encoding) | Binary schema | sbe-tool 1.40.2 | Flyweight filled in serialize | adapted | Logged version is the generator, not crate 0.1.0. No `nested_table`. No compliance decoder. |
 | [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records). Loads `schemas/v2/avro/*.avsc`. `table_project` full-decodes then keeps `f_float_0`. |
 | [serde_json](https://github.com/serde-rs/json) | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
@@ -139,6 +143,22 @@ rkyv is a zero-copy deserialization framework for Rust. The problem was that eve
 #### [rmp-serde](https://github.com/3Hren/msgpack-rust) · `1.3.1`
 
 rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps.
+
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable).
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable).
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution).
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution).
 
 #### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
 

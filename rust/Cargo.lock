@@ -820,6 +820,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "dagr_benchmark_v2"
+version = "0.1.0"
+
+[[package]]
 name = "darling"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2426,6 +2430,7 @@ dependencies = [
  "ciborium",
  "clap",
  "csv",
+ "dagr_benchmark_v2",
  "flate2",
  "flexbuffers",
  "ion-rs",

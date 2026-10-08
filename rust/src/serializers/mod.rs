@@ -22,6 +22,7 @@
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
 //! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
+//! - [`dagr_ser`] — Dagr, four node layouts (generated direct builder / arena + lazy reader)
 //! - [`kinded`] — shared kind-tracked direct codec macro
 
 use crate::data::Fixture;
@@ -34,6 +35,7 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 mod avro_ser;
 mod binary_serde;
 mod columnar;
+mod dagr_ser;
 mod direct;
 mod json;
 mod kinded;
@@ -46,6 +48,7 @@ use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
 };
 use columnar::{ArrowIpc, ParquetSer};
+use dagr_ser::{DagrFrozenPackedSer, DagrFrozenSer, DagrRegularSer, DagrSer};
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
 use prost_ser::ProstSer;
@@ -199,6 +202,10 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(RkyvSer::default()),
         Box::new(ProstSer::default()),
         Box::new(AvroFastSer::default()),
+        Box::new(DagrSer::default()),
+        Box::new(DagrRegularSer::default()),
+        Box::new(DagrFrozenSer::default()),
+        Box::new(DagrFrozenPackedSer::default()),
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
         Box::new(SerdeYaml::default()),
@@ -251,7 +258,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 22);
+        assert_eq!(all.len(), 26);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -259,8 +266,8 @@ mod tests {
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        // The four columnar rows do not support message. serde_yaml still does.
-        assert_eq!(ok, 18);
+        // The four columnar rows do not support message. serde_yaml and the four Dagr rows do.
+        assert_eq!(ok, 22);
     }
 
     #[test]

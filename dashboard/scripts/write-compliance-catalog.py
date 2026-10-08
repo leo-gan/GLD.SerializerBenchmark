@@ -710,6 +710,12 @@ add("mojo", "parquet", ["parquet"], "https://github.com/leo-gan/gld-parquet",
 add("mojo", "parquet-uncompressed", ["parquet"], "https://github.com/leo-gan/gld-parquet",
     "gld-parquet 0.2.0: same writer with page compression off.")
 
+# --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
+for _lang in ("rust", "go", "swift", "javascript", "python", "mojo", "cpp"):
+    for _row in ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed"):
+        add(_lang, _row, [], "https://codeberg.org/mzaks/dagr",
+            "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
+
 
 def main() -> int:
     import json

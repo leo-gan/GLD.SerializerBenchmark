@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, Smile, Arrow IPC, and Parquet. The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, Smile, Arrow IPC, and Parquet, and Dagr (generated Mojo from the suite's Dagr schema). The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
 
 ## Runtime
 
@@ -16,14 +16,14 @@ Mojo compiles to **native machine code**. This suite targets **Mojo 1.1.0** on L
 | | This suite |
 |---|---|
 | Tools | Mojo **1.1.0** via `pixi` (`https://conda.modular.com/max`) |
-| Build | `pixi run mojo run -I src -I vendor/... src/main.mojo` |
+| Build | `pixi run mojo run -I src -I src/gen/dagr -I vendor/... src/main.mojo` |
 | Prepare | `./scripts/install-host-requirements.sh mojo` |
 | Run | `mojo/scripts/run-benchmarks.sh` |
 | Memory | Manual ownership / compiler-managed, not a tracing GC |
 
 ### What this suite runs
 
-The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `serialize_json` on suite types (v0.3.1 reflects `Int32` and `List[struct]` on the write path) except `telemetry`, which builds a `Value` tree because `serialize_json` mis-matches `List[Float64]`. Decode is `loads` plus a `Value` walk (`List[struct]` deserialize is still unsupported). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`. FlatBuffers keeps one `Builder`. Timed serialize is `clear`, generated `pack`, and `finish`. Timed deserialize is `unpack` into the suite value.
+The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `serialize_json` on suite types (v0.3.1 reflects `Int32` and `List[struct]` on the write path) except `telemetry`, which builds a `Value` tree because `serialize_json` mis-matches `List[Float64]`. Decode is `loads` plus a `Value` walk (`List[struct]` deserialize is still unsupported). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`. FlatBuffers keeps one `Builder`. Timed serialize is `clear`, generated `pack`, and `finish`. Timed deserialize is `unpack` into the suite value. Dagr keeps one generated `Builder` per graph and `reset()`s it per instance. `dagr-packed` and `dagr-frozen-packed` encode every graph through the generated direct builder (value structs, no arena). `dagr-regular` and `dagr-frozen` have no direct builder (the generator emits it for packed-rooted graphs only), so they build the generated arena (one per instance) and write it with the generated arena serializer. The conversion from the suite value is timed in every Dagr row. Timed deserialize is the generated lazy reader materialized into the suite value.
 
 ### What changes the numbers
 
@@ -63,6 +63,10 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [gld-toml](https://github.com/leo-gan/gld-toml) | Text | leo-gan/gld-toml 0.1.0 | bytes only | `encode_toml` / `decode_toml` (vendored as `gldtoml`) |
 | [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.6.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.4.0 | bytes only | WireWriter / WireReader |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.10.1 (generator) | bytes only | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`; generated direct builder into one reused `Builder` (`write_{root}_graph_direct`); lazy reader decode (`read_{root}_root`) |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.10.1 (generator) | bytes only | Same schema, `regular` layout (`<Type>RegularGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.10.1 (generator) | bytes only | Same schema, `frozen` layout (`<Type>FrozenGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.10.1 (generator) | bytes only | Same schema, `frozen+packed` layout (`<Type>FrozenPackedGraph`); generated direct builder into one reused `Builder`; lazy reader decode |
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 | [mojo-ion](https://github.com/leo-gan/gld-ion) | Binary | leo-gan/gld-ion 0.2.0 | bytes only | Ion 1.0 binary document encode / decode |
 | [mojo-smile](https://github.com/leo-gan/gld-smile) | Binary | leo-gan/gld-smile 0.2.0 | bytes only | Smile document encode / decode |
@@ -96,7 +100,7 @@ gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf e
 
 #### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.4.0`
 
-gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`.
+mojo-flatbuffers is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [mojo-avro](https://github.com/leo-gan/gld-avro) · `0.4.0`
 
@@ -142,6 +146,22 @@ Apache Parquet was created as a columnar file for scans that touch a few fields 
 
 This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override.
 
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable).
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable).
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution).
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution).
+
 ### Call-path contract
 
 ```text
@@ -154,6 +174,7 @@ fidelity                         # untimed, float-tolerant
 ### Caveats
 
 - Stream mode is not claimed (`stream_policy: bytes_only`).
+- dagr's generated modules import each other by bare module name, so every Mojo build adds `-I src/gen/dagr`. Do not hand-edit `src/gen/dagr/`; regenerate with `dagr build` in `schemas/v2/dagr/`.
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
 - ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with the other JSON packages. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
 - `arrow-ipc`, `parquet`, and `parquet-uncompressed` run only on `table`, `table_project`, `nested_table`, and `signal`. Invoke them with `BENCHMARK_RUN_CONFIG=config/library/columnar.yaml`.

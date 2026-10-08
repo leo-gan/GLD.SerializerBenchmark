@@ -27,6 +27,10 @@ func All() []BenchSerializer {
 		newPelletierTOML(),
 		// Schema / IDL
 		newGoogleProtobuf(),
+		newDagr(),
+		newDagrRegular(),
+		newDagrFrozen(),
+		newDagrFrozenPacked(),
 		newHambaAvro(),
 		newLinkedInGoavro(),
 		// Columnar / fixed-wire. Stable order.
