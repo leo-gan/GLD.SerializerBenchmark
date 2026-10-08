@@ -92,7 +92,8 @@ def write_event_graph(mut b: Builder[_VT_MAX], a: EventRegularGraphArena) raises
     var _off = node_offset(_store_event(b, a, a.root().value()))
     return b.store_leb(UInt64((b.cursor - _off) << 2))    # framing (no header)
 
-def serialize_event_graph(a: EventRegularGraphArena, max_size: Int = 2 * 1024 * 1024) raises -> List[UInt8]:
+def serialize_event_graph(a: EventRegularGraphArena, max_size: Int = 2 * 1024 * 1024, alignment_offset: Int = 0) raises -> List[UInt8]:
     var b = Builder[_VT_MAX](hint=len(a._arr_event_attr) + len(a._arr_event), max_size=max_size)
+    b.alignment_offset = alignment_offset
     _ = write_event_graph(b, a)
     return b.make_data()

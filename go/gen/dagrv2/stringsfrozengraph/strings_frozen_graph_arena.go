@@ -144,7 +144,7 @@ func (n Strings) Hash() uint64 { return dagr.Fnv1a([]byte(n.String())) }
 func (n Strings) Equals(o Strings) bool { return n.String() == o.String() }
 
 func restoreStrings(acc StringsAccessor, a *Arena, seen map[dagr.SeenKey]uint64) Strings {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return Strings{a: a, h: h}
 	}

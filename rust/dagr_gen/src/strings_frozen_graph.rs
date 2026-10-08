@@ -267,6 +267,16 @@ impl<const ID: u64> StringsFrozenGraphArena<ID> {
         Ok(b.cursor())
     }
 
+    /// Like `to_bytes`, for a buffer that will travel `alignment_offset` bytes into an envelope
+    /// (a frame header, a length word — 12 §14): its aligned arrays land on their boundary in
+    /// the envelope's frame. With a caller-owned builder, `set_alignment_offset` + `write_into`.
+    pub fn to_bytes_with_alignment_offset(&self, alignment_offset: usize) -> Result<Vec<u8>, DagrError> {
+        let mut b = DagrBuilder::with_hint(self.arena_of_strings().borrow().len());
+        b.set_alignment_offset(alignment_offset);
+        self.write_into(&mut b)?;
+        Ok(b.finalize())
+    }
+
     /// Like `to_bytes`, but with an explicit `max_size` bound that sets the back-reference
     /// placeholder width (2 MiB -> 4 B, 1024 -> 2 B). Must match across producers for byte-identity.
     pub fn to_bytes_with_max_size(&self, max_size: usize) -> Result<Vec<u8>, DagrError> {

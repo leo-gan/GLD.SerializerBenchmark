@@ -217,7 +217,7 @@ func (a MessageAccessor) FString2Bytes() ([]byte, bool) {
 }
 
 func walkMessage(a MessageAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}

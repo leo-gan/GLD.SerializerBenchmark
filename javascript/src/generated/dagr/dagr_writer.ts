@@ -30,6 +30,43 @@ export function lebLength(v: number | bigint): number {
   return n;
 }
 
+/** LEB value at `at` in `data` (a record built here, so well-formed). */
+function _lebAt(data: Uint8Array, at: number): number {
+  let result = 0, shift = 0, pos = at;
+  for (;;) {
+    const b = data[pos++]!;
+    result += (b & 0x7f) * 2 ** shift;   // not `<<`: 32-bit shifts corrupt values past bit 31
+    shift += 7;
+    if ((b & 0x80) === 0) return result;
+  }
+}
+
+/**
+ * The leading pad of a sink record's raw-embedded graph (spec 18 §11.4, spec 42 D6) — a
+ * port of `sink_raw_pad` in dagr/runtime/dagr_sink.py.
+ *
+ * `payload` is the record content — `[LEB size][fields]` — written with a pad of 0, its
+ * embedded graph starting at `bo`; `base` is the absolute stream position of the payload's
+ * first byte. The pad is the SMALLEST count in [0, 255] (it is stored in one byte) that
+ * puts the graph on an `n` boundary in the stream, COUNTING that the pad lengthens the two
+ * LEBs it sits inside — the field's payload length and the record's size — each of which
+ * may grow by a byte and move the graph one byte further than the pad alone. When no count
+ * does (possible only for n >= 128), the pad is 0.
+ */
+export function sinkRawPad(payload: Uint8Array, bo: number, base: number, n: number): number {
+  const c0 = _lebAt(payload, 0);                      // the record's size, pad 0
+  let q = bo - 2;                                     // the payload length LEB ends here (pad byte after)
+  while (q > 0 && (payload[q - 1]! & 0x80) !== 0) q--;
+  const p0 = _lebAt(payload, q);                      // the field's payload length, pad 0
+  const lc0 = lebLength(c0), lp0 = lebLength(p0);
+  for (let pad = 0; pad < 256; pad++) {
+    const growP = lebLength(p0 + pad) - lp0;
+    const growC = lebLength(c0 + pad + growP) - lc0;
+    if ((base + bo + pad + growP + growC) % n === 0) return pad;
+  }
+  return 0;
+}
+
 /** Zig-zag for signed distances (node-ref bidir pointers): n>=0 ? n<<1 : ~n<<1|1. */
 export function toZigZag(v: number | bigint): bigint {
   const x = typeof v === "bigint" ? v : BigInt(v);
@@ -177,6 +214,17 @@ export class Builder {
   private buf: Uint8Array;
   private dv: DataView;   // over `buf`, re-made on every grow (float stores)
   cursor = 0;
+
+  /**
+   * Alignment offset (spec 12 §14): the number of bytes that will PRECEDE the finished
+   * buffer in whatever carries it (a frame header, a message prefix, a length word).
+   * Finish padding then aligns `alignmentOffset + total length` instead of the total
+   * length, so every `aligned(N)` array lands on its boundary in the ENVELOPE's frame.
+   * 0 (the default) is the plain buffer-relative alignment, byte for byte. No wire
+   * change — a reader neither knows nor needs it. Configuration, like the size bound:
+   * it survives `reset()`. Not applied to a graph with a customizable header.
+   */
+  alignmentOffset = 0;
 
   // reserveFieldPointerSize is derived from maxSize EXACTLY like Rust/Swift (with_max_size):
   // bits = bitLength(maxSize)+3; width = nextPow2(ceil(bits/8)). 2 MiB -> 4 B, 1024 -> 2 B.
@@ -499,23 +547,35 @@ export class Builder {
   storeAlignedUtf8(s: string, N: number): number { return this.storeAlignedBytes(_te.encode(s), N); }
 
   /**
-   * Arena finish padding (§11 §4): insert zero bytes before the framing LEB so the
-   * total length (afterPad + framingLen) is ≡ 0 mod maxN, making every aligned
-   * element base buffer-relative aligned. Brute-forces the smallest pad because the
-   * framing LEB width depends on the (padded) distance. Mirrors
-   * storeFinishAlignmentPadding. Must be called after the root node is stored,
-   * before the framing word.
+   * Arena finish padding (spec 12 §4, §14): insert zero bytes before the framing LEB so
+   * that `alignmentOffset + total length` (total = afterPad + framingLen) is ≡ 0 mod
+   * maxN, making every aligned element base aligned — in the buffer's own frame when
+   * `alignmentOffset` is 0, in the frame of the envelope that carries it otherwise.
+   *
+   * The framing LEB's own length depends on the (padded) distance, hence the search. It
+   * runs over `[0, 2·maxN)`: that range crosses at most one step of the framing length,
+   * so one side of the step holds `maxN` consecutive candidates and a solution always
+   * exists (the old bound, `maxN`, could straddle the step and find none, leaving the
+   * buffer unpadded — spec 42 §1). The smallest pad wins, so every buffer that was
+   * padded correctly before is byte-identical. Must be called after the root node is
+   * stored, before the framing word.
    */
   storeFinishAlignmentPadding(rootOffset: number, maxN: number): void {
     if (maxN <= 1) return;
-    for (let p = 0; p < maxN; p++) {
+    const offset = this.alignmentOffset;
+    if (!Number.isSafeInteger(offset) || offset < 0) {
+      throw new RangeError(`alignmentOffset must be a non-negative integer, got ${offset}`);
+    }
+    const base = offset % maxN;                    // only `offset mod maxN` matters
+    for (let p = 0; p < 2 * maxN; p++) {
       const afterPad = this.cursor + p;
-      const framingLen = lebLength(BigInt(afterPad - rootOffset) << 2n);
-      if ((afterPad + framingLen) % maxN === 0) {
-        if (p) this.storeBytes(new Array(p).fill(0));
+      const framingLen = lebLength((afterPad - rootOffset) * 4);
+      if ((base + afterPad + framingLen) % maxN === 0) {
+        if (p) this.storeBytes(new Uint8Array(p));
         return;
       }
     }
+    throw new Error("finish padding: no pad found");   // unreachable (spec 42 §1)
   }
 
   /** Fixed-width numeric array: [LEB count][elem0..elemN-1] LE. Elements stored in

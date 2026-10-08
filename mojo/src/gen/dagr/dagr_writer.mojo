@@ -197,6 +197,11 @@ struct Builder[VT_MAX: Int = 32](Movable):
     var _ref_pool: List[List[NodeStoreRef]]  # recycled node-ref-array scratch (§1.21)
     var _int_pool: List[List[Int]]           # recycled ptr-table offset scratch
     var _byte_pool: List[List[UInt8]]        # recycled frozen-packed bitset scratch (§1.32)
+    # Bytes that will PRECEDE the finished buffer in whatever carries it (spec 12 §14):
+    # finish padding aligns `alignment_offset + total length`, so the aligned arrays land
+    # on their boundary in the ENVELOPE's frame. Configuration, like `max_size` — not
+    # per-record state, so `reset()` keeps it. 0 = the buffer stands alone.
+    var alignment_offset: Int
 
     # `hint` = expected node count (a whole-graph build passes it; a per-record sink
     # writer leaves it 0). Pre-sizing the dedup/cycle maps to the node count avoids the
@@ -237,6 +242,7 @@ struct Builder[VT_MAX: Int = 32](Movable):
         self._ref_pool = List[List[NodeStoreRef]]()
         self._int_pool = List[List[Int]]()
         self._byte_pool = List[List[UInt8]]()
+        self.alignment_offset = 0
 
     # ── scratch pools (§1.21): recycle the per-array `List`s the store walk builds and
     # discards, so a whole-graph encode allocates them ~once (grows to max array-nesting
@@ -300,7 +306,8 @@ struct Builder[VT_MAX: Int = 32](Movable):
     # only within itself — byte-identical to a fresh Builder, but no per-record alloc.
     # Only non-empty tables are cleared: `clear()` re-initializes a table even when it is
     # empty, ~88 ns for all five — more than encoding a small record (a direct-builder /
-    # packed record never touches most of them).
+    # packed record never touches most of them). `alignment_offset` is configuration,
+    # not record state — it survives the reset (spec 12 §14).
     def reset(mut self):
         self.cursor = 0
         if len(self._vt_lookup) > 0:
@@ -1124,17 +1131,23 @@ struct Builder[VT_MAX: Int = 32](Movable):
             bytes.append(b[i])
         return self.store_aligned_bytes(bytes, N)
 
-    # Arena finish padding (§11 §4): zero bytes before the framing LEB so the total
-    # length (afterPad + framingLen) ≡ 0 mod maxN, making every aligned element base
-    # buffer-relative aligned. Brute-forces the smallest pad (framing LEB width depends
-    # on the padded distance). Call after the root node is stored, before framing.
+    # Arena finish padding (spec 12 §4, §14): zero bytes before the framing LEB so that
+    # `alignment_offset + total length` (afterPad + framingLen) ≡ 0 mod maxN, making every
+    # aligned element base aligned in the frame of whatever carries the buffer (offset 0:
+    # buffer-relative). The framing LEB's own width depends on the padded distance, hence
+    # the search — over `[0, 2·maxN)`: that range crosses at most one step of the framing
+    # length, so one side of the step holds maxN consecutive candidates and a solution
+    # always exists (the old bound, maxN, could straddle the step and find none — the
+    # buffer then went out unpadded, spec 42 §1). The smallest pad wins, so every buffer
+    # the old search padded is byte-identical. Call after the root node is stored, before
+    # framing.
     def store_finish_alignment_padding(mut self, root_offset: Int, max_n: Int):
         if max_n <= 1:
             return
-        for p in range(max_n):
+        for p in range(2 * max_n):
             var after_pad = self.cursor + p
             var framing_len = leb_length(UInt64((after_pad - root_offset) << 2))
-            if (after_pad + framing_len) % max_n == 0:
+            if (self.alignment_offset + after_pad + framing_len) % max_n == 0:
                 if p != 0:
                     _ = self.store_zeros(p)
                 return

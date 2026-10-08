@@ -382,6 +382,26 @@ func PackedUnionPayloadBytes(buf []byte, ep int, code int) int {
 	}
 }
 
+// PackedUnionUint reads an unsigned integer packed-union payload by its header code:
+// a varint under code 0, else 1 / 2 / 4 / 8 raw little-endian bytes under code 1 / 2 /
+// 3 / 4 (spec 07 §8). What a wide enum variant is decoded with — by the code, not by the
+// enum's backing width, so the one byte a pre-spec-42 writer stored still reads.
+func PackedUnionUint(buf []byte, at int, code int) uint64 {
+	switch code {
+	case 0:
+		v, _ := ReadLEB(buf, at)
+		return v
+	case 1:
+		return uint64(buf[at])
+	case 2:
+		return uint64(binary.LittleEndian.Uint16(buf[at:]))
+	case 3:
+		return uint64(binary.LittleEndian.Uint32(buf[at:]))
+	default:
+		return binary.LittleEndian.Uint64(buf[at:])
+	}
+}
+
 // ── Unions (spec 05) ───────────────────────────────────────────────────────────
 
 // UnionHeader parses a union field slot header `[LEB (tag<<2)|wc]` at `pos`,

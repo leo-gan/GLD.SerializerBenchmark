@@ -2305,13 +2305,8 @@ _DAGR_ROW_TEXT = {
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):
     for _row, _text in _DAGR_ROW_TEXT.items():
         EXTRA[(_lang, _row)] = _text
-# C++ is generated from schemas/v2/dagr/schema_cpp.py (the same 20 graphs) because the C++
-# target is newer than the dagr-cli release the other languages are built with.
 for _row, _text in _DAGR_ROW_TEXT.items():
-    EXTRA[("cpp", _row)] = (
-        _text + " The C++ code is header-only, generated from "
-        "`schemas/v2/dagr/schema_cpp.py` (the same graphs as `schema.py`) into `cpp/dagr_gen/`."
-    )
+    EXTRA[("cpp", _row)] = _text + " The C++ code is header-only (`cpp/dagr_gen/`)."
 
 def load_measured_versions() -> dict[tuple[str, str], str]:
     """Map (language, SerializerName) → SerializerVersion from latest benches."""

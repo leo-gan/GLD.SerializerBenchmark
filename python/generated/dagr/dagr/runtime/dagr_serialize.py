@@ -56,7 +56,7 @@ def _eff_kind(field, lookup):
     return field.type.kind
 
 
-def serialize(graph, root, max_size=2 * 1024 * 1024, header_fn=None):
+def serialize(graph, root, max_size=2 * 1024 * 1024, header_fn=None, alignment_offset=0):
     """Serialize a restored graph (its root ``DagrNode``) → ``bytes``. ``max_size`` bounds the
     buffer and sets the back-reference placeholder width (2 MiB → 4 B, 1024 → 2 B); it must match
     across producers for byte-identity.
@@ -70,6 +70,9 @@ def serialize(graph, root, max_size=2 * 1024 * 1024, header_fn=None):
         raise NotImplementedError("only ref-root graphs supported so far")
     graph = runtime_graph(graph)
     b = Builder(max_size)
+    # spec 12 §14: the bytes that will precede this buffer in its envelope; finish padding
+    # aligns `alignment_offset + length` instead of `length`. No effect without aligned arrays.
+    b.alignment_offset = alignment_offset
     off = node_offset(_store_node(graph, b, graph.root_type.inner, root))
     max_align = graph._max_align
     if max_align is None:
@@ -89,6 +92,8 @@ def serialize(graph, root, max_size=2 * 1024 * 1024, header_fn=None):
         raise DagrError("header_fn given but the graph declares no header")
     if max_align > 1:
         raise NotImplementedError("customizable header + aligned arrays not yet supported (Python)")
+    if alignment_offset:
+        raise NotImplementedError("alignment_offset with a customizable header is not supported (spec 42 §2.2)")
     original_offset = b.cursor - off               # distance from body start to root (relative)
     body = b.make_data()                           # body bytes only — the signed preimage input
     hv = header_fn(original_offset, body)
@@ -508,7 +513,9 @@ def _store_packed_block(graph, b, decl, node, inline=False):
     never READS the dedup cache — but it still populates it, and a later regular parent
     may point into the inlined copy. That is the Rust/Swift `store_packed` rule
     (``spec/07`` §5.1); reading the cache here wrote NOTHING for the second use of a
-    shared node — a packed array ``[x, y, x]`` came out two elements long."""
+    shared node — a packed array ``[x, y, x]`` came out two elements long.
+
+    It populates the cache only for a node DECLARED packed (`_cache_packed_copy`)."""
     key = id(node)
     if not inline and key in b.struct_lookup:
         return {"off": b.struct_lookup[key]}
@@ -523,8 +530,21 @@ def _store_packed_block(graph, b, decl, node, inline=False):
         _store_packed_field(graph, b, idx, field, val, (emb, cls, k))
     b.store_leb(b.cursor - before)                 # blockLen (front of the record)
     o = b.cursor
-    b.struct_lookup[key] = o
+    _cache_packed_copy(b, decl, key, o)
     return {"off": o}
+
+
+def _cache_packed_copy(b, decl, key, offset):
+    """Register a just-written packed block in the dedup cache — when the node is DECLARED
+    packed. A node declared regular or frozen that a packed parent inlines is written as a
+    PRIVATE packed copy: a pointer from a regular parent must reach the node in its own
+    (vtable / positional) encoding, so the copy is neither offered to later pointers nor
+    allowed to replace an own-shape encoding already in the cache. Registering it made a
+    regular parent point into a packed block that every reader — this package's `restore`
+    included — then parsed as a vtable node. (The Go writer has the same rule, spec/37 §17
+    "wire fixes": never registered in the dedup cache.)"""
+    if decl.packed:
+        b.struct_lookup[key] = offset
 
 
 def _store_frozen_packed_block(graph, b, decl, node, inline=False):
@@ -598,7 +618,7 @@ def _store_frozen_packed_block(graph, b, decl, node, inline=False):
         b.store_bytes(_pack_bits(present))
     b.store_leb(b.cursor - before)                 # blockLen
     o = b.cursor
-    b.struct_lookup[key] = o
+    _cache_packed_copy(b, decl, key, o)           # see _store_packed_block
     return {"off": o}
 
 
@@ -692,8 +712,9 @@ def _apply_union(graph, b, union, u):
         return {"id": vi, "emit": lambda bb: bb.store_forward_pointer(o)}
     if k == "ref":
         inner = lookup.get(vt.inner)
-        if isinstance(inner, Enum):
-            return {"id": vi, "emit": lambda bb: bb.store_u8(int(val))}
+        if isinstance(inner, Enum):                      # like an enum FIELD: its backing width
+            m = _UNION_VALUE_STORE[_enum_raw_width(inner)]
+            return {"id": vi, "emit": lambda bb: getattr(bb, m)(int(val))}
         if isinstance(inner, Node):
             o = _store_node(graph, b, vt.inner, val)     # NodeStoreRef (bidir pointer)
             return {"id": vi, "emit": lambda bb: bb.store_bidirectional_pointer(o)}
@@ -739,12 +760,8 @@ def _apply_union_packed(graph, b, union, u):
             return {"id": vi, "code": 0}
         getattr(b, _UNION_VALUE_STORE[k])(val)
         return {"id": vi, "code": _PACKED_RAW_CODE[k]}
-    if k in ("f16", "bf16"):
-        bits = (f32_to_bf16_bits if k == "bf16" else f32_to_f16_bits)(val)
-        if leb_length(bits) < 2:
-            b.store_leb(bits)
-            return {"id": vi, "code": 0}
-        b.store_u16(bits)
+    if k in ("f16", "bf16"):                           # always its two raw bytes (spec 07 §8)
+        b.store_u16((f32_to_bf16_bits if k == "bf16" else f32_to_f16_bits)(val))
         return {"id": vi, "code": 2}
     if k == "f32":
         return {"id": vi, "code": 3 if b.store_packed_float32(val, False) else 5}
@@ -761,9 +778,16 @@ def _apply_union_packed(graph, b, union, u):
         return {"id": vi, "code": 6}
     if k == "ref":
         inner = lookup.get(vt.inner)
-        if isinstance(inner, Enum):
-            b.store_u8(int(val))
-            return {"id": vi, "code": 1}
+        if isinstance(inner, Enum):                      # like an enum FIELD of a packed node
+            w = _enum_raw_width(inner)
+            if w == "u8":
+                b.store_u8(int(val))
+                return {"id": vi, "code": 1}
+            if leb_length(int(val)) < _WIDTH[w]:
+                b.store_leb(int(val))
+                return {"id": vi, "code": 0}
+            getattr(b, _UNION_VALUE_STORE[w])(int(val))
+            return {"id": vi, "code": _PACKED_RAW_CODE[w]}
         if isinstance(inner, Node):
             _store_packed_inline(graph, b, vt.inner, val)
             return {"id": vi, "code": 6}

@@ -392,6 +392,12 @@ func PutTelemetry(n Telemetry, b *dagr.Builder, buf []byte, i int) ([]byte, int)
 // TelemetryGraphBuilder is the reusable form (spec 33 §4.3): one builder, reset per Build.
 type TelemetryGraphBuilder struct {
 	b *dagr.Builder
+	// AlignmentOffset is the number of bytes that will precede each built buffer in
+	// whatever carries it (spec 12 §14): the finish padding aligns AlignmentOffset +
+	// length, so an aligned(N) array lands on its boundary in the envelope's frame.
+	// Configuration — it holds for every Build until changed; 0 is a bare buffer.
+	// This graph has no aligned array, so the offset has no effect on its bytes.
+	AlignmentOffset int
 }
 
 func NewTelemetryGraphBuilder() *TelemetryGraphBuilder {
@@ -427,6 +433,7 @@ func (w *TelemetryGraphBuilder) BuildBytes(root Telemetry) []byte {
 func (w *TelemetryGraphBuilder) build(root Telemetry) {
 	b := w.b
 	b.Reset()
+	b.AlignmentOffset = w.AlignmentOffset
 	off := dagr.NodeOffset(storeTelemetry(root, b))
 	b.StoreLEB(uint64(b.Cursor()-off) << 2)
 }

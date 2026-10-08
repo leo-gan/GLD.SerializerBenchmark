@@ -602,6 +602,16 @@ var Builder = class {
   dv;
   // over `buf`, re-made on every grow (float stores)
   cursor = 0;
+  /**
+   * Alignment offset (spec 12 §14): the number of bytes that will PRECEDE the finished
+   * buffer in whatever carries it (a frame header, a message prefix, a length word).
+   * Finish padding then aligns `alignmentOffset + total length` instead of the total
+   * length, so every `aligned(N)` array lands on its boundary in the ENVELOPE's frame.
+   * 0 (the default) is the plain buffer-relative alignment, byte for byte. No wire
+   * change — a reader neither knows nor needs it. Configuration, like the size bound:
+   * it survives `reset()`. Not applied to a graph with a customizable header.
+   */
+  alignmentOffset = 0;
   // reserveFieldPointerSize is derived from maxSize EXACTLY like Rust/Swift (with_max_size):
   // bits = bitLength(maxSize)+3; width = nextPow2(ceil(bits/8)). 2 MiB -> 4 B, 1024 -> 2 B.
   constructor(maxSize = 2 * 1024 * 1024, initialCapacity = 64) {
@@ -1011,23 +1021,35 @@ var Builder = class {
     return this.storeAlignedBytes(_te.encode(s), N);
   }
   /**
-   * Arena finish padding (§11 §4): insert zero bytes before the framing LEB so the
-   * total length (afterPad + framingLen) is ≡ 0 mod maxN, making every aligned
-   * element base buffer-relative aligned. Brute-forces the smallest pad because the
-   * framing LEB width depends on the (padded) distance. Mirrors
-   * storeFinishAlignmentPadding. Must be called after the root node is stored,
-   * before the framing word.
+   * Arena finish padding (spec 12 §4, §14): insert zero bytes before the framing LEB so
+   * that `alignmentOffset + total length` (total = afterPad + framingLen) is ≡ 0 mod
+   * maxN, making every aligned element base aligned — in the buffer's own frame when
+   * `alignmentOffset` is 0, in the frame of the envelope that carries it otherwise.
+   *
+   * The framing LEB's own length depends on the (padded) distance, hence the search. It
+   * runs over `[0, 2·maxN)`: that range crosses at most one step of the framing length,
+   * so one side of the step holds `maxN` consecutive candidates and a solution always
+   * exists (the old bound, `maxN`, could straddle the step and find none, leaving the
+   * buffer unpadded — spec 42 §1). The smallest pad wins, so every buffer that was
+   * padded correctly before is byte-identical. Must be called after the root node is
+   * stored, before the framing word.
    */
   storeFinishAlignmentPadding(rootOffset2, maxN) {
     if (maxN <= 1) return;
-    for (let p = 0; p < maxN; p++) {
+    const offset = this.alignmentOffset;
+    if (!Number.isSafeInteger(offset) || offset < 0) {
+      throw new RangeError(`alignmentOffset must be a non-negative integer, got ${offset}`);
+    }
+    const base = offset % maxN;
+    for (let p = 0; p < 2 * maxN; p++) {
       const afterPad = this.cursor + p;
-      const framingLen = lebLength(BigInt(afterPad - rootOffset2) << 2n);
-      if ((afterPad + framingLen) % maxN === 0) {
-        if (p) this.storeBytes(new Array(p).fill(0));
+      const framingLen = lebLength((afterPad - rootOffset2) * 4);
+      if ((base + afterPad + framingLen) % maxN === 0) {
+        if (p) this.storeBytes(new Uint8Array(p));
         return;
       }
     }
+    throw new Error("finish padding: no pad found");
   }
   /** Fixed-width numeric array: [LEB count][elem0..elemN-1] LE. Elements stored in
    * reverse (backward builder) via `each`; returns the count-LEB offset. */
@@ -1593,8 +1615,9 @@ function writeInto(root, b) {
   const off = nodeOffset(_storeMessage(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes(root, maxSize = 2 * 1024 * 1024) {
+function toBytes(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto(root, b);
   return b.makeData();
 }
@@ -1926,8 +1949,9 @@ function writeInto2(root, b) {
   const off = nodeOffset(_storeMessage2(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes2(root, maxSize = 2 * 1024 * 1024) {
+function toBytes2(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto2(root, b);
   return b.makeData();
 }
@@ -2309,8 +2333,9 @@ function writeInto3(root, b) {
   const off = nodeOffset(_storeMessage3(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes3(root, maxSize = 2 * 1024 * 1024) {
+function toBytes3(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto3(root, b);
   return b.makeData();
 }
@@ -2528,8 +2553,9 @@ function writeInto4(root, b) {
   const off = nodeOffset(_storeMessage4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes4(root, maxSize = 2 * 1024 * 1024) {
+function toBytes4(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto4(root, b);
   return b.makeData();
 }
@@ -2867,8 +2893,9 @@ function writeInto5(root, b) {
   const off = nodeOffset(_storeDocument(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes5(root, maxSize = 2 * 1024 * 1024) {
+function toBytes5(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto5(root, b);
   return b.makeData();
 }
@@ -3223,10 +3250,12 @@ var Document = class {
     this._arena._arrDocument[this._index].meta = value === null ? null : value._packed;
   }
   get items() {
-    return this._arena._arrDocument[this._index].items.filter((_p) => _p !== null).map((_p) => new DocumentItem(_p, this._arena));
+    const _s = this._arena._arrDocument[this._index].items;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new DocumentItem(_p, this._arena));
   }
   set items(value) {
-    this._arena._arrDocument[this._index].items = value.map((_h) => _h === null ? null : _h._packed);
+    this._arena._arrDocument[this._index].items = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key() {
     return `Document#${this._index}`;
@@ -3283,9 +3312,9 @@ var Arena3 = class {
     this._arrDocumentItem.push({ sku, qty, price_minor });
     return new DocumentItem(_pack3(0, _i), this);
   }
-  newDocument(id = "", status = 0, meta = null, items = []) {
+  newDocument(id = "", status = 0, meta = null, items = null) {
     const _i = this._arrDocument.length;
-    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items === null ? null : items.map((_h) => _h === null ? null : _h._packed) });
     return new Document(_pack3(0, _i), this);
   }
   get root() {
@@ -3326,7 +3355,7 @@ function _fromDocument(accU, a, seen) {
   _n.id = acc.id;
   _n.status = acc.status;
   _n.meta = acc.meta === null ? null : _fromDocumentMeta(acc.meta, a, seen);
-  _n.items = ((_s) => acc.items.map((_e) => _e === null ? null : _fromDocumentItem(_e, a, _s)))(seen);
+  _n.items = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromDocumentItem(_e, a, _s)))(acc.items, seen);
   return _n;
 }
 function restore3(bytes) {
@@ -3386,8 +3415,9 @@ function writeInto6(root, b) {
   const off = nodeOffset(_storeDocument2(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes6(root, maxSize = 2 * 1024 * 1024) {
+function toBytes6(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto6(root, b);
   return b.makeData();
 }
@@ -3787,10 +3817,12 @@ var Document2 = class {
     this._arena._arrDocument[this._index].meta = value === null ? null : value._packed;
   }
   get items() {
-    return this._arena._arrDocument[this._index].items.filter((_p) => _p !== null).map((_p) => new DocumentItem2(_p, this._arena));
+    const _s = this._arena._arrDocument[this._index].items;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new DocumentItem2(_p, this._arena));
   }
   set items(value) {
-    this._arena._arrDocument[this._index].items = value.map((_h) => _h === null ? null : _h._packed);
+    this._arena._arrDocument[this._index].items = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key() {
     return `Document#${this._index}`;
@@ -3847,9 +3879,9 @@ var Arena4 = class {
     this._arrDocumentItem.push({ sku, qty, price_minor });
     return new DocumentItem2(_pack4(0, _i), this);
   }
-  newDocument(id = "", status = 0, meta = null, items = []) {
+  newDocument(id = "", status = 0, meta = null, items = null) {
     const _i = this._arrDocument.length;
-    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items === null ? null : items.map((_h) => _h === null ? null : _h._packed) });
     return new Document2(_pack4(0, _i), this);
   }
   get root() {
@@ -3890,7 +3922,7 @@ function _fromDocument2(accU, a, seen) {
   _n.id = acc.id;
   _n.status = acc.status;
   _n.meta = acc.meta === null ? null : _fromDocumentMeta2(acc.meta, a, seen);
-  _n.items = ((_s) => acc.items.map((_e) => _e === null ? null : _fromDocumentItem2(_e, a, _s)))(seen);
+  _n.items = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromDocumentItem2(_e, a, _s)))(acc.items, seen);
   return _n;
 }
 function restore4(bytes) {
@@ -3965,8 +3997,9 @@ function writeInto7(root, b) {
   const off = nodeOffset(_storeDocument3(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes7(root, maxSize = 2 * 1024 * 1024) {
+function toBytes7(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto7(root, b);
   return b.makeData();
 }
@@ -4301,8 +4334,9 @@ function writeInto8(root, b) {
   const off = nodeOffset(_storeDocument4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes8(root, maxSize = 2 * 1024 * 1024) {
+function toBytes8(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto8(root, b);
   return b.makeData();
 }
@@ -4454,8 +4488,9 @@ function writeInto9(root, b) {
   const off = nodeOffset(_storeTelemetry(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes9(root, maxSize = 2 * 1024 * 1024) {
+function toBytes9(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto9(root, b);
   return b.makeData();
 }
@@ -4720,8 +4755,9 @@ function writeInto10(root, b) {
   const off = nodeOffset(_storeTelemetry2(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes10(root, maxSize = 2 * 1024 * 1024) {
+function toBytes10(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto10(root, b);
   return b.makeData();
 }
@@ -5012,8 +5048,9 @@ function writeInto11(root, b) {
   const off = nodeOffset(_storeTelemetry3(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes11(root, maxSize = 2 * 1024 * 1024) {
+function toBytes11(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto11(root, b);
   return b.makeData();
 }
@@ -5161,8 +5198,9 @@ function writeInto12(root, b) {
   const off = nodeOffset(_storeTelemetry4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes12(root, maxSize = 2 * 1024 * 1024) {
+function toBytes12(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto12(root, b);
   return b.makeData();
 }
@@ -5230,8 +5268,9 @@ function writeInto13(root, b) {
   const off = nodeOffset(_storeStrings(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes13(root, maxSize = 2 * 1024 * 1024) {
+function toBytes13(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto13(root, b);
   return b.makeData();
 }
@@ -5440,8 +5479,9 @@ function writeInto14(root, b) {
   const off = nodeOffset(_storeStrings2(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes14(root, maxSize = 2 * 1024 * 1024) {
+function toBytes14(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto14(root, b);
   return b.makeData();
 }
@@ -5658,8 +5698,9 @@ function writeInto15(root, b) {
   const off = nodeOffset(_storeStrings3(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes15(root, maxSize = 2 * 1024 * 1024) {
+function toBytes15(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto15(root, b);
   return b.makeData();
 }
@@ -5726,8 +5767,9 @@ function writeInto16(root, b) {
   const off = nodeOffset(_storeStrings4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes16(root, maxSize = 2 * 1024 * 1024) {
+function toBytes16(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto16(root, b);
   return b.makeData();
 }
@@ -5977,8 +6019,9 @@ function writeInto17(root, b) {
   const off = nodeOffset(_storeEvent(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes17(root, maxSize = 2 * 1024 * 1024) {
+function toBytes17(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto17(root, b);
   return b.makeData();
 }
@@ -6243,10 +6286,12 @@ var Event = class {
     this._arena._arrEvent[this._index].producer = value;
   }
   get attrs() {
-    return this._arena._arrEvent[this._index].attrs.filter((_p) => _p !== null).map((_p) => new EventAttr(_p, this._arena));
+    const _s = this._arena._arrEvent[this._index].attrs;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new EventAttr(_p, this._arena));
   }
   set attrs(value) {
-    this._arena._arrEvent[this._index].attrs = value.map((_h) => _h === null ? null : _h._packed);
+    this._arena._arrEvent[this._index].attrs = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key() {
     return `Event#${this._index}`;
@@ -6299,9 +6344,9 @@ var Arena9 = class {
     this._arrEventAttr.push({ key, value });
     return new EventAttr(_pack9(0, _i), this);
   }
-  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = []) {
+  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = null) {
     const _i = this._arrEvent.length;
-    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs === null ? null : attrs.map((_h) => _h === null ? null : _h._packed) });
     return new Event(_pack9(0, _i), this);
   }
   get root() {
@@ -6332,7 +6377,7 @@ function _fromEvent(accU, a, seen) {
   _n.event_type = acc.event_type;
   _n.occurred_at = acc.occurred_at;
   _n.producer = acc.producer;
-  _n.attrs = ((_s) => acc.attrs.map((_e) => _e === null ? null : _fromEventAttr(_e, a, _s)))(seen);
+  _n.attrs = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromEventAttr(_e, a, _s)))(acc.attrs, seen);
   return _n;
 }
 function restore9(bytes) {
@@ -6384,8 +6429,9 @@ function writeInto18(root, b) {
   const off = nodeOffset(_storeEvent2(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes18(root, maxSize = 2 * 1024 * 1024) {
+function toBytes18(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto18(root, b);
   return b.makeData();
 }
@@ -6685,10 +6731,12 @@ var Event2 = class {
     this._arena._arrEvent[this._index].producer = value;
   }
   get attrs() {
-    return this._arena._arrEvent[this._index].attrs.filter((_p) => _p !== null).map((_p) => new EventAttr2(_p, this._arena));
+    const _s = this._arena._arrEvent[this._index].attrs;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new EventAttr2(_p, this._arena));
   }
   set attrs(value) {
-    this._arena._arrEvent[this._index].attrs = value.map((_h) => _h === null ? null : _h._packed);
+    this._arena._arrEvent[this._index].attrs = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key() {
     return `Event#${this._index}`;
@@ -6741,9 +6789,9 @@ var Arena10 = class {
     this._arrEventAttr.push({ key, value });
     return new EventAttr2(_pack10(0, _i), this);
   }
-  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = []) {
+  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = null) {
     const _i = this._arrEvent.length;
-    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs === null ? null : attrs.map((_h) => _h === null ? null : _h._packed) });
     return new Event2(_pack10(0, _i), this);
   }
   get root() {
@@ -6774,7 +6822,7 @@ function _fromEvent2(accU, a, seen) {
   _n.event_type = acc.event_type;
   _n.occurred_at = acc.occurred_at;
   _n.producer = acc.producer;
-  _n.attrs = ((_s) => acc.attrs.map((_e) => _e === null ? null : _fromEventAttr2(_e, a, _s)))(seen);
+  _n.attrs = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromEventAttr2(_e, a, _s)))(acc.attrs, seen);
   return _n;
 }
 function restore10(bytes) {
@@ -6837,8 +6885,9 @@ function writeInto19(root, b) {
   const off = nodeOffset(_storeEvent3(root, b));
   return b.storeLEB(BigInt(b.cursor - off) << 2n);
 }
-function toBytes19(root, maxSize = 2 * 1024 * 1024) {
+function toBytes19(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto19(root, b);
   return b.makeData();
 }
@@ -7075,8 +7124,9 @@ function writeInto20(root, b) {
   const off = nodeOffset(_storeEvent4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes20(root, maxSize = 2 * 1024 * 1024) {
+function toBytes20(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   const b = new Builder(maxSize, 1024);
+  b.alignmentOffset = alignmentOffset;
   writeInto20(root, b);
   return b.makeData();
 }

@@ -135,9 +135,22 @@ def is_elided(field, node, lookup, value):
     return d is not None and value == d                # exact equality (NaN never elides — correct)
 
 
+def synthesizes(field, node, lookup):
+    """True if an ABSENT ``field`` reads as its schema default (spec 14 §4): a REQUIRED field
+    with a default, on a non-frozen node. NOT "an elidable field" — a writer never elides an
+    ``always_store`` / ``deprecated`` field, but a buffer that predates the field still lacks it,
+    and the read must synthesize all the same."""
+    if getattr(node, "frozen", False):
+        return False
+    if not field.options.is_required or getattr(field, "default", None) is None:
+        return False
+    return _elidable_type(field.type, lookup)
+
+
 def synth_default(field, node, lookup):
-    """Value to synthesize for an ABSENT field on read — its default if elidable, else ``None``
-    (the prior behavior for a genuinely absent optional field)."""
-    if not can_elide(field, node, lookup):
+    """Value to synthesize for an ABSENT field on read — its default if the field synthesizes
+    (``synthesizes``), else ``None`` (a genuinely absent optional field, or a default of a kind
+    this runtime cannot construct: node prefabs)."""
+    if not synthesizes(field, node, lookup):
         return None
     return default_value(field, lookup)

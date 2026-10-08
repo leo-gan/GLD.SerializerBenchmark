@@ -77,8 +77,9 @@ export function writeInto(root: Document, b: Builder): number {
   return b.storeLEB((b.cursor - off) * 4);  // framing: rootDist<<2 | headerFlags(0)
 }
 
-export function toBytes(root: Document, maxSize: number = 2 * 1024 * 1024): Uint8Array {
+export function toBytes(root: Document, maxSize: number = 2 * 1024 * 1024, alignmentOffset: number = 0): Uint8Array {
   const b = new Builder(maxSize, 1024);   // direct = tree → small buffer, grows if needed
+  b.alignmentOffset = alignmentOffset;    // spec 12 §14: bytes preceding the buffer in its envelope
   writeInto(root, b);
   return b.makeData();
 }

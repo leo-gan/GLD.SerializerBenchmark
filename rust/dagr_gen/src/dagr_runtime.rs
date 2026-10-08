@@ -117,7 +117,26 @@ pub fn leb_length(value: u64) -> usize {
     (((64 - value.leading_zeros()) + 6) / 7).max(1) as usize
 }
 
+// Most LEBs are one or two bytes — small ints, counts, and the size prefix of a packed
+// node or blob under 16 KB — and a packed read decodes one per field or skipped element:
+// those two cases are inlined at every call site, the rest is one out-of-line call.
+// Without the split the length check below kept `read_leb` from being inlined, which
+// doubled a packed OTLP scan; with only the one-byte case inline, skipping a packed
+// element (a two-byte size) still paid the call (spec/32 §1.58).
+#[inline(always)]
 pub fn read_leb(data: &[u8], at: usize) -> Result<(u64, usize), DagrError> {
+    match data.get(at) {
+        Some(&b) if b < 0x80 => Ok((b as u64, 1)),
+        Some(&b) => match data.get(at + 1) {
+            Some(&c) if c < 0x80 => Ok(((b & 0x7F) as u64 | (c as u64) << 7, 2)),
+            _ => read_leb_multi(data, at),
+        },
+        None => Err(DagrError::InvalidData),
+    }
+}
+
+#[inline(never)]
+fn read_leb_multi(data: &[u8], at: usize) -> Result<(u64, usize), DagrError> {
     let mut result = 0u64;
     let mut shift = 0usize;
     let mut pos = at;
@@ -382,6 +401,40 @@ pub fn read_packed_f16(data: &[u8], at: usize) -> Result<(f32, usize), DagrError
 
 pub fn read_packed_bf16(data: &[u8], at: usize) -> Result<(f32, usize), DagrError> {
     read_packed_f16(data, at)
+}
+
+/// An f16 / bf16 variant of a PACKED union by its header code → `(value, bytes consumed)`.
+/// The canonical form is the two raw bytes under code 2 (07 §8). Two older forms stay
+/// readable: the 16 bits as a varint under code 0 (what `+0.0` was from the writers that
+/// routed the bits through the u16 store — 42 §3), and a special value as its one-byte
+/// float-codec tag under code 5 (DataSink records).
+pub fn read_union_half(data: &[u8], at: usize, code: u64, bf16: bool) -> Result<(f32, usize), DagrError> {
+    match code {
+        0 => {
+            let (lv, ll) = read_leb(data, at)?;
+            let bits = lv as u16;
+            Ok((if bf16 { bf16_bits_to_f32(bits) } else { f16_bits_to_f32(bits) }, ll))
+        }
+        5 => if bf16 { read_packed_bf16(data, at) } else { read_packed_f16(data, at) },
+        _ => {
+            let bits = read_u16(data, at)?;
+            Ok((if bf16 { bf16_bits_to_f32(bits) } else { f16_bits_to_f32(bits) }, 2))
+        }
+    }
+}
+
+/// The raw value of an ENUM variant of a packed union value (07 §8, 42 §3 D4), by the
+/// header's code: a varint under code 0, otherwise `1 << (code - 1)` raw bytes. Returns
+/// (value, bytes consumed).
+pub fn read_union_enum_raw(data: &[u8], at: usize, code: u64) -> Result<(u64, usize), DagrError> {
+    match code {
+        0 => read_leb(data, at),
+        1 => Ok((read_u8(data, at)? as u64, 1)),
+        2 => Ok((read_u16(data, at)? as u64, 2)),
+        3 => Ok((read_u32(data, at)? as u64, 4)),
+        4 => Ok((read_u64(data, at)?, 8)),
+        _ => Err(DagrError::InvalidData),
+    }
 }
 
 // Proper IEEE-754 round-to-nearest-even (subnormals + mantissa carry), bit-identical
@@ -808,6 +861,30 @@ pub fn rleb_bytes(mut v: u64) -> ([u8; 10], usize) {
     (tmp, n)
 }
 
+/// The leading pad of a sink record's raw-embedded graph (spec 18 §11.4, spec 42 D6).
+/// `block` is the record content `[LEB size][fields]` written with a pad of 0, its embedded
+/// graph starting at `blob_offset`; `abs_base` is the absolute stream position of the block's
+/// first byte. The pad is the SMALLEST count in `0..=255` that puts the graph on an `n`
+/// boundary in the stream, counting that the pad may lengthen the two LEBs it sits inside —
+/// the field's payload length and the record's size. When no count does, the pad is 0.
+/// Allocation-free; port of the Python reference `sink_raw_pad`.
+pub fn sink_raw_pad(block: &[u8], blob_offset: usize, abs_base: usize, n: usize) -> usize {
+    if n <= 1 || blob_offset < 2 { return 0; }
+    let c0 = match read_leb(block, 0) { Ok((v, _)) => v, Err(_) => return 0 };
+    // The payload-length LEB ends right before the pad-count byte at `blob_offset - 1`;
+    // step left while the byte before it continues a LEB (the tag's terminator stops it).
+    let mut q = blob_offset - 2;
+    while q > 0 && block.get(q - 1).map_or(false, |b| b & 0x80 != 0) { q -= 1; }
+    let p0 = match read_leb(block, q) { Ok((v, _)) => v, Err(_) => return 0 };
+    let (lp0, lc0) = (leb_length(p0), leb_length(c0));
+    for pad in 0..256usize {
+        let gp = leb_length(p0 + pad as u64) - lp0;
+        let gc = leb_length(c0 + (pad + gp) as u64) - lc0;
+        if (abs_base + blob_offset + pad + gp + gc) % n == 0 { return pad; }
+    }
+    0
+}
+
 /// A backward-growing byte builder: the contract every packed `store_*` function targets
 /// (36 §5). Positions are counted from the END — the wire is built last byte first. The
 /// required methods are the primitive ops; everything else has a default in terms of them.
@@ -815,6 +892,10 @@ pub trait PackedSink {
     /// Bytes written since construction / the last `reset`.
     fn cursor(&self) -> usize;
     fn reset(&mut self);
+    /// The number of bytes that will PRECEDE the finished buffer in whatever carries it
+    /// (12 §14): finish padding aligns `alignment_offset + length`, so aligned arrays land
+    /// on their boundary in the ENVELOPE's frame. 0 unless the builder was given one.
+    #[inline] fn alignment_offset(&self) -> usize { 0 }
     fn store_raw(&mut self, bytes: &[u8]) -> Result<(), DagrError>;
     /// Prepend `n` zero bytes (a bitset region to be filled in place with `or_byte`).
     fn store_zeros(&mut self, n: usize) -> Result<(), DagrError>;
@@ -904,14 +985,16 @@ pub trait PackedSink {
         if !self.store_packed_f64(v)? { self.store_u8(0x08)?; }
         Ok(())
     }
-    /// Same padding decision as `DagrBuilder::store_finish_alignment_padding` (12 §4).
+    /// Same padding decision as `DagrBuilder::store_finish_alignment_padding` (12 §4, §14):
+    /// the smallest pad in `[0, 2·max_n)` — a range that always holds one (42 §1).
     fn store_finish_alignment_padding(&mut self, root_off: usize, max_n: usize, header_span: usize) -> Result<(), DagrError> {
         if max_n <= 1 { return Ok(()); }
-        for p in 0..max_n {
+        let offset = self.alignment_offset() % max_n;
+        for p in 0..2 * max_n {
             let after_pad = self.cursor() + p;
             let stored_offset = ((after_pad - root_off) + header_span) as u64;
             let framing_len = leb_length(stored_offset << 2);
-            if (after_pad + framing_len + header_span) % max_n == 0 {
+            if (offset + after_pad + framing_len + header_span) % max_n == 0 {
                 return self.store_zeros(p);
             }
         }
@@ -938,16 +1021,20 @@ pub trait StorePackedStd {
 
 /// A `PackedSink` over a caller-provided slice (36 §5): no heap, bounded memory. Every
 /// store past the slice's capacity is `Err(BufferFull)` and writes nothing.
-pub struct FixedBuilder<'b> { buf: &'b mut [u8], cursor: usize }
+pub struct FixedBuilder<'b> { buf: &'b mut [u8], cursor: usize, alignment_offset: usize }
 
 impl<'b> FixedBuilder<'b> {
-    pub fn new(buf: &'b mut [u8]) -> Self { FixedBuilder { buf, cursor: 0 } }
+    pub fn new(buf: &'b mut [u8]) -> Self { FixedBuilder { buf, cursor: 0, alignment_offset: 0 } }
     #[inline] pub fn capacity(&self) -> usize { self.buf.len() }
+    /// The bytes that will precede the finished buffer in its envelope (12 §14).
+    /// Configuration: `reset` keeps it.
+    #[inline] pub fn set_alignment_offset(&mut self, offset: usize) { self.alignment_offset = offset; }
 }
 
 impl PackedSink for FixedBuilder<'_> {
     #[inline] fn cursor(&self) -> usize { self.cursor }
     #[inline] fn reset(&mut self) { self.cursor = 0; }
+    #[inline] fn alignment_offset(&self) -> usize { self.alignment_offset }
     #[inline] fn store_raw(&mut self, bytes: &[u8]) -> Result<(), DagrError> {
         let n = bytes.len();
         let cap = self.buf.len();
@@ -1013,6 +1100,7 @@ impl PackedSink for FixedBuilder<'_> {
 impl PackedSink for DagrBuilder {
     #[inline] fn cursor(&self) -> usize { self.cursor }
     #[inline] fn reset(&mut self) { DagrBuilder::reset(self) }
+    #[inline] fn alignment_offset(&self) -> usize { self.alignment_offset }
     #[inline] fn store_raw(&mut self, bytes: &[u8]) -> Result<(), DagrError> { DagrBuilder::store_raw(self, bytes); Ok(()) }
     #[inline] fn store_zeros(&mut self, n: usize) -> Result<(), DagrError> {
         self.reserve(n);
@@ -1171,6 +1259,9 @@ pub struct DagrBuilder {
     // set false while building prototype/prefab default blobs so they materialize every field
     // (eliding a field inside its own default blob would remove the read-side synthesis base case).
     elide_defaults: bool,
+    // Bytes that will PRECEDE the finished buffer in whatever carries it (12 §14): finish
+    // padding aligns `alignment_offset + length`. Configuration — `reset` keeps it.
+    alignment_offset: usize,
 }
 
 fn _next_pow2(mut x: usize) -> usize {
@@ -1245,8 +1336,18 @@ impl DagrBuilder {
             late_bindings: HashMap::default(),
             reserve_field_pointer_size: rfps,
             elide_defaults: true,
+            alignment_offset: 0,
         }
     }
+
+    /// The number of bytes that will PRECEDE the finished buffer in whatever carries it — a
+    /// frame header, a length word (12 §14). Finish padding then makes `offset + length` a
+    /// multiple of the graph's largest `aligned(N)`, so every aligned array lands on its
+    /// boundary in the frame of the ENVELOPE; only `offset mod N` matters, and 0 (the
+    /// default) is a buffer that stands on its own. No wire change: a reader neither knows
+    /// nor needs it. Configuration, like the size bound — `reset` keeps it.
+    #[inline] pub fn set_alignment_offset(&mut self, offset: usize) { self.alignment_offset = offset; }
+    #[inline] pub fn alignment_offset(&self) -> usize { self.alignment_offset }
 
     /// Enable/disable write-side default elision (default: enabled). Default blobs set false.
     #[inline] pub fn set_elide_defaults(&mut self, v: bool) { self.elide_defaults = v; }
@@ -1431,20 +1532,29 @@ impl DagrBuilder {
         if !self.store_packed_f64(v) { self.store_u8(0x08); }
     }
 
-    // Arena-level finish padding for aligned arrays (see "spec/12-memory-aligned-fields.md" §4).
+    // Arena-level finish padding for aligned arrays (see "spec/12-memory-aligned-fields.md" §4, §14).
     // Writes the minimal number of zero bytes so that, after the root-distance LEB that
-    // follows, the final cursor is a multiple of `max_n` — guaranteeing every aligned
-    // array's count field (and element base) lands at an n-aligned offset in the buffer.
+    // follows, `alignment_offset + final cursor` is a multiple of `max_n` — guaranteeing
+    // every aligned array's element base lands on an n-aligned position in the frame of
+    // whatever carries the buffer (the buffer itself when the offset is 0).
     pub fn store_finish_alignment_padding(&mut self, root_off: usize, max_n: usize, header_span: usize) {
         if max_n <= 1 { return; }
         // The leading framing word encodes (stored_offset << 2 | discriminator bits); its
         // LEB length — plus the header span (if any) — precedes the body, so total length
         // = framing_len + header_span + after_pad must be a multiple of max_n.
-        for p in 0..max_n {
+        //
+        // The framing length depends on the pad, hence the search — over [0, 2·max_n): that
+        // range crosses at most one step of the framing length, so one side of the step
+        // holds max_n consecutive candidates and a pad always exists. The old bound, max_n,
+        // could straddle the step and find none; the buffer then went out UNPADDED and
+        // every aligned array in it was misaligned (42 §1). The smallest pad wins, so every
+        // buffer the old search padded is byte-identical.
+        let offset = self.alignment_offset % max_n;
+        for p in 0..2 * max_n {
             let after_pad = self.cursor + p;
             let stored_offset = ((after_pad - root_off) + header_span) as u64;
             let framing_len = leb_length(stored_offset << 2);
-            if (after_pad + framing_len + header_span) % max_n == 0 {
+            if (offset + after_pad + framing_len + header_span) % max_n == 0 {
                 for _ in 0..p { self.store_u8(0); }
                 return;
             }

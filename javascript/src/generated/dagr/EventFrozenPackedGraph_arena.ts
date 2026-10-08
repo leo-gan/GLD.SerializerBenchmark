@@ -64,7 +64,7 @@ interface EventValues {
   event_type: string;
   occurred_at: bigint;
   producer: string;
-  attrs: (bigint | null)[];
+  attrs: (bigint | null)[] | null;
 }
 
 export class EventAttr<B = unknown> {
@@ -140,11 +140,13 @@ export class Event<B = unknown> {
   set producer(value: string) {
     this._arena._arrEvent[this._index]!.producer = value;
   }
-  get attrs(): (EventAttr<B> | null)[] {
-    return this._arena._arrEvent[this._index]!.attrs.filter((_p): _p is bigint => _p !== null).map((_p) => new EventAttr<B>(_p, this._arena));
+  get attrs(): (EventAttr<B> | null)[] | null {
+    const _s = this._arena._arrEvent[this._index]!.attrs;
+    if (_s === null) return null;
+    return _s.filter((_p): _p is bigint => _p !== null).map((_p) => new EventAttr<B>(_p, this._arena));
   }
-  set attrs(value: (EventAttr<B> | null)[]) {
-    this._arena._arrEvent[this._index]!.attrs = value.map((_h) => _h === null ? null : _h._packed);
+  set attrs(value: (EventAttr<B> | null)[] | null) {
+    this._arena._arrEvent[this._index]!.attrs = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key(): string { return `Event#${this._index}`; }
   toString(): string { return this._describe(new Set<string>()); }
@@ -191,9 +193,9 @@ export class Arena<B = unknown> {
       this._arrEventAttr.push({ key, value });
     return new EventAttr<B>(_pack(0, _i), this);
   }
-  newEvent(event_id: string = "", event_type: string = "", occurred_at: bigint = 0n, producer: string = "", attrs: (EventAttr<B> | null)[] = []): Event<B> {
+  newEvent(event_id: string = "", event_type: string = "", occurred_at: bigint = 0n, producer: string = "", attrs: (EventAttr<B> | null)[] | null = null): Event<B> {
     const _i = this._arrEvent.length;
-      this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+      this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs === null ? null : attrs.map((_h) => _h === null ? null : _h._packed) });
     return new Event<B>(_pack(0, _i), this);
   }
   get root(): Event<B> | null {
@@ -224,7 +226,7 @@ function _fromEvent<B>(accU: unknown, a: Arena<B>, seen: Map<number, unknown>): 
   _n.event_type = acc.event_type!;
   _n.occurred_at = acc.occurred_at!;
   _n.producer = acc.producer!;
-  _n.attrs = ((_s: Map<number, unknown>) => acc.attrs!.map((_e) => _e === null ? null : _fromEventAttr<B>(_e, a, _s)))(seen);
+  _n.attrs = ((_v, _s: Map<number, unknown>) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromEventAttr<B>(_e, a, _s)))(acc.attrs, seen);
   return _n;
 }
 

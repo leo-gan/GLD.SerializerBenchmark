@@ -296,6 +296,13 @@ public final class DataArenaBuilder: ArenaBuilder {
     public let reserveFieldPointerSize: Int
     public private(set) var elideDefaults: Bool = true
     public func setElideDefaults(_ v: Bool) { elideDefaults = v }
+    /// The number of bytes that will PRECEDE the finished buffer in whatever carries it — a
+    /// frame header, a length word ("spec/12-memory-aligned-fields.md" §14). Finish padding
+    /// then makes `alignmentOffset + length` a multiple of the graph's largest `aligned(N)`,
+    /// so every aligned array lands on its boundary in the frame of the ENVELOPE. Only the
+    /// value mod N matters; 0 (the default) is a buffer that stands on its own. No wire
+    /// change — a reader neither knows nor needs it. Configuration: `reset()` keeps it.
+    public var alignmentOffset: Int = 0
     private var capacity: UInt64
     private var _data: UnsafeMutableRawPointer
     public var cursor: BufferOffset { .offset(_cursor) }
@@ -333,11 +340,18 @@ public final class DataArenaBuilder: ArenaBuilder {
         // The leading framing word encodes (storedOffset << 2 | discriminator bits); its
         // LEB length — not the bare distance — plus the header span (if any) precede the
         // body, so total length = framingLen + headerSpan + afterPad must be ≡ 0 mod maxN.
-        for p in 0..<maxN {
+        // The framing length depends on the pad, hence the search — over [0, 2·maxN): that
+        // range crosses at most one step of the framing length, so one side of the step
+        // holds maxN consecutive candidates and a pad always exists. The old bound, maxN,
+        // could straddle the step and find none; the buffer then went out UNPADDED and
+        // every aligned array in it was misaligned (spec 42 §1). The smallest pad wins, so
+        // every buffer the old search padded is byte-identical.
+        let offset = ((alignmentOffset % maxN) + maxN) % maxN
+        for p in 0..<(2 * maxN) {
             let afterPad = Int(_cursor) + p
             let storedOffset = (UInt64(afterPad) - rootOffset.value) + UInt64(headerSpan)
             let framingLen   = lebLength(storedOffset << 2)
-            if (afterPad + framingLen + headerSpan) % maxN == 0 {
+            if (offset + afterPad + framingLen + headerSpan) % maxN == 0 {
                 for _ in 0..<p { _ = try store(number: UInt8(0)) }
                 return
             }
@@ -1727,6 +1741,22 @@ func _decodePackedF16(from data: Data, at cursor: Int) throws -> (Float, Int) {
 }
 
 // ── Packed float decode ───────────────────────────────────────────────────────
+
+/// The raw value of an ENUM variant of a packed union value (spec 07 §8, spec 42 D4): a
+/// varint under code 0, otherwise `1 << (code - 1)` raw bytes. Returns (value, bytes read).
+@inline(__always)
+func _restoreUnionEnumRaw(from data: Data, at pos: Int, code: Int) throws -> (UInt64, Int) {
+    switch code {
+    case 0: return try restoreLEB(from: data, at: pos)
+    case 1:
+        guard pos >= 0, pos < data.count else { throw ArenaRestoreError.outsideOfBuffer }
+        return (UInt64(data[pos]), 1)
+    case 2: return (UInt64(try UInt16.restore(from: data, at: pos)), 2)
+    case 3: return (UInt64(try UInt32.restore(from: data, at: pos)), 4)
+    case 4: return (try UInt64.restore(from: data, at: pos), 8)
+    default: throw ArenaRestoreError.outsideOfBuffer
+    }
+}
 
 func _decodePackedFloat32(from data: Data, at cursor: Int) throws -> (Float, Int) {
     guard cursor >= 0, cursor < data.count else { throw ArenaRestoreError.outsideOfBuffer }

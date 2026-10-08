@@ -61,8 +61,9 @@ def write_telemetry_graph_direct(mut b: Builder[_VT_MAX], n: DirectTelemetry) ra
     var _off = node_offset(_store_telemetry_d(b, n))
     return b.store_leb(UInt64((b.cursor - _off) << 2))
 
-def serialize_telemetry_graph_direct(var n: DirectTelemetry) raises -> List[UInt8]:
+def serialize_telemetry_graph_direct(var n: DirectTelemetry, alignment_offset: Int = 0) raises -> List[UInt8]:
     var b = Builder[_VT_MAX]()
+    b.alignment_offset = alignment_offset
     _ = write_telemetry_graph_direct(b, n)
     return b.make_data()
 

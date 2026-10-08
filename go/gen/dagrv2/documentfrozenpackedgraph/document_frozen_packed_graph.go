@@ -371,7 +371,7 @@ func (a DocumentAccessor) ItemsAll() iter.Seq[DocumentItemAccessor] {
 }
 
 func walkDocumentMeta(a DocumentMetaAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}
@@ -394,7 +394,7 @@ func ValidateDocumentMeta(a DocumentMetaAccessor) (err error) {
 }
 
 func walkDocumentItem(a DocumentItemAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}
@@ -418,7 +418,7 @@ func ValidateDocumentItem(a DocumentItemAccessor) (err error) {
 }
 
 func walkDocument(a DocumentAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}

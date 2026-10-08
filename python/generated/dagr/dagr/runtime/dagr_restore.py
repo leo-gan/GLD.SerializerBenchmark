@@ -144,9 +144,8 @@ def _restore_regular_node(graph, mv, node, type_name, start, seen):
     field_pos = restore_vtable(mv, start)
     for idx, field in indexed_items(graph, node):
         pos = field_pos[idx] if idx < len(field_pos) else None
-        if pos is None:                        # absent: synthesize an elided required default (§8.5)
-            shell.fields[field.name] = (_synth_default(field, node, graph.lookup)
-                                        if field_can_elide(graph, field, node) else None)
+        if pos is None:                        # absent: a required field with a default synthesizes (14 §4)
+            shell.fields[field.name] = _synth_default(field, node, graph.lookup)
         else:
             shell.fields[field.name] = _restore_value(graph, mv, field.type, pos, seen)
     return shell
@@ -240,8 +239,7 @@ def _restore_packed_inline_node(graph, mv, type_name, pos, seen):
     fields = shell.fields
     for field in idx_fields.values():          # fields with no tag were absent → synth default (§8.5)
         if field.name not in fields:
-            fields[field.name] = (_synth_default(field, node, graph.lookup)
-                                  if field_can_elide(graph, field, node) else None)
+            fields[field.name] = _synth_default(field, node, graph.lookup)
     return shell, end
 
 
@@ -435,10 +433,20 @@ def _restore_packed_union_payload(graph, mv, vtype, code, ep, seen):
             return v, ep + nb
         return _SCALAR[k](mv, ep), ep + _SCALAR_WIDTH[k]
     if k in ("f16", "bf16"):
+        # A half variant is its two raw bytes (code 2). Writers before spec 42 stored the 16
+        # bits as a varint under code 0 when they were below 128 (+0.0 is one zero byte).
         if code == 0:
-            v, nb = decode_packed_f16(mv, ep)
-            return v, ep + nb
+            bits, new_pos = read_leb(mv, ep)
+            return _SCALAR[k](memoryview(int(bits & 0xFFFF).to_bytes(2, "little")), 0), new_pos
         return _SCALAR[k](mv, ep), ep + 2
+    if k == "ref" and isinstance(graph.lookup.get(vtype.inner), Enum):
+        # An enum variant is stored like an enum field (a byte-wide enum: one raw byte, code
+        # 1; a wider one: a varint under code 0, else its backing width). Decoded by the CODE,
+        # which also reads what writers before spec 42 stored — one byte whatever the width.
+        if code == 0:
+            return read_leb(mv, ep)
+        w = {1: 1, 2: 2, 3: 4}.get(code, 8)
+        return int.from_bytes(bytes(mv[ep:ep + w]), "little"), ep + w
     if k == "ref" and isinstance(graph.lookup.get(vtype.inner), UnionType):
         # Nested union (code 6): payload = [size LEB][inner union's packed encoding].
         _, inner_ep = read_leb(mv, ep)

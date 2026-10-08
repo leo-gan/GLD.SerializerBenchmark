@@ -69,7 +69,7 @@ interface DocumentValues {
   id: string;
   status: number;
   meta: bigint | null;
-  items: (bigint | null)[];
+  items: (bigint | null)[] | null;
 }
 
 export class DocumentMeta<B = unknown> {
@@ -194,11 +194,13 @@ export class Document<B = unknown> {
   set meta(value: DocumentMeta<B> | null) {
     this._arena._arrDocument[this._index]!.meta = value === null ? null : value._packed;
   }
-  get items(): (DocumentItem<B> | null)[] {
-    return this._arena._arrDocument[this._index]!.items.filter((_p): _p is bigint => _p !== null).map((_p) => new DocumentItem<B>(_p, this._arena));
+  get items(): (DocumentItem<B> | null)[] | null {
+    const _s = this._arena._arrDocument[this._index]!.items;
+    if (_s === null) return null;
+    return _s.filter((_p): _p is bigint => _p !== null).map((_p) => new DocumentItem<B>(_p, this._arena));
   }
-  set items(value: (DocumentItem<B> | null)[]) {
-    this._arena._arrDocument[this._index]!.items = value.map((_h) => _h === null ? null : _h._packed);
+  set items(value: (DocumentItem<B> | null)[] | null) {
+    this._arena._arrDocument[this._index]!.items = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
   }
   _key(): string { return `Document#${this._index}`; }
   toString(): string { return this._describe(new Set<string>()); }
@@ -249,9 +251,9 @@ export class Arena<B = unknown> {
       this._arrDocumentItem.push({ sku, qty, price_minor });
     return new DocumentItem<B>(_pack(0, _i), this);
   }
-  newDocument(id: string = "", status: number = 0, meta: DocumentMeta<B> | null = null, items: (DocumentItem<B> | null)[] = []): Document<B> {
+  newDocument(id: string = "", status: number = 0, meta: DocumentMeta<B> | null = null, items: (DocumentItem<B> | null)[] | null = null): Document<B> {
     const _i = this._arrDocument.length;
-      this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+      this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items === null ? null : items.map((_h) => _h === null ? null : _h._packed) });
     return new Document<B>(_pack(0, _i), this);
   }
   get root(): Document<B> | null {
@@ -293,7 +295,7 @@ function _fromDocument<B>(accU: unknown, a: Arena<B>, seen: Map<number, unknown>
   _n.id = acc.id!;
   _n.status = acc.status!;
   _n.meta = (acc.meta === null ? null : _fromDocumentMeta<B>(acc.meta, a, seen));
-  _n.items = ((_s: Map<number, unknown>) => acc.items!.map((_e) => _e === null ? null : _fromDocumentItem<B>(_e, a, _s)))(seen);
+  _n.items = ((_v, _s: Map<number, unknown>) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromDocumentItem<B>(_e, a, _s)))(acc.items, seen);
   return _n;
 }
 

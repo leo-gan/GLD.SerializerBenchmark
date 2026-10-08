@@ -224,6 +224,14 @@ type Builder struct {
 	// ReserveFieldPointerSize is the placeholder width for cycle back-edges, derived
 	// from maxSize exactly like Rust/Swift (2 MiB → 4 bytes, 1024 → 2 bytes).
 	ReserveFieldPointerSize int
+
+	// AlignmentOffset is the number of bytes that will PRECEDE the finished buffer in
+	// whatever carries it (spec 12 §14): a frame header, a length word. The finish padding
+	// then aligns AlignmentOffset + total length instead of the total length, so every
+	// aligned(N) array lands on its boundary in the frame of the ENVELOPE. Only its value
+	// mod the graph's largest alignment matters; 0 is a buffer that stands on its own.
+	// Configuration, not per-record state: Reset keeps it.
+	AlignmentOffset int
 }
 
 // NewBuilder creates a builder; maxSize sets the back-reference placeholder width and
@@ -1048,16 +1056,27 @@ func (b *Builder) StoreAlignedBytes(bs []byte, n int) int {
 	return b.StoreLEB(uint64(len(bs)))
 }
 
-// StoreFinishAlignmentPadding inserts zero bytes before the framing LEB so the total
-// length is ≡ 0 mod maxN. Call after the root is stored, before the framing word.
+// StoreFinishAlignmentPadding inserts zero bytes before the framing LEB so that
+// AlignmentOffset + total length is ≡ 0 mod maxN (spec 12 §4, §14). Call after the root
+// is stored, before the framing word.
+//
+// The framing word's own length depends on the pad, hence the search — over [0, 2·maxN):
+// that range crosses at most one step of the framing length, so one side of the step
+// holds maxN consecutive candidates and a solution always exists. The old bound, maxN,
+// could straddle the step and find none, and the buffer then went out unpadded (spec 42
+// §1). The smallest pad wins, so every buffer the old search padded is unchanged.
 func (b *Builder) StoreFinishAlignmentPadding(rootOffset, maxN int) {
 	if maxN <= 1 {
 		return
 	}
-	for p := 0; p < maxN; p++ {
+	off := b.AlignmentOffset % maxN
+	if off < 0 {
+		off += maxN
+	}
+	for p := 0; p < 2*maxN; p++ {
 		afterPad := b.cursor + p
 		framingLen := LebLength(uint64(afterPad-rootOffset) << 2)
-		if (afterPad+framingLen)%maxN == 0 {
+		if (off+afterPad+framingLen)%maxN == 0 {
 			b.storeZeros(p)
 			return
 		}
@@ -2026,4 +2045,30 @@ func InflateHeader(header []byte, rootOffset, bodyLen, maxN int) []byte {
 			return out
 		}
 	}
+}
+
+// SinkRawPad is the leading pad of a sink record's raw-embedded graph (spec 18 §11.4,
+// spec 42 D6) — a port of the Python reference `sink_raw_pad`. `payload` is the record
+// content `[LEB size][fields]` written with a pad of 0, its embedded graph starting at
+// `bo`; `base` is the absolute stream position of the payload's first byte. The pad is
+// the SMALLEST count in [0, 255] (it is stored in one byte) that puts the graph on an `n`
+// boundary in the stream, COUNTING that the pad lengthens two LEBs it sits inside: the
+// field's payload length and the record's size — each may grow by a byte, moving the graph
+// one byte further than the pad alone. When no count does (possible only for n ≥ 128),
+// the pad is 0.
+func SinkRawPad(payload []byte, bo, base, n int) int {
+	c0, _ := ReadLEB(payload, 0) // the record's size, pad 0
+	q := bo - 2                  // the payload length LEB ends here (the pad byte follows)
+	for q > 0 && payload[q-1]&0x80 != 0 {
+		q--
+	}
+	p0, _ := ReadLEB(payload, q) // the field's payload length, pad 0
+	for pad := 0; pad < 256; pad++ {
+		gP := LebLength(p0+uint64(pad)) - LebLength(p0)
+		gC := LebLength(c0+uint64(pad+gP)) - LebLength(c0)
+		if (base+bo+pad+gP+gC)%n == 0 {
+			return pad
+		}
+	}
+	return 0
 }

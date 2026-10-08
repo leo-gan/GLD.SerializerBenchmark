@@ -96,7 +96,7 @@ func (a StringsAccessor) ItemsAll() iter.Seq[string] {
 }
 
 func walkStrings(a StringsAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}

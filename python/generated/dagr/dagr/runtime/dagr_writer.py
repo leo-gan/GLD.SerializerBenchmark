@@ -219,6 +219,10 @@ class Builder:
         self.struct_lookup = {}       # id(node) → offset (shared/cyclic node dedup)
         self._in_progress = set()     # id(node) currently being stored (cycle detect)
         self._late_bindings = {}      # id(node) → list of pending patch records
+        # Bytes that will PRECEDE the finished buffer in whatever carries it (spec 12 §14):
+        # finish padding aligns `alignment_offset + total length`, so aligned arrays land
+        # on their boundary in the envelope's frame. Configuration — not per-record state.
+        self.alignment_offset = 0
 
     # ── core ─────────────────────────────────────────────────────────────────
     def _push(self, data):
@@ -939,15 +943,22 @@ class Builder:
 
     # ── finish alignment padding (§11) ────────────────────────────────────────
     def store_finish_alignment_padding(self, root_offset, max_n):
+        """Zero bytes before the framing word so that ``alignment_offset + total length``
+        is a multiple of ``max_n`` (spec 12 §4, §14). The framing word's own length depends
+        on the pad, hence the search — over ``[0, 2·max_n)``: that range crosses at most one
+        step of the framing length, so one side of the step holds ``max_n`` consecutive
+        candidates and a solution always exists (the old bound, ``max_n``, could straddle
+        the step and find none — spec 42 §1). The smallest pad wins."""
         if max_n <= 1:
             return
-        for p in range(max_n):
+        for p in range(2 * max_n):
             after_pad = self.cursor + p
             framing_len = leb_length((after_pad - root_offset) << 2)
-            if (after_pad + framing_len) % max_n == 0:
+            if (self.alignment_offset + after_pad + framing_len) % max_n == 0:
                 if p:
                     self.store_bytes(bytes(p))
                 return
+        raise AssertionError("finish padding: no pad found")   # unreachable (spec 42 §1)
 
     # ── the finished buffer ───────────────────────────────────────────────────
     def make_data(self):

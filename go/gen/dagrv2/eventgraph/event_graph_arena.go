@@ -334,7 +334,7 @@ func (n Event) Hash() uint64 { return dagr.Fnv1a([]byte(n.String())) }
 func (n Event) Equals(o Event) bool { return n.String() == o.String() }
 
 func restoreEventAttr(acc EventAttrAccessor, a *Arena, seen map[dagr.SeenKey]uint64) EventAttr {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return EventAttr{a: a, h: h}
 	}
@@ -358,7 +358,7 @@ func restoreEventAttr(acc EventAttrAccessor, a *Arena, seen map[dagr.SeenKey]uin
 }
 
 func restoreEvent(acc EventAccessor, a *Arena, seen map[dagr.SeenKey]uint64) Event {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return Event{a: a, h: h}
 	}

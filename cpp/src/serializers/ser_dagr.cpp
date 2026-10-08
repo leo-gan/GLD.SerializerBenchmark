@@ -1,4 +1,4 @@
-// Dagr ("Data Graph") via generated C++ (Dagr spec/41): schemas/v2/dagr/schema_cpp.py →
+// Dagr ("Data Graph") via generated C++ (Dagr spec/41): schemas/v2/dagr/schema.py →
 // `dagr build` → cpp/dagr_gen (header-only: the lazy reader, the arena and its serializer,
 // and — for the packed layouts — the direct builder).
 //

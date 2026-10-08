@@ -223,7 +223,7 @@ func (a TelemetryAccessor) ValuesAll() iter.Seq[float64] {
 }
 
 func walkTelemetry(a TelemetryAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}

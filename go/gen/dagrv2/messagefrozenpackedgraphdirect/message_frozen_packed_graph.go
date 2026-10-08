@@ -359,6 +359,12 @@ func storeMessage(n Message, b *dagr.Builder) dagr.NodeStoreRef {
 // MessageFrozenPackedGraphBuilder is the reusable form (spec 33 §4.3): one builder, reset per Build.
 type MessageFrozenPackedGraphBuilder struct {
 	b *dagr.Builder
+	// AlignmentOffset is the number of bytes that will precede each built buffer in
+	// whatever carries it (spec 12 §14): the finish padding aligns AlignmentOffset +
+	// length, so an aligned(N) array lands on its boundary in the envelope's frame.
+	// Configuration — it holds for every Build until changed; 0 is a bare buffer.
+	// This graph has no aligned array, so the offset has no effect on its bytes.
+	AlignmentOffset int
 }
 
 func NewMessageFrozenPackedGraphBuilder() *MessageFrozenPackedGraphBuilder {
@@ -394,6 +400,7 @@ func (w *MessageFrozenPackedGraphBuilder) BuildBytes(root Message) []byte {
 func (w *MessageFrozenPackedGraphBuilder) build(root Message) {
 	b := w.b
 	b.Reset()
+	b.AlignmentOffset = w.AlignmentOffset
 	off := dagr.NodeOffset(storeMessage(root, b))
 	b.StoreLEB(uint64(b.Cursor()-off) << 2)
 }

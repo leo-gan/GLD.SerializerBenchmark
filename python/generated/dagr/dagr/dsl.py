@@ -87,7 +87,7 @@ from typing import Optional, Union as TypingUnion
 # integer is the machine-checkable signal instead.  A schema module calls
 # `require_dsl(min=N)` at its top to fail loudly on a tool too old to understand it,
 # rather than dying with an obscure AttributeError/TypeError deep inside a build.
-DSL_API_VERSION = 2
+DSL_API_VERSION = 3
 
 
 class IncompatibleDslVersion(Exception):
@@ -545,6 +545,19 @@ class NonFrozenNodeInSharedBuffer(ValidationError):
         )
         self.sb_name = sb_name
         self.node_name = node_name
+
+class UnsupportedInAtomicSharedBuffer(ValidationError):
+    """spec/40 §2 — a field the `atomic` strategy cannot make one atomic in v1."""
+    def __init__(self, sb_name: str, problems: list[str]):
+        super().__init__(
+            f"SharedBuffer '{sb_name}' (concurrency='atomic'): " + "; ".join(problems)
+            + " — every field of an atomic region is ONE atomic word (spec/40 §2); keep "
+              "strings, unions and other multi-word values in a separate seqlock region "
+              "of descriptors, indexed like the atomic one (§2.3)"
+        )
+        self.sb_name = sb_name
+        self.problems = problems
+
 
 class NonFixedFieldInSharedBuffer(ValidationError):
     """§7 rule 1 — every field must be fixed-width."""
@@ -2275,12 +2288,15 @@ def _api_compare_header(
 
 # ── Reserved-name check (shared by DataGraph / SharedBuffer) ────────────────────
 
-def _check_reserved_names(node_types: list, header=None) -> None:
+def _check_reserved_names(node_types: list, header=None, go_types=None, cpp: bool = True) -> None:
     """Reject schema type/field names that collide with names the codegen emits in
     any target language (framework types, generated members).  A semantic clash that
     escaping cannot fix — see dagr/reserved_names.py and "spec/23-identifier-mapping.md" §6.
+    `go_types` is what shares one Go package — an importing graph's own types plus every
+    imported graph's (`flatten_graph_imports`); it defaults to `node_types`.
     """
-    from dagr.reserved_names import reserved_name_collisions, rust_variant_collisions
+    from dagr.reserved_names import (reserved_name_collisions, rust_variant_collisions,
+                                     go_name_collisions, cpp_name_collisions)
     type_names = [nt.name for nt in node_types]
     field_names = []
     for nt in node_types:
@@ -2290,6 +2306,10 @@ def _check_reserved_names(node_types: list, header=None) -> None:
         field_names += [(header.name, f.name) for f in header.fields]
     msgs = reserved_name_collisions(type_names, field_names)
     msgs += rust_variant_collisions(node_types)
+    msgs += go_name_collisions(node_types if go_types is None else go_types)
+    if cpp:     # the graph surfaces (arena, lazy reader, direct builder) — not a SharedBuffer's overlay
+        msgs += cpp_name_collisions(node_types if go_types is None else go_types,
+                                    header if isinstance(header, Node) else None)
     if msgs:
         raise ReservedNameCollision(msgs)
 
@@ -2315,7 +2335,7 @@ class DataGraph:
         root_type: Optional[EntryType] = None,
         imports: Optional[list[ImportedGraph]] = None,
         header: Optional["Node"] = None,
-        deletable: bool = True,
+        deletable: bool = False,
     ):
         self.name = name
         self.root_type = root_type
@@ -2325,9 +2345,10 @@ class DataGraph:
         # in packed format ahead of the body, is NOT part of node_types, and gets
         # no typeId — it is the envelope, not the payload.
         self.header: Optional["Node"] = header
-        # Deletion toggle (see "spec/09-deletion-of-nodes.md").  When False the generated
-        # arena is append-only: no delete()/is_valid(), no free-list reuse, no
-        # generation tracking — handles and stored refs collapse to a bare index.
+        # Deletion toggle (see "spec/09-deletion-of-nodes.md").  Opt-in: by default
+        # (False, since DSL_API_VERSION 3) the generated arena is append-only: no
+        # delete()/is_valid(), no free-list reuse, no generation tracking — handles
+        # and stored refs collapse to a bare index.  Pass deletable=True for them.
         # This is a *runtime* choice only; serialized bytes are identical either way
         # (the wire format never encoded generation), so a buffer written by a
         # deletable arena reads back into a non-deletable one and vice versa.
@@ -2415,7 +2436,13 @@ class DataGraph:
                 if not f.type.is_valid_reference(lk.keys()):
                     raise UnresolvedReferences([f.type.type_name])
 
-        _check_reserved_names(self.node_types, self.header)
+        go_types = None
+        if self.imports:
+            # Go (like Rust) declares every imported type in the importing graph's
+            # package, so the names they derive can collide across graphs
+            from dagr.codegen.shared import flatten_graph_imports
+            go_types = flatten_graph_imports(self).node_types
+        _check_reserved_names(self.node_types, self.header, go_types)
 
     def check_compatibility_with(self, previous: DataGraph) -> None:
         """Check that *self* is wire-compatible with *previous* — in BOTH
@@ -2594,9 +2621,13 @@ class DataSink:
         # packed after the framing word, before record0; NOT in node_types, no typeId.
         self.header: Optional["Node"] = header
         self._validate_raw_fields()
-        from dagr.reserved_names import rust_variant_collisions
+        from dagr.reserved_names import rust_variant_collisions, go_name_collisions
         _rv = rust_variant_collisions(list(node_types) + self.meta_types,
                                       record_types=list(node_types) + self.meta_types)
+        _rv += go_name_collisions(list(node_types) + self.meta_types)
+        from dagr.reserved_names import cpp_name_collisions
+        _rv += cpp_name_collisions(list(node_types) + self.meta_types,
+                                   header if isinstance(header, Node) else None)
         if _rv:
             raise ReservedNameCollision(_rv)
 
@@ -2786,9 +2817,8 @@ class DataSink:
 _SB_NUMERIC_KINDS = frozenset(
     ("u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f16", "bf16", "f32", "f64")
 )
-#: Concurrency strategies whose layout is implemented (§9.4).  double_buffer / ring
-#: are settled in design but land in later increments.
-_SB_CONCURRENCY = ("none", "seqlock", "double_buffer", "ring")
+#: Concurrency strategies whose layout is implemented (§9.4; `atomic`: spec/40 §2).
+_SB_CONCURRENCY = ("none", "seqlock", "double_buffer", "ring", "atomic", "seqlock_mw", "mpsc_ring")
 
 
 def _sb_inline_edges_of_type(t: EntryType, lookup: dict) -> list[str]:
@@ -2921,10 +2951,10 @@ class SharedBuffer:
 
         if self.concurrency not in _SB_CONCURRENCY:
             raise InvalidConcurrencyStrategy(self.name, self.concurrency, list(_SB_CONCURRENCY))
-        if self.concurrency == "ring" and not (isinstance(self.ring_capacity, int)
-                                               and self.ring_capacity >= 1):
+        if self.concurrency in ("ring", "mpsc_ring") and not (isinstance(self.ring_capacity, int)
+                                                             and self.ring_capacity >= 1):
             raise InvalidConcurrencyStrategy(
-                self.name, "ring (needs ring_capacity >= 1)", list(_SB_CONCURRENCY))
+                self.name, f"{self.concurrency} (needs ring_capacity >= 1)", list(_SB_CONCURRENCY))
 
         # Pure-API constants (§14): identifiers, no reserved-name clash, scalar values.
         for cname, cval in self.constants.items():
@@ -3010,7 +3040,68 @@ class SharedBuffer:
         # Rule 2 — no inline recursion over member nodes.
         self._check_acyclic(lk)
 
-        _check_reserved_names(self.node_types)
+        if self.concurrency == "atomic":
+            self._check_atomic(lk)
+
+        # The C++ overlay names union members `{field}_{label}` and has no arena: the C++
+        # graph checks (cpp_name_collisions) do not apply to it.
+        _check_reserved_names(self.node_types, cpp=False)
+        from dagr.reserved_names import sb_type_collisions
+        msgs = sb_type_collisions(self.node_types)
+        if msgs:
+            raise ReservedNameCollision(msgs)
+
+    def _check_atomic(self, lk: dict) -> None:
+        """spec/40 §2: every field of an `atomic` container is one atomic word (or a
+        capped array of them, or an inlined node of them). v1 rejects what is not."""
+        problems = []
+
+        def value_ok(t: EntryType, where: str) -> bool:
+            k = t.kind
+            if k == "bool" or (k in _SB_NUMERIC_KINDS and k not in ("f16", "bf16")):
+                return True
+            if k in ("f16", "bf16"):
+                problems.append(f"{where}: {k} has no atomic form")
+                return False
+            if k in ("utf8", "data"):
+                problems.append(f"{where}: {k} spans several words")
+                return False
+            if k == "ref":
+                target = lk.get(t.inner)
+                if isinstance(target, UnionType):
+                    problems.append(f"{where}: union {t.inner} is a tag and a payload")
+                    return False
+                if isinstance(target, Enum) and target.as_bitset and target.capacity > 32:
+                    problems.append(f"{where}: bitset enum {t.inner} is wider than 32 bits")
+                    return False
+                return True
+            problems.append(f"{where}: {k} is not supported")
+            return False
+
+        for nt in self.node_types:
+            if not isinstance(nt, Node):
+                continue
+            for f in nt.indexed_fields().values():
+                where = f"{nt.name}.{f.name}"
+                t = f.type
+                if f.default is not None:
+                    problems.append(f"{where}: defaults are not supported (regions start zeroed)")
+                if f.alignment is not None:
+                    problems.append(f"{where}: aligned(N) is not supported")
+                if t.kind == "arrayWithOptionals":
+                    problems.append(f"{where}: array_with_optionals has a presence bitset")
+                    continue
+                if t.kind == "array":
+                    if not f.options.is_required:
+                        problems.append(f"{where}: an optional array is not supported")
+                    value_ok(t.inner, where)
+                    continue
+                if t.kind == "ref" and isinstance(lk.get(t.inner), Node) and not f.options.is_required:
+                    problems.append(f"{where}: an optional member node is not supported")
+                    continue
+                value_ok(t, where)
+        if problems:
+            raise UnsupportedInAtomicSharedBuffer(self.name, problems)
 
     def _bad_union_variants(self, t: EntryType, lookup: dict):
         """Yield (union_name, [bad variant labels]) for any union reachable via *t*

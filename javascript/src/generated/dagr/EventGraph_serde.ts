@@ -34,10 +34,12 @@ export function writeInto(root: Event, b: Builder): number {
   return b.storeLEB((BigInt(b.cursor - off) << 2n));  // framing: rootDist<<2 | headerFlags(0)
 }
 
-export function toBytes(root: Event, maxSize: number = 2 * 1024 * 1024): Uint8Array {
+export function toBytes(root: Event, maxSize: number = 2 * 1024 * 1024, alignmentOffset: number = 0): Uint8Array {
   // maxSize sets the back-reference placeholder width (2 MiB -> 4 B, 1024 -> 2 B); it must
-  // match across producers for byte-identity.
+  // match across producers for byte-identity. alignmentOffset (spec 12 §14) = the bytes
+  // that will precede this buffer in its envelope; 0 aligns relative to the buffer itself.
   const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
   writeInto(root, b);
   return b.makeData();
 }

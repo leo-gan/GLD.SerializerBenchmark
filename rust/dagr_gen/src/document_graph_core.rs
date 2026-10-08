@@ -92,6 +92,16 @@ pub mod direct {
         Ok(b.finalize())
     }
 
+    /// `to_bytes` for a buffer that will travel `alignment_offset` bytes into an envelope
+    /// (12 §14). With a caller-owned builder: `set_alignment_offset`, then `write_into`.
+    #[cfg(not(dagr_no_std))]
+    pub fn to_bytes_with_alignment_offset(root: &Document<'_>, alignment_offset: usize) -> Result<Vec<u8>, DagrError> {
+        let mut b = DagrBuilder::with_capacity(4096);
+        b.set_alignment_offset(alignment_offset);
+        write_into(root, &mut b)?;
+        Ok(b.finalize())
+    }
+
     #[cfg(not(dagr_no_std))]
     pub struct Writer;
     #[cfg(not(dagr_no_std))]

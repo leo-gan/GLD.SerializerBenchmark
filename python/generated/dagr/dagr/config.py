@@ -91,6 +91,13 @@ def Go(out, features=None, package=None, layout=None, exclude=None):
     if layout is not None and layout not in GO_LAYOUTS:
         raise ValueError(f"Go target: layout must be one of {GO_LAYOUTS}, got {layout!r}")
     return Target("go", out, features, package, layout, exclude)
+# C++ (spec 41): a header-only library — generated headers under `<out>/include/<ns>/`,
+# the hand-written runtime copied in as `<out>/include/dagr/`, and a CMakeLists.txt with one
+# INTERFACE target. `namespace` is the root namespace (default: the snake_case library
+# name; `a::b` nests); each DataGraph gets its own namespace below it, so graphs that
+# declare the same type name never meet.
+def Cpp(out, features=None, namespace=None, exclude=None):
+    return Target("cpp", out, features, namespace, exclude=exclude)
 # "spec/29-python-codegen-plan.md" Fork A: the pure-Python reflective target — typed
 # @dataclass modules over the shipped dagr/runtime runtime (eager restore + serialize).
 def Python(out, features=None, package=None, exclude=None):

@@ -356,6 +356,42 @@ export function packedUnionPayloadBytes(buf: Buf, ep: number, code: number): num
   }
 }
 
+// An ENUM variant of a packed union, decoded by the header `code` (spec 07 §8): the
+// variant is stored like an enum FIELD of a packed node — a byte-wide enum as one raw
+// byte (code 1), a wider one as a LEB (code 0) when that is shorter than its backing
+// width, else the backing width (code 2 / 3 / 4). Going by the code rather than by the
+// schema width also reads what writers before spec 42 stored: ONE byte under code 1,
+// whatever the enum's width.
+export function readPackedUnionEnum(buf: Buf, ep: number, code: number): number {
+  switch (code) {
+    case 0: return readLEB(buf, ep)[0];
+    case 1: return readU8(buf, ep);
+    case 2: return readU16(buf, ep);
+    case 3: return readU32(buf, ep);
+    default: return Number(readU64(buf, ep));
+  }
+}
+/** `readPackedUnionEnum` for a u64-backed enum (the value is a bigint). */
+export function readPackedUnionEnumBig(buf: Buf, ep: number, code: number): bigint {
+  switch (code) {
+    case 0: return readLEBBig(buf, ep)[0];
+    case 1: return BigInt(readU8(buf, ep));
+    case 2: return BigInt(readU16(buf, ep));
+    case 3: return BigInt(readU32(buf, ep));
+    default: return readU64(buf, ep);
+  }
+}
+
+// An f16 / bf16 variant of a packed union (spec 07 §8): ALWAYS its two raw bytes under
+// code 2. Writers before spec 42 stored the 16 bits as a LEB under code 0 when they were
+// below 128 (`+0.0` was one zero byte); that is a varint of the BITS — not the special
+// value tag of the f16 field codec, which agrees with it for `+0.0` only.
+export function readPackedUnionF16Bits(buf: Buf, ep: number, code: number): number {
+  if (code === 0) return readLEB(buf, ep)[0] & 0xffff;
+  bounds(buf, ep, 2);
+  return buf.dv.getUint16(ep, true);
+}
+
 // Packed node-ref array: [LEB count][opt nil bitset][ (LEB blockLen + child
 // packed data) per present element ]. Each child is read at the blockLen
 // position (its packed accessor consumes the blockLen itself); the array

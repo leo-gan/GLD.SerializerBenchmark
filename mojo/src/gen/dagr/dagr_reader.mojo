@@ -772,6 +772,39 @@ def packed_union_payload_bytes(buf: Span[UInt8, _], ep: Int, code: Int) raises -
     return r[1] + Int(r[0])
 
 
+# ── Packed-union value variants decoded by the header CODE (07 §8, 42 §3) ─────────
+# A half (f16 / bf16) variant is ALWAYS its two raw bytes under code 2. Writers before
+# spec 42 stored the 16 bits as a varint under code 0 when they were below 128 (`+0.0`
+# was one zero byte) — still accepted, and decoded as that varint (NOT with the §12
+# field codec, which agrees for +0.0 only).
+def read_union_f16(buf: Span[UInt8, _], vp: Int, code: UInt8) raises -> Float16:
+    if code == 0:
+        return Float16(from_bits=UInt16(read_leb(buf, vp)[0] & 0xffff))
+    return read_f16(buf, vp)
+
+
+def read_union_bf16(buf: Span[UInt8, _], vp: Int, code: UInt8) raises -> BFloat16:
+    if code == 0:
+        return BFloat16(from_bits=UInt16(read_leb(buf, vp)[0] & 0xffff))
+    return read_bf16(buf, vp)
+
+
+# An enum variant of a WIDER-than-a-byte enum is stored like an enum field: a varint
+# under code 0 when that is shorter than the backing width, else the backing width under
+# code 2 / 3 / 4. Decoded by the code, which also reads what writers before spec 42
+# stored — one byte under code 1, whatever the enum's width. Returns the raw value.
+def read_union_enum(buf: Span[UInt8, _], vp: Int, code: UInt8) raises -> UInt64:
+    if code == 0:
+        return read_leb(buf, vp)[0]
+    if code == 1:
+        return UInt64(read_u8(buf, vp))
+    if code == 2:
+        return UInt64(read_u16(buf, vp))
+    if code == 3:
+        return UInt64(read_u32(buf, vp))
+    return read_u64(buf, vp)
+
+
 # Raw embedded-graph leaf (18 §4): a `raw` node-ref inline entry
 # `[LEB payloadLen][pad?][standalone .dagr blob]`. `pos` = payloadLen LEB start;
 # `has_pad` = the embedded graph is alignment-bearing (a leading pad byte precedes
@@ -1046,6 +1079,55 @@ def read_rel_offset_s(buf: Span[UInt8, _], at: Int, es: Int) raises -> Int:
     if bits < 64 and (v & (1 << (bits - 1))) != 0:
         v -= 1 << bits
     return v
+
+
+# Signed-int VALUE variant of a regular / frozen union-array element. The slot holds the
+# value's bit pattern at the TYPE's width, ZERO-extended to the slot width `es` — which is
+# the minimal width over the array's slots, so it may be narrower OR wider than the type.
+# Read `es` bytes unsigned and sign-reinterpret at the TYPE's width — never at the slot's:
+# an i32 200 in a one-byte slot is 200, not -56 (spec 42 §6, `union_narrow_signed_slots`).
+def read_slot_i8(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Int8:
+    return UInt8(read_rel_offset_u(buf, sp, es) & 0xff).cast[DType.int8]()
+
+
+def read_slot_i16(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Int16:
+    return UInt16(read_rel_offset_u(buf, sp, es) & 0xffff).cast[DType.int16]()
+
+
+def read_slot_i32(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Int32:
+    return UInt32(read_rel_offset_u(buf, sp, es) & 0xffffffff).cast[DType.int32]()
+
+
+def read_slot_i64(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Int64:
+    return Int64(read_rel_offset_u(buf, sp, es))   # 8 bytes, or fewer zero-extended
+
+
+# Float VALUE variant of a regular / frozen union-array element. The slot width `es` is
+# the MINIMAL width over the array's slots, so it can be NARROWER than the float (`+0.0`
+# has bits 0 — a one-byte slot): read exactly `es` bytes and reinterpret the zero-extended
+# bits. A slot at least as wide as the float holds its bits in the low bytes (LE).
+def read_slot_f16(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Float16:
+    if es >= 2:
+        return read_f16(buf, sp)
+    return Float16(from_bits=UInt16(read_rel_offset_u(buf, sp, es)))
+
+
+def read_slot_bf16(buf: Span[UInt8, _], sp: Int, es: Int) raises -> BFloat16:
+    if es >= 2:
+        return read_bf16(buf, sp)
+    return BFloat16(from_bits=UInt16(read_rel_offset_u(buf, sp, es)))
+
+
+def read_slot_f32(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Float32:
+    if es >= 4:
+        return read_f32(buf, sp)
+    return Float32(from_bits=UInt32(read_rel_offset_u(buf, sp, es)))
+
+
+def read_slot_f64(buf: Span[UInt8, _], sp: Int, es: Int) raises -> Float64:
+    if es >= 8:
+        return read_f64(buf, sp)
+    return Float64(from_bits=UInt64(read_rel_offset_u(buf, sp, es)))
 
 
 # Pointer-table utf8 array (regular/frozen): `[LEB (count<<2)|wc][count × es-byte

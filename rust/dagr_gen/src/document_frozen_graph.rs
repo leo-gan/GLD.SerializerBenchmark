@@ -568,7 +568,7 @@ impl<'arena, G: DocumentFrozenGraphGraph> Document<'arena, G> {
             let _cb_items = self.graph.arena_of_document_item().borrow();
             for _nr in _refs_items.iter().rev() {
                 if _cb_items.get(_nr.index as usize).is_some() {
-                    _items_items.push(DocumentItem { index: _nr.index, graph: self.graph }.store(b).unwrap_or(NodeStoreRef::Offset(0)));
+                    if let Ok(_r) = (DocumentItem { index: _nr.index, graph: self.graph }).store(b) { _items_items.push(_r); }
                 }
             }
         }
@@ -779,6 +779,16 @@ impl<const ID: u64> DocumentFrozenGraphArena<ID> {
         let root_off = root_ref.to_offset().unwrap_or(0);
         b.store_leb(((b.cursor() - root_off) as u64) << 2);
         Ok(b.cursor())
+    }
+
+    /// Like `to_bytes`, for a buffer that will travel `alignment_offset` bytes into an envelope
+    /// (a frame header, a length word — 12 §14): its aligned arrays land on their boundary in
+    /// the envelope's frame. With a caller-owned builder, `set_alignment_offset` + `write_into`.
+    pub fn to_bytes_with_alignment_offset(&self, alignment_offset: usize) -> Result<Vec<u8>, DagrError> {
+        let mut b = DagrBuilder::with_hint(self.arena_of_document_meta().borrow().len() + self.arena_of_document_item().borrow().len() + self.arena_of_document().borrow().len());
+        b.set_alignment_offset(alignment_offset);
+        self.write_into(&mut b)?;
+        Ok(b.finalize())
     }
 
     /// Like `to_bytes`, but with an explicit `max_size` bound that sets the back-reference

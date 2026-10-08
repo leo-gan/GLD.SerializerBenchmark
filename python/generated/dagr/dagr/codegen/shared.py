@@ -80,6 +80,9 @@ def sb_constant_decl(lang: str, name: str, value) -> str:
         return f"export const {name} = {lit};"     # type inferred
     if lang == "python":
         return f"{name} = {lit}"                    # module-level constant
+    if lang == "cpp":
+        ty = {"bool": "bool", "int": "std::int64_t", "float": "double", "str": "std::string_view"}[kind]
+        return f"inline constexpr {ty} {name} = {lit};"
     raise ValueError(f"sb_constant_decl: unknown lang {lang!r}")
 
 
@@ -384,7 +387,7 @@ def _free_slots_of_snake(node_name: str) -> str:
 # to the deletable form (the wire format never encoded generation). Set once by each
 # language's top-level generate_* entry, read by the per-feature emitters. Codegen is
 # single-threaded, so a module global is safe.
-_DELETABLE = True
+_DELETABLE = False
 
 def set_deletable(flag: bool) -> None:
     global _DELETABLE
@@ -634,7 +637,7 @@ def packed_root_view(graph):
         types.append(nt)
     return DataGraph(flat.name, node_types=types, root_type=flat.root_type,
                      header=getattr(flat, "header", None),
-                     deletable=getattr(flat, "deletable", True))
+                     deletable=getattr(flat, "deletable", False))
 
 
 def _node_drop_dedup_cache(node: Node, lookup: dict) -> bool:
@@ -837,4 +840,4 @@ def flatten_graph_imports(graph):
     add_types(graph, set())
     return DataGraph(graph.name, node_types=merged, root_type=graph.root_type,
                      header=getattr(graph, "header", None),
-                     deletable=getattr(graph, "deletable", True))
+                     deletable=getattr(graph, "deletable", False))

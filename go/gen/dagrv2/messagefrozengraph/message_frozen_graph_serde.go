@@ -84,9 +84,23 @@ func ToBytesMessageFrozenGraph(root Message, maxSize int) []byte {
 	return b.MakeData()
 }
 
+// ToBytesMessageFrozenGraphAt is ToBytesMessageFrozenGraph for a buffer that travels inside an envelope:
+// alignmentOffset is the number of bytes that will precede it there (spec 12 §14), and
+// the finish padding aligns alignmentOffset + length, so every aligned(N) array lands on
+// its boundary in the envelope's frame. 0 yields the bytes of ToBytesMessageFrozenGraph.
+// This graph has no aligned array, so the offset has no effect on its bytes.
+func ToBytesMessageFrozenGraphAt(root Message, maxSize, alignmentOffset int) []byte {
+	b := dagr.NewBuilder(maxSize)
+	b.AlignmentOffset = alignmentOffset
+	off := dagr.NodeOffset(storeMessage(root, b))
+	b.StoreLEB(uint64(b.Cursor()-off) << 2)
+	return b.MakeData()
+}
+
 // AppendToMessageFrozenGraph serializes the graph reachable from root into b (reset first) and
 // appends the record to dst: ToBytes without a Builder per call. Bytes are
-// identical to ToBytes with the maxSize b was created with.
+// identical to ToBytes with the maxSize b was created with — and, for a b whose
+// AlignmentOffset is set, to ToBytesMessageFrozenGraphAt with that offset (Reset keeps it).
 func AppendToMessageFrozenGraph(b *dagr.Builder, dst []byte, root Message) []byte {
 	b.Reset()
 	off := dagr.NodeOffset(storeMessage(root, b))

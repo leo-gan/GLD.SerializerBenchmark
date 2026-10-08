@@ -1438,22 +1438,22 @@ languages:
         optimal_api: "msgpack WireWriter / WireReader on suite types (vendored as msgpack_*)"
       - name: dagr-packed
         category: schema
-        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.10.0, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr data-graph format; Mojo generated from schemas/v2/dagr/schema.py (all nodes packed, Telemetry values raw)"
         optimal_api: "Reused Builder; generated direct builder (write_{root}_graph_direct) for all types; lazy {Node}Accessor decode"
       - name: dagr-regular
         category: schema
-        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.10.0, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, regular (vtable) layout — <Type>RegularGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Generated arena + write_{root}_graph into a reused per-graph Builder (no direct builder for regular); lazy {Node}Accessor decode"
       - name: dagr-frozen
         category: schema
-        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.10.0, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, frozen layout — <Type>FrozenGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Generated arena + write_{root}_graph into a reused Builder (no direct builder for frozen); lazy {Node}Accessor decode"
       - name: dagr-frozen-packed
         category: schema
-        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.10.0, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, frozen+packed layout — <Type>FrozenPackedGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Direct value structs → write_{root}_graph_direct into one reused Builder; lazy {Node}Accessor decode"
       - name: mojo-bson
@@ -1598,22 +1598,22 @@ languages:
         optimal_api: "field-tag encode/decode (proto3)"
       - name: dagr-packed
         category: schema
-        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema_cpp.py; cpp/dagr_gen)
+        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema.py; cpp/dagr_gen)
         rationale: "Dagr data-graph format, packed layout (codegen peer of protobuf)"
         optimal_api: "direct::build into one reused dagr::Builder / lazy accessors"
       - name: dagr-regular
         category: schema
-        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema_cpp.py; cpp/dagr_gen)
+        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema.py; cpp/dagr_gen)
         rationale: "Dagr data-graph format, regular (vtable) layout"
         optimal_api: "arena built in prepare → Arena::serialize(builder, caches) / lazy accessors"
       - name: dagr-frozen
         category: schema
-        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema_cpp.py; cpp/dagr_gen)
+        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema.py; cpp/dagr_gen)
         rationale: "Dagr data-graph format, frozen layout (no schema evolution)"
         optimal_api: "arena built in prepare → Arena::serialize(builder, caches) / lazy accessors"
       - name: dagr-frozen-packed
         category: schema
-        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema_cpp.py; cpp/dagr_gen)
+        library: header-only generated code (`dagr build` from schemas/v2/dagr/schema.py; cpp/dagr_gen)
         rationale: "Dagr data-graph format, frozen+packed layout (no schema evolution)"
         optimal_api: "direct::build into one reused dagr::Builder / lazy accessors"
       - name: flexbuffers

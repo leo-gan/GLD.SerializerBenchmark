@@ -85,8 +85,9 @@ def write_message_graph_direct(mut b: Builder[_VT_MAX], n: DirectMessage) raises
     var _off = node_offset(_store_message_d(b, n))
     return b.store_leb(UInt64((b.cursor - _off) << 2))
 
-def serialize_message_graph_direct(var n: DirectMessage) raises -> List[UInt8]:
+def serialize_message_graph_direct(var n: DirectMessage, alignment_offset: Int = 0) raises -> List[UInt8]:
     var b = Builder[_VT_MAX]()
+    b.alignment_offset = alignment_offset
     _ = write_message_graph_direct(b, n)
     return b.make_data()
 

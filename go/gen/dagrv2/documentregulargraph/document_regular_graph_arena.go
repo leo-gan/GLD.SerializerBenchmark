@@ -444,7 +444,7 @@ func (n Document) Hash() uint64 { return dagr.Fnv1a([]byte(n.String())) }
 func (n Document) Equals(o Document) bool { return n.String() == o.String() }
 
 func restoreDocumentMeta(acc DocumentMetaAccessor, a *Arena, seen map[dagr.SeenKey]uint64) DocumentMeta {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return DocumentMeta{a: a, h: h}
 	}
@@ -468,7 +468,7 @@ func restoreDocumentMeta(acc DocumentMetaAccessor, a *Arena, seen map[dagr.SeenK
 }
 
 func restoreDocumentItem(acc DocumentItemAccessor, a *Arena, seen map[dagr.SeenKey]uint64) DocumentItem {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return DocumentItem{a: a, h: h}
 	}
@@ -499,7 +499,7 @@ func restoreDocumentItem(acc DocumentItemAccessor, a *Arena, seen map[dagr.SeenK
 }
 
 func restoreDocument(acc DocumentAccessor, a *Arena, seen map[dagr.SeenKey]uint64) Document {
-	sk := dagr.SeenAt(acc.buf, acc.pos)
+	sk := dagr.SeenAt(acc.BufferBytes(), acc.BufferPos())
 	if h, ok := seen[sk]; ok {
 		return Document{a: a, h: h}
 	}

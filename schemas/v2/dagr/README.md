@@ -18,7 +18,7 @@ Field sets match [`../protobuf/benchmark_v2.proto`](../protobuf/benchmark_v2.pro
 ## Regenerate
 
 ```bash
-pip install dagr-cli
+pip install dagr-cli==2026.10.0
 cd schemas/v2/dagr && dagr build     # rewrites every target below + dagr.lock.json
 dagr check                           # schema vs the committed receipt
 dagr verify                          # detect hand-edits of generated files
@@ -32,18 +32,6 @@ dagr verify                          # detect hand-edits of generated files
 | JavaScript | `javascript/src/generated/dagr/` (TypeScript) |
 | Python | `python/generated/dagr/` |
 | Mojo | `mojo/src/gen/dagr/` |
-| C++ | `cpp/dagr_gen/` (header-only, namespace `benchmark_v2`; from `schema_cpp.py`, see below) |
-
-The C++ target is newer than the current dagr-cli release, so it lives in a library of its
-own: `schema_cpp.py` imports the same 20 graphs from `schema.py` and has its own receipt,
-`dagr_cpp.lock.json`. Rebuild it with a dagr-cli from Dagr's main branch; the other targets
-and `dagr.lock.json` are left alone:
-
-```bash
-pip install git+https://codeberg.org/mzaks/dagr
-cd schemas/v2/dagr && dagr build --schema schema_cpp.py --receipt dagr_cpp.lock.json
-```
-
-Fold the `Cpp(...)` target into `schema.py` once a dagr-cli release ships it.
+| C++ | `cpp/dagr_gen/` (header-only, namespace `benchmark_v2`) |
 
 Never edit generated files. Change `schema.py` and rebuild.

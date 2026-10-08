@@ -84,8 +84,9 @@ def write_event_graph_direct(mut b: Builder[_VT_MAX], n: DirectEvent) raises -> 
     var _off = node_offset(_store_event_d(b, n))
     return b.store_leb(UInt64((b.cursor - _off) << 2))
 
-def serialize_event_graph_direct(var n: DirectEvent) raises -> List[UInt8]:
+def serialize_event_graph_direct(var n: DirectEvent, alignment_offset: Int = 0) raises -> List[UInt8]:
     var b = Builder[_VT_MAX]()
+    b.alignment_offset = alignment_offset
     _ = write_event_graph_direct(b, n)
     return b.make_data()
 

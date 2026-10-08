@@ -8,7 +8,7 @@ Native C++20 benchmark runner emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.c
 
 See [docs/cpp/index.md](../docs/cpp/index.md) for the inventory, optimal call paths, and **C vs C++ dual-use** notes.
 
-Includes official **libprotobuf** (`protobuf`) plus in-tree **protobuf-wire**, and the four **Dagr** layout rows (`dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`) from the header-only code generated into `cpp/dagr_gen/` (regenerate in `schemas/v2/dagr/` with `dagr build --schema schema_cpp.py --receipt dagr_cpp.lock.json`).
+Includes official **libprotobuf** (`protobuf`) plus in-tree **protobuf-wire**, and the four **Dagr** layout rows (`dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`) from the header-only code generated into `cpp/dagr_gen/` (regenerate with `dagr build` in `schemas/v2/dagr/`, like every other language).
 
 With Arrow 25.0.1 on `ARROW_ROOT`, this machine registers **39** codecs: **33** existing rows (the four Dagr rows included; Boost.Serialization is not installed; avro-c and Cap'n Proto are) plus `sbe` and `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
 

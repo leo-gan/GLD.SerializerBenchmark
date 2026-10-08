@@ -205,9 +205,13 @@ extension TelemetryGraph.Telemetry: ArenaGraphStorable {
 }
 
 extension TelemetryGraph.Arena {
-    public func toData() throws -> Foundation.Data {
+    /// `alignmentOffset`: the number of bytes that will precede this buffer in whatever
+    /// carries it (spec 12 §14) — its aligned arrays then land on their boundary in the
+    /// envelope's frame. 0 is a buffer that stands on its own.
+    public func toData(alignmentOffset: Int = 0) throws -> Foundation.Data {
         guard let root = root else { return Foundation.Data() }
         let builder = DataArenaBuilder()
+        builder.alignmentOffset = alignmentOffset
         let rootOffset = try root.store(with: builder)
         _ = try builder.storeAsLEB(value: (builder.cursor.value - rootOffset.value) << 2)
         return builder.makeData
@@ -227,9 +231,10 @@ extension TelemetryGraph.Arena {
 
     /// Like `toData()`, but with an explicit `maxSize` that sets the back-reference
     /// placeholder width (2 MiB -> 4 B, 1024 -> 2 B). Must match across producers.
-    public func toData(maxSize: UInt64) throws -> Foundation.Data {
+    public func toData(maxSize: UInt64, alignmentOffset: Int = 0) throws -> Foundation.Data {
         guard let root = root else { return Foundation.Data() }
         let builder = DataArenaBuilder(maxSize: maxSize)
+        builder.alignmentOffset = alignmentOffset
         let rootOffset = try root.store(with: builder)
         _ = try builder.storeAsLEB(value: (builder.cursor.value - rootOffset.value) << 2)
         return builder.makeData
@@ -355,8 +360,10 @@ extension TelemetryGraph {
             }
         }
 
-        public static func toData(_ root: Telemetry) throws -> Foundation.Data {
+        /// `alignmentOffset`: the bytes that will precede this buffer in its envelope (spec 12 §14).
+        public static func toData(_ root: Telemetry, alignmentOffset: Int = 0) throws -> Foundation.Data {
             let builder = DataArenaBuilder()
+            builder.alignmentOffset = alignmentOffset
             let rootOffset = try root.store(with: builder)
             _ = try builder.storeAsLEB(value: (builder.cursor.value - rootOffset.value) << 2)
             return builder.makeData

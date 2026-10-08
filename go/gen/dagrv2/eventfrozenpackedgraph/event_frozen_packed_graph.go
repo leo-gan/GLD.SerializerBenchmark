@@ -299,7 +299,7 @@ func (a EventAccessor) AttrsAll() iter.Seq[EventAttrAccessor] {
 }
 
 func walkEventAttr(a EventAttrAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}
@@ -322,7 +322,7 @@ func ValidateEventAttr(a EventAttrAccessor) (err error) {
 }
 
 func walkEvent(a EventAccessor, seen map[dagr.SeenKey]bool) {
-	sk := dagr.SeenAt(a.buf, a.pos)
+	sk := dagr.SeenAt(a.BufferBytes(), a.BufferPos())
 	if seen[sk] {
 		return
 	}

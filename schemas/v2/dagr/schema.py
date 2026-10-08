@@ -10,7 +10,7 @@ Regenerate with `dagr build` (emits the per-language code + dagr.lock.json).
 """
 
 from dagr.dsl import DataGraph, Node, raw, t
-from dagr.config import Library, Rust, Swift, Go, TypeScript, Python, Mojo
+from dagr.config import Cpp, Library, Rust, Swift, Go, TypeScript, Python, Mojo
 
 # The four node layouts (spec/16): packed (tagged, evolvable — the `dagr-packed` row), regular
 # (vtable), frozen (positional) and frozen+packed (positional, self-sizing). Frozen layouts
@@ -102,6 +102,9 @@ library = Library(
         TypeScript(out="../../../javascript/src/generated/dagr"),
         Python(out="../../../python/generated/dagr"),
         Mojo(out="../../../mojo/src/gen/dagr"),
+        # Header-only: include/benchmark_v2/<graph>{,_arena,_direct}.hpp + the runtime
+        # include/dagr/*.hpp; cpp/CMakeLists.txt adds the include directory.
+        Cpp(out="../../../cpp/dagr_gen", namespace="benchmark_v2"),
     ],
     wire_format_version=1,
 )
