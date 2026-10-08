@@ -21,7 +21,7 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one standard and one language when you can. A family is the first cut, and the standard is the cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
+**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
 
 ---
 

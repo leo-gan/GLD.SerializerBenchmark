@@ -703,6 +703,12 @@ add("mojo", "mojo-smile", ["smile"], "https://github.com/leo-gan/gld-smile",
     "gld-smile 0.2.0: Smile decode_bytes.")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
+add("mojo", "arrow-ipc", ["arrow"], "https://github.com/leo-gan/gld-arrow",
+    "gld-arrow 0.2.0: Arrow IPC stream encode_ipc_stream / decode_ipc_stream.")
+add("mojo", "parquet", ["parquet"], "https://github.com/leo-gan/gld-parquet",
+    "gld-parquet 0.2.0: Parquet file encode_table / decode_table with Snappy.")
+add("mojo", "parquet-uncompressed", ["parquet"], "https://github.com/leo-gan/gld-parquet",
+    "gld-parquet 0.2.0: same writer with page compression off.")
 
 
 def main() -> int:

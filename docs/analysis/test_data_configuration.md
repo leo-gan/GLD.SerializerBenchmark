@@ -271,7 +271,7 @@ Prefer this wrapper over a package-level stream of top-level `repeated` messages
 
 `columnar.yaml` sets `compression.mode: none`. `Size` is the codec’s own byte length. Parquet’s default page codec is Snappy, so `parquet` is not a layout-only size. `parquet-uncompressed` turns page compression off. Arrow IPC stream bytes are uncompressed. Apache ORC’s C++ and Java writers default to Zlib. pyarrow’s `write_table` defaults to uncompressed, and the Python `orc` row follows that default. `orc-uncompressed` is the named override for languages whose default is Zlib; on pyarrow it is the same codec as `orc`.
 
-Call the columnar configs with `BENCHMARK_RUN_CONFIG`. They are not `smoke_run_config` or `default_run_config`. Pass a serializer name filter. The new type ids are not part of the global smoke matrix, so PHP, Zig, Mojo, Swift, and C are not required to generate them.
+Call the columnar configs with `BENCHMARK_RUN_CONFIG`. They are not `smoke_run_config` or `default_run_config`. Pass a serializer name filter. The new type ids are not part of the global smoke matrix. Mojo generates them for `arrow-ipc`, `parquet`, and `parquet-uncompressed`. PHP, Zig, Swift, and C do not generate them.
 
 Resolve a config to see the expanded cell list:
 

@@ -1,7 +1,7 @@
 # Vendored Mojo libraries
 
 `gldjson_src/`, `cbor_src/`, `pb_src/`, `yaml_src/`, `msgpack_src/`,
-`fb_src/`, `avro_src/`, `bson_src/`, `ion_src/`, and `smile_src/` are copies of the leo-gan `gld-*` libraries with
+`fb_src/`, `avro_src/`, `bson_src/`, `ion_src/`, `smile_src/`, `arrow_src/`, and `parquet_src/` are copies of the leo-gan `gld-*` libraries with
 colliding top-level packages renamed (`json` → `gldjson` or `avro_json`,
 `runtime` → `gldjson_runtime` / `cbor_runtime` / `pb_runtime` /
 `yaml_runtime` / `msgpack_runtime` / `avro_runtime`, and the matching

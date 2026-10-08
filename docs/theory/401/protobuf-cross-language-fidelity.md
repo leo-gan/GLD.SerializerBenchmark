@@ -8,7 +8,7 @@ In this article you will learn a disciplined way to prove that three runtimes in
 
 ## Short answer
 
-In this course, **fidelity** means two related claims. First, given one logical value and one `.proto`, each runtime’s encode and decode behaves as a correct Protocol Buffers implementation for that schema. Second, **cross-language** pairs interoperate for the fields you care about: bytes produced in language A decode correctly in language B.
+Keep three checks apart. The suite’s **fidelity** score means one language writes a fixture and reads it back. That round trip is not specification compliance, and it is not a cross-language test. **Cross-language agreement** means bytes produced in language A decode to the same logical fields in language B. **Specification compliance** means the library follows the Protocol Buffers rules for that schema, which this score does not prove by itself.
 
 Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s benchmark runners are **per-language**. They do not automatically prove cross-runtime byte identity. [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) is about product contract choice. This page is about **byte and logic discipline**.
 
@@ -115,7 +115,7 @@ Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41
 | Field name vs number | Codegen renames (`FirstName` vs `first_name`)—the wire carries numbers only |
 | Benchmark runner mapping | Suite `prepare` converts domain objects—bugs can look like codec bugs |
 
-### 7. Separate benchmark runner fidelity from product fidelity
+### 7. Separate the benchmark runner round trip from cross-language agreement
 
 This suite may:
 
@@ -189,6 +189,6 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 ## Key takeaways
 
 - Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.
-- Prove fidelity with **matrix tests and goldens**, not with benchmark ranks.
+- Prove cross-language agreement with **matrix tests and goldens**, not with benchmark ranks.
 - Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.
-- Suite fidelity is not multi-runtime fidelity. Bridge them with explicit tests you own.
+- Suite fidelity is a one-language write-then-read. It is not cross-language agreement, and it is not specification compliance. Bridge languages with explicit tests you own.

@@ -144,8 +144,10 @@ Batch and streaming platforms needed formats that survive **years** of readers a
 
 Even fast encode and decode still **copy** data into language objects. Domains with tight latency or memory budgets pushed further. Games, some telemetry, and certain RPC paths are examples.
 
-- **Cap’n Proto** (Kenton Varda, ~2013) — layout designed so the buffer *is* the in-memory form. Encode and decode can approach a no-op for simple access patterns.
-- **FlatBuffers** (Wouter van Oortmerssen, Google, ~2014) — similar zero-copy access goals with vtable-based optional fields. It has strong mobile and game heritage. It also appears in [ML](https://en.wikipedia.org/wiki/Machine_learning "ML — Machine learning")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> runtime ecosystems.
+- **Cap’n Proto** (Kenton Varda, ~2013) lays the buffer out so a reader can load fields in place. Building that buffer still takes work. A simple read can skip a second object tree. Encode is not free.
+- **FlatBuffers** (Wouter van Oortmerssen, Google, ~2014) has the same access goal, with a small offset table for optional fields. It has a strong mobile and game heritage. It also appears in [ML](https://en.wikipedia.org/wiki/Machine_learning "ML — Machine learning")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> runtime ecosystems.
+
+These two formats store one record. Parquet and Arrow, in the previous section, store columns. The era map puts them on one row because they arrived in the same decade. They answer different pressures.
 
 **Trade-off theme:** less parse work often means more care around **validation**, how you mutate data, and day-to-day tooling. Debuggability, proxies, and HTTP-centric infrastructure all change.
 

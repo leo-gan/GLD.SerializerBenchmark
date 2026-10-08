@@ -12,7 +12,7 @@ Architecture discussions often stop at the format name. People say “we use JSO
 
 After the **standard** is fixed, choose a **concrete library** (and version) per language. See [categories](../../analysis/serialization_categories.md). Use Dashboard numbers for the same data set and the same data type. Read Overview caveats. The standard sets interoperability *possibility*. The implementation sets cost and engineering quality on that runtime. One language’s winning JSON library can behave differently from another language’s JSON library. See [multi-language systems (polyglot estates)](polyglot-estates.md).
 
-In other words: first choose the product job. That choice lands on a family, then on a standard such as JSON or Protocol Buffers. Then choose the library. Keep that order.
+In other words: first choose the product job. A family is a teaching cut that helps you reach a standard such as JSON or Protocol Buffers. Then choose the library, which is one implementation of that standard. Keep that order.
 
 This page assumes [using this suite](using-this-suite.md) and 201 [encode/decode cost](../201/encode-decode-cost.md).
 
@@ -38,7 +38,7 @@ A **DOM-style** parser builds a full in-memory tree of the document. A **streami
 
 ```text
   1. Fix the boundary contract and the standard
-       (other 301 policy articles; a family is the first cut)
+       (other 301 policy articles; a family is a teaching cut, not a filter)
   2. For each language on that boundary:
        open the Dashboard on that language and standard
        same data set and data type
@@ -123,7 +123,7 @@ When several JSON libraries exist, **that spread is the lesson**. The same is tr
 | `total_median_ns` / `deser_median_ns` / `ser_median_ns` | **Primary** speed comparison within the standard |
 | `avg_ops_per_sec` | Throughput-oriented display of the same idea |
 | `median_size_bytes` | When density matters inside the standard |
-| `mean_fidelity` | **Hard filter** |
+| `mean_fidelity` | **Hard filter.** Fixture round trip, not specification compliance. |
 | `mean_memory_peak_bytes` | Tie-break when allocations matter |
 | `serializer_version` | What you pin |
 | Effect sizes versus fastest (Cliff’s δ, if multi-way) | “Is the gap real?” |

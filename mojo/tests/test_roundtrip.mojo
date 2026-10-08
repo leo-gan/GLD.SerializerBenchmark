@@ -13,6 +13,9 @@ from bench.msgpack_ser import MsgpackSer
 from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
+from bench.arrow_ser import ArrowIpcSer
+from bench.parquet_ser import ParquetSer
+from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -98,6 +101,63 @@ def _flatbuffers_batch(type_id: String) raises:
         raise Error("flatbuffers fidelity n=100 " + type_id)
 
 
+def _columnar(type_id: String, n: Int) raises -> Int:
+    var cfg = TypeConfig()
+    if type_id == "nested_table":
+        cfg.children = 4
+        cfg.string_max = 12
+    if type_id == "signal":
+        cfg.group_count = 4
+        cfg.string_max = 12
+    var fx = make_cell(type_id, cfg, UInt64(42), n, "h")
+    var arrow = ArrowIpcSer()
+    var parquet = ParquetSer("parquet", CODEC_SNAPPY)
+    var raw = ParquetSer("parquet-uncompressed", CODEC_NONE)
+    var ab = arrow.serialize_bytes(fx)
+    var pb = parquet.serialize_bytes(fx)
+    var ub = raw.serialize_bytes(fx)
+    if not arrow.check(fx, ab):
+        raise Error("arrow-ipc fidelity " + type_id + " n=" + String(n))
+    if not parquet.check(fx, pb):
+        raise Error("parquet fidelity " + type_id + " n=" + String(n))
+    if not raw.check(fx, ub):
+        raise Error("parquet-uncompressed fidelity " + type_id + " n=" + String(n))
+    if len(ab) < 8 or len(pb) < 8 or len(ub) < 8:
+        raise Error("columnar payload too small " + type_id)
+    return len(ab)
+
+
+def _columnar_scale() raises:
+    var one = _columnar("table", 1)
+    var hundred = _columnar("table", 100)
+    # IPC schema and alignment dominate n=1. The added rows must still grow the file.
+    if hundred - one < 99 * 80:
+        raise Error("arrow-ipc table n=100 did not scale: " + String(hundred) + " vs " + String(one))
+    _ = _columnar("table_project", 1)
+    _ = _columnar("table_project", 100)
+    _ = _columnar("nested_table", 1)
+    _ = _columnar("nested_table", 3)
+    _ = _columnar("signal", 1)
+    _ = _columnar("signal", 3)
+    var cfg = TypeConfig()
+    cfg.group_count = 0
+    cfg.children = 0
+    var empty_sig = make_cell("signal", cfg, UInt64(7), 2, "e")
+    var empty_nest = make_cell("nested_table", cfg, UInt64(7), 2, "e")
+    var arrow = ArrowIpcSer()
+    var parquet = ParquetSer("parquet", CODEC_NONE)
+    if not arrow.check(empty_sig, arrow.serialize_bytes(empty_sig)):
+        raise Error("arrow empty signal legs")
+    if not parquet.check(empty_nest, parquet.serialize_bytes(empty_nest)):
+        raise Error("parquet empty nested items")
+    var neg = make_cell("table", TypeConfig(), UInt64(1), 1, "n")
+    neg.tables[0].floats[0] = -1.5
+    if not arrow.check(neg, arrow.serialize_bytes(neg)):
+        raise Error("arrow negative float")
+    if not parquet.check(neg, parquet.serialize_bytes(neg)):
+        raise Error("parquet negative float")
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
@@ -116,4 +176,5 @@ def main() raises:
     _yaml_batch("telemetry")
     _yaml_batch("strings")
     _yaml_batch("event")
+    _columnar_scale()
     print("ok")

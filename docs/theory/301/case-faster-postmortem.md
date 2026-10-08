@@ -67,13 +67,13 @@ A **data-transfer object (DTO)** is a structure used to carry data across a boun
 ### Setup
 
 1. Production profile or a reproduction under load.
-2. Current codec family and library pin.
-3. Fair suite access for same-language slices.
+2. Current standard and library pin. A family is only the teaching cut that led you there.
+3. Fair suite access for that same cell: one language, one standard, one data set, and one data type.
 
 ### Procedure
 
 1. Profile. Confirm serialize and deserialize is on the critical path (H4).
-2. Fair Dashboard numbers on the **same standard** (H1). See [using this suite](using-this-suite.md).
+2. Fair Dashboard numbers on the same language, standard, data set, and data type (H1). See [using this suite](using-this-suite.md).
 3. Inspect payload shape and allocations (H3). See [latency tails](latency-tails-and-gc.md).
 4. Only if that standard cannot meet the reliability target, revisit the family (H2).
 5. Check compression and network (H5) before rewrite.

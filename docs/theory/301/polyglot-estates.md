@@ -16,7 +16,7 @@ For each **boundary**, pick **one portable contract**. Boundaries include public
 
 A **contract** here means the shared rules for field identity, types, and allowed evolution. It is not merely “we both somehow use JSON.”
 
-Use this suite to compare **implementations within one language**. Do not use it to elect a global winner across languages. Dual contracts are allowed at **edges**. One example is JSON on the public surface and Protobuf internally. That is fine when translation is owned and tested. It is not fine as accidental drift.
+Use this suite to compare **libraries inside one language, one standard, one data set, and one data type**. Do not use it to elect a global winner across languages. Dual contracts are allowed at **edges**. One example is JSON on the public surface and Protobuf internally. That is fine when translation is owned and tested. It is not fine as accidental drift.
 
 This page assumes [trust boundaries](trust-boundaries.md). Language-native interchange is not allowed. It also assumes [using this suite](using-this-suite.md).
 
@@ -30,10 +30,10 @@ This page assumes [trust boundaries](trust-boundaries.md). Language-native inter
 | **Human debuggability** | Public and partner edges often keep JSON even when internal traffic is binary |
 | **Evolution ownership** | One IDL, registry, or process—not N ad hoc JSON dialects |
 | **Team skill** | Exotic codecs that only one expert understands do not survive staff changes |
-| **Fidelity** | Types such as decimals, timestamps, and maps must round-trip across languages |
+| **Cross-language agreement** | Types such as decimals, timestamps, and maps must match after encode in one language and decode in another |
 | **Operations tooling** | Can on-call engineers inspect payloads during incidents? |
 
-**Fidelity** means that after encode in language A and decode in language B, the logical values still match. Without fidelity, “we all speak Protobuf” is a slogan rather than a fact.
+**Cross-language agreement** means that after encode in language A and decode in language B, the logical values still match. Without that agreement, “we all speak Protobuf” is a slogan. The suite’s `mean_fidelity` is narrower. One language writes a fixture and reads it back. A passing score is not proof that the library follows the published specification, and it is not a cross-language test.
 
 ---
 
@@ -98,7 +98,7 @@ A format that appears in **many** language overviews is a candidate for multi-la
 
 ## Experiments
 
-**Question:** Can one **product contract** interoperate across the languages we ship? Where does fidelity break?
+**Question:** Can one **product contract** interoperate across the languages we ship? Where does cross-language agreement break?
 
 ### Setup
 
@@ -126,9 +126,9 @@ A format that appears in **many** language overviews is a candidate for multi-la
 | Metric / signal | Role |
 |-----------------|------|
 | **Matrix pass rate** (encode in A, decode in B) | **Primary** |
-| Logical field equality | Correctness definition |
+| Logical field equality | The fields you care about match after a cross-language decode |
 | Bit-identical encode (optional) | Relevant only for caching or signing |
-| Per-language `mean_fidelity` | Local benchmark runner health |
+| Per-language `mean_fidelity` | One-language fixture round trip. Not specification compliance. |
 | Schema and version alignment | Drift detector |
 | Per-language latency (Dashboard) | Capacity planning **after** interop works |
 
@@ -140,7 +140,7 @@ A format that appears in **many** language overviews is a candidate for multi-la
 
 - The political cost of mandating one shared IDL code repository for many projects.
 - Whether your gateway team can own JSON-to-binary translation.
-- The full matrix of type fidelity for every field across all languages. You must design tests that check every language implements the same contract.
+- The full matrix of field agreement across all languages. You must design tests that check every language implements the same contract. A one-language fixture round trip does not do that, and it does not prove specification compliance.
 - Vendor lock-in and staffing cost for exotic codecs.
 
 ---

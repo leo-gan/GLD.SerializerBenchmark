@@ -73,7 +73,7 @@ A game-state blob of 100KB or more is read by many services. Each request needs 
 |----------|------|
 | Language **Overview** | Whether FlatBuffers-class entries are registered |
 | **Dashboard** | Same-language comparison; note validation settings if documented |
-| [Using this suite](using-this-suite.md) | Fair reads on one language and one standard |
+| [Using this suite](using-this-suite.md) | Fair reads on one language, standard, data set, and data type |
 
 Absence from a language benchmark runner means “not measured.” It does not mean “bad technology.”
 
@@ -113,7 +113,7 @@ Absence from a language benchmark runner means “not measured.” It does not m
 | Verify time and fail rate on corrupt input | Safety |
 | `median_size_bytes` | Density tradeoff |
 | Schema rollout complexity | Operations cost |
-| Suite `mean_fidelity` | Correctness under the benchmark runner |
+| Suite `mean_fidelity` | Fixture round trip under the benchmark runner. Not specification compliance. |
 | Planned `time_access_ns` (if available) | Direct suite support when present |
 
 **Conclusion style:** “The flat layout wins on field touches with verification OK; adopt it for the cache blob, not the public API.”

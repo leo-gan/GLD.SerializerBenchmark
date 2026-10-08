@@ -4,7 +4,7 @@
 
 Benchmark tables are easy to misuse. A single chart often becomes a policy decision. Someone says “library A is 3× faster than library B.” Nobody asks whether A and B implement the **same job**. Nobody checks the **same payload shape**. Nobody checks the **same language**. Nobody checks the **same timing rules**. Organizations then switch codecs. They observe little improvement. They conclude that “benchmarks lie.” The real issue was **misaligned comparison**.
 
-This multi-language suite is built to support **fair, local** comparisons. It answers a question inside one language and one standard. In this section you will learn how to read the numbers as a first-year student should. Read them as answers to carefully stated questions.
+This multi-language suite is built to support **fair, local** comparisons. It answers a question inside one language, one standard, one data set, and one data type. In this section you will learn how to read the numbers as a first-year student should. Read them as answers to carefully stated questions.
 
 ---
 
@@ -12,9 +12,11 @@ This multi-language suite is built to support **fair, local** comparisons. It an
 
 Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
 
-The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. Data set is Suite or Columnar. The Dashboard sets it from the standard. JSON, Avro, Protocol Buffers, and FlatBuffers have both sets, so the data type still has to match. Arrow IPC, Parquet, ORC, and SBE are Columnar only.
+The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. Data set is Suite or Columnar. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only `f_float_0`.
 
-A **family** is how you arrive at a standard. It groups formats that solve roughly the same product job: JSON text, schemaless binary, schema-driven, language-native, or columnar. See [Serialization categories](../../analysis/serialization_categories.md). The filter is the standard.
+The Dashboard sets the data set from the standard. Where a language registers them on both sets, JSON, Avro, Protocol Buffers, and FlatBuffers still need a matching data type. Arrow IPC, Parquet, and ORC are Columnar only. SBE (Simple Binary Encoding) is Columnar only as a data set. It is schema-driven. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet.
+
+A **family** is a teaching cut. It groups formats that solve roughly the same product job: JSON text, schemaless binary, schema-driven, language-native, or columnar. See [Serialization categories](../../analysis/serialization_categories.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
 
 A cross-language or cross-standard chart needs the workload stated again before it becomes architecture policy. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are one part of the argument. See the rest of Serialization 301.
 
@@ -43,9 +45,9 @@ This matters because a mixed chart can look like a tournament. The honest use is
 Use this checklist **before** quoting a Dashboard number:
 
 1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
-2. **Same standard?** This is the Dashboard **Standard** control. Cross-standard only when the product question is which contract. Then speed is one axis among others. The family is how you got to the standard. See [Serialization categories](../../analysis/serialization_categories.md).
+2. **Same standard?** This is the Dashboard **Standard** control. Cross-standard only when the product question is which contract. Then speed is one axis among others. The family is the teaching cut that led you to the standard. See [Serialization categories](../../analysis/serialization_categories.md).
 3. **Same data set?** Suite or Columnar. The Dashboard sets this from the standard. When a standard has both, read the label and then check the data type.
-4. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs.
+4. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
 5. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
 6. **Still missing?** Compression on the wire, authentication, schema registry behavior, and multi-hop delivery of one message to many consumers (*fan-out*) sit outside the core tables. Design a separate experiment for those.
 
@@ -146,7 +148,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 | Chosen reliability-target (SLO) metric (for example decode median or size) | The one number allowed in the argument |
 | `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on the Dashboard |
 | `median_size_bytes` | Density and bandwidth axis |
-| `mean_fidelity` | Eligibility filter: non-faithful rows are out |
+| `mean_fidelity` | Fixture round trip (write, then read). Not specification compliance. Non-faithful rows are out. |
 | `serializer_version` | Reproducibility of the claim |
 | `runs`, warmup, outliers removed | Trust in the statistic |
 | Dashboard or CSV **filter state** | Document what you hid |

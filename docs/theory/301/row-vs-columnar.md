@@ -22,7 +22,7 @@ Use **row-oriented** messages when the unit of work is **whole records**. Those 
 
 A **data lake** is a large store of historical data. It often lives on object storage. It is designed for analytics rather than for single-record API responses.
 
-Crossing the streams is occasional glue. Export jobs are one example. Crossing the streams is not a default architecture. Do not pick columnar because it compresses well in a blog chart. That choice is wrong if every request needs the full row in under a millisecond.
+Crossing the streams is occasional glue. Export jobs are one example. Crossing the streams is not a default architecture. Do not pick columnar because it compresses well in a blog chart. That choice is wrong if every request needs the full row in under a millisecond. A columnar layout pays off when the row count is large. At one row, headers and alignment padding dominate both size and time.
 
 This page assumes the 101 row and columnar axis. Here we own **workload architecture**.
 
@@ -93,13 +93,15 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 | Resource | Role |
 |----------|------|
-| Language benchmark runners | `all@all` stays the five row types. `table`, `table_project`, `nested_table`, and `signal` are their own Dashboard data types |
+| Language benchmark runners | `all@all` stays the five Suite types. `table`, `table_project`, `nested_table`, and `signal` are their own Dashboard data types |
 | [Test Data](../../analysis/test_data_configuration.md) | Those nine type ids |
 | [Columnar run config](../../../config/library/columnar.yaml) | The four columnar types. Timed for the new serializers and a short peer list |
-| [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own family. SBE sits with schema-driven, word-aligned codecs |
-| [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one family and one data type |
+| [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own teaching family. SBE stays schema-driven. Its data set is Columnar. Its standard is SBE. |
+| [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one language, one standard, one data set, and one data type. |
 
-**Important:** `all@all`, `all@1`, and `all@100` stay the five row types (`message`, `document`, `telemetry`, `strings`, `event`). The four columnar types are separate data types. Their groups come from a `columnar.yaml` run appended by `dashboard/scripts/splice-columnar-stats.py`. The five-type groups are the earlier published snapshot and were not recomputed.
+**Important:** `all@all`, `all@1`, and `all@100` stay the five Suite types (`message`, `document`, `telemetry`, `strings`, `event`). The four Columnar types are separate data types. Their groups come from a `columnar.yaml` run appended by `dashboard/scripts/splice-columnar-stats.py`. The five-type groups are the earlier published snapshot and were not recomputed.
+
+SBE (Simple Binary Encoding) is measured on `signal`, `table`, and `table_project`. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet. On `table_project`, every codec in this comparison writes the full row and reads only `f_float_0`.
 
 Spliced columnar serializers (peers measured in that same run also appear on those data types):
 
@@ -133,13 +135,13 @@ C++, Rust, Go, Java, C#, JavaScript, and Kotlin used 100 repetitions. Do not ran
 1. Classify the primary workload using the decision frame.
 2. If the path is analytical, prototype scan time and compression on a columnar layout. Compare that with dumping RPC rows.
 3. If the path is RPC, measure per-message latency with row codecs. Do not put lake formats on the code path that runs on every request under load.
-4. Treat `all@all` as the five row types. Read `table`, `table_project`, `nested_table`, and `signal` for Arrow, Parquet, ORC, and SBE. Do not rank a columnar row against a row codec on `message`.
+4. Treat `all@all` as the five Suite types. Read `table`, `table_project`, `nested_table`, and `signal` for Arrow, Parquet, and ORC. Read `signal`, `table`, and `table_project` for SBE. SBE has no `nested_table` row. Do not rank a Columnar row against a Suite codec on `message`. On `table_project`, deserialize reads only `f_float_0`.
 5. Document a two-hop design if both patterns exist. Use row events on the bus. Use columnar data in the lake.
 
 ### Decision rule
 
 - Scan-heavy lake path means a columnar system format. RPC suite winners are irrelevant.
-- Hot RPC means a row or schema-driven family. Columnar files are not substitutes.
+- Hot RPC means a row message or a schema-driven message layout. Columnar files such as Parquet are not substitutes. SBE can still be a message layout. It is not a lake file.
 
 ---
 
@@ -180,5 +182,5 @@ C++, Rust, Go, Java, C#, JavaScript, and Kotlin used 100 repetitions. Do not ran
 
 - **Access pattern** chooses row versus columnar more than fashion.
 - Services want row messages. Lakes and analytics want columnar storage. Use deliberate bridges between them.
-- Dashboard `all@all` informs message codec choice inside a language. The columnar data types inform Arrow, Parquet, ORC, and SBE. Neither designs lake architecture.
+- Dashboard `all@all` informs message codec choice inside a language. Arrow, Parquet, and ORC on the Columnar data types inform scan layouts. SBE on those types is still one record per stride. None of those rows designs lake architecture.
 - Dual paths are normal. Use row for serve and columnar for analyze. That is not a design failure.

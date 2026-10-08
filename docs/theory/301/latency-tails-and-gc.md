@@ -76,7 +76,7 @@ Two JSON libraries show similar mean decode on the Python Dashboard. Production 
 
 | Resource | Role |
 |----------|------|
-| **Dashboard** means and ops | Orientation within one language |
+| **Dashboard** means and ops | Orientation inside one language, standard, data set, and data type |
 | Methodology | Warmup and outliers—read before quoting |
 | Optional memory metrics | If present for a language, use them cautiously |
 | [Using this suite](using-this-suite.md) | Fair slice checklist |
@@ -127,7 +127,7 @@ Primary signals for this page’s decision. See also [Metrics catalog](../../ana
 | **Allocations per op / alloc rate** | Profiler | Explains GC pressure |
 | **GC pause time / frequency** | Runtime metrics | Direct tail mechanism on managed runtimes |
 | `median_size_bytes` | Suite | Separates “big payload” from “allocation-heavy codec” |
-| `mean_fidelity` | Suite | Reject broken codecs before the performance debate |
+| `mean_fidelity` | Suite | Drop a library whose fixture round trip fails. This is not a specification audit. |
 
 **Conclusion style:** “Choose library L because p99 and allocation rate under load meet the reliability target; mean Dashboard ranks only shortlisted L.”
 

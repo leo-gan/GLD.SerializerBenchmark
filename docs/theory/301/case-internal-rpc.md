@@ -104,7 +104,7 @@ This matters because “internal” does not mean “native is fine.” It means
 | CPU percent on serialize and deserialize | Capacity |
 | Suite median serialize/deserialize and size | Shortlist |
 | Schema evolution pain (qualitative plus incident count) | Long-term cost |
-| `mean_fidelity` | Correctness |
+| `mean_fidelity` | Fixture round trip. Not specification compliance. |
 | A chart that mixes standards | Leave it out of the decision |
 
 ---

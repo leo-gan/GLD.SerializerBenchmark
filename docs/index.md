@@ -82,7 +82,7 @@ Then return to the **[Dashboard](dashboard/)** with clearer questions.
 
 ## Honesty rules (short)
 
-- Prefer comparisons **within one language and one standard**. A family is the first cut. See [Serialization categories](analysis/serialization_categories.md).  
+- Prefer comparisons **within one language and one standard**. A family is a teaching cut, coarser than the standard. See [Serialization categories](analysis/serialization_categories.md).  
 - Implementation quality often matters more than the format brand name.  
 - Payload shape changes costs a great deal.  
 - Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.

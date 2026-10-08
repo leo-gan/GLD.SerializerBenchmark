@@ -89,7 +89,7 @@ An **interop matrix** means this: encode a golden fixture in each language and d
 |-----------------|------|
 | Matrix pass rate | **Primary** |
 | Logical equality failures by language pair | Debug signal |
-| Per-language `mean_fidelity` | Local health |
+| Per-language `mean_fidelity` | One-language fixture round trip. Not a cross-language proof or specification compliance. |
 | Per-language 99th-percentile latency (*p99*: 99% of requests are faster than this) and suite medians | Capacity after interop |
 | Version pin drift | Drift risk |
 

@@ -136,7 +136,7 @@ Compressed untrusted data has a history of **decompression bombs**. Those are sm
 
 ## In this suite
 
-The benchmark runner measures **serializer** behaviour. That means encode and decode of logical fixtures. It is not a full matrix of compress-wrapped transports. Dashboard numbers should not be read as “gzip is unnecessary” or “binary is mandatory.” Use them to select a codec family and implementation. Evaluate compression on the deployment path separately, or as an explicit follow-on experiment outside the core tables.
+The benchmark runner measures **serializer** behaviour. That means encode and decode of logical fixtures. It is not a full matrix of compress-wrapped transports. Dashboard numbers should not be read as “gzip is unnecessary” or “binary is mandatory.” Read them inside one language, one standard, one data set, and one data type. A family is only a teaching cut. Evaluate compression on the deployment path separately, or as an explicit follow-on experiment outside the core tables.
 
 ---
 
