@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data, after google-protobuf encode was
 moved into timed `serialize`. They illustrate the gap; they are not a
 universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=google-protobuf&ser=google-protobuf&ser=protobufjs&ser=protobuf-es#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=javascript&standard=protobuf&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=google-protobuf&ser=google-protobuf&ser=protobufjs&ser=protobuf-es#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [JavaScript overview](../../javascript/)
 

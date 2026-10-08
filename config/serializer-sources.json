@@ -27,6 +27,11 @@
         "version": "0.6.3",
         "specifics": "flatcc is the maintained C implementation of FlatBuffers. FlatBuffers was created at Google so games and other clients could read serialized data without a parsing/unpacking step. flatcc solves the C side with a schema compiler and a C builder/reader."
       },
+      "ion-c": {
+        "source_url": "https://github.com/amazon-ion/ion-c",
+        "version": "1.1.6",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-c is the official C implementation. This row times the binary writer and reader on the suite visitor, including a native FILE* stream."
+      },
       "jansson": {
         "source_url": "https://github.com/akheron/jansson",
         "version": "2.15.1",
@@ -123,6 +128,11 @@
         "source_url": "https://github.com/bblanchon/ArduinoJson",
         "version": "7.4.3",
         "specifics": "ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model."
+      },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter into a buffer: the IPC stream inside the bytes API, not the Arrow file format. The record batch is built inside serialize_bytes. table_project sets IpcReadOptions.included_fields to f_float_0. The row is omitted when ARROW_ROOT is unset. No compliance decoder."
       },
       "avro": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
@@ -223,6 +233,26 @@
         "version": "3.12.0",
         "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache ORC was created as a columnar file with stripe indexes for scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row sets Compression::GZIP. The adapter stores that value as ORC ZLIB. table_project calls Read of f_float_0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same Arrow C++ ORC adapter as orc, with WriteOptions.compression set to UNCOMPRESSED. The name is the override. No compliance decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Arrow C++ 25.0.1 parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project reads leaf column 0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same Arrow C++ Parquet writer as parquet, with WriterProperties compression set to UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder."
+      },
       "protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
         "version": "3.12.4",
@@ -237,6 +267,11 @@
         "source_url": "https://github.com/Tencent/rapidjson",
         "version": "1.1.0",
         "specifics": "RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside serialize_bytes. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       },
       "simdjson": {
         "source_url": "https://github.com/simdjson/simdjson",
@@ -270,6 +305,11 @@
       }
     },
     "csharp": {
+      "Amazon.IonDotnet": {
+        "source_url": "https://github.com/amazon-ion/ion-dotnet",
+        "version": "1.3.2",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. Amazon.IonDotnet is the Ion team .NET reader and writer. NuGet marks the package deprecated and the GitHub repository is archived; the Ion libraries page still lists it. This row pins NuGet 1.3.2 (the newest package there; it fixes CVE-2025-11573) and reflects over the suite types to write binary Ion."
+      },
       "Apache.Avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.2",
@@ -312,7 +352,7 @@
       },
       "Google.Protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
-        "version": "3.36.1",
+        "version": "3.36.2",
         "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
       },
       "GroBuf": {
@@ -324,11 +364,6 @@
         "source_url": "https://github.com/akkadotnet/Hyperion",
         "version": "0.12.2",
         "specifics": "Hyperion is the binary serializer from the Akka.NET lineage (formerly Wire). It exists so an actor system can ship .NET messages efficiently. This row times that graph codec."
-      },
-      "Jil": {
-        "source_url": "https://github.com/kevin-montrose/Jil",
-        "version": "2.17.0",
-        "specifics": "Jil was written by Kevin Montrose for very fast JSON on .NET using Sigil-generated IL. The problem was JSON cost in Stack Overflow-scale services. Jil solves it with a compiled serialize/deserialize path."
       },
       "Json.Net": {
         "source_url": "https://github.com/JamesNK/Newtonsoft.Json",
@@ -347,37 +382,37 @@
       },
       "MS Binary": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline."
       },
       "MS Bond Compact": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
       },
       "MS Bond Fast": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
       },
       "MS Bond Json": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
       },
       "MS DataContract": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS DataContract Json": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS XmlSerializer": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.10",
         "specifics": "XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it."
       },
       "MemoryPack": {
@@ -386,7 +421,7 @@
       },
       "MessagePack-CSharp": {
         "source_url": "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
-        "version": "2.5.302",
+        "version": "2.5.305",
         "specifics": "MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver."
       },
       "Migrant": {
@@ -396,7 +431,7 @@
       },
       "Nerdbank.MessagePack": {
         "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
-        "version": "1.3.86",
+        "version": "1.3.88",
         "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
       },
       "NetJSON": {
@@ -424,13 +459,48 @@
         "version": "6.11.0",
         "specifics": "ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times ServiceStack.Text JSON."
       },
+      "ShapeShift.Cbor": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes the CBOR bytes. The package has no stream API, so the stream row adapts its byte-array API."
+      },
+      "ShapeShift.Json": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+      },
+      "ShapeShift.MsgPack": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+      },
+      "ShapeShift.Protobuf": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API."
+      },
+      "ShapeShift.Taml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized."
+      },
+      "ShapeShift.Toml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output."
+      },
+      "ShapeShift.Yaml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output."
+      },
       "SharpSerializer": {
         "source_url": "https://github.com/polenter/SharpSerializer",
         "specifics": "SharpSerializer is a .NET serializer that can write binary or XML. It was created as a simple, portable alternative to framework serializers for app persistence."
       },
       "SharpYaml": {
         "source_url": "https://github.com/xoofx/SharpYaml",
-        "version": "3.13.1",
+        "version": "3.14.0",
         "specifics": "SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#."
       },
       "SpanJson": {
@@ -440,7 +510,7 @@
       },
       "System.Text.Json": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": "8.0.0.0",
+        "version": "10.0.0.0",
         "specifics": "System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options."
       },
       "Utf8Json": {
@@ -463,13 +533,33 @@
         "version": "1.6.4",
         "specifics": "ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary serializer for .NET, inspired by FlatBuffers/Cap'n Proto ideas. Dynamic IL is broken on .NET 8; this suite uses KeyTuple shapes."
       },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-dotnet",
+        "version": "23.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Apache.Arrow 23.0.0 stream writer and reader on the string path (Base64 of the IPC stream), not the Arrow file format. Row-to-column conversion stays inside serialize. table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no net10.0 asset; the net10.0 project consumes the net8.0 asset. No compliance decoder."
+      },
       "fastJson": {
         "source_url": "https://github.com/mgholam/fastJSON",
         "version": "2.4.0.4",
         "specifics": "fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON simple and dependency-light. This row times that compact implementation."
+      },
+      "parquet": {
+        "source_url": "https://github.com/aloneguid/parquet-dotnet",
+        "version": "6.1.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Parquet.Net 6.1.0 at the library default, Snappy. The timed call is the string path (Base64 of the Parquet bytes). table_project reads the FFloat0 data field. The package has an explicit net10.0 asset. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/aloneguid/parquet-dotnet",
+        "version": "6.1.0",
+        "specifics": "This is the same Parquet.Net writer as parquet, with CompressionMethod.None. Encodings stay at the library default. The name is the override. No compliance decoder."
       }
     },
     "go": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-go's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Record batches are built inside SerializeBytes. table_project reads the f_float_0 value buffer only, because arrow-go's ipc.Reader has no included-fields option. No compliance decoder."
+      },
       "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
         "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
@@ -488,13 +578,18 @@
       },
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
-        "version": "go1.24.13",
+        "version": "go1.27.1",
         "specifics": "encoding/gob is Go's native binary stream for Go types. It was created so Go programs can RPC and persist values without an IDL. It is not a cross-language wire format."
       },
       "encoding/json": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/json",
-        "version": "go1.24.13",
-        "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat."
+        "version": "go1.27.1",
+        "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat. On Go 1.27 the package keeps v1 semantics. The stricter defaults are the separate `encoding/json/v2` row."
+      },
+      "encoding/json/v2": {
+        "source_url": "https://github.com/golang/go/tree/master/src/encoding/json/v2",
+        "version": "go1.27.1",
+        "specifics": "`encoding/json/v2` is the Go 1.27 standard library JSON API with stricter defaults than `encoding/json`: invalid UTF-8 and duplicate object names are errors, and `<`, `>`, and `&` are not HTML-escaped. This row times `Marshal` / `Unmarshal` and `MarshalWrite` / `UnmarshalRead`."
       },
       "fxamacker/cbor": {
         "source_url": "https://github.com/fxamacker/cbor",
@@ -516,6 +611,11 @@
         "version": "2.31.0",
         "specifics": "hamba/avro is a high-performance Avro library for Go. Avro was created for compact, schema-driven records. hamba focuses on a frozen API and schema cache so the timed path is encode/decode, not schema parse."
       },
+      "ion-go": {
+        "source_url": "https://github.com/amazon-ion/ion-go",
+        "version": "1.5.0",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-go is the official Go implementation. This row times MarshalBinary / Unmarshal and the binary encoder stream."
+      },
       "jsoniter": {
         "source_url": "https://github.com/json-iterator/go",
         "version": "1.1.12",
@@ -536,6 +636,16 @@
         "version": "1.17.9",
         "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
       },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-go pqarrow. arrow-go WriterProperties defaults to uncompressed, so this row sets Snappy, which is the suite's parquet page codec. table_project passes column index 0 to GetRecordReader. The schema is prepared untimed. The batch is built inside SerializeBytes. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow-go",
+        "version": "18.8.0",
+        "specifics": "This is the same arrow-go pqarrow writer as parquet, with compression left off (Codecs.Uncompressed). Encodings stay at the library default. The name is the override. No compliance decoder."
+      },
       "pelletier/go-toml": {
         "source_url": "https://github.com/pelletier/go-toml",
         "version": "2.4.3",
@@ -545,6 +655,11 @@
         "source_url": "https://github.com/protocolbuffers/protobuf-go",
         "version": "1.36.12",
         "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Go flyweight inside SerializeBytes. It encodes table, table_project, and signal. nested_table is not an SBE body. No compliance decoder."
       },
       "segmentio/encoding/json": {
         "source_url": "https://github.com/segmentio/encoding",
@@ -588,6 +703,11 @@
       }
     },
     "java": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-java",
+        "version": "19.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serializeBytes. table_project loads f_float_0 only. No compliance decoder."
+      },
       "avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.1",
@@ -683,6 +803,26 @@
         "version": "0.9.8",
         "specifics": "msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "Apache ORC was created as a columnar file with stripe indexes for scans. This row times orc-core 2.3.1 (classifier nohive). OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder."
+      },
       "protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
         "version": "4.35.0",
@@ -692,6 +832,11 @@
         "source_url": "https://github.com/protostuff/protostuff",
         "version": "1.8.0",
         "specifics": "protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Java flyweight inside serializeBytes. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       }
     },
     "javascript": {
@@ -704,6 +849,11 @@
         "source_url": "https://github.com/nodejs/node",
         "version": "node-24.15.0",
         "specifics": "`JSON.stringify` / `JSON.parse` are the ECMAScript standard JSON APIs. They exist so every JavaScript host can speak RFC 8259 without a library. This row times Node's V8 implementation."
+      },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "21.2.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times the apache-arrow IPC stream writer and reader (tableToIPC with type stream) inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. No compliance decoder."
       },
       "avsc": {
         "source_url": "https://github.com/mtth/avsc",
@@ -776,6 +926,11 @@
         "version": "3.21.4",
         "specifics": "This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`."
       },
+      "ion-js": {
+        "source_url": "https://github.com/amazon-ion/ion-js",
+        "version": "5.2.1",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-js is the official JavaScript implementation. This row times binary dump/load; the Ion DOM is turned into plain objects outside the timer."
+      },
       "js-yaml": {
         "source_url": "https://github.com/nodeca/js-yaml",
         "version": "4.3.2",
@@ -790,6 +945,16 @@
         "source_url": "https://github.com/kriszyp/msgpackr",
         "version": "1.12.1",
         "specifics": "msgpackr was written for high-throughput MessagePack in Node, with reusable Packr/Unpackr instances. The problem was that generic MessagePack libraries allocated too much per call. msgpackr solves that with a performance-oriented encoder/decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/hyparam/hyparquet-writer",
+        "version": "0.16.10",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times hyparquet-writer parquetWriteBuffer at the library default codec, Snappy, and hyparquet 1.31.2 parquetReadObjects. A nested_table value (struct plus a list of structs, int32 not widened) round-tripped, which is why the row is registered. table_project passes columns ['f_float_0'] on read. SerializerVersion is the writer package. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/hyparam/hyparquet-writer",
+        "version": "0.16.10",
+        "specifics": "This is the same hyparquet-writer path as parquet, with codec UNCOMPRESSED. That switch changes the column codec metadata and the bytes. Encodings stay at the library default. It is the same writer, not a second Parquet library. No compliance decoder."
       },
       "protobuf-es": {
         "source_url": "https://github.com/bufbuild/protobuf-es",
@@ -818,6 +983,11 @@
       }
     },
     "kotlin": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-java",
+        "version": "19.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This Kotlin row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serialize. table_project loads f_float_0 only. No compliance decoder."
+      },
       "avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.1",
@@ -923,6 +1093,26 @@
         "version": "2.1.3",
         "specifics": "obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "Apache ORC was created as a columnar file with stripe indexes for scans. This Kotlin row times orc-core 2.3.1 (classifier nohive) and orc-format 1.1.1 nohive. OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/orc",
+        "version": "2.3.1",
+        "specifics": "This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This Kotlin row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/parquet-java",
+        "version": "1.18.1",
+        "specifics": "This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder."
+      },
       "protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
         "version": "4.35.0",
@@ -937,6 +1127,11 @@
         "source_url": "https://github.com/protostuff/protostuff",
         "version": "1.8.0",
         "specifics": "protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java flyweight inside serialize. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       },
       "thrift": {
         "source_url": "https://github.com/apache/thrift",
@@ -954,6 +1149,11 @@
         "source_url": "https://github.com/bgreni/EmberJson",
         "version": "0.3.4",
         "specifics": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API."
+      },
+      "arrow-ipc": {
+        "source_url": "https://github.com/leo-gan/gld-arrow",
+        "version": "0.2.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a from-scratch Arrow library for Mojo. This row times `encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not the Arrow file. The record batch is built inside serialize. gld-arrow has no included-fields reader, so table_project decodes the stream and then materializes f_float_0 only. Suite columns are required because these rows have no nulls."
       },
       "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
@@ -976,9 +1176,14 @@
         "version": "0.4.0",
         "specifics": "ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk."
       },
+      "gld-toml": {
+        "source_url": "https://github.com/leo-gan/gld-toml",
+        "version": "0.1.0",
+        "specifics": "gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml so its package name does not collide with DataBooth's toml package."
+      },
       "gld-yaml": {
         "source_url": "https://github.com/leo-gan/gld-yaml",
-        "version": "0.2.0",
+        "version": "0.6.0",
         "specifics": "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a human-friendly config language. The library was written so Mojo can speak YAML on suite types."
       },
       "mojo-avro": {
@@ -989,37 +1194,57 @@
       "mojo-bson": {
         "source_url": "https://github.com/leo-gan/gld-bson",
         "version": "0.1.0",
-        "specifics": "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types. Package 0.1.0 is the latest release that builds on Mojo 1.1."
+        "specifics": "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types."
       },
       "mojo-cbor": {
         "source_url": "https://github.com/leo-gan/gld-cbor",
-        "version": "0.6.0",
+        "version": "0.8.0",
         "specifics": "gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode."
       },
       "mojo-flatbuffers": {
         "source_url": "https://github.com/leo-gan/gld-flatbuffers",
+        "version": "0.4.0",
+        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`."
+      },
+      "mojo-ion": {
+        "source_url": "https://github.com/leo-gan/gld-ion",
         "version": "0.2.0",
-        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can use fields without unpacking the buffer. This row times a reused Builder and generated pack/unpack on the suite tables."
+        "specifics": "gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a typed superset of JSON with text and binary encodings. This row times Ion 1.0 binary encode and decode of a document built from the suite value."
       },
       "mojo-json": {
         "source_url": "https://github.com/leo-gan/gld-json",
-        "version": "0.3.0",
+        "version": "0.5.0",
         "specifics": "gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types."
       },
       "mojo-msgpack": {
         "source_url": "https://github.com/leo-gan/gld-messagepack",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "specifics": "gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format."
       },
       "mojo-protobuf": {
         "source_url": "https://github.com/leo-gan/gld-protobuf",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "specifics": "gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode."
+      },
+      "mojo-smile": {
+        "source_url": "https://github.com/leo-gan/gld-smile",
+        "version": "0.2.0",
+        "specifics": "gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value."
       },
       "mojo-toml": {
         "source_url": "https://github.com/DataBooth/mojo-toml",
         "version": "0.9.1",
-        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This is the published Mojo TOML implementation (`gld-toml` is not out yet)."
+        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is a different library and is the gld-toml row."
+      },
+      "parquet": {
+        "source_url": "https://github.com/leo-gan/gld-parquet",
+        "version": "0.2.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. gld-parquet (leo-gan) is a from-scratch Parquet library for Mojo. The library default is uncompressed, so this row sets Snappy, the suite page codec. table_project decodes the file and then reads f_float_0 only, because decode_table has no column projection. Lists use the standard three-level group."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/leo-gan/gld-parquet",
+        "version": "0.2.0",
+        "specifics": "This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override."
       }
     },
     "php": {
@@ -1097,7 +1322,13 @@
     "python": {
       "amazon-ion": {
         "source_url": "https://github.com/amazon-ion/ion-python",
+        "version": "0.15.0",
         "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation."
+      },
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only."
       },
       "avro": {
         "source_url": "https://github.com/fastavro/fastavro",
@@ -1177,10 +1408,30 @@
         "source_url": "https://github.com/FasterXML/smile-format-specification",
         "specifics": "Smile is FasterXML's binary JSON: Jackson-compatible data with a smaller, faster binary encoding. The problem was JSON text cost in JVM services that already used Jackson. Smile solves it with a documented binary JSON token stream."
       },
+      "orc": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times pyarrow.orc.write_table and read_table with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. table_project passes columns=['f_float_0'] on read."
+      },
+      "orc-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib."
+      },
       "orjson": {
         "source_url": "https://github.com/ijl/orjson",
         "version": "3.12.0",
         "specifics": "orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times pyarrow.parquet.write_table and read_table with pyarrow's default page compression, Snappy. Encodings stay at the library default. table_project passes columns=['f_float_0'] on read."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow",
+        "version": "25.0.1",
+        "specifics": "This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy."
       },
       "pickle": {
         "source_url": "https://github.com/python/cpython/tree/main/Lib/pickle.py",
@@ -1226,6 +1477,11 @@
       }
     },
     "rust": {
+      "arrow-ipc": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-rs 60.0.0 IPC stream writer and reader inside the bytes API, not the Arrow file format. The schema is chosen in prepare. The RecordBatch is built inside serialize. table_project passes field index 0 to StreamReader::try_new. No compliance decoder."
+      },
       "bincode": {
         "source_url": "https://github.com/bincode-org/bincode",
         "version": "2.0.1",
@@ -1267,6 +1523,11 @@
         "version": "2.0.0",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
       },
+      "ion-rs": {
+        "source_url": "https://github.com/amazon-ion/ion-rust",
+        "version": "1.0.1",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion)."
+      },
       "minicbor": {
         "source_url": "https://github.com/twittner/minicbor",
         "version": "0.25.1",
@@ -1276,6 +1537,16 @@
         "source_url": "https://github.com/not-fl3/nanoserde",
         "version": "0.1.37",
         "specifics": "nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path."
+      },
+      "parquet": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-rs 60 ArrowWriter. arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets Compression::SNAPPY. Encodings stay at the builder default. table_project uses ProjectionMask::columns on f_float_0. No compliance decoder."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/apache/arrow-rs",
+        "version": "60.0.0",
+        "specifics": "This is the same arrow-rs Parquet writer as parquet, with Compression::UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder."
       },
       "postcard": {
         "source_url": "https://github.com/jamesmunns/postcard",
@@ -1296,6 +1567,11 @@
         "source_url": "https://github.com/3Hren/msgpack-rust",
         "version": "1.3.1",
         "specifics": "rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps."
+      },
+      "sbe": {
+        "source_url": "https://github.com/aeron-io/simple-binary-encoding",
+        "version": "1.40.2",
+        "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight inside serialize. The logged version is the generator, not the vendored crate 0.1.0. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
       },
       "serde_avro_fast": {
         "source_url": "https://github.com/Ten0/serde_avro_fast",

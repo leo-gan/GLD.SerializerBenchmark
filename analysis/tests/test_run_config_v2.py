@@ -21,10 +21,20 @@ _LIBRARY = _REPO / "config" / "library"
 _CATALOG = _REPO / "schemas" / "data_catalog_v2.yaml"
 
 
-def test_catalog_loads_five_types():
+def test_catalog_loads_suite_types():
     cat = load_catalog(_CATALOG)
     assert cat["data_model_version"] == 2
-    assert set(cat["types"]) == {"message", "document", "telemetry", "strings", "event"}
+    assert set(cat["types"]) == {
+        "message",
+        "document",
+        "telemetry",
+        "strings",
+        "event",
+        "table",
+        "table_project",
+        "nested_table",
+        "signal",
+    }
 
 
 def test_resolve_empty_type_config_fills_defaults():
@@ -85,6 +95,45 @@ def test_unknown_type_id():
             {"types": [{"type_id": "nope", "type_config": {}}], "data_type_instance_count": [1]},
             cat,
         )
+
+
+def test_columnar_run_configs_cell_counts():
+    smoke = resolve_run_config(_LIBRARY / "columnar-smoke.yaml", catalog_path=_CATALOG, seed=42)
+    assert smoke["cell_count"] == 4
+    assert {c["data_type_instance_count"] for c in smoke["cells"]} == {1}
+    assert smoke["compression"]["mode"] == "none"
+
+    full = resolve_run_config(_LIBRARY / "columnar.yaml", catalog_path=_CATALOG, seed=42)
+    assert full["cell_count"] == 10  # 3+3+2+2
+    by_type: dict[str, set[int]] = {}
+    hashes: dict[str, str] = {}
+    for cell in full["cells"]:
+        by_type.setdefault(cell["type_id"], set()).add(cell["data_type_instance_count"])
+        hashes[cell["type_id"]] = cell["type_config_hash"]
+    assert by_type["table"] == {1, 100, 10000}
+    assert by_type["table_project"] == {1, 100, 10000}
+    assert by_type["nested_table"] == {1, 100}
+    assert by_type["signal"] == {1, 100}
+    assert hashes["table"] == hashes["table_project"]
+    assert full["compression"]["mode"] == "none"
+    assert full["execution"]["io_modes"] == ["bytes"]
+
+
+def test_signal_schema_field_order():
+    proto = (_REPO / "schemas" / "v2" / "protobuf" / "benchmark_v2.proto").read_text(encoding="utf-8")
+    signal = proto.split("message Signal {", 1)[1].split("message BatchSignal", 1)[0]
+    assert signal.index("int64 seq") < signal.index("string symbol")
+    assert signal.index("string symbol") < signal.index("string venue")
+    assert signal.index("string venue") < signal.index("repeated SignalLeg legs")
+
+    # sbe-tool 1.40.2 rejects a group after variable-length data
+    # ("group node specified after data node"). Signal's wire order is the
+    # fixed block, then legs, then symbol and venue. Field ids are unchanged.
+    xml = (_REPO / "schemas" / "v2" / "sbe" / "signal.xml").read_text(encoding="utf-8")
+    body = xml.split('<sbe:message name="Signal"', 1)[1].split("</sbe:message>", 1)[0]
+    assert body.index('name="seq"') < body.index('name="legs"')
+    assert body.index('name="legs"') < body.index('name="symbol"')
+    assert body.index('name="symbol"') < body.index('name="venue"')
 
 
 def test_soft_budget():

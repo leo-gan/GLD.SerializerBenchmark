@@ -42,6 +42,7 @@ download libyaml "https://github.com/yaml/libyaml/archive/refs/tags/0.2.5.tar.gz
 download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/v1.5.2.tar.gz"
 download avro "https://github.com/apache/avro/archive/refs/tags/release-1.11.3.tar.gz"
 download mongo-c-driver "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.27.5.tar.gz"
+download ion-c "https://github.com/amazon-ion/ion-c/archive/refs/tags/v1.1.6.tar.gz"
 
 echo "[build] jansson"
 mkdir -p "$TP/_build/jansson"
@@ -73,6 +74,12 @@ cmake -S "$TP/mongo-c-driver" -B "$TP/_build/libbson" -DCMAKE_BUILD_TYPE=Release
   -DENABLE_SRV=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZLIB=OFF -DENABLE_ZSTD=OFF \
   -DCMAKE_C_FLAGS="-Wno-error"
 cmake --build "$TP/_build/libbson" -j"$(nproc 2>/dev/null || echo 2)" --target bson_static
+
+echo "[build] ion-c"
+mkdir -p "$TP/_build/ion-c"
+cmake -S "$TP/ion-c" -B "$TP/_build/ion-c" -DCMAKE_BUILD_TYPE=Release \
+  -DIONC_BUILD_TESTS=OFF
+cmake --build "$TP/_build/ion-c" -j"$(nproc 2>/dev/null || echo 2)" --target ionc decNumber
 
 echo "[build] avro-c"
 export PKG_CONFIG_PATH="$TP/_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"

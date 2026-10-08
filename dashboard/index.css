@@ -278,6 +278,34 @@ body {
   }
 }
 
+/* One tab is one view. The filter bar stays on Overview and Compare. */
+#compare,
+#history-custom {
+  display: none;
+}
+
+body.dash-view-compare #compare {
+  display: block;
+}
+
+body.dash-view-overview.dash-run-open #history-custom {
+  display: block;
+}
+
+body.dash-view-compare .summary-grid,
+body.dash-view-compare .charts-grid,
+body.dash-view-compare #detailed-analytics,
+body.dash-view-compare #orientation-banner,
+body.dash-view-compare #run-meta,
+body.dash-view-compare .toolbar > .tabs {
+  display: none !important;
+}
+
+/* Language is the shared filter. Compare does not repeat it. */
+#compare-same-panel .same-lang-wrap {
+  display: none;
+}
+
 /* Main Container Layout (High Density) */
 .container {
   max-width: 1440px;
@@ -397,6 +425,23 @@ body {
   font-weight: 500;
   border-color: #c5cae9;
   background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
+}
+
+/* Data set follows the standard. Same box as a primary select, no chevron. */
+.filter-group-primary .dataset-value {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+  border: 1px solid #c5cae9;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
+  padding: 0.3rem 0.6rem;
+  cursor: default;
+  user-select: none;
 }
 
 .filter-group-secondary {
@@ -1164,7 +1209,13 @@ select:focus {
 }
 
 /* Pareto highlight instead of Frontier column */
+#analytics-table tbody tr.roster-child-row td.str {
+  padding-left: 1.6rem;
+  color: var(--text-muted);
+}
+
 #analytics-table tbody tr.roster-pareto-row td {
+
   background: rgba(26, 115, 232, 0.06);
 }
 #analytics-table tbody tr.roster-pareto-row td.str strong {
@@ -1668,6 +1719,8 @@ tr.roster-baseline-row td.num.baseline-col {
   background: #f8f9fa;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .compare-ctrl-row {
@@ -1774,13 +1827,17 @@ tr.roster-baseline-row td.num.baseline-col {
 }
 
 .compare-add-select-wrap {
-  flex: 1 1 9rem;
-  min-width: 7rem;
-  max-width: 14rem;
+  flex: 0 0 auto;
+  width: auto;
+  /* Do not shrink. A narrow box clips encoding/json/v2 back to encoding/json. */
+  min-width: 14rem;
+  max-width: none;
 }
 
 .compare-add-select-wrap select {
-  width: 100%;
+  width: max-content;
+  min-width: 14rem;
+  max-width: none;
   padding-top: 0.28rem;
   padding-bottom: 0.28rem;
   font-size: 0.78rem;
@@ -2106,9 +2163,27 @@ tr.roster-baseline-row td.num.baseline-col {
   .chip-lang-label {
     flex-basis: 100%;
   }
-  .compare-add-select-wrap {
-    max-width: none;
-    flex-basis: 100%;
+  .compare-ctrl-row-main,
+  .compare-inline-add,
+  #xl-add-panel.compare-inline-add {
+    flex-wrap: wrap;
+  }
+  .compare-add-select-wrap,
+  #xl-add-panel .xl-add-ser-wrap {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .compare-add-select-wrap select,
+  #compare-same-filters #compare-baseline-select,
+  #compare-xl-filters #compare-xl-baseline-select,
+  #roster-baseline-select,
+  #xl-add-panel #xl-add-serializer,
+  #cmp-filter-serializer {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
@@ -2132,6 +2207,8 @@ tr.roster-baseline-row td.num.baseline-col {
 .compare-ctrl-row-main {
   flex-wrap: nowrap;
   gap: 0.35rem 0.45rem;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -2155,6 +2232,7 @@ tr.roster-baseline-row td.num.baseline-col {
   padding-top: 0.25rem;
   min-height: 2rem;
   flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .compare-ctrl-row-selected .compare-inline-add {
@@ -2220,6 +2298,15 @@ tr.roster-baseline-row td.num.baseline-col {
   max-width: 12rem;
 }
 
+#compare-same-filters #compare-baseline-select,
+#compare-xl-filters #compare-xl-baseline-select,
+#roster-baseline-select,
+#xl-add-panel #xl-add-serializer {
+  width: max-content;
+  min-width: 14rem;
+  max-width: none;
+}
+
 .compare-ctrl-row-metrics {
   flex-wrap: nowrap;
   gap: 0.3rem 0.4rem;
@@ -2243,9 +2330,10 @@ tr.roster-baseline-row td.num.baseline-col {
 }
 
 #xl-add-panel .xl-add-ser-wrap {
-  flex: 0 1 11rem;
-  max-width: 12rem;
-  min-width: 7rem;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: none;
+  min-width: 14rem;
 }
 
 .compare-lab-filters-inline .select-wrapper select {
@@ -2257,4 +2345,33 @@ tr.roster-baseline-row td.num.baseline-col {
 .comparison-section .glass-panel,
 .comparison-section.glass-panel {
   /* section itself is glass-panel */
+}
+
+/* Phones: the desktop min-width would widen the page. Stack the serializer
+   selects so encoding/json/v2 stays on screen. */
+@media (max-width: 720px) {
+  .compare-ctrl-row-main,
+  #compare-same-panel.compare-inline-add,
+  #xl-add-panel.compare-inline-add,
+  #xl-add-panel.xl-add-panel {
+    /* Beat the desktop `flex-wrap: nowrap !important` on the cross-language row. */
+    flex-wrap: wrap !important;
+    max-width: 100%;
+  }
+  #compare-same-panel .compare-add-select-wrap,
+  #xl-add-panel .xl-add-ser-wrap {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #compare-same-panel #same-ser-add-select,
+  #compare-same-filters #compare-baseline-select,
+  #compare-xl-filters #compare-xl-baseline-select,
+  #roster-baseline-select,
+  #xl-add-panel #xl-add-serializer {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }

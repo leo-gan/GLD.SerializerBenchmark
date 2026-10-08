@@ -12,8 +12,12 @@ import benchmark.model.Fixture
 import benchmark.model.v2.Document
 import benchmark.model.v2.Event
 import benchmark.model.v2.Message
+import benchmark.model.v2.NestedRow
+import benchmark.model.v2.Signal
 import benchmark.model.v2.Strings
+import benchmark.model.v2.TableRow
 import benchmark.model.v2.Telemetry
+import benchmark.model.v2.V2Rows
 import com.google.flatbuffers.FlatBufferBuilder
 import java.nio.ByteBuffer
 
@@ -35,6 +39,8 @@ class FlatBuffersSer : BenchSerializer {
 
     override fun nativeKind() = "schema"
 
+    override fun supports(testDataName: String) = TypeUtil.originalOrColumnar(testDataName)
+
     override fun prepare(fx: Fixture) {
         typeId = fx.name
         batch = TypeUtil.isList(fx.value)
@@ -53,7 +59,8 @@ class FlatBuffersSer : BenchSerializer {
 
     override fun deserializeBytes(data: ByteArray): Any {
         val bb = ByteBuffer.wrap(data)
-        return if (batch) unpackList(bb) else unpackOne(bb)
+        val decoded = if (batch) unpackList(bb) else unpackOne(bb)
+        return if (typeId == "table_project") V2Rows.float0(decoded) else decoded
     }
 
     private fun packOne(value: Any): Int =
@@ -63,6 +70,9 @@ class FlatBuffersSer : BenchSerializer {
             "telemetry" -> packTelemetry(value as Telemetry)
             "strings" -> packStrings(value as Strings)
             "event" -> packEvent(value as Event)
+            "table", "table_project" -> FbV2.packTable(builder, value as TableRow)
+            "nested_table" -> FbV2.packNested(builder, value as NestedRow)
+            "signal" -> FbV2.packSignal(builder, value as Signal)
             else -> throw IllegalArgumentException(typeId)
         }
 
@@ -74,6 +84,7 @@ class FlatBuffersSer : BenchSerializer {
             "telemetry" -> BatchTelemetry.createBatchTelemetry(builder, BatchTelemetry.createItemsVector(builder, offs))
             "strings" -> BatchStrings.createBatchStrings(builder, BatchStrings.createItemsVector(builder, offs))
             "event" -> BatchEvent.createBatchEvent(builder, BatchEvent.createItemsVector(builder, offs))
+            "table", "table_project", "nested_table", "signal" -> FbV2.packBatch(builder, offs)
             else -> throw IllegalArgumentException(typeId)
         }
     }
@@ -134,6 +145,9 @@ class FlatBuffersSer : BenchSerializer {
             "telemetry" -> fromTelemetry(benchmark.fb.Telemetry.getRootAsTelemetry(bb))
             "strings" -> fromStrings(benchmark.fb.Strings.getRootAsStrings(bb))
             "event" -> fromEvent(benchmark.fb.Event.getRootAsEvent(bb))
+            "table", "table_project" -> FbV2.readTable(bb)
+            "nested_table" -> FbV2.readNested(bb)
+            "signal" -> FbV2.readSignal(bb)
             else -> throw IllegalArgumentException(typeId)
         }
 
@@ -159,6 +173,9 @@ class FlatBuffersSer : BenchSerializer {
                 val b = BatchEvent.getRootAsBatchEvent(bb)
                 MutableList(b.itemsLength()) { fromEvent(b.items(it)!!) }
             }
+            "table", "table_project" -> FbV2.readTableBatch(bb)
+            "nested_table" -> FbV2.readNestedBatch(bb)
+            "signal" -> FbV2.readSignalBatch(bb)
             else -> throw IllegalArgumentException(typeId)
         }
 

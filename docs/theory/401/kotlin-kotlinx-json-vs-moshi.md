@@ -10,7 +10,7 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=kotlin&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
+[Open this slice on the Dashboard](../../dashboard/?lang=kotlin&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
 · [Kotlin overview](../../kotlin/)
 
@@ -75,7 +75,7 @@ Encode is closer (29 µs versus 24 µs) because both paths already know the fiel
 
 ## What you give up
 
-kotlinx.serialization is the Kotlin multiplatform format family. The same `@Serializable` types can write JSON, CBOR, ProtoBuf, Properties, and HOCON. Moshi is JVM JSON. If the product must share one type definition across formats, kotlinx-json is the reason that family exists. If the product is a JVM service that only speaks JSON, Moshi’s generated adapter is why it is faster on this fixture.
+kotlinx.serialization can write several formats from the same `@Serializable` types. Those formats include JSON, CBOR, ProtoBuf, Properties, and HOCON. That is a library feature. It is not the teaching cut this course calls a family. Moshi is JVM JSON. If the product must share one type definition across formats, kotlinx-json is why that library exists. If the product is a JVM service that only speaks JSON, Moshi’s generated adapter is why it is faster on this fixture.
 
 moshi-reflect is slightly faster than moshi-codegen on this one-instance document. Do not read that as “never generate adapters.” The reflection factory is still Moshi. The pair on this page is kotlinx versus Moshi, not codegen versus reflection.
 

@@ -83,11 +83,26 @@ ResolvedRun load_resolved(const std::string& run_config_path, uint64_t seed) {
       if (c_json.contains("type_config") && c_json["type_config"].is_object()) {
         tc = c_json["type_config"];
       }
-      c.type_config.children = j_int(tc, "children", 8);
-      c.type_config.points = j_int(tc, "points", 32);
-      c.type_config.count = j_int(tc, "count", 32);
-      c.type_config.attr_count = j_int(tc, "attr_count", 4);
-      c.type_config.tag_count = j_int(tc, "tag_count", 2);
+      // Only keys that are present. Missing keys stay sentinels so nested_table
+      // does not inherit document's children default, and strings keeps its own duplication.
+      if (tc.contains("children")) c.type_config.children = j_int(tc, "children", -1);
+      if (tc.contains("points")) c.type_config.points = j_int(tc, "points", 32);
+      if (tc.contains("count")) c.type_config.count = j_int(tc, "count", 32);
+      if (tc.contains("attr_count")) c.type_config.attr_count = j_int(tc, "attr_count", 4);
+      if (tc.contains("tag_count")) c.type_config.tag_count = j_int(tc, "tag_count", 2);
+      if (tc.contains("group_count")) c.type_config.group_count = j_int(tc, "group_count", -1);
+      if (tc.contains("string_len") && tc["string_len"].is_object()) {
+        c.type_config.string_len_min = j_int(tc["string_len"], "min", 3);
+        c.type_config.string_len_max = j_int(tc["string_len"], "max", 16);
+      }
+      if (tc.contains("int_range") && tc["int_range"].is_object()) {
+        c.type_config.has_int_range = true;
+        c.type_config.int_range_min = j_int(tc["int_range"], "min", 0);
+        c.type_config.int_range_max = j_int(tc["int_range"], "max", 1000000);
+      }
+      if (tc.contains("duplication") && tc["duplication"].is_number()) {
+        c.type_config.duplication = tc["duplication"].get<double>();
+      }
       if (!c.type_id.empty()) rr.cells.push_back(std::move(c));
     }
   }

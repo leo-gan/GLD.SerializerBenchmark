@@ -135,9 +135,9 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 		names[s.Name()] = true
 	}
 	for _, want := range []string{
-		"encoding/json", "sonic", "goccy/go-json", "jsoniter",
+		"encoding/json", "encoding/json/v2", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
-		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro", "linkedin/goavro",
+		"encoding/gob", "mongo-bson", "ion-go", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
 		if !names[want] {
 			t.Errorf("missing serializer %s", want)
@@ -181,6 +181,7 @@ func TestCallPathDocsMentionOptimizations(t *testing.T) {
 func TestStreamModeLabels(t *testing.T) {
 	want := map[string]StreamMode{
 		"encoding/json":            StreamNative,
+		"encoding/json/v2":         StreamNative,
 		"sonic":                    StreamNative,
 		"goccy/go-json":            StreamNative,
 		"jsoniter":                 StreamNative,
@@ -195,6 +196,7 @@ func TestStreamModeLabels(t *testing.T) {
 		"kelindar/binary":          StreamNative,
 		"encoding/gob":             StreamNative,
 		"mongo-bson":               StreamNative,
+		"ion-go":                   StreamNative,
 		"goccy/go-yaml":            StreamNative,
 		"pelletier/go-toml":        StreamNative,
 		"hamba/avro":               StreamNative,
@@ -205,6 +207,11 @@ func TestStreamModeLabels(t *testing.T) {
 		"dagr-regular":       StreamAdapted,
 		"dagr-frozen":        StreamAdapted,
 		"dagr-frozen-packed": StreamAdapted,
+		// Bytes API only. Adapted streams must not crash; they are not a native io path.
+		"arrow-ipc":            StreamAdapted,
+		"parquet":              StreamAdapted,
+		"parquet-uncompressed": StreamAdapted,
+		"sbe":                  StreamAdapted,
 	}
 	seen := map[string]bool{}
 	for _, ser := range All() {

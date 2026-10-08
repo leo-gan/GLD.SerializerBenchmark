@@ -111,7 +111,7 @@ In other words, the contract stayed stable while the implementation improved. Th
 | Breaking-change escape rate | Process quality |
 | Client SDK regenerate success | Contract usability |
 | Suite JSON `deser_median_ns` and size | Secondary server cost |
-| `mean_fidelity` | Implementation correctness |
+| `mean_fidelity` | Fixture round trip. Not specification compliance. |
 
 **Conclusion style:** “OpenAPI and JSON Schema are required; breaking changes use content-type versioning.”
 

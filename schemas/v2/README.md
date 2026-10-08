@@ -6,7 +6,9 @@ Canonical **wire** definitions for schema-driven serializers. Logical field mean
 
 | Path | Family |
 |------|--------|
-| `protobuf/benchmark_v2.proto` | Protocol Buffers (five types + batch wrappers) |
+| `protobuf/benchmark_v2.proto` | Protocol Buffers (publication types, `Table`, `NestedRow`, `Signal`, and batch wrappers) |
+| `avro/*.avsc` | Avro records for `Table`, `NestedRow`, and `Signal` |
+| `sbe/signal.xml` | SBE messages for `Signal` and `Table` (no `nested_table`) |
 | `dagr/schema.py` | Dagr (one DataGraph per type; see [`dagr/README.md`](dagr/README.md)) |
 
 ## Regenerate language artifacts

@@ -2,7 +2,7 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src}.
+# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,gldtoml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src,arrow_src,parquet_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -43,17 +43,17 @@ acquire gld-messagepack "$tmp/gld-messagepack" https://github.com/leo-gan/gld-me
 acquire gld-flatbuffers "$tmp/gld-flatbuffers" https://github.com/leo-gan/gld-flatbuffers.git
 acquire gld-avro "$tmp/gld-avro" https://github.com/leo-gan/gld-avro.git
 acquire gld-bson "$tmp/gld-bson" https://github.com/leo-gan/gld-bson.git
-# DataBooth TOML is not a leo-gan sibling; clone (or reuse a sibling if present).
+acquire gld-ion "$tmp/gld-ion" https://github.com/leo-gan/gld-ion.git
+acquire gld-smile "$tmp/gld-smile" https://github.com/leo-gan/gld-smile.git
+acquire gld-toml "$tmp/gld-toml" https://github.com/leo-gan/gld-toml.git
+acquire gld-arrow "$tmp/gld-arrow" https://github.com/leo-gan/gld-arrow.git
+acquire gld-parquet "$tmp/gld-parquet" https://github.com/leo-gan/gld-parquet.git
+# DataBooth/mojo-toml keeps the `toml` package. gld-toml is vendored separately below.
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
   rm -rf "$tmp/mojo-toml"
   mkdir -p "$tmp/mojo-toml"
   cp -a "$SIBLING_ROOT/mojo-toml/src" "$tmp/mojo-toml/src"
-elif [[ -d "$SIBLING_ROOT/gld-toml/src/toml" ]]; then
-  echo "[INFO] using sibling $SIBLING_ROOT/gld-toml"
-  rm -rf "$tmp/mojo-toml"
-  mkdir -p "$tmp/mojo-toml"
-  cp -a "$SIBLING_ROOT/gld-toml/src" "$tmp/mojo-toml/src"
 else
   git clone --depth 1 https://github.com/DataBooth/mojo-toml.git "$tmp/mojo-toml"
 fi
@@ -180,6 +180,63 @@ rewrite_tree(
     },
 )
 rewrite_tree(
+    src_root / "gld-ion" / "src",
+    mojo / "vendor" / "ion_src",
+    {
+        "runtime": "ion_runtime",
+        "wire": "ion_wire",
+        "schema": "ion_schema",
+        "codegen": "ion_codegen",
+        "ion": "ion",
+    },
+)
+rewrite_tree(
+    src_root / "gld-toml" / "src",
+    mojo / "vendor" / "gldtoml_src",
+    {
+        "runtime": "gldtoml_runtime",
+        "wire": "gldtoml_wire",
+        "schema": "gldtoml_schema",
+        "codegen": "gldtoml_codegen",
+        "toml": "gldtoml",
+    },
+)
+rewrite_tree(
+    src_root / "gld-smile" / "src",
+    mojo / "vendor" / "smile_src",
+    {
+        "runtime": "smile_runtime",
+        "wire": "smile_wire",
+        "schema": "smile_schema",
+        "codegen": "smile_codegen",
+        "smile": "smile",
+    },
+)
+rewrite_tree(
+    src_root / "gld-arrow" / "src",
+    mojo / "vendor" / "arrow_src",
+    {
+        "runtime": "arrow_runtime",
+        "wire": "arrow_wire",
+        "schema": "arrow_schema",
+        "codegen": "arrow_codegen",
+        "compress": "arrow_compress",
+        "arrow": "arrow",
+    },
+)
+rewrite_tree(
+    src_root / "gld-parquet" / "src",
+    mojo / "vendor" / "parquet_src",
+    {
+        "runtime": "parquet_runtime",
+        "wire": "parquet_wire",
+        "schema": "parquet_schema",
+        "codegen": "parquet_codegen",
+        "compress": "parquet_compress",
+        "parquet": "parquet",
+    },
+)
+rewrite_tree(
     src_root / "gld-flatbuffers" / "src",
     mojo / "vendor" / "fb_src",
     {
@@ -226,5 +283,27 @@ def parse_gpu_to_value(s: String, result: Int) raises -> Value:
 """,
     encoding="utf-8",
 )
+# gld-smile 0.2.0 returns from a short 0x3A header without consuming
+# the byte, and the caller loops. Keep the end-of-input guard.
+smile_codec = mojo / "vendor" / "smile_src" / "smile_wire" / "codec.mojo"
+smile_text = smile_codec.read_text(encoding="utf-8")
+smile_old = (
+    "    def _try_header(mut self) raises DecodeError -> Bool:\n"
+    "        if self._remain() < 4:\n"
+    "            return False\n"
+)
+smile_new = (
+    "    def _try_header(mut self) raises DecodeError -> Bool:\n"
+    "        if self._remain() < 4:\n"
+    "            # 0x3A starts a header. Leaving those bytes unconsumed makes\n"
+    "            # `_finish` call this again and never move forward.\n"
+    "            if self._remain() > 0 and Int(self.raw[self.i]) == 0x3A:\n"
+    "                raise DecodeError(DecodeError.KIND_EOF, self.i)\n"
+    "            return False\n"
+)
+if smile_old in smile_text:
+    smile_codec.write_text(smile_text.replace(smile_old, smile_new, 1), encoding="utf-8")
+elif "never move forward" not in smile_text:
+    raise SystemExit("smile short-header guard could not be applied")
 print("vendors refreshed")
 PY

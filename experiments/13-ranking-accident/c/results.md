@@ -1,7 +1,7 @@
 # Experiment 13 results — c
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/13-ranking-accident/c/logs/c/2026-08-17-104808.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/13-ranking-accident/c/logs/c/2026-09-29-184752.csv`
 **Language:** c
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,11 +12,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 3.88 | 1.79 | 5.75 | 460 | — | fast C JSON library | fastest | yes | 93 |
-| cJSON | 1.7.18 | 6.58 | 4.76 | 11.1 | 460 | — | small common C JSON library | slower | yes | 95 |
-| json-c | 0.15 | 8.74 | 10.5 | 19.3 | 460 | — | system JSON library on many Linux machines | slower | yes | 95 |
-| jansson | 2.14 | 10.6 | 9.92 | 20.7 | 460 | — | common C JSON library | slower | yes | 97 |
-| parson | 1.5.3 | 17.5 | 6.77 | 24.5 | 460 | — | small C JSON library | slower | yes | 98 |
+| yyjson | 0.10.0 | 3.53 | 2.25 | 5.79 | 460 | 2687 | fast C JSON library | fastest | yes | 87 |
+| cJSON | 1.7.19 | 7.29 | 6.44 | 13.8 | 460 | 2701 | small common C JSON library | slower | yes | 90 |
+| json-c | 0.15 | 8.98 | 10.2 | 19.2 | 460 | 2722 | system JSON library on many Linux machines | slower | yes | 90 |
+| jansson | 2.15.1 | 11.6 | 10.5 | 22.2 | 460 | 2687 | common C JSON library | slower | yes | 87 |
+| parson | 1.5.3 | 18.1 | 8.27 | 26.4 | 460 | 2722 | small C JSON library | slower | yes | 83 |
 
 ## In memory — sample A (order), 100 record(s) per write
 
@@ -24,11 +24,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 196 | 150 | 345 | 45951 | — | fast C JSON library | fastest | yes | 96 |
-| cJSON | 1.7.18 | 415 | 390 | 805 | 45951 | — | small common C JSON library | slower | yes | 94 |
-| json-c | 0.15 | 687 | 807 | 1496 | 45951 | — | system JSON library on many Linux machines | slower | yes | 92 |
-| jansson | 2.14 | 756 | 892 | 1647 | 45951 | — | common C JSON library | slower | yes | 95 |
-| parson | 1.5.3 | 1459 | 538 | 1998 | 45951 | — | small C JSON library | slower | yes | 96 |
+| yyjson | 0.10.0 | 185 | 153 | 340 | 45951 | 2687 | fast C JSON library | fastest | yes | 81 |
+| cJSON | 1.7.19 | 390 | 424 | 818 | 45951 | 2701 | small common C JSON library | slower | yes | 87 |
+| json-c | 0.15 | 540 | 754 | 1330 | 45951 | 2722 | system JSON library on many Linux machines | slower | yes | 93 |
+| jansson | 2.15.1 | 728 | 843 | 1577 | 45951 | 2687 | common C JSON library | slower | yes | 84 |
+| parson | 1.5.3 | 1280 | 520 | 1811 | 45951 | 2722 | small C JSON library | slower | yes | 90 |
 
 ## In memory — sample D (event), 1 record(s) per write
 
@@ -36,11 +36,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 1.39 | 1.01 | 2.40 | 264 | — | fast C JSON library | fastest | yes | 79 |
-| cJSON | 1.7.18 | 3.23 | 2.38 | 5.59 | 264 | — | small common C JSON library | slower | yes | 90 |
-| json-c | 0.15 | 3.37 | 4.81 | 8.27 | 264 | — | system JSON library on many Linux machines | slower | yes | 91 |
-| parson | 1.5.3 | 5.79 | 3.57 | 9.41 | 264 | — | small C JSON library | slower | yes | 85 |
-| jansson | 2.14 | 5.12 | 5.11 | 10.3 | 264 | — | common C JSON library | slower | yes | 86 |
+| yyjson | 0.10.0 | 2.17 | 1.76 | 3.93 | 264 | 2687 | fast C JSON library | fastest | yes | 93 |
+| cJSON | 1.7.19 | 4.41 | 3.64 | 7.98 | 264 | 2701 | small common C JSON library | slower | yes | 92 |
+| json-c | 0.15 | 5.04 | 6.80 | 11.8 | 264 | 2722 | system JSON library on many Linux machines | slower | yes | 93 |
+| parson | 1.5.3 | 7.34 | 5.00 | 12.5 | 264 | 2722 | small C JSON library | slower | yes | 93 |
+| jansson | 2.15.1 | 6.58 | 6.39 | 13.0 | 264 | 2687 | common C JSON library | slower | yes | 87 |
 
 ## In memory — sample D (event), 100 record(s) per write
 
@@ -48,11 +48,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 101 | 106 | 207 | 25937 | — | fast C JSON library | fastest | yes | 90 |
-| cJSON | 1.7.18 | 224 | 211 | 436 | 25937 | — | small common C JSON library | slower | yes | 92 |
-| json-c | 0.15 | 244 | 386 | 632 | 25937 | — | system JSON library on many Linux machines | slower | yes | 89 |
-| parson | 1.5.3 | 428 | 275 | 704 | 25937 | — | small C JSON library | slower | yes | 88 |
-| jansson | 2.14 | 359 | 452 | 811 | 25937 | — | common C JSON library | slower | yes | 91 |
+| yyjson | 0.10.0 | 108 | 135 | 243 | 25937 | 2687 | fast C JSON library | fastest | yes | 88 |
+| cJSON | 1.7.19 | 238 | 249 | 487 | 25937 | 2701 | small common C JSON library | slower | yes | 90 |
+| json-c | 0.15 | 291 | 419 | 708 | 25937 | 2722 | system JSON library on many Linux machines | slower | yes | 84 |
+| parson | 1.5.3 | 415 | 306 | 724 | 25937 | 2722 | small C JSON library | slower | yes | 90 |
+| jansson | 2.15.1 | 394 | 494 | 897 | 25937 | 2687 | common C JSON library | slower | yes | 87 |
 
 ## In memory — sample B (flat), 1 record(s) per write
 
@@ -60,11 +60,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 1.00 | 0.51 | 1.52 | 171 | — | fast C JSON library | fastest | yes | 91 |
-| cJSON | 1.7.18 | 2.49 | 1.34 | 3.84 | 172 | — | small common C JSON library | slower | yes | 93 |
-| json-c | 0.15 | 2.25 | 2.90 | 5.17 | 172 | — | system JSON library on many Linux machines | slower | yes | 95 |
-| jansson | 2.14 | 2.88 | 3.44 | 6.34 | 172 | — | common C JSON library | slower | yes | 93 |
-| parson | 1.5.3 | 4.68 | 1.93 | 6.61 | 172 | — | small C JSON library | slower | yes | 96 |
+| yyjson | 0.10.0 | 1.39 | 0.81 | 2.22 | 171 | 2687 | fast C JSON library | fastest | yes | 83 |
+| cJSON | 1.7.19 | 3.11 | 2.15 | 5.29 | 172 | 2701 | small common C JSON library | slower | yes | 86 |
+| jansson | 2.15.1 | 3.25 | 4.00 | 7.29 | 171 | 2687 | common C JSON library | slower | yes | 84 |
+| json-c | 0.15 | 3.29 | 4.10 | 7.32 | 172 | 2722 | system JSON library on many Linux machines | slower | yes | 87 |
+| parson | 1.5.3 | 5.43 | 2.47 | 7.86 | 172 | 2722 | small C JSON library | slower | yes | 87 |
 
 ## In memory — sample B (flat), 100 record(s) per write
 
@@ -72,11 +72,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 53.7 | 50.0 | 104 | 16878 | — | fast C JSON library | fastest | yes | 90 |
-| cJSON | 1.7.18 | 180 | 117 | 297 | 16910 | — | small common C JSON library | slower | yes | 86 |
-| json-c | 0.15 | 174 | 225 | 400 | 16962 | — | system JSON library on many Linux machines | slower | yes | 87 |
-| jansson | 2.14 | 210 | 284 | 495 | 16962 | — | common C JSON library | slower | yes | 92 |
-| parson | 1.5.3 | 425 | 140 | 566 | 16962 | — | small C JSON library | slower | yes | 91 |
+| yyjson | 0.10.0 | 57.1 | 69.9 | 128 | 16878 | 2687 | fast C JSON library | fastest | yes | 88 |
+| cJSON | 1.7.19 | 188 | 147 | 336 | 16910 | 2701 | small common C JSON library | slower | yes | 92 |
+| json-c | 0.15 | 178 | 245 | 423 | 16962 | 2722 | system JSON library on many Linux machines | slower | yes | 89 |
+| jansson | 2.15.1 | 190 | 311 | 502 | 16878 | 2687 | common C JSON library | slower | yes | 86 |
+| parson | 1.5.3 | 408 | 157 | 565 | 16962 | 2722 | small C JSON library | slower | yes | 87 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -84,11 +84,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 1.27 | 2.97 | 4.28 | 391 | — | fast C JSON library | fastest | yes | 95 |
-| cJSON | 1.7.18 | 3.55 | 5.12 | 8.70 | 391 | — | small common C JSON library | slower | yes | 98 |
-| parson | 1.5.3 | 5.03 | 4.92 | 10.6 | 391 | — | small C JSON library | slower | yes | 99 |
-| json-c | 0.15 | 4.41 | 6.93 | 11.3 | 391 | — | system JSON library on many Linux machines | slower | yes | 99 |
-| jansson | 2.14 | 6.58 | 8.60 | 16.4 | 391 | — | common C JSON library | slower | yes | 97 |
+| yyjson | 0.10.0 | 1.63 | 2.40 | 4.04 | 391 | 2687 | fast C JSON library | fastest | yes | 90 |
+| cJSON | 1.7.19 | 3.77 | 5.42 | 9.26 | 391 | 2701 | small common C JSON library | slower | yes | 88 |
+| parson | 1.5.3 | 5.48 | 5.06 | 10.6 | 391 | 2722 | small C JSON library | slower | yes | 94 |
+| json-c | 0.15 | 4.53 | 7.20 | 11.7 | 391 | 2722 | system JSON library on many Linux machines | slower | yes | 92 |
+| jansson | 2.15.1 | 6.59 | 8.02 | 14.6 | 391 | 2687 | common C JSON library | slower | yes | 93 |
 
 ## In memory — sample E (words), 100 record(s) per write
 
@@ -96,11 +96,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 104 | 222 | 326 | 41352 | — | fast C JSON library | fastest | yes | 92 |
-| cJSON | 1.7.18 | 214 | 417 | 630 | 41352 | — | small common C JSON library | slower | yes | 89 |
-| parson | 1.5.3 | 375 | 386 | 762 | 41352 | — | small C JSON library | slower | yes | 89 |
-| json-c | 0.15 | 257 | 521 | 777 | 41352 | — | system JSON library on many Linux machines | slower | yes | 87 |
-| jansson | 2.14 | 436 | 708 | 1145 | 41352 | — | common C JSON library | slower | yes | 89 |
+| yyjson | 0.10.0 | 110 | 244 | 355 | 41352 | 2687 | fast C JSON library | fastest | yes | 91 |
+| cJSON | 1.7.19 | 227 | 472 | 700 | 41352 | 2701 | small common C JSON library | slower | yes | 89 |
+| parson | 1.5.3 | 378 | 413 | 797 | 41352 | 2722 | small C JSON library | slower | yes | 87 |
+| json-c | 0.15 | 272 | 572 | 847 | 41352 | 2722 | system JSON library on many Linux machines | slower | yes | 89 |
+| jansson | 2.15.1 | 477 | 736 | 1211 | 41352 | 2687 | common C JSON library | slower | yes | 91 |
 
 ## In memory — sample C (sensor), 1 record(s) per write
 
@@ -108,11 +108,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 1.83 | 2.03 | 3.77 | 657 | — | fast C JSON library | fastest | yes | 86 |
-| json-c | 0.15 | 15.2 | 11.2 | 26.5 | 688 | — | system JSON library on many Linux machines | slower | yes | 84 |
-| jansson | 2.14 | 15.2 | 15.6 | 30.9 | 688 | — | common C JSON library | slower | yes | 86 |
-| cJSON | 1.7.18 | 27.7 | 6.59 | 34.5 | 666 | — | small common C JSON library | slower | yes | 86 |
-| parson | 1.5.3 | 35.2 | 7.87 | 43.2 | 688 | — | small C JSON library | slower | yes | 88 |
+| yyjson | 0.10.0 | 2.40 | 1.91 | 4.31 | 657 | 2687 | fast C JSON library | fastest | yes | 89 |
+| jansson | 2.15.1 | 7.77 | 16.9 | 24.7 | 657 | 2687 | common C JSON library | slower | yes | 89 |
+| json-c | 0.15 | 15.9 | 12.2 | 28.2 | 688 | 2722 | system JSON library on many Linux machines | slower | yes | 84 |
+| cJSON | 1.7.19 | 27.3 | 8.07 | 35.5 | 666 | 2701 | small common C JSON library | slower | yes | 89 |
+| parson | 1.5.3 | 34.5 | 8.21 | 42.5 | 688 | 2722 | small C JSON library | slower | yes | 87 |
 
 ## In memory — sample C (sensor), 100 record(s) per write
 
@@ -120,66 +120,66 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 138 | 136 | 275 | 66315 | — | fast C JSON library | fastest | yes | 89 |
-| json-c | 0.15 | 1354 | 915 | 2273 | 68605 | — | system JSON library on many Linux machines | slower | yes | 92 |
-| jansson | 2.14 | 1331 | 1287 | 2623 | 68605 | — | common C JSON library | slower | yes | 90 |
-| cJSON | 1.7.18 | 2583 | 572 | 3158 | 66887 | — | small common C JSON library | slower | yes | 94 |
-| parson | 1.5.3 | 3317 | 621 | 3933 | 68605 | — | small C JSON library | slower | yes | 97 |
+| yyjson | 0.10.0 | 139 | 155 | 297 | 66315 | 2687 | fast C JSON library | fastest | yes | 88 |
+| jansson | 2.15.1 | 460 | 1470 | 1928 | 66315 | 2687 | common C JSON library | slower | yes | 87 |
+| json-c | 0.15 | 1282 | 909 | 2193 | 68605 | 2722 | system JSON library on many Linux machines | slower | yes | 94 |
+| cJSON | 1.7.19 | 2501 | 621 | 3116 | 66887 | 2701 | small common C JSON library | slower | yes | 95 |
+| parson | 1.5.3 | 3258 | 648 | 3908 | 68605 | 2722 | small C JSON library | slower | yes | 94 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| yyjson | 1 | 3.01 | 1.88 | 4.98 | copied |
-| cJSON | 1 | 7.16 | 5.91 | 13.0 | copied |
-| json-c | 1 | 8.88 | 9.28 | 18.2 | copied |
-| jansson | 1 | 11.2 | 10.8 | 22.0 | copied |
-| parson | 1 | 18.3 | 8.54 | 26.8 | copied |
-| yyjson | 100 | 186 | 144 | 330 | copied |
-| cJSON | 100 | 395 | 372 | 770 | copied |
-| json-c | 100 | 650 | 765 | 1414 | copied |
-| jansson | 100 | 719 | 850 | 1569 | copied |
-| parson | 100 | 1389 | 511 | 1901 | copied |
-| yyjson | 1 | 1.66 | 1.26 | 2.93 | copied |
-| cJSON | 1 | 3.97 | 2.85 | 6.80 | copied |
-| json-c | 1 | 3.92 | 4.59 | 8.51 | copied |
-| jansson | 1 | 5.74 | 5.57 | 11.3 | copied |
-| parson | 1 | 7.01 | 4.35 | 11.4 | copied |
-| yyjson | 100 | 102 | 107 | 210 | copied |
-| cJSON | 100 | 227 | 213 | 441 | copied |
-| json-c | 100 | 246 | 389 | 635 | copied |
-| parson | 100 | 432 | 277 | 709 | copied |
-| jansson | 100 | 361 | 452 | 813 | copied |
-| yyjson | 1 | 1.25 | 0.72 | 1.97 | copied |
-| cJSON | 1 | 2.80 | 1.53 | 4.30 | copied |
-| json-c | 1 | 2.57 | 2.82 | 5.37 | copied |
-| jansson | 1 | 3.18 | 3.61 | 6.78 | copied |
-| parson | 1 | 5.20 | 2.18 | 7.40 | copied |
-| yyjson | 100 | 55.5 | 52.3 | 108 | copied |
-| cJSON | 100 | 185 | 119 | 304 | copied |
-| json-c | 100 | 178 | 229 | 407 | copied |
-| jansson | 100 | 215 | 292 | 507 | copied |
-| parson | 100 | 437 | 142 | 578 | copied |
-| yyjson | 1 | 1.76 | 3.10 | 4.92 | copied |
-| cJSON | 1 | 4.87 | 6.18 | 11.1 | copied |
-| json-c | 1 | 5.32 | 7.71 | 13.0 | copied |
-| parson | 1 | 6.90 | 6.62 | 13.5 | copied |
-| jansson | 1 | 8.26 | 10.4 | 18.7 | copied |
-| yyjson | 100 | 104 | 224 | 328 | copied |
-| cJSON | 100 | 216 | 417 | 633 | copied |
-| parson | 100 | 379 | 387 | 765 | copied |
-| json-c | 100 | 257 | 518 | 776 | copied |
-| jansson | 100 | 437 | 708 | 1146 | copied |
-| yyjson | 1 | 2.20 | 1.66 | 3.94 | copied |
-| json-c | 1 | 14.8 | 10.2 | 25.1 | copied |
-| jansson | 1 | 15.2 | 14.8 | 30.3 | copied |
-| cJSON | 1 | 27.1 | 7.21 | 34.4 | copied |
-| parson | 1 | 33.9 | 8.28 | 42.4 | copied |
-| yyjson | 100 | 139 | 137 | 276 | copied |
-| json-c | 100 | 1344 | 912 | 2255 | copied |
-| jansson | 100 | 1329 | 1279 | 2613 | copied |
-| cJSON | 100 | 2550 | 569 | 3118 | copied |
-| parson | 100 | 3274 | 618 | 3889 | copied |
+| yyjson | 1 | 4.74 | 2.91 | 7.66 | real |
+| cJSON | 1 | 8.31 | 8.10 | 16.4 | copied |
+| json-c | 1 | 9.91 | 10.5 | 20.4 | copied |
+| jansson | 1 | 12.8 | 11.9 | 24.6 | copied |
+| parson | 1 | 20.0 | 10.6 | 30.7 | copied |
+| yyjson | 100 | 255 | 192 | 450 | real |
+| cJSON | 100 | 398 | 433 | 829 | copied |
+| json-c | 100 | 533 | 759 | 1310 | copied |
+| jansson | 100 | 731 | 856 | 1593 | copied |
+| parson | 100 | 1293 | 536 | 1835 | copied |
+| yyjson | 1 | 3.21 | 2.35 | 5.55 | real |
+| cJSON | 1 | 5.22 | 4.14 | 9.45 | copied |
+| json-c | 1 | 5.86 | 7.07 | 13.0 | copied |
+| jansson | 1 | 7.38 | 6.83 | 14.2 | copied |
+| parson | 1 | 8.52 | 6.07 | 14.5 | copied |
+| yyjson | 100 | 166 | 167 | 336 | real |
+| cJSON | 100 | 245 | 258 | 505 | copied |
+| json-c | 100 | 295 | 428 | 723 | copied |
+| parson | 100 | 421 | 315 | 740 | copied |
+| jansson | 100 | 401 | 499 | 906 | copied |
+| yyjson | 1 | 2.11 | 1.33 | 3.47 | real |
+| cJSON | 1 | 3.65 | 2.32 | 5.99 | copied |
+| jansson | 1 | 3.68 | 4.16 | 7.88 | copied |
+| json-c | 1 | 3.68 | 4.20 | 7.89 | copied |
+| parson | 1 | 5.90 | 2.75 | 8.63 | copied |
+| yyjson | 100 | 100 | 100 | 202 | real |
+| cJSON | 100 | 188 | 147 | 335 | copied |
+| json-c | 100 | 175 | 240 | 416 | copied |
+| jansson | 100 | 188 | 307 | 495 | copied |
+| parson | 100 | 409 | 158 | 568 | copied |
+| yyjson | 1 | 2.43 | 3.04 | 5.47 | real |
+| cJSON | 1 | 4.90 | 6.32 | 11.2 | copied |
+| parson | 1 | 6.65 | 6.24 | 12.9 | copied |
+| json-c | 1 | 5.49 | 7.50 | 13.0 | copied |
+| jansson | 1 | 7.80 | 8.96 | 16.8 | copied |
+| yyjson | 100 | 168 | 267 | 437 | real |
+| cJSON | 100 | 220 | 456 | 677 | copied |
+| parson | 100 | 372 | 406 | 779 | copied |
+| json-c | 100 | 261 | 554 | 815 | copied |
+| jansson | 100 | 460 | 708 | 1170 | copied |
+| yyjson | 1 | 3.61 | 2.58 | 6.20 | real |
+| jansson | 1 | 8.88 | 17.8 | 26.8 | copied |
+| json-c | 1 | 16.9 | 12.8 | 29.8 | copied |
+| cJSON | 1 | 28.7 | 8.85 | 37.7 | copied |
+| parson | 1 | 36.7 | 9.08 | 45.8 | copied |
+| yyjson | 100 | 221 | 190 | 413 | real |
+| jansson | 100 | 469 | 1482 | 1948 | copied |
+| json-c | 100 | 1284 | 917 | 2207 | copied |
+| cJSON | 100 | 2494 | 630 | 3125 | copied |
+| parson | 100 | 3275 | 655 | 3931 | copied |
 
 ## Libraries that belong in the conversation
 

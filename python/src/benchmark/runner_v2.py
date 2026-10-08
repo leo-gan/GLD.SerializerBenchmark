@@ -5,6 +5,10 @@ Usage:
     python -m benchmark.runner_v2 [repetitions] [serializerFilter] [dataFilter]
     BENCHMARK_RUN_CONFIG=config/library/smoke.yaml python -m benchmark.runner_v2 2
 
+serializerFilter is one substring, or a comma-separated allow-list of
+substrings. ``parquet`` still matches ``parquet-uncompressed``. A columnar
+run passes the allow-list; an empty filter times every registered serializer.
+
 Env:
     BENCHMARK_RUN_CONFIG  path to run config YAML (default: config/library/default.yaml)
     BENCHMARK_SEED        int seed (default: 42)
@@ -26,12 +30,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .comparer import compare
-from .data_v2.fidelity import fidelity_v2
+from .data_v2.fidelity import expected_for_fidelity, fidelity_v2
 from .data_v2.generator import instances_for_cell
 from .data_v2 import protobuf_bridge
 from .report import BenchmarkError, BenchmarkLog, LogStorage, aggregate_logs, print_report, save_errors
 from .serializers import (
+    ArrowIpcSerializer,
     AvroSerializer,
+    AmazonIonSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
     DagrSerializer,
@@ -41,7 +47,11 @@ from .serializers import (
     MsgpackSerializer,
     MsgspecMessagePackSerializer,
     MsgspecSerializer,
+    OrcSerializer,
+    OrcUncompressedSerializer,
     OrjsonSerializer,
+    ParquetSerializer,
+    ParquetUncompressedSerializer,
     PickleSerializer,
     PyYamlSerializer,
     ProtobufSerializer,
@@ -64,6 +74,7 @@ ALL_SERIALIZERS = [
     MsgspecMessagePackSerializer(),
     MsgpackSerializer(),
     Cbor2Serializer(),
+    AmazonIonSerializer(),
     ProtobufSerializer(),
     AvroSerializer(),
     FlatBuffersSerializer(),
@@ -71,6 +82,11 @@ ALL_SERIALIZERS = [
     DagrSerializer("dagr-regular"),
     DagrSerializer("dagr-frozen"),
     DagrSerializer("dagr-frozen-packed"),
+    ArrowIpcSerializer(),
+    ParquetSerializer(),
+    ParquetUncompressedSerializer(),
+    OrcSerializer(),
+    OrcUncompressedSerializer(),
     PyYamlSerializer(),
     PickleSerializer(),
     CloudpickleSerializer(),
@@ -152,6 +168,7 @@ def _prepare_for_serializer(
 ) -> Tuple[Any, Any, type]:
     """Return (serializable, expected_for_fidelity, type_hint)."""
     payload = _pack_payload(instances, n)
+    expected = expected_for_fidelity(type_id, instances)
     name = serializer.name.lower()
 
     if name == "protobuf":
@@ -166,7 +183,7 @@ def _prepare_for_serializer(
         serializer._msg_cls = cls  # type: ignore[attr-defined]
         src = instances if batch else instances[0]
         native = protobuf_bridge.to_pb(src)
-        return native, payload, type(instances[0])
+        return native, expected, type(instances[0])
 
     # Generic path: dataclass or list of dataclasses. Batch cells pass the
     # parameterized list[T] so typed codecs can be built ahead of timing.
@@ -174,7 +191,24 @@ def _prepare_for_serializer(
     td_type = tip if n == 1 else list[tip]
     serializer.prepare(type_id, td_type)
     serializable = serializer.prepare_data(payload, type_id, td_type)
-    return serializable, payload, td_type
+    return serializable, expected, td_type
+
+
+def serializer_selected(name: str, serializer_filter: Optional[str]) -> bool:
+    """True when ``name`` matches the runner's serializer filter.
+
+    No filter selects every serializer. One token keeps the old substring
+    match. Commas split an allow-list; a serializer is selected when any
+    token is a substring of its name.
+    """
+    if not serializer_filter or not serializer_filter.strip():
+        return True
+    lowered = name.lower()
+    tokens = [part.strip().lower() for part in serializer_filter.split(",")]
+    tokens = [part for part in tokens if part]
+    if not tokens:
+        return True
+    return any(part in lowered for part in tokens)
 
 
 def run_v2(
@@ -198,11 +232,7 @@ def run_v2(
     if data_filter:
         cells = [c for c in cells if data_filter.lower() in c["type_id"].lower()]
 
-    serializers = [
-        s
-        for s in ALL_SERIALIZERS
-        if serializer_filter is None or serializer_filter.lower() in s.name.lower()
-    ]
+    serializers = [s for s in ALL_SERIALIZERS if serializer_selected(s.name, serializer_filter)]
 
     if not serializers or not cells:
         print("No cells or serializers matched.")
@@ -253,7 +283,21 @@ def run_v2(
     print(f"[PROGRESS] schedule={schedule_strategy} record_run_order={record_run_order}")
     print(f"[PROGRESS] soft_budget≈{soft}s hard_cap={hard}s → {ts_file}")
 
-    io_modes = (resolved.get("execution") or {}).get("io_modes") or ["bytes", "stream"]
+    try:
+        from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
+    except ImportError:
+        root_dims = _repo_root()
+        if root_dims:
+            src = str(root_dims / "analysis" / "src")
+            if src not in sys.path:
+                sys.path.insert(0, src)
+        from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
+
+    io_modes = io_modes_for_language(
+        (resolved.get("execution") or {}).get("io_modes"),
+        "python",
+        {s.name for s in serializers},
+    )
     compress_mode = (resolved.get("compression") or {}).get("mode") or "none"
     run_order = 0
     hard_stop = False
@@ -320,6 +364,8 @@ def run_v2(
                     break
                 serializer, serializable, expected, tip, size_gz, size_zstd = pack
                 for mode in io_modes:
+                    if not include_in_mode("python", ser_name, mode):
+                        continue
                     run_order = _run_reps_v2(
                         serializer,
                         serializable,
@@ -351,7 +397,11 @@ def run_v2(
                         print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
                         hard_stop = True
                         break
-                    pool = [nm for nm in eligible_names if nm not in failed_runtime]
+                    pool = [
+                        nm
+                        for nm in eligible_names
+                        if nm not in failed_runtime and include_in_mode("python", nm, mode)
+                    ]
                     order_names = shuffle_serializer_names(
                         pool,
                         base_seed=seed,

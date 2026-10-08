@@ -169,8 +169,16 @@ if want_lang java && command -v mvn >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/java
     echo ""
     echo -e "${BLUE}java compliance…${NC}"
     JAVA_OUT="$LOG_DIR/${TS}-java.json"
+    # exec.args is a plugin-wide property. Passing it during compile replaces the
+    # sbe-tool command line, so generate sources first, then run Compliance.
     set +e
-    (cd "$PROJECT_ROOT/java" && mvn -q -DskipTests compile exec:java -Dexec.mainClass=benchmark.Compliance -Dexec.args="--json-out ${JAVA_OUT} ${fmt_args[*]}")
+    (
+        cd "$PROJECT_ROOT/java" || exit 1
+        mvn -q -DskipTests compile || exit $?
+        # exec:java runs inside the Maven JVM. Arrow and Agrona need these opens.
+        JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" \
+            mvn -q -DskipTests exec:java -Dexec.mainClass=benchmark.Compliance -Dexec.args="--json-out ${JAVA_OUT} ${fmt_args[*]}"
+    )
     JAVA_ST=$?
     set -e
     if [[ "$JAVA_ST" -eq 0 && -s "$JAVA_OUT" ]]; then
@@ -196,17 +204,18 @@ fi
 if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c-sharp/src/Compliance.cs" ]]; then
     echo ""
     echo -e "${BLUE}csharp compliance…${NC}"
-    CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net8.0/GLD.SerializerBenchmark.dll"
+    CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net10.0/GLD.SerializerBenchmark.dll"
     if [[ ! -f "$CS_DLL" ]]; then
         (cd "$PROJECT_ROOT/c-sharp/src" && dotnet build -c Release --nologo -v q) || true
     fi
     CS_PART="$LOG_DIR/csharp-parts"
     mkdir -p "$CS_PART"
     CS_SERS=(
-        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "Jil" "SpanJson" "Utf8Json"
+        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "SpanJson" "Utf8Json"
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
-        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
+        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
+        "arrow-ipc" "parquet" "parquet-uncompressed"
     )
     # NetJSON hangs on some catalog cases; keep it out of the unattended loop.
     export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
@@ -284,8 +293,25 @@ fi
 NLOHMANN="$PROJECT_ROOT/cpp/third_party/nlohmann_json/include"
 if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/src/compliance.cpp" && -d "$NLOHMANN" ]]; then
     CPP_BIN="$LOG_DIR/compliance-cpp"
-    CPP_INC=(-I"$NLOHMANN")
+    CPP_INC=(-I"$NLOHMANN" -I"$PROJECT_ROOT/cpp/gen/sbe")
+    CPP_DEFS=()
+    CPP_LINK=()
     CPP_LIBS=()
+    ARROW_ROOT="${ARROW_ROOT:-/tmp/arrow-prefix/usr}"
+    ARROW_LIBDIR=""
+    if [[ -f "$ARROW_ROOT/include/arrow/api.h" ]]; then
+        if [[ -f "$ARROW_ROOT/lib/x86_64-linux-gnu/libarrow.so" ]]; then
+            ARROW_LIBDIR="$ARROW_ROOT/lib/x86_64-linux-gnu"
+        elif [[ -f "$ARROW_ROOT/lib/libarrow.so" ]]; then
+            ARROW_LIBDIR="$ARROW_ROOT/lib"
+        fi
+    fi
+    if [[ -n "$ARROW_LIBDIR" && -f "$ARROW_LIBDIR/libparquet.so" && -f "$ARROW_LIBDIR/libthrift.so" ]]; then
+        CPP_INC+=(-I"$ARROW_ROOT/include")
+        CPP_LIBS+=("$ARROW_LIBDIR/libparquet.so" "$ARROW_LIBDIR/libarrow.so" "$ARROW_LIBDIR/libthrift.so")
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_ARROW=1)
+        CPP_LINK+=(-pthread -Wl,--disable-new-dtags "-Wl,-rpath,$ARROW_LIBDIR")
+    fi
     for d in rapidjson/include glaze/include ArduinoJson/src jsoncons/include msgpack-c/include flatbuffers/include yaml-cpp/include; do
         if [[ -d "$PROJECT_ROOT/cpp/third_party/$d" ]]; then
             CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/$d")
@@ -296,7 +322,7 @@ if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/s
         CPP_LIBS+=("$YAML_LIB")
     fi
     if [[ ! -x "$CPP_BIN" || "$PROJECT_ROOT/cpp/src/compliance.cpp" -nt "$CPP_BIN" ]]; then
-        g++ -O2 -std=c++20 "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" -o "$CPP_BIN" || true
+        g++ -O2 -std=c++20 "${CPP_DEFS[@]}" "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" "${CPP_LINK[@]}" -o "$CPP_BIN" || true
     fi
     if [[ -x "$CPP_BIN" ]]; then
         run_lang cpp "$CPP_BIN"
@@ -372,6 +398,7 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
     MOJO_OUT="$LOG_DIR/${TS}-mojo.json"
     MOJO_BIN="$LOG_DIR/mojo-compliance"
     MOJO_PART="$LOG_DIR/mojo-parts"
+    rm -rf "$MOJO_PART"
     mkdir -p "$MOJO_PART"
     (
         cd "$PROJECT_ROOT/mojo"
@@ -383,6 +410,8 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
             -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src \
             -I vendor/msgpack_src -I vendor/fb_src -I vendor/avro_src \
             -I vendor/emberjson_src -I vendor/bson_src \
+            -I vendor/ion_src -I vendor/smile_src -I vendor/gldtoml_src \
+            -I vendor/arrow_src -I vendor/parquet_src \
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then
@@ -395,15 +424,19 @@ for src in sorted(root.rglob("*.json")):
     if src.name.startswith("_"):
         continue
     rel = src.relative_to(root)
-    if src.parent.name == "yaml":
+    # YAML catalogs are large enough to OOM EmberJson. Smile is split per
+    # case because one truncated header makes gld-smile 0.2.0 loop.
+    # TOML chunks stay small: a few DataBooth documents OOM the process.
+    step = 20 if src.parent.name == "yaml" else 4 if src.parent.name == "toml" else 1 if src.parent.name == "smile" else 0
+    if step:
         doc = json.loads(src.read_text())
         cases = doc.get("cases") or []
         meta = {k: v for k, v in doc.items() if k != "cases"}
-        step = 20
+        prefix = src.parent.name
         for i in range(0, len(cases), step):
             chunk = dict(meta)
             chunk["cases"] = cases[i : i + step]
-            out = dest / f"yaml-{src.stem}-{i:04d}.json"
+            out = dest / f"{prefix}-{src.stem}-{i:04d}.json"
             out.write_text(json.dumps(chunk, separators=(",", ":")))
     else:
         (dest / f"{rel.parent}-{src.stem}.json").write_text(src.read_text())
@@ -418,7 +451,50 @@ PY
             timeout 25 "$MOJO_BIN" --json-out "$out" --list "$list" "${fmt_args[@]+"${fmt_args[@]}"}"
             st=$?
             set -e
-            if [[ $st -ne 0 || ! -s "$out" ]]; then
+            if [[ $st -eq 124 ]]; then
+                echo -e "${YELLOW}⚠ mojo chunk $(basename "$chunk") timed out${NC}"
+                python3 - "$chunk" "$out" "$PROJECT_ROOT/compliance/serializer-standards.json" <<'PY'
+import json, sys
+from pathlib import Path
+suite = json.loads(Path(sys.argv[1]).read_text())
+standards = json.loads(Path(sys.argv[3]).read_text())
+fmt = suite.get("format") or ""
+version = suite.get("version") or ""
+names = [
+    name
+    for name, fmts in (standards.get("languages") or {}).get("mojo", {}).items()
+    if fmt in (fmts or [])
+]
+rows = []
+for case in suite.get("cases") or []:
+    for name in names or [""]:
+        rows.append({
+            "id": case.get("id") or "",
+            "language": "mojo",
+            "serializer": name,
+            "serializer_version": "0.2.0" if name == "mojo-smile" else "",
+            "format": fmt,
+            "standard": suite.get("standard") or "",
+            "standard_url": suite.get("standard_url") or "",
+            "version": version,
+            "version_key": f"{fmt}.{version}" if fmt else "",
+            "requirement": case.get("requirement") or "",
+            "expect": case.get("expect") or "",
+            "section": "",
+            "section_title": "",
+            "section_url": case.get("section_url") or "",
+            "paragraph": "",
+            "title": "",
+            "input": "",
+            "input_encoding": "",
+            "detail": "decoder did not finish within 25s",
+            "observed": "timeout",
+            "outcome": "error",
+        })
+Path(sys.argv[2]).write_text(json.dumps({"results": rows}))
+print(f"  recorded {len(rows)} timeout error(s)")
+PY
+            elif [[ $st -ne 0 || ! -s "$out" ]]; then
                 echo -e "${YELLOW}⚠ mojo chunk $(basename "$chunk") exited ${st}${NC}"
                 rm -f "$out"
             fi
@@ -432,6 +508,8 @@ for p in sorted(Path(sys.argv[1]).glob("*-out.json")):
     rows.extend(json.loads(p.read_text()).get("results") or [])
 passed = sum(1 for r in rows if r.get("outcome") == "pass")
 failed = sum(1 for r in rows if r.get("outcome") == "fail")
+skipped = sum(1 for r in rows if r.get("outcome") == "skip")
+errors = sum(1 for r in rows if r.get("outcome") not in ("pass", "fail", "skip"))
 doc = {
     "schema": "gld.dashboard.compliance/1",
     "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -441,8 +519,8 @@ doc = {
     "scope": {"formats": sorted({r.get("format") for r in rows if r.get("format")})},
     "passed": passed,
     "failed": failed,
-    "skipped": 0,
-    "errors": 0,
+    "skipped": skipped,
+    "errors": errors,
     "catalog_errors": [],
     "serializer_errors": [],
     "results": rows,

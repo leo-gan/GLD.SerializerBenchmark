@@ -35,6 +35,8 @@ Building without `--release` is the error that changes the numbers the most, bec
 
 Stream mode is native only where the serializer table says so. Elsewhere the stream path is the bytes path written through a cursor.
 
+`arrow-ipc` bytes are an IPC stream, not an Arrow file and not suite stream I/O. Schema selection and Parquet writer properties are outside the timer. Building the `RecordBatch`, and filling the SBE flyweight, is inside the timed serialize. `table_project` deserialize returns only `f_float_0` (Arrow `StreamReader::try_new` with field index 0, Parquet `ProjectionMask::columns` for `f_float_0`). Those rows have no compliance decoder. A comma in the serializer filter selects case-insensitive exact names; without a comma the filter stays a substring.
+
 These times cannot be ranked against a garbage-collected language as one contest.
 
 ### Where to go next
@@ -52,22 +54,27 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
+| [arrow-ipc](https://github.com/apache/arrow-rs) | Columnar | `arrow` 60.0.0 | IPC stream `RecordBatch` built in serialize | adapted | Bytes API is the IPC stream, not the file format. `table_project` uses `StreamReader::try_new(_, Some(vec![0]))`. No compliance decoder. |
 | [bincode](https://github.com/bincode-org/bincode) | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
 | [bitcode](https://github.com/SoftbearStudios/bitcode) | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | [bson](https://github.com/mongodb/bson-rust) | Document | `bson` | Serde | adapted | Document DB interop |
 | [ciborium](https://github.com/enarx/ciborium) | CBOR | `ciborium` | Serde | native | Reused write buffer |
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
+| [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
 | [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
+| [parquet](https://github.com/apache/arrow-rs) | Columnar | `parquet` 60.0.0 | `RecordBatch` in serialize; props in `prepare` | adapted | Snappy page codec. Encodings not overridden. `table_project`: `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
+| [parquet-uncompressed](https://github.com/apache/arrow-rs) | Columnar | `parquet` 60.0.0 | Same writer, compression off | adapted | `Compression::UNCOMPRESSED` only. |
 | [postcard](https://github.com/jamesmunns/postcard) | Binary | `postcard` | Serde | adapted | no_std-friendly format |
 | [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | [rmp-serde](https://github.com/3Hren/msgpack-rust) | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
-| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Direct value structs built in `prepare` (like prost's messages); timed encode is `write_into` only; bytes copied out because Dagr writes back-to-front |
-| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `regular` (vtable) node layout; no direct builder exists for it |
-| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen` node layout; no direct builder exists for it |
-| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen`+`packed` node layout; same call path as `dagr-packed` |
-| [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Direct value structs built in `prepare` (like prost's messages); timed encode is `write_into` only; bytes copied out because Dagr writes back-to-front |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `regular` (vtable) node layout; no direct builder exists for it |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | Generated **arena** built in `prepare`; timed arena serializer into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen` node layout; no direct builder exists for it |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | `frozen`+`packed` node layout; same call path as `dagr-packed` |
+| [sbe](https://github.com/aeron-io/simple-binary-encoding) | Binary schema | sbe-tool 1.40.2 | Flyweight filled in serialize | adapted | Logged version is the generator, not crate 0.1.0. No `nested_table`. No compliance decoder. |
+| [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records). Loads `schemas/v2/avro/*.avsc`. `table_project` full-decodes then keeps `f_float_0`. |
 | [serde_json](https://github.com/serde-rs/json) | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
 | [simd-json](https://github.com/simd-lite/simd-json) | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
 | [sonic-rs](https://github.com/cloudwego/sonic-rs) | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
@@ -76,6 +83,10 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [arrow-ipc](https://github.com/apache/arrow-rs) · `60.0.0`
+
+Apache Arrow shares columnar batches without a private copy at each boundary. This row times the arrow-rs IPC stream writer and reader inside the suite bytes API, not the Arrow file format. The schema is chosen in prepare. The `RecordBatch` is built inside serialize. `table_project` passes field index 0 to `StreamReader::try_new`. There is no compliance decoder.
 
 #### [bincode](https://github.com/bincode-org/bincode) · `2.0.1`
 
@@ -97,6 +108,10 @@ ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSO
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
+#### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.0.1`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (`to_binary` / `from_ion`). The public serde API allocates, so the stream column is adapted.
+
 #### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
 
 minicbor is a compact, often no_std CBOR codec with its own Encode/Decode traits. The problem was serde overhead and no_std needs. It implements RFC 8949 directly on structs.
@@ -104,6 +119,14 @@ minicbor is a compact, often no_std CBOR codec with its own Encode/Decode traits
 #### [nanoserde](https://github.com/not-fl3/nanoserde) · `0.1.37`
 
 nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path.
+
+#### [parquet](https://github.com/apache/arrow-rs) · `60.0.0`
+
+Apache Parquet is a columnar file for scans that touch a few fields. This row times arrow-rs `ArrowWriter` / `ParquetRecordBatchReaderBuilder`. Writer properties are built in prepare. The `RecordBatch` is built inside serialize. Page compression is Snappy; encodings are left at the builder default. arrow-rs 60's `DEFAULT_COMPRESSION` is UNCOMPRESSED, so this row sets Snappy explicitly. `table_project` uses `ProjectionMask::columns` on `f_float_0`. There is no compliance decoder.
+
+#### [parquet-uncompressed](https://github.com/apache/arrow-rs) · `60.0.0`
+
+Same Parquet writer as `parquet`, with `Compression::UNCOMPRESSED` and no encoding overrides. Use this size when the question is layout rather than Snappy.
 
 #### [postcard](https://github.com/jamesmunns/postcard) · `1.1.3`
 
@@ -121,13 +144,25 @@ rkyv is a zero-copy deserialization framework for Rust. The problem was that eve
 
 rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps.
 
-#### [dagr](https://codeberg.org/mzaks/dagr)
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
-Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The `dagr-packed` row uses the `packed` layout; its timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode.
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable).
 
-#### dagr-regular, dagr-frozen, dagr-frozen-packed
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
-The same schema also emits every suite type in Dagr's three other node layouts, one row each; decode is always the lazy reader → domain value. `regular` nodes carry a FlatBuffers-style vtable: random access and schema evolution, paid for with the largest bytes. `frozen` drops the vtable for a Cap'n Proto-style fixed positional struct with presence bits: smaller and zero-parse, but the node shape can never change (no compatibility at all). `packed` (the `dagr-packed` row) writes Protobuf-style tagged, varint fields inline: compact and still evolvable, read sequentially rather than by slot. `frozen`+`packed` is positional and inline: the smallest bytes, with neither evolution nor random access. `regular` and `frozen` have no direct builder, so their native model is the generated arena (built in `prepare`) and the timed encode is the arena serializer; `frozen-packed` uses the direct builder like `dagr-packed`.
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable).
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution).
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution).
+
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+
+Simple Binary Encoding is a fixed-layout binary codec aimed at low-latency messaging. This row times the Rust flyweights from sbe-tool 1.40.2 (vendored; the generated crate version 0.1.0 is not the logged version). Filling the flyweight is inside serialize. `nested_table` is not a body. There is no compliance decoder.
 
 #### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) · `2.1.1`
 
@@ -179,7 +214,8 @@ Compare serializers **inside the same family** only (JSON with JSON, not JSON wi
 |--------|---------|
 | JSON | `serde_json`, `simd-json`, `sonic-rs` |
 | Rust-centric binary | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
-| Schema / zero-copy | `flexbuffers`, `rkyv`, `prost` |
+| Schema / zero-copy | `flexbuffers`, `rkyv`, `prost`, `sbe` |
+| Columnar | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
 | Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde` |
 
 ## Numbers

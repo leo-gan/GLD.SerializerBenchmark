@@ -75,15 +75,41 @@ JSON_INVALID_UNQUOTED = "An object member name is a string, which is quoted."
 JSON_CTRL = "Unescaped control characters (U+0000 through U+001F) MUST NOT appear in a string."
 
 
+def _json_loc(url_base: str, topic: str) -> tuple[str, str, str]:
+    """(section, title, url) for an original JSON extra.
+
+    RFC 7159 and RFC 8259 share section numbers. RFC 4627 numbers values through
+    strings as §2.1–§2.5; §4–§7 of that RFC are parsers, generators, IANA, and
+    security, not the grammar productions.
+    """
+    if url_base.rstrip("/").endswith("rfc4627"):
+        mapping = {
+            "grammar": ("2", "JSON Grammar"),
+            "values": ("2.1", "Values"),
+            "object": ("2.2", "Objects"),
+            "array": ("2.3", "Arrays"),
+            "number": ("2.4", "Numbers"),
+            "string": ("2.5", "Strings"),
+        }
+    else:
+        mapping = {
+            "grammar": ("2", "JSON Grammar"),
+            "values": ("3", "Values"),
+            "object": ("4", "Objects"),
+            "array": ("5", "Arrays"),
+            "number": ("6", "Numbers"),
+            "string": ("7", "Strings"),
+        }
+    num, title = mapping[topic]
+    return num, title, f"{url_base}#section-{num}"
+
+
 def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> list[dict]:
-    u = lambda sec: f"{url_base}#section-{sec}"
     cases = [
         C(
             f"{prefix}-empty-object",
             "Empty object is a JSON text",
-            "2",
-            "JSON Grammar",
-            u("2"),
+            *_json_loc(url_base, "grammar"),
             "An object structure is represented as a pair of curly brackets surrounding zero or more name/value pairs.",
             "MUST",
             "accept",
@@ -93,9 +119,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-empty-array",
             "Empty array is a JSON text",
-            "5",
-            "Arrays",
-            u("5"),
+            *_json_loc(url_base, "array"),
             "An array structure is represented as square brackets surrounding zero or more values.",
             "MUST",
             "accept",
@@ -105,9 +129,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-object-mixed",
             "Object with string, number, bool, null, nested array",
-            "4",
-            "Objects",
-            u("4"),
+            *_json_loc(url_base, "object"),
             "An object is an unordered collection of zero or more name/value pairs.",
             "MUST",
             "accept",
@@ -117,9 +139,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-array-heterogeneous",
             "Array may mix JSON types",
-            "5",
-            "Arrays",
-            u("5"),
+            *_json_loc(url_base, "array"),
             "There is no requirement that the values in an array be of the same type.",
             "MUST",
             "accept",
@@ -129,9 +149,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-string-escapes",
             "Standard escape sequences",
-            "7",
-            "Strings",
-            u("7"),
+            *_json_loc(url_base, "string"),
             r'All Unicode characters may be placed within quotation marks except those that must be escaped: quotation mark, reverse solidus, and the control characters. Short escapes include \", \\, \/, \b, \f, \n, \r, \t, and \uXXXX.',
             "MUST",
             "accept",
@@ -141,9 +159,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-string-unicode",
             "Unicode code point via \\u and literal UTF-8",
-            "7",
-            "Strings",
-            u("7"),
+            *_json_loc(url_base, "string"),
             "Any code point may be represented as a hexadecimal escape; UTF-8 is the interchange encoding of the text.",
             "MUST",
             "accept",
@@ -153,9 +169,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-number-int",
             "Integer without leading zero",
-            "6",
-            "Numbers",
-            u("6"),
+            *_json_loc(url_base, "number"),
             "A number contains an integer component that may be prefixed with a minus sign.",
             "MUST",
             "accept",
@@ -165,9 +179,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-number-frac-exp",
             "Fractional number with exponent",
-            "6",
-            "Numbers",
-            u("6"),
+            *_json_loc(url_base, "number"),
             "A number may have a fractional part and/or an exponent part.",
             "MUST",
             "accept",
@@ -177,9 +189,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
         C(
             f"{prefix}-ws-around",
             "Insignificant whitespace around a value",
-            "2",
-            "JSON Grammar",
-            u("2"),
+            *_json_loc(url_base, "grammar"),
             "Whitespace may be inserted between any pair of tokens.",
             "MUST",
             "accept",
@@ -193,9 +203,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-string",
                     "A JSON text may be a string",
-                    "2",
-                    "JSON Grammar",
-                    u("2"),
+                    *_json_loc(url_base, "grammar"),
                     "A JSON text is a serialized value. Note that this is different from RFC 4627, which allowed only object or array at the top level.",
                     "MUST",
                     "accept",
@@ -205,9 +213,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-number",
                     "A JSON text may be a number",
-                    "2",
-                    "JSON Grammar",
-                    u("2"),
+                    *_json_loc(url_base, "grammar"),
                     "A JSON text is a serialized value.",
                     "MUST",
                     "accept",
@@ -217,9 +223,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-true",
                     "A JSON text may be true",
-                    "3",
-                    "Values",
-                    u("3"),
+                    *_json_loc(url_base, "values"),
                     "A JSON value MUST be an object, array, number, or string, or one of the literal names true, false, or null.",
                     "MUST",
                     "accept",
@@ -229,9 +233,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-null",
                     "A JSON text may be null",
-                    "3",
-                    "Values",
-                    u("3"),
+                    *_json_loc(url_base, "values"),
                     "A JSON value MUST be an object, array, number, or string, or one of the literal names true, false, or null.",
                     "MUST",
                     "accept",
@@ -246,9 +248,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-string-forbidden",
                     "RFC 4627 forbids a top-level string",
-                    "2",
-                    "JSON Grammar",
-                    u("2"),
+                    *_json_loc(url_base, "grammar"),
                     "A JSON text is a serialized object or array.",
                     "MUST",
                     "reject",
@@ -257,9 +257,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-number-forbidden",
                     "RFC 4627 forbids a top-level number",
-                    "2",
-                    "JSON Grammar",
-                    u("2"),
+                    *_json_loc(url_base, "grammar"),
                     "A JSON text is a serialized object or array.",
                     "MUST",
                     "reject",
@@ -268,9 +266,7 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
                 C(
                     f"{prefix}-top-true-forbidden",
                     "RFC 4627 forbids a top-level literal",
-                    "2",
-                    "JSON Grammar",
-                    u("2"),
+                    *_json_loc(url_base, "grammar"),
                     "A JSON text is a serialized object or array.",
                     "MUST",
                     "reject",
@@ -282,14 +278,11 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
 
 
 def json_common_reject(prefix: str, url_base: str) -> list[dict]:
-    u = lambda sec: f"{url_base}#section-{sec}"
     return [
         C(
             f"{prefix}-trailing-comma-object",
             "Trailing comma after the last object member is invalid",
-            "4",
-            "Objects",
-            u("4"),
+            *_json_loc(url_base, "object"),
             JSON_INVALID_TRAILING,
             "MUST NOT",
             "reject",
@@ -298,9 +291,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-trailing-comma-array",
             "Trailing comma after the last array element is invalid",
-            "5",
-            "Arrays",
-            u("5"),
+            *_json_loc(url_base, "array"),
             JSON_INVALID_TRAILING,
             "MUST NOT",
             "reject",
@@ -309,9 +300,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-single-quotes",
             "Single-quoted strings are not JSON",
-            "7",
-            "Strings",
-            u("7"),
+            *_json_loc(url_base, "string"),
             JSON_INVALID_SINGLE,
             "MUST NOT",
             "reject",
@@ -320,9 +309,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-comment",
             "C-style comments are not JSON",
-            "2",
-            "JSON Grammar",
-            u("2"),
+            *_json_loc(url_base, "grammar"),
             JSON_INVALID_COMMENT,
             "MUST NOT",
             "reject",
@@ -331,9 +318,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-bare-nan",
             "NaN is not a JSON number",
-            "6",
-            "Numbers",
-            u("6"),
+            *_json_loc(url_base, "number"),
             JSON_INVALID_NAN,
             "MUST NOT",
             "reject",
@@ -342,9 +327,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-infinity",
             "Infinity is not a JSON number",
-            "6",
-            "Numbers",
-            u("6"),
+            *_json_loc(url_base, "number"),
             "Numeric values that cannot be represented as sequences of digits (such as Infinity and NaN) are not permitted.",
             "MUST NOT",
             "reject",
@@ -353,9 +336,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-leading-zero",
             "Leading zeros are not allowed",
-            "6",
-            "Numbers",
-            u("6"),
+            *_json_loc(url_base, "number"),
             JSON_INVALID_LEAD0,
             "MUST NOT",
             "reject",
@@ -364,9 +345,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-unquoted-key",
             "Object member names must be strings",
-            "4",
-            "Objects",
-            u("4"),
+            *_json_loc(url_base, "object"),
             JSON_INVALID_UNQUOTED,
             "MUST NOT",
             "reject",
@@ -375,9 +354,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-unescaped-newline",
             "Unescaped U+000A in a string is invalid",
-            "7",
-            "Strings",
-            u("7"),
+            *_json_loc(url_base, "string"),
             JSON_CTRL,
             "MUST NOT",
             "reject",
@@ -386,9 +363,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-empty",
             "The empty document is not a JSON text",
-            "2",
-            "JSON Grammar",
-            u("2"),
+            *_json_loc(url_base, "grammar"),
             "A JSON text is a serialized value (RFC 7159/8259) or object/array (RFC 4627).",
             "MUST",
             "reject",
@@ -397,9 +372,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-extra-value",
             "Two top-level values are not a single JSON text",
-            "2",
-            "JSON Grammar",
-            u("2"),
+            *_json_loc(url_base, "grammar"),
             "A JSON text is one serialized value.",
             "MUST NOT",
             "reject",
@@ -408,9 +381,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
         C(
             f"{prefix}-true-wrong-case",
             "Literal names are lowercase only",
-            "3",
-            "Values",
-            u("3"),
+            *_json_loc(url_base, "values"),
             "The literal names MUST be lowercase. No other literal names are allowed.",
             "MUST NOT",
             "reject",
@@ -511,11 +482,11 @@ def write_json_suites() -> None:
                     f"{r8259}#section-4",
                     "The names within an object SHOULD be unique. When they are not, the behavior is unpredictable across implementations.",
                     "SHOULD",
-                    "accept",
+                    "any",
                     '{"harbor":1,"harbor":2}',
                     notes=(
-                        "SHOULD, not MUST. Recording which value wins (first vs last) is "
-                        "useful; both accepting and taking one of the values is common."
+                        "SHOULD, not MUST. Accepting either value, or rejecting the object, "
+                        "is conforming. The observed behavior is recorded and not scored."
                     ),
                 ),
                 C(

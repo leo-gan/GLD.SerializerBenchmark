@@ -283,23 +283,182 @@ static int pb_ok(const unsigned char *d, size_t n) {
   return 1;
 }
 
+static int proto_json_int_string(const char *s) {
+  if (!s || !*s) return 0;
+  if (*s == '-') s++;
+  if (!*s) return 0;
+  for (; *s; s++) {
+    if (*s < '0' || *s > '9') return 0;
+  }
+  return 1;
+}
+
+/* proto3 JSON mapping for the catalog message (n/s/ok/tags), not a generic JSON parse.
+   A message is an object. int32 accepts a number or a digit string, not an arbitrary string. */
+static int dec_proto_json(const unsigned char *data, size_t n) {
+  char *tmp = malloc(n + 1);
+  if (!tmp) return -1;
+  memcpy(tmp, data, n);
+  tmp[n] = 0;
+  cJSON *root = cJSON_Parse(tmp);
+  free(tmp);
+  if (!root) return -1;
+  int ok = 0;
+  if (!cJSON_IsObject(root)) {
+    ok = -1;
+  } else {
+    cJSON *nf = cJSON_GetObjectItemCaseSensitive(root, "n");
+    if (nf) {
+      if (cJSON_IsString(nf)) {
+        if (!proto_json_int_string(nf->valuestring)) ok = -1;
+      } else if (!cJSON_IsNumber(nf) && !cJSON_IsNull(nf)) {
+        ok = -1;
+      }
+    }
+    cJSON *sf = cJSON_GetObjectItemCaseSensitive(root, "s");
+    if (sf && !cJSON_IsString(sf) && !cJSON_IsNull(sf)) ok = -1;
+    cJSON *bf = cJSON_GetObjectItemCaseSensitive(root, "ok");
+    if (bf && !cJSON_IsBool(bf) && !cJSON_IsNull(bf)) ok = -1;
+    cJSON *tags = cJSON_GetObjectItemCaseSensitive(root, "tags");
+    if (tags && !cJSON_IsArray(tags) && !cJSON_IsNull(tags)) ok = -1;
+  }
+  cJSON_Delete(root);
+  return ok;
+}
+
 static int dec_protobuf_wire(const unsigned char *data, size_t n, const cJSON *schema) {
   if (schema && cJSON_IsString(schema) && schema->valuestring && strcmp(schema->valuestring, "json") == 0)
-    return dec_cjson(data, n, schema);
+    return dec_proto_json(data, n);
   return pb_ok(data, n) ? 0 : -1;
 }
 
 #ifdef HAS_UBJ
+/* Draft-12 structural check. The timed ubj row is a fixture codec, so compliance
+   cannot call it on these vectors; this walker accepts only a complete value. */
+static int ubj_skip(const unsigned char *d, size_t n, size_t *i, int depth);
+
+static int ubj_read_int(const unsigned char *d, size_t n, size_t *i, int64_t *out) {
+  if (*i >= n) return -1;
+  unsigned char t = d[(*i)++];
+  if (t == 'U' || t == 'i') {
+    if (*i >= n) return -1;
+    *out = t == 'U' ? (int64_t)d[*i] : (int64_t)(int8_t)d[*i];
+    (*i)++;
+    return *out < 0 ? -1 : 0;
+  }
+  if (t == 'I') {
+    if (*i + 2 > n) return -1;
+    int64_t v = ((int64_t)d[*i] << 8) | d[*i + 1];
+    *i += 2;
+    *out = v;
+    return 0;
+  }
+  if (t == 'l') {
+    if (*i + 4 > n) return -1;
+    uint32_t v = ((uint32_t)d[*i] << 24) | ((uint32_t)d[*i + 1] << 16) |
+                 ((uint32_t)d[*i + 2] << 8) | d[*i + 3];
+    *i += 4;
+    if (v > 0x7fffffffu) return -1;
+    *out = (int64_t)v;
+    return 0;
+  }
+  if (t == 'L') {
+    if (*i + 8 > n) return -1;
+    uint64_t v = 0;
+    for (int k = 0; k < 8; k++) v = (v << 8) | d[*i + k];
+    *i += 8;
+    if (v > (uint64_t)INT64_MAX) return -1;
+    *out = (int64_t)v;
+    return 0;
+  }
+  return -1;
+}
+
+static int ubj_skip_payload(const unsigned char *d, size_t n, size_t *i, unsigned char t) {
+  size_t k = 0;
+  if (t == 'Z' || t == 'N' || t == 'T' || t == 'F') return 0;
+  if (t == 'C' || t == 'U' || t == 'i') k = 1;
+  else if (t == 'I') k = 2;
+  else if (t == 'l' || t == 'd') k = 4;
+  else if (t == 'L' || t == 'D') k = 8;
+  else return -1;
+  if (*i + k > n) return -1;
+  *i += k;
+  return 0;
+}
+
+static int ubj_container(const unsigned char *d, size_t n, size_t *i, int is_object, int depth) {
+  if (depth > 32) return -1;
+  int has_type = 0;
+  unsigned char et = 0;
+  int64_t count = -1;
+  if (*i < n && d[*i] == '$') {
+    (*i)++;
+    if (*i >= n) return -1;
+    et = d[(*i)++];
+    has_type = 1;
+  }
+  if (*i < n && d[*i] == '#') {
+    (*i)++;
+    if (ubj_read_int(d, n, i, &count) || count < 0) return -1;
+  }
+  if (count >= 0) {
+    for (int64_t c = 0; c < count; c++) {
+      if (is_object) {
+        int64_t kn = 0;
+        if (ubj_read_int(d, n, i, &kn) || kn < 0) return -1;
+        if (*i + (size_t)kn > n) return -1;
+        *i += (size_t)kn;
+      }
+      if (has_type) {
+        if (ubj_skip_payload(d, n, i, et)) return -1;
+      } else if (ubj_skip(d, n, i, depth + 1)) {
+        return -1;
+      }
+    }
+    return 0;
+  }
+  {
+    unsigned char end = is_object ? '}' : ']';
+    while (*i < n && d[*i] != end) {
+      if (!is_object && d[*i] == 'N') {
+        (*i)++;
+        continue;
+      }
+      if (is_object) {
+        int64_t kn = 0;
+        if (ubj_read_int(d, n, i, &kn) || kn < 0) return -1;
+        if (*i + (size_t)kn > n) return -1;
+        *i += (size_t)kn;
+      }
+      if (ubj_skip(d, n, i, depth + 1)) return -1;
+    }
+    if (*i >= n || d[*i] != end) return -1;
+    (*i)++;
+    return 0;
+  }
+}
+
+static int ubj_skip(const unsigned char *d, size_t n, size_t *i, int depth) {
+  if (depth > 32 || *i >= n) return -1;
+  unsigned char t = d[(*i)++];
+  if (t == 'S' || t == 'H') {
+    int64_t ln = 0;
+    if (ubj_read_int(d, n, i, &ln) || ln < 0) return -1;
+    if (*i + (size_t)ln > n) return -1;
+    *i += (size_t)ln;
+    return 0;
+  }
+  if (t == '[') return ubj_container(d, n, i, 0, depth);
+  if (t == '{') return ubj_container(d, n, i, 1, depth);
+  return ubj_skip_payload(d, n, i, t);
+}
+
 static int dec_ubj(const unsigned char *data, size_t n, const cJSON *schema) {
   (void)schema;
-  if (n == 0) return -1;
-  /* A UBJSON value starts with a type marker. */
-  unsigned char t = data[0];
-  return (t == 'Z' || t == 'N' || t == 'T' || t == 'F' || t == 'i' || t == 'U' || t == 'I' ||
-          t == 'l' || t == 'L' || t == 'd' || t == 'D' || t == 'H' || t == 'C' || t == 'S' ||
-          t == '[' || t == '{')
-             ? 0
-             : -1;
+  size_t i = 0;
+  if (ubj_skip(data, n, &i, 0)) return -1;
+  return i == n ? 0 : -1;
 }
 #endif
 
@@ -309,6 +468,111 @@ static int dec_flatcc(const unsigned char *data, size_t n, const cJSON *schema) 
   /* FlatBuffers table buffers are at least a uoffset root. FlexBuffers catalog
    * cases will fail here — that is a real library/format mismatch, reported. */
   return n >= 4 ? 0 : -1;
+}
+#endif
+
+#ifdef HAS_IONC
+#include <ionc/ion.h>
+/* ion-c validates operator symbols, lob bodies, and annotation SIDs when the
+ * value is read. Skipping a positioned scalar leaves those checks unrun. */
+static int ion_read_scalar(hREADER rd, ION_TYPE t) {
+  iERR e = IERR_INVALID_ARG;
+  if (t == tid_NULL) {
+    ION_TYPE n;
+    e = ion_reader_read_null(rd, &n);
+  } else if (t == tid_BOOL) {
+    BOOL v;
+    e = ion_reader_read_bool(rd, &v);
+  } else if (t == tid_INT) {
+    ION_INT *v = NULL;
+    e = ion_int_alloc(NULL, &v);
+    if (e == IERR_OK) e = ion_reader_read_ion_int(rd, v);
+    ion_int_free(v);
+  } else if (t == tid_FLOAT) {
+    double v;
+    e = ion_reader_read_double(rd, &v);
+  } else if (t == tid_DECIMAL) {
+    ION_DECIMAL v;
+    ion_decimal_zero(&v);
+    e = ion_reader_read_ion_decimal(rd, &v);
+    ion_decimal_free(&v);
+  } else if (t == tid_TIMESTAMP) {
+    ION_TIMESTAMP v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_timestamp(rd, &v);
+  } else if (t == tid_SYMBOL) {
+    ION_SYMBOL v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_ion_symbol(rd, &v);
+  } else if (t == tid_STRING) {
+    ION_STRING v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_string(rd, &v);
+  } else if (t == tid_CLOB || t == tid_BLOB) {
+    SIZE n = 0;
+    e = ion_reader_get_lob_size(rd, &n);
+    if (e == IERR_OK) {
+      if (n > (SIZE)(8 * 1024 * 1024)) return -1;
+      BYTE *buf = n ? (BYTE *)malloc(n) : NULL;
+      if (n && !buf) return -1;
+      BYTE tiny = 0;
+      SIZE got = 0;
+      e = ion_reader_read_lob_bytes(rd, n ? buf : &tiny, n, &got);
+      free(buf);
+    }
+  }
+  return e == IERR_OK ? 0 : -1;
+}
+static int ion_consume(hREADER rd, ION_TYPE t) {
+  BOOL in_struct = 0;
+  if (ion_reader_is_in_struct(rd, &in_struct) != IERR_OK) return -1;
+  if (in_struct) {
+    ION_STRING name;
+    memset(&name, 0, sizeof name);
+    if (ion_reader_get_field_name(rd, &name) != IERR_OK) return -1;
+  }
+  SIZE ann = 0;
+  if (ion_reader_get_annotation_count(rd, &ann) != IERR_OK) return -1;
+  if (ann > 256) return -1;
+  if (ann) {
+    ION_STRING *names = (ION_STRING *)calloc(ann, sizeof *names);
+    if (!names) return -1;
+    SIZE got = 0;
+    iERR e = ion_reader_get_annotations(rd, names, ann, &got);
+    free(names);
+    if (e != IERR_OK) return -1;
+  }
+  BOOL is_null = 0;
+  if (ion_reader_is_null(rd, &is_null) != IERR_OK) return -1;
+  if (is_null) return 0;
+  if (t == tid_LIST || t == tid_SEXP || t == tid_STRUCT) {
+    if (ion_reader_step_in(rd) != IERR_OK) return -1;
+    for (;;) {
+      ION_TYPE child;
+      iERR e = ion_reader_next(rd, &child);
+      if (e == IERR_EOF || (e == IERR_OK && child == tid_EOF)) break;
+      if (e != IERR_OK) return -1;
+      if (ion_consume(rd, child) != 0) return -1;
+    }
+    return ion_reader_step_out(rd) == IERR_OK ? 0 : -1;
+  }
+  return ion_read_scalar(rd, t);
+}
+static int dec_ion(const unsigned char *data, size_t n, const cJSON *schema) {
+  (void)schema;
+  if (n == 0) return 0;
+  if (!data || n > 0x7fffffff) return -1;
+  hREADER rd = NULL;
+  if (ion_reader_open_buffer(&rd, (BYTE *)data, (SIZE)n, NULL) != IERR_OK) return -1;
+  int rc = 0;
+  for (;;) {
+    ION_TYPE t;
+    iERR e = ion_reader_next(rd, &t);
+    if (e == IERR_EOF || (e == IERR_OK && t == tid_EOF)) break;
+    if (e != IERR_OK || ion_consume(rd, t) != 0) { rc = -1; break; }
+  }
+  ion_reader_close(rd);
+  return rc;
 }
 #endif
 
@@ -412,6 +676,9 @@ int main(int argc, char **argv) {
 #endif
 #ifdef HAS_LIBYAML
   ADD("libyaml", "yaml", dec_yaml);
+#endif
+#ifdef HAS_IONC
+  ADD("ion-c", "ion", dec_ion);
 #endif
   ADD("protobuf-wire", "protobuf", dec_protobuf_wire);
 #ifdef HAS_NANOPB

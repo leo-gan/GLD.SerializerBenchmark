@@ -5,7 +5,7 @@ title: "C++"
 C++
 ===
 
-C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
+C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers, SBE), and **columnar** Arrow IPC, Parquet, and ORC.
 
 ## Runtime
 
@@ -24,7 +24,7 @@ C++ compiles to **native machine code**. There is no virtual machine. This runne
 
 ### What this suite runs
 
-The first CMake configure downloads the pinned third-party libraries. Official protobuf is a separate sysroot created by `cpp/scripts/setup-protobuf-sysroot.sh`. It is not the system `libprotobuf`. **glaze** is pinned to v2.9.5 because glaze v3 and later require C++23.
+The first CMake configure downloads the pinned third-party libraries. Official protobuf is a separate sysroot created by `cpp/scripts/setup-protobuf-sysroot.sh`. It is not the system `libprotobuf`. **glaze** is pinned to v2.9.5 because glaze v3 and later require C++23. Apache Arrow 25.0.1 is an optional prebuilt package (`-DARROW_ROOT=`), not a FetchContent pin. SBE 1.40.2 is vendored header-only output under `cpp/gen/sbe/`.
 
 ### What changes the numbers
 
@@ -49,13 +49,16 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 - Runner: `cpp/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Build: CMake **C++20**, deps via `FetchContent` → `cpp/third_party/` (pins in [`cpp/third_party/VERSIONS.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/third_party/VERSIONS.md))
 - Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
-- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp)
+- Apache Arrow 25.0.1: optional prebuilt prefix (`-DARROW_ROOT=` or `ARROW_ROOT`). Same feature set as the jammy apt packages `libarrow-dev` and `libparquet-dev` 25.0.1-1. Not FetchContent. ORC is inside `libarrow`. A missing prefix skips the Arrow rows and still builds the other serializers.
+- SBE 1.40.2: header-only codecs vendored in `cpp/gen/sbe/` from `schemas/v2/sbe/signal.xml`
+- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **35** codecs (**29** existing rows plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
 
 ## Serializers
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
 | [arduinojson](https://github.com/bblanchon/ArduinoJson) | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
+| [arrow-ipc](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `ipc::MakeStreamWriter` into a buffer | Uncompressed IPC stream. Row→column conversion is inside timed `serialize_bytes`. `table_project` uses `included_fields`. Stream **adapted**. Optional (`ARROW_ROOT`). No compliance decoder. |
 | [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | [avro_c](https://github.com/apache/avro) | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
 | [bitsery](https://github.com/fraillt/bitsery) | Binary | bitsery | serializer `object`/`container` | Explicit schema |
@@ -76,9 +79,14 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [nlohmann_json](https://github.com/nlohmann/json) | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
 | [nlohmann_msgpack](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
 | [nlohmann_ubjson](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
+| [orc](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = GZIP` | Adapter default is UNCOMPRESSED. This row sets Arrow `GZIP`, which the adapter stores as ORC ZLIB. Stream **adapted**. Optional. No compliance decoder. |
+| [orc-uncompressed](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = UNCOMPRESSED` | Explicit uncompressed ORC. |
+| [parquet](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::SNAPPY` | Writer default on 25.0.1 is UNCOMPRESSED, so this row sets Snappy. Stream **adapted**. Optional. No compliance decoder. |
+| [parquet-uncompressed](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::UNCOMPRESSED` | Explicit uncompressed Parquet. |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
 | [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp) | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
 | [rapidjson](https://github.com/Tencent/rapidjson) | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
+| [sbe](https://github.com/aeron-io/simple-binary-encoding) | Schema | SBE 1.40.2 | flyweight `wrapAndApplyHeader` inside timed `serialize_bytes` | Vendored codecs from `schemas/v2/sbe/signal.xml`. No `nested_table`. Stream **adapted**. No compliance decoder. |
 | [simdjson](https://github.com/simdjson/simdjson) | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
 | [thrift](https://github.com/apache/thrift) | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
 | [yas](https://github.com/niXman/yas) | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
@@ -92,6 +100,10 @@ Why each library exists, what problem it was written to solve, and how. Names li
 #### [arduinojson](https://github.com/bblanchon/ArduinoJson) · `7.4.3`
 
 ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model.
+
+#### [arrow-ipc](https://github.com/apache/arrow) · `25.0.1`
+
+Apache Arrow IPC writes a columnar record batch stream. This row uses `arrow::ipc::MakeStreamWriter` into a memory buffer (the stream writer, not the file writer) with no compression. Domain rows are converted to an Arrow table inside timed `serialize_bytes`. `table_project` deserialize sets `IpcReadOptions.included_fields` to the `f_float_0` column instead of reading every column and slicing. Stream calls are adapted to the bytes path. The row is omitted when `ARROW_ROOT` is unset. There is no compliance decoder.
 
 #### [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `binary-1.11`
 
@@ -173,6 +185,22 @@ nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ cou
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`.
 
+#### [orc](https://github.com/apache/arrow) · `25.0.1`
+
+`orc` writes with `arrow::adapters::orc::ORCFileWriter`. On Arrow 25.0.1 the adapter `WriteOptions` default is **UNCOMPRESSED**, so this row sets `Compression::GZIP`. The adapter stores that value as ORC ZLIB. `orc-uncompressed` sets `Compression::UNCOMPRESSED`. `table_project` calls `Read({"f_float_0"})`. Row→column conversion is inside timed `serialize_bytes`. Stream is adapted. No compliance decoder.
+
+#### [orc-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+
+Same ORC writer as `orc`, with `WriteOptions.compression` set to `arrow::Compression::UNCOMPRESSED`. The name is the override.
+
+#### [parquet](https://github.com/apache/arrow) · `25.0.1`
+
+`parquet` calls `parquet::arrow::WriteTable` with `Compression::SNAPPY`. Arrow C++ `WriterProperties` default on 25.0.1 is **UNCOMPRESSED**, so the suite name sets Snappy explicitly. `parquet-uncompressed` passes `Compression::UNCOMPRESSED`. `table_project` uses `ReadTable` with leaf column `{0}` (`f_float_0`). Conversion is inside timed `serialize_bytes`. Stream is adapted. No compliance decoder.
+
+#### [parquet-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+
+Same Parquet writer as `parquet`, with `WriterProperties::Builder::compression(UNCOMPRESSED)`. The name is the override.
+
 #### [protobuf](https://github.com/protocolbuffers/protobuf) · `3.12.4`
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
@@ -184,6 +212,10 @@ This row is the suite's in-tree proto3 tag reader/writer. It exists to measure t
 #### [rapidjson](https://github.com/Tencent/rapidjson) · `1.1.0`
 
 RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator.
+
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+
+Simple Binary Encoding is a flyweight codec: the generated C++ headers read and write fields at fixed offsets in a caller-owned buffer. This row vendors sbe-tool 1.40.2 output for `schemas/v2/sbe/signal.xml` (`table` and `signal` only; `nested_table` is not in the schema). `wrapAndApplyHeader` and the field stores run inside timed `serialize_bytes`. Stream is adapted. There is no compliance decoder.
 
 #### [simdjson](https://github.com/simdjson/simdjson) · `3.10.1`
 
@@ -215,6 +247,8 @@ for rep:
   to_domain (if needed)          # untimed
   fidelity(expected, actual)     # untimed
 ```
+
+For Arrow and SBE, `prepare` only stores the fixture. Building the Arrow table (or filling the SBE flyweight) runs inside timed `serialize_bytes`. `table_project` deserialize reads the `f_float_0` column only. Those rows are bytes-only in the columnar run config; the stream methods are adapted and are not a second codec.
 
 ## C vs C++ — clear separation
 
@@ -265,7 +299,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 6. **Not dual-registered (C-only or C++-only by design)**
    - **C-only in suite:** cJSON, jansson, parson, json-c, mpack, tinycbor, QCBOR, libbson, nanopb/protobuf-c log rows, flatcc, avro-c, zcbor.
-   - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, glaze, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API.
+   - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, glaze, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API, Arrow IPC/Parquet/ORC, SBE.
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
 
@@ -276,7 +310,11 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 - **protobuf** is official **libprotobuf** + protoc-generated stubs from `schemas/v2/protobuf/benchmark_v2.proto` (requires `cpp/scripts/setup-protobuf-sysroot.sh`). Domain→Message conversion is untimed (`prepare` / `to_domain`).
 - **capnproto** follows the same split: `prepare` fills a reused `MallocMessageBuilder`; the timer covers `messageToFlatArray` / `writeMessage` and reader setup; `to_domain` walks fields into suite structs. That matches libprotobuf and the [timing contract](../analysis/TIMING_HONESTY.md).
 - **protobuf-wire** is the previous in-tree proto3 field-tag codec (no libprotobuf); kept for comparison when the sysroot is absent or for wire-only baselines.
-- **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs).
+- **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs). The columnar type ids (`table`, `table_project`, `nested_table`, `signal`) are hand-built in the same slots as the Python FlatBuffers builder; they are not a shared `.fbs`.
+- **arrow-ipc**, **parquet**, **parquet-uncompressed**, **orc**, and **orc-uncompressed** require Arrow 25.0.1 via `ARROW_ROOT` (prebuilt `libarrow` / `libparquet`, not FetchContent). ORC symbols live in `libarrow`. Column conversion and the SBE flyweight fill are inside timed `serialize_bytes`. `table_project` reads only `f_float_0` (IPC `included_fields`, Parquet leaf column 0, ORC `Read({"f_float_0"})`). Stream is **adapted**. Columnar configs are bytes only. These rows have no compliance decoder.
+- **parquet** sets `Compression::SNAPPY`. On Arrow 25.0.1 the C++ writer default is **UNCOMPRESSED**, so the uncompressed twin is a separate row.
+- **orc** sets `Compression::GZIP`. The Arrow ORC adapter default is **UNCOMPRESSED**; the adapter stores `GZIP` as ORC ZLIB. **orc-uncompressed** leaves compression off.
+- **sbe** is SBE 1.40.2 header-only codecs vendored from `schemas/v2/sbe/signal.xml`. It supports `table`, `table_project`, and `signal`, and returns false for `nested_table`.
 - Stream mode is **native** where the library exposes streams/buffers and the benchmark runner uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).
 

@@ -1,7 +1,7 @@
 # Experiment 6 results — go
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/06-document-db-formats/go/logs/go/2026-08-17-110018.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/06-document-db-formats/go/logs/go/2026-09-29-184356.csv`
 **Language:** go
 **Sample:** one order-like record (`document`), 1 record per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| goccy/go-json | 0.10.6 | 1.38 | 2.31 | 3.72 | 448 | — | JSON — Experiment 1 | fastest | yes | 86 |
-| vmihailenco/msgpack | 5.4.1 | 2.36 | 4.07 | 6.41 | 397 | — | MessagePack | slower | yes | 87 |
-| mongo-bson | 1.17.9 | 5.88 | 6.64 | 13.0 | 525 | — | BSON | slower | yes | 91 |
+| goccy/go-json | 0.10.6 | 1.88 | 2.80 | 4.58 | 448 | 234 | JSON — Experiment 1 | fastest | yes | 88 |
+| vmihailenco/msgpack | 5.4.1 | 2.71 | 4.50 | 7.26 | 405 | 239 | MessagePack | slower | yes | 91 |
+| mongo-bson | 1.17.9 | 6.31 | 7.30 | 13.7 | 525 | 281 | BSON | slower | yes | 89 |
 
 ## Libraries that belong in the conversation
 

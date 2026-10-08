@@ -79,4 +79,62 @@ namespace GLD.SerializerBenchmark.TestData.V2
         public List<Type> SecondaryDataTypes => new List<Type> { typeof(EventAttr) };
         public object Data => _data;
     }
+
+    // Columnar ids. Not added to Program's fallback list or Exporter: old smoke
+    // must keep constructing only message and telemetry.
+    public sealed class TableDescription : ITestDataDescription
+    {
+        private readonly TableRow _data;
+        public TableDescription(int seed = 42)
+        {
+            _data = (TableRow)Generator.MakeOne("table", FallbackConfig.Empty, seed, 0);
+        }
+        public string Name => "table";
+        public string Description => "v2 table";
+        public Type DataType => typeof(TableRow);
+        public List<Type> SecondaryDataTypes => new List<Type>();
+        public object Data => _data;
+    }
+
+    public sealed class TableProjectDescription : ITestDataDescription
+    {
+        private readonly TableRow _data;
+        public TableProjectDescription(int seed = 42)
+        {
+            _data = (TableRow)Generator.MakeOne("table_project", FallbackConfig.Empty, seed, 0);
+        }
+        public string Name => "table_project";
+        public string Description => "v2 table_project";
+        public Type DataType => typeof(TableRow);
+        public List<Type> SecondaryDataTypes => new List<Type>();
+        public object Data => _data;
+    }
+
+    public sealed class NestedTableDescription : ITestDataDescription
+    {
+        private readonly NestedRow _data;
+        public NestedTableDescription(int seed = 42)
+        {
+            _data = (NestedRow)Generator.MakeOne("nested_table", FallbackConfig.Empty, seed, 0);
+        }
+        public string Name => "nested_table";
+        public string Description => "v2 nested_table";
+        public Type DataType => typeof(NestedRow);
+        public List<Type> SecondaryDataTypes => new List<Type> { typeof(NestedMeta), typeof(NestedItem) };
+        public object Data => _data;
+    }
+
+    public sealed class SignalDescription : ITestDataDescription
+    {
+        private readonly Signal _data;
+        public SignalDescription(int seed = 42)
+        {
+            _data = (Signal)Generator.MakeOne("signal", FallbackConfig.Empty, seed, 0);
+        }
+        public string Name => "signal";
+        public string Description => "v2 signal";
+        public Type DataType => typeof(Signal);
+        public List<Type> SecondaryDataTypes => new List<Type> { typeof(SignalLeg) };
+        public object Data => _data;
+    }
 }

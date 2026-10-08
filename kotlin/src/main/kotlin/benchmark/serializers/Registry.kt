@@ -37,14 +37,40 @@ object Registry {
             Entry("thrift", ::ThriftSer),
             Entry("flatbuffers", ::FlatBuffersSer),
             Entry("capnproto", ::CapnProtoSer),
+            Entry("arrow-ipc", ::ArrowIpcSer),
+            Entry("parquet", ::ParquetSer),
+            Entry("parquet-uncompressed", ::ParquetUncompressedSer),
+            Entry("orc", ::OrcSer),
+            Entry("orc-uncompressed", ::OrcUncompressedSer),
+            Entry("sbe", ::SbeSer),
         )
+
+    fun names(): List<String> = entries.map { it.name }
 
     fun all(): List<BenchSerializer> = select("")
 
+    /**
+     * Empty selects every name. A filter with no comma is a case-insensitive substring.
+     * A comma-separated list is case-insensitive exact names, in registry order.
+     * "protobuf" still matches protobuf-kotlin. "protobuf," and "protobuf,avro" do not.
+     */
     fun select(nameSubstring: String?): List<BenchSerializer> {
-        val filter = nameSubstring?.lowercase(Locale.ROOT) ?: ""
-        return entries
-            .filter { filter.isEmpty() || it.name.contains(filter) }
-            .map { it.factory() }
+        val filter = nameSubstring ?: ""
+        if (filter.isEmpty()) return entries.map { it.factory() }
+        val chosen =
+            if (!filter.contains(',')) {
+                val needle = filter.lowercase(Locale.ROOT)
+                entries.filter { it.name.lowercase(Locale.ROOT).contains(needle) }
+            } else {
+                // Kotlin rejects Java's split limit -1. Limit 0 drops trailing empties;
+                // empty pieces are dropped below, so "protobuf," is exact "protobuf".
+                val want =
+                    filter.split(",", limit = 0)
+                        .map { it.trim().lowercase(Locale.ROOT) }
+                        .filter { it.isNotEmpty() }
+                        .toSet()
+                entries.filter { it.name.lowercase(Locale.ROOT) in want }
+            }
+        return chosen.map { it.factory() }
     }
 }

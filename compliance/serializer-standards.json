@@ -68,6 +68,9 @@
       "custom-binary": [],
       "libyaml": [
         "yaml"
+      ],
+      "ion-c": [
+        "ion"
       ]
     },
     "python": {
@@ -137,6 +140,21 @@
       "py-ubjson": [
         "ubjson"
       ],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -173,6 +191,9 @@
       "bson": [
         "bson"
       ],
+      "ion-js": [
+        "ion"
+      ],
       "avsc": [
         "avro"
       ],
@@ -198,6 +219,15 @@
       "devalue": [],
       "sia": [],
       "bser": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -205,6 +235,9 @@
     },
     "go": {
       "encoding/json": [
+        "json"
+      ],
+      "encoding/json/v2": [
         "json"
       ],
       "goccy/go-json": [
@@ -255,11 +288,26 @@
       "mongo-bson": [
         "bson"
       ],
+      "ion-go": [
+        "ion"
+      ],
       "pelletier/go-toml": [
         "toml"
       ],
       "encoding/gob": [],
       "kelindar/binary": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "sbe": [
+        "sbe"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -318,7 +366,25 @@
       "kryo": [],
       "fory": [],
       "hessian": [],
-      "protostuff": []
+      "protostuff": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "kotlin": {
       "kotlinx-json": [
@@ -390,7 +456,25 @@
       "kotlinx-properties": [],
       "kryo": [],
       "fory": [],
-      "protostuff": []
+      "protostuff": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "csharp": {
       "System.Text.Json": [
@@ -400,9 +484,6 @@
         "json"
       ],
       "Json.Net (Helper)": [
-        "json"
-      ],
-      "Jil": [
         "json"
       ],
       "SpanJson": [
@@ -438,6 +519,9 @@
       ],
       "MessagePack-CSharp": [
         "msgpack"
+      ],
+      "Amazon.IonDotnet": [
+        "ion"
       ],
       "Google.Protobuf": [
         "protobuf"
@@ -475,11 +559,37 @@
       "Nerdbank.MessagePack": [
         "msgpack"
       ],
+      "ShapeShift.Cbor": [
+        "cbor"
+      ],
+      "ShapeShift.Json": [
+        "json"
+      ],
+      "ShapeShift.MsgPack": [
+        "msgpack"
+      ],
+      "ShapeShift.Protobuf": [],
+      "ShapeShift.Taml": [],
+      "ShapeShift.Toml": [
+        "toml"
+      ],
+      "ShapeShift.Yaml": [
+        "yaml"
+      ],
       "Migrant": [],
       "NetSerializer": [],
       "ServiceStack": [],
       "SharpSerializer": [],
-      "ZeroFormatter": []
+      "ZeroFormatter": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ]
     },
     "rust": {
       "serde_json": [
@@ -512,6 +622,9 @@
       "bson": [
         "bson"
       ],
+      "ion-rs": [
+        "ion"
+      ],
       "flexbuffers": [
         "flatbuffers"
       ],
@@ -521,6 +634,18 @@
       "postcard": [],
       "speedy": [],
       "rkyv": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "sbe": [
+        "sbe"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -602,7 +727,25 @@
       "custom_binary": [],
       "yas": [],
       "zpp_bits": [],
-      "boost_serialization": []
+      "boost_serialization": [],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
+      ],
+      "orc": [
+        "orc"
+      ],
+      "orc-uncompressed": [
+        "orc"
+      ],
+      "sbe": [
+        "sbe"
+      ]
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -757,14 +900,32 @@
       "mojo-toml": [
         "toml"
       ],
+      "gld-toml": [
+        "toml"
+      ],
       "mojo-msgpack": [
         "msgpack"
       ],
       "mojo-bson": [
         "bson"
       ],
+      "mojo-ion": [
+        "ion"
+      ],
+      "mojo-smile": [
+        "smile"
+      ],
       "gld-yaml": [
         "yaml"
+      ],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
       ],
       "dagr-packed": [],
       "dagr-regular": [],

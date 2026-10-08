@@ -1,7 +1,7 @@
 # Experiment 1 results — csharp
 
-**Date:** 2026-08-16
-**Raw file:** `experiments/01-json-library-bakeoff/csharp/logs/csharp/2026-08-16-150610.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/01-json-library-bakeoff/csharp/logs/csharp/2026-09-29-184038.csv`
 **Language:** csharp
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,35 +12,35 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| SpanJson | 4.2.1 | 7.61 | 5.39 | 12.9 | 440 | — | yes | fastest | yes | 91 |
-| NetJSON | 1.0.0 | 10.6 | 12.5 | 23.0 | 440 | — | yes | slower | yes | 90 |
-| Utf8Json | 1.3.7 | 12.6 | 13.9 | 26.3 | 440 | — | yes | slower | yes | 90 |
-| MS Bond Json | .NET 8.0.28 | 17.6 | 18.8 | 36.2 | 440 | — | yes | slower | yes | 90 |
-| Jil | 2.17.0 | 23.9 | 14.4 | 38.4 | 440 | — | yes | slower | yes | 88 |
-| System.Text.Json | 8.0.0.0 | 32.2 | 31.8 | 63.9 | 588 | — | yes | slower | yes | 93 |
-| ServiceStack Json | 6.11.0 | 37.5 | 35.0 | 72.4 | 440 | — | yes | slower | yes | 87 |
-| fastJson | 2.4.0.4 | 37.2 | 48.4 | 85.7 | 972 | — | yes | slower | yes | 91 |
-| Json.Net (Helper) | 13.0.4 | 38.6 | 46.7 | 86.9 | 541 | — | yes | slower | yes | 90 |
-| Json.Net | 13.0.4 | 37.3 | 49.0 | 87.3 | 560 | — | yes | slower | yes | 91 |
-| FsPicklerJson | 5.3.2 | 47.8 | 43.7 | 92.6 | 1024 | — | yes | slower | yes | 91 |
-| MS DataContract Json | .NET 8.0.28 | 32.0 | 60.5 | 93.2 | 588 | — | yes | slower | yes | 95 |
+| SpanJson | 4.2.1 | 8.61 | 5.53 | 14.2 | 440 | 237 | yes | fastest | yes | 88 |
+| NetJSON | 1.0.0 | 9.66 | 12.9 | 22.7 | 440 | 237 | yes | slower | yes | 91 |
+| Utf8Json | 1.3.7 | 13.1 | 14.0 | 26.7 | 440 | 237 | yes | slower | yes | 86 |
+| MS Bond Json | .NET 8.0.28 | 18.4 | 19.0 | 37.3 | 440 | 237 | yes | slower | yes | 91 |
+| Jil | 2.17.0 | 26.6 | 13.9 | 40.8 | 440 | 241 | yes | slower | yes | 87 |
+| System.Text.Json | 8.0.0.0 | 31.9 | 29.7 | 62.0 | 440 | 237 | yes | slower | yes | 87 |
+| ServiceStack Json | 6.11.0 | 38.4 | 34.8 | 73.2 | 440 | 237 | yes | slower | yes | 91 |
+| fastJson | 2.4.0.4 | 37.5 | 49.8 | 87.0 | 972 | 363 | yes | slower | yes | 95 |
+| MS DataContract Json | .NET 8.0.28 | 31.4 | 56.5 | 87.8 | 440 | 237 | yes | slower | yes | 94 |
+| FsPicklerJson | 5.3.2 | 48.7 | 42.7 | 91.9 | 768 | 422 | yes | slower | yes | 93 |
+| Json.Net | 13.0.4 | 41.7 | 50.3 | 92.6 | 560 | 265 | yes | slower | yes | 96 |
+| Json.Net (Helper) | 13.0.4 | 44.1 | 49.8 | 93.9 | 541 | 264 | yes | slower | yes | 93 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| SpanJson | 9.55 | 7.88 | 17.6 | text_on_stream |
-| Utf8Json | 13.1 | 16.2 | 29.2 | text_on_stream |
-| NetJSON | 11.8 | 17.5 | 29.7 | copied |
-| Jil | 24.4 | 16.9 | 41.5 | text_on_stream |
-| MS Bond Json | 18.9 | 23.4 | 43.2 | text_on_stream |
-| System.Text.Json | 32.8 | 28.7 | 61.4 | text_on_stream |
-| ServiceStack Json | 41.2 | 41.8 | 83.0 | text_on_stream |
-| fastJson | 37.6 | 55.3 | 92.4 | copied |
-| FsPicklerJson | 47.3 | 46.3 | 92.7 | text_on_stream |
-| Json.Net | 40.4 | 55.8 | 96.3 | text_on_stream |
-| MS DataContract Json | 35.1 | 71.2 | 105 | text_on_stream |
-| Json.Net (Helper) | 46.6 | 58.6 | 107 | text_on_stream |
+| SpanJson | 10.3 | 7.42 | 17.8 | text_on_stream |
+| NetJSON | 11.2 | 17.3 | 28.5 | copied |
+| Utf8Json | 14.4 | 17.4 | 31.8 | text_on_stream |
+| Jil | 27.2 | 17.8 | 45.4 | text_on_stream |
+| MS Bond Json | 20.6 | 25.7 | 46.1 | text_on_stream |
+| System.Text.Json | 32.1 | 25.6 | 58.3 | text_on_stream |
+| ServiceStack Json | 41.5 | 40.8 | 82.1 | text_on_stream |
+| fastJson | 35.6 | 52.9 | 89.3 | copied |
+| MS DataContract Json | 32.2 | 58.3 | 90.8 | text_on_stream |
+| FsPicklerJson | 53.4 | 52.5 | 107 | text_on_stream |
+| Json.Net | 49.7 | 64.6 | 113 | text_on_stream |
+| Json.Net (Helper) | 53.0 | 63.5 | 117 | text_on_stream |
 
 ## Libraries that belong in the conversation
 

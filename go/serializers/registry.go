@@ -5,6 +5,7 @@ func All() []BenchSerializer {
 	return []BenchSerializer{
 		// JSON family
 		newEncodingJSON(),
+		newEncodingJSONV2(),
 		newSonicJSON(),
 		newGoccyJSON(),
 		newJSONIter(),
@@ -20,6 +21,7 @@ func All() []BenchSerializer {
 		newKelindarBinary(),
 		newEncodingGob(),
 		newMongoBSON(),
+		newAmazonIon(),
 		// Text document formats
 		newGoccyYAML(),
 		newPelletierTOML(),
@@ -31,5 +33,10 @@ func All() []BenchSerializer {
 		newDagrFrozenPacked(),
 		newHambaAvro(),
 		newLinkedInGoavro(),
+		// Columnar / fixed-wire. Stable order.
+		newArrowIPC(),
+		newParquet(),
+		newParquetUncompressed(),
+		newSBE(),
 	}
 }

@@ -2,11 +2,12 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (24)
+## Serializers (30)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
-| encoding/json | JSON | stdlib | `Marshal`/`Unmarshal`; stream `Encoder` with `SetEscapeHTML(false)` |
+| encoding/json | JSON | stdlib | v1 API. `Marshal`/`Unmarshal`; stream `Encoder` with `SetEscapeHTML(false)`. On Go 1.27 this keeps v1 semantics |
+| encoding/json/v2 | JSON | stdlib | v2 defaults. `Marshal`/`Unmarshal`; stream `MarshalWrite`/`UnmarshalRead` |
 | sonic | JSON | `github.com/bytedance/sonic` | `ConfigDefault` + `Pretouch` in `prepare` |
 | goccy/go-json | JSON | `github.com/goccy/go-json` | drop-in fast JSON; native stream |
 | jsoniter | JSON | `github.com/json-iterator/go` | `ConfigCompatibleWithStandardLibrary` |
@@ -21,6 +22,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | kelindar/binary | Binary | `github.com/kelindar/binary` | reused `Encoder.Reset`; Go-only wire |
 | encoding/gob | Native binary | stdlib | types registered once; buffer `Reset` |
 | mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; stream length-prefixed doc |
+| ion-go | Binary | `github.com/amazon-ion/ion-go` | `MarshalBinary` / `Unmarshal`; native binary encoder stream. Suite structs have no `ion` tags, so wire names are the Go field names |
 | goccy/go-yaml | YAML | `github.com/goccy/go-yaml` | `Marshal`/`Unmarshal`; stream Encoder |
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
 | protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; **stream adapted** (bytes-only API) |
@@ -29,13 +31,17 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | dagr-frozen | Schema | `gen/dagrv2/<type>frozengraph` (same `dagr build`) | frozen (fixed-struct) nodes: generated arena built in `Prepare` (untimed), `AppendTo<Graph>(b, dst, root)` into one reused `dagr.Builder` timed / lazy accessors → domain value timed; framing and stream as `dagr-packed` |
 | dagr-frozen-packed | Schema | `gen/dagrv2/<type>frozenpackedgraphdirect` (same `dagr build`) | frozen+packed nodes: same call path as `dagr-packed` (direct builder `BuildAppend`, one builder reused / lazy accessors); framing and stream as `dagr-packed` |
 | hamba/avro | Schema | `github.com/hamba/avro/v2` | frozen `API` + schema cache; **native stream** `NewEncoder`/`NewDecoder` |
-| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `BinaryFromNative`; **stream adapted** (OCF is different format) |
+| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `BinaryFromNative`; **stream adapted** (OCF is different format). Original five type ids only |
+| arrow-ipc | Columnar | `github.com/apache/arrow-go/v18` | IPC **stream** bytes (not the file format). Schema in `Prepare`. Record batch built inside `SerializeBytes`. `table_project` reads the `f_float_0` value buffer. **Stream adapted**. No compliance decoder |
+| parquet | Columnar | `github.com/apache/arrow-go/v18` | `pqarrow` file. arrow-go's writer default is uncompressed; this row sets **Snappy**. `table_project` passes column index 0. Schema in `Prepare`. **Stream adapted**. No compliance decoder |
+| parquet-uncompressed | Columnar | `github.com/apache/arrow-go/v18` | Same writer with compression off. **Stream adapted**. No compliance decoder |
+| sbe | Fixed wire | sbe-tool `1.40.2` | Go flyweight filled inside `SerializeBytes` (not in `Prepare`). `table`, `table_project`, `signal`. No `nested_table`. **Stream adapted**. No compliance decoder |
 
 ### Call-path contract
 
 1. `Prepare(fixture)` — untimed  
 2. `SerializeBytes` / `DeserializeBytes` — timed  
-3. Stream: **native** (library `io.Reader`/`io.Writer` APIs) or **adapted** (`Marshal`→`Write` / `ReadAll`→`Unmarshal`) via `StreamMode`
+3. Stream: **native** (library `io.Reader`/`io.Writer` APIs) or **adapted** (`Marshal`→`Write` / `ReadAll`→`Unmarshal`) via `StreamMode`. Columnar rows time the bytes API. Their adapted stream methods must not crash. There is no compliance decoder.
 
 ### Not registered (by design)
 
@@ -45,8 +51,8 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Test data
 
-Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`  
-(smoke filter default: `message`).
+Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`, `table`, `table_project`, `nested_table`, `signal`  
+(smoke filter default: `message`. The four columnar ids are not in the default or smoke run config.)
 
 ## Run
 
@@ -60,7 +66,7 @@ go build -o bin/serializer-benchmark-go .
 ./bin/serializer-benchmark-go 100
 ```
 
-Requires Go **1.24+**. `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/go/`).
+Requires Go **1.27+** (`go.mod` toolchain `go1.27.1`). A 1.22+ bootstrap is enough when `GOTOOLCHAIN=auto` can download that toolchain. Do not set `GOEXPERIMENT=nojsonv2`; that build hides `encoding/json/v2`. `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/go/`).
 
 Analysis: `analyze-benchmarks -l go`.
 
@@ -68,3 +74,4 @@ Analysis: `analyze-benchmarks -l go`.
 
 - `scripts/generate-protobuf.sh` regenerates Data Model v2 protobuf bindings into `gen/pbv2/`.  
 - Generated code under `gen/pbv2/` is committed for offline builds.
+- `gen/sbe/` is the sbe-tool 1.40.2 Go flyweight for `schemas/v2/sbe/signal.xml` (package `benchmark_v2`). Regenerate only with that jar. Do not reorder the XML.

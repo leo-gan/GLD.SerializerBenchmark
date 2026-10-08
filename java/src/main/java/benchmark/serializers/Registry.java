@@ -1,8 +1,10 @@
 package benchmark.serializers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /** Registered serializers in stable display order (lazy construction). */
@@ -34,7 +36,13 @@ public final class Registry {
           new Entry("protobuf", ProtobufSer::new),
           new Entry("avro", AvroSer::new),
           new Entry("flatbuffers", FlatBuffersSer::new),
-          new Entry("capnproto", CapnProtoSer::new));
+          new Entry("capnproto", CapnProtoSer::new),
+          new Entry("arrow-ipc", ArrowIpcSer::new),
+          new Entry("parquet", ParquetSer::new),
+          new Entry("parquet-uncompressed", ParquetUncompressedSer::new),
+          new Entry("orc", OrcSer::new),
+          new Entry("orc-uncompressed", OrcUncompressedSer::new),
+          new Entry("sbe", SbeSer::new));
 
   private Registry() {}
 
@@ -42,6 +50,13 @@ public final class Registry {
     return select("");
   }
 
+  public static List<String> names() {
+    List<String> out = new ArrayList<>(ENTRIES.size());
+    for (Entry e : ENTRIES) out.add(e.name());
+    return out;
+  }
+
+  /** Case-insensitive substring match. Empty selects every serializer. */
   public static List<BenchSerializer> select(String nameSubstring) {
     String filter = nameSubstring == null ? "" : nameSubstring.toLowerCase(Locale.ROOT);
     List<BenchSerializer> list = new ArrayList<>();
@@ -50,6 +65,19 @@ public final class Registry {
         continue;
       }
       list.add(e.factory().get());
+    }
+    return list;
+  }
+
+  /** Registry order. Unknown names are skipped. */
+  public static List<BenchSerializer> byNames(List<String> names) {
+    Map<String, Entry> byName = new HashMap<>();
+    for (Entry e : ENTRIES) byName.put(e.name(), e);
+    List<BenchSerializer> list = new ArrayList<>();
+    if (names == null) return list;
+    for (String name : names) {
+      Entry e = byName.get(name);
+      if (e != null) list.add(e.factory().get());
     }
     return list;
   }

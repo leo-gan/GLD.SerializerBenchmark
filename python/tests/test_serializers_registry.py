@@ -45,7 +45,7 @@ def test_v2_types_supported_by_schemaless_serializers():
 
     v2_types = ("message", "document", "telemetry", "strings", "event")
     schemaless = {
-        "json", "orjson", "msgspec", "rapidjson", "msgpack", "cbor2",
+        "json", "orjson", "msgspec", "rapidjson", "msgpack", "cbor2", "amazon-ion",
         "pickle", "cloudpickle", "dill", "pydantic", "mashumaro",
     }
     for ser in ALL_SERIALIZERS:
@@ -64,6 +64,7 @@ def test_full_runner_registry_size():
         "json", "orjson", "msgspec", "pydantic", "mashumaro", "serpyco-rs",
         "msgpack", "cbor2", "protobuf", "avro", "flatbuffers", "yaml",
         "pickle", "cloudpickle", "dill",
+        "arrow-ipc", "parquet", "parquet-uncompressed", "orc", "orc-uncompressed",
     ):
         assert required in names
 

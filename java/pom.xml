@@ -16,6 +16,11 @@
     <jackson.version>2.19.0</jackson.version>
     <protobuf.version>4.35.0</protobuf.version>
     <avro.version>1.12.1</avro.version>
+    <arrow.version>19.0.0</arrow.version>
+    <parquet.version>1.18.1</parquet.version>
+    <orc.version>2.3.1</orc.version>
+    <agrona.version>2.6.1</agrona.version>
+    <sbe.version>1.40.2</sbe.version>
   </properties>
 
   <dependencies>
@@ -143,6 +148,49 @@
       <version>${avro.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-vector</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <!-- arrow-vector marks the Netty allocator test-scoped; RootAllocator needs it at runtime. -->
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-avro</artifactId>
+      <version>${parquet.version}</version>
+    </dependency>
+    <!-- nohive relocates hive-storage-api vectors to org.apache.orc.storage and
+         calls org.apache.orc.protobuf. The default orc-format jar is compiled
+         against com.google.protobuf, so this build uses orc-format nohive. -->
+    <dependency>
+      <groupId>org.apache.orc</groupId>
+      <artifactId>orc-core</artifactId>
+      <version>${orc.version}</version>
+      <classifier>nohive</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.orc</groupId>
+          <artifactId>orc-format</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.orc</groupId>
+      <artifactId>orc-format</artifactId>
+      <version>1.1.1</version>
+      <classifier>nohive</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.agrona</groupId>
+      <artifactId>agrona</artifactId>
+      <version>${agrona.version}</version>
+    </dependency>
+    <!-- sbe-all is copied in generate-sources and run as a jar. Agrona is the runtime. -->
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-nop</artifactId>
       <version>2.0.13</version>
@@ -193,13 +241,57 @@
             --add-opens java.base/java.text=ALL-UNNAMED
             --add-opens java.base/java.io=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED
+            --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
           </argLine>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.8.1</version>
+        <executions>
+          <execution>
+            <id>copy-sbe-all</id>
+            <phase>generate-sources</phase>
+            <goals><goal>copy</goal></goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>uk.co.real-logic</groupId>
+                  <artifactId>sbe-all</artifactId>
+                  <version>${sbe.version}</version>
+                  <outputDirectory>${project.build.directory}/sbe</outputDirectory>
+                  <destFileName>sbe-all.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>sbe-java</id>
+            <phase>generate-sources</phase>
+            <goals><goal>exec</goal></goals>
+            <configuration>
+              <executable>${java.home}/bin/java</executable>
+              <arguments>
+                <argument>--add-opens</argument>
+                <argument>java.base/jdk.internal.misc=ALL-UNNAMED</argument>
+                <argument>-Dsbe.output.dir=${project.build.directory}/generated-sources/sbe</argument>
+                <argument>-Dsbe.target.language=Java</argument>
+                <argument>-jar</argument>
+                <argument>${project.build.directory}/sbe/sbe-all.jar</argument>
+                <argument>${project.basedir}/../schemas/v2/sbe/signal.xml</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -236,9 +328,77 @@
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/**/module-info.class</exclude>
                   </excludes>
                 </filter>
               </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>avro-namespace</id>
+            <phase>generate-sources</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.build.directory}/avro-schema"/>
+                <copy todir="${project.build.directory}/avro-schema" overwrite="true">
+                  <fileset dir="${project.basedir}/../schemas/v2/avro">
+                    <include name="table.avsc"/>
+                    <include name="nested_table.avsc"/>
+                    <include name="signal.avsc"/>
+                  </fileset>
+                </copy>
+                <!-- Protobuf already owns package benchmark.v2. Nested records inherit this namespace. -->
+                <replaceregexp
+                    match="&quot;namespace&quot;: &quot;benchmark\.v2&quot;"
+                    replace="&quot;namespace&quot;: &quot;benchmark.v2.avro&quot;"
+                    byline="true"
+                    flags="g">
+                  <fileset dir="${project.build.directory}/avro-schema" includes="*.avsc"/>
+                </replaceregexp>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro-maven-plugin</artifactId>
+        <version>${avro.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals><goal>schema</goal></goals>
+            <configuration>
+              <sourceDirectory>${project.build.directory}/avro-schema</sourceDirectory>
+              <outputDirectory>${project.build.directory}/generated-sources/avro</outputDirectory>
+              <stringType>String</stringType>
+              <fieldVisibility>private</fieldVisibility>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>add-sbe-sources</id>
+            <phase>generate-sources</phase>
+            <goals><goal>add-source</goal></goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/sbe</source>
+              </sources>
             </configuration>
           </execution>
         </executions>

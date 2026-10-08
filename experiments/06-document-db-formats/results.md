@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -19,7 +19,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr` | [javascript/results.md](javascript/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `vmihailenco/msgpack` | [go/results.md](go/results.md) |
-| rust | ok | `rmp-serde` | — | `rmp-serde` | [rust/results.md](rust/results.md) |
+| rust | ok | `rmp-serde` | `sonic-rs` | `rmp-serde` | [rust/results.md](rust/results.md) |
 | c | ok | `mpack` | — | `mpack` | [c/results.md](c/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
 | zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
@@ -70,9 +70,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| JSON.stringify | 7.13 | 448 | JSON | fastest |
-| msgpackr | 17.6 | 345 | MessagePack | slower |
-| bson | 27.2 | 493 | BSON | slower |
+| JSON.stringify | 10.3 | 448 | JSON | fastest |
+| msgpackr | 19.7 | 345 | MessagePack | slower |
+| bson | 32.6 | 493 | BSON | slower |
 
 ### go
 
@@ -80,9 +80,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| goccy/go-json | 3.72 | 448 | JSON — Experiment 1 | fastest |
-| vmihailenco/msgpack | 6.41 | 397 | MessagePack | slower |
-| mongo-bson | 13.0 | 525 | BSON | slower |
+| goccy/go-json | 4.58 | 448 | JSON — Experiment 1 | fastest |
+| vmihailenco/msgpack | 7.26 | 405 | MessagePack | slower |
+| mongo-bson | 13.7 | 525 | BSON | slower |
 
 ### rust
 
@@ -90,9 +90,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| rmp-serde | 1.41 | 333 | MessagePack | fastest |
-| sonic-rs | 1.80 | 460 | JSON — Experiment 1 | slower |
-| bson | 3.92 | 540 | BSON | slower |
+| rmp-serde | 3.01 | 333 | MessagePack | fastest |
+| sonic-rs | 3.44 | 460 | JSON — Experiment 1 | close |
+| bson | 7.11 | 540 | BSON | slower |
 
 ### c
 
@@ -100,9 +100,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mpack | 2.82 | 335 | MessagePack | fastest |
-| yyjson | 4.79 | 460 | JSON — Experiment 1 | slower |
-| libbson | 6.71 | 577 | BSON | slower |
+| mpack | 3.12 | 335 | MessagePack | fastest |
+| yyjson | 6.15 | 460 | JSON — Experiment 1 | slower |
+| libbson | 8.62 | 577 | BSON | slower |
 
 ### swift
 

@@ -21,10 +21,14 @@ forbidden_type_config_keys:
   - n
   - return_array_even_for_1_instance
 
+# data_set is the parent of a type id. suite = the five publication types.
+# columnar = table, table_project, nested_table, and signal.
+# A serializer is measured only on the sets it already supports.
 types:
   message:
     description: "Single-level map/struct of mixed primitives"
     category: flat_mixed
+    data_set: suite
     default_type_config:
       field_count: 8
       primitive_types: all_available
@@ -39,6 +43,7 @@ types:
   document:
     description: "Nested structure; structure dominates cost"
     category: nested
+    data_set: suite
     default_type_config:
       children: 8
       fields_per_child: 3
@@ -50,6 +55,7 @@ types:
   telemetry:
     description: "Mostly numeric bulk inside one instance"
     category: numeric_bulk
+    data_set: suite
     default_type_config:
       points: 32
       number_type: float64
@@ -61,6 +67,7 @@ types:
   strings:
     description: "Homogeneous text bulk; trivial shell"
     category: text_bulk
+    data_set: suite
     default_type_config:
       count: 32
       string_len:
@@ -71,9 +78,58 @@ types:
   event:
     description: "Stream envelope; batch via data_type_instance_count"
     category: envelope
+    data_set: suite
     default_type_config:
       attr_count: 4
       string_len:
         min: 3
         max: 12
       include_payload_bytes: 0
+
+  # Columnar and aligned-record types. They are not in default.yaml or smoke.yaml.
+  # Run them from config/library/columnar.yaml with an explicit serializer allow-list.
+  table:
+    description: "Wide flat row: 16 float64, 4 int64, then 2 utf8 strings"
+    category: columnar_flat
+    data_set: columnar
+    default_type_config:
+      string_len:
+        min: 3
+        max: 16
+      int_range:
+        min: 0
+        max: 1000000
+      duplication: 0.5
+
+  table_project:
+    description: "Same row as table; deserialize returns f_float_0 only"
+    category: columnar_project
+    data_set: columnar
+    default_type_config:
+      string_len:
+        min: 3
+        max: 16
+      int_range:
+        min: 0
+        max: 1000000
+      duplication: 0.5
+
+  nested_table:
+    description: "One struct column plus a list of structs (shredding)"
+    category: columnar_nested
+    data_set: columnar
+    default_type_config:
+      children: 4
+      string_len:
+        min: 3
+        max: 12
+
+  signal:
+    description: "Fixed block, then variable strings, then a repeating group"
+    category: aligned_record
+    data_set: columnar
+    default_type_config:
+      group_count: 4
+      string_len:
+        min: 3
+        max: 12

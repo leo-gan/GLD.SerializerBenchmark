@@ -1,7 +1,7 @@
 # Experiment 1 results — python
 
-**Date:** 2026-08-16
-**Raw file:** `experiments/01-json-library-bakeoff/python/logs/python/2026-08-16-143516.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/01-json-library-bakeoff/python/logs/python/2026-09-29-184046.csv`
 **Language:** python
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,25 +12,25 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| orjson | 3.11.9 | 1.52 | 2.36 | 3.89 | 448 | 229 | yes | fastest | yes | 92 |
-| msgspec | 0.21.1 | 1.91 | 2.46 | 4.35 | 192 | 165 | no (list) | — | yes | 90 |
-| serpyco-rs | 1.21.0 | 3.33 | 4.54 | 7.86 | 448 | 229 | yes | slower | yes | 93 |
-| mashumaro | 3.22 | 3.75 | 8.02 | 11.8 | 448 | 229 | yes | slower | yes | 90 |
-| rapidjson | 1.23 | 6.01 | 7.06 | 13.2 | 448 | 229 | yes | slower | yes | 89 |
-| json | python-3.14.0 | 12.9 | 8.53 | 21.6 | 448 | 229 | yes | slower | yes | 92 |
-| pydantic | 2.13.4 | 9.49 | 16.9 | 26.2 | 448 | 229 | yes | slower | yes | 89 |
+| orjson | 3.12.0 | 2.44 | 3.16 | 5.63 | 448 | 229 | yes | fastest | yes | 90 |
+| msgspec | 0.21.1 | 2.76 | 3.22 | 6.10 | 192 | 165 | no (list) | — | yes | 95 |
+| serpyco-rs | 1.22.0 | 5.17 | 6.08 | 11.2 | 448 | 229 | yes | slower | yes | 93 |
+| mashumaro | 3.22 | 4.48 | 9.85 | 14.3 | 448 | 229 | yes | slower | yes | 94 |
+| rapidjson | 1.25 | 8.41 | 8.47 | 17.0 | 448 | 229 | yes | slower | yes | 97 |
+| json | python-3.14.0 | 15.6 | 11.6 | 27.3 | 448 | 229 | yes | slower | yes | 95 |
+| pydantic | 2.13.5 | 14.7 | 17.6 | 32.2 | 448 | 229 | yes | slower | yes | 97 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| orjson | 1.92 | 2.64 | 4.63 | copied |
-| msgspec | 2.63 | 3.22 | 5.89 | real |
-| serpyco-rs | 3.73 | 4.92 | 8.63 | copied |
-| mashumaro | 4.10 | 8.46 | 12.7 | copied |
-| rapidjson | 6.34 | 7.53 | 13.9 | copied |
-| json | 13.1 | 8.98 | 22.1 | copied |
-| pydantic | 9.62 | 17.4 | 26.8 | copied |
+| orjson | 2.85 | 3.32 | 6.23 | copied |
+| msgspec | 3.95 | 4.38 | 8.26 | copied |
+| serpyco-rs | 5.82 | 6.56 | 12.3 | copied |
+| mashumaro | 5.11 | 10.7 | 15.8 | copied |
+| rapidjson | 9.65 | 9.46 | 19.3 | copied |
+| json | 17.6 | 12.3 | 29.8 | copied |
+| pydantic | 16.0 | 18.2 | 34.6 | copied |
 
 ## Libraries that belong in the conversation
 

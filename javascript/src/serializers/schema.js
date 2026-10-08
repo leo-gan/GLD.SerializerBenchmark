@@ -2,7 +2,7 @@ import avro from 'avsc';
 import protobuf from 'protobufjs';
 import * as flatbuffers from 'flatbuffers';
 import { encode as flexEncode, toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
-import { pkgVersion, baseSupports, jsonClone } from './common.js';
+import { pkgVersion, baseSupports, peerSupports, projectFFloat0, jsonClone } from './common.js';
 
 /* ---------- Avro schemas for official V2 types (doubles must be explicit) ---------- */
 
@@ -94,7 +94,80 @@ const avroSchemas = {
       },
     ],
   },
+  table: {
+    type: 'record',
+    name: 'TableV2',
+    fields: [
+      ...Array.from({ length: 16 }, (_, i) => ({ name: `f_float_${i}`, type: 'double' })),
+      ...Array.from({ length: 4 }, (_, i) => ({ name: `f_int_${i}`, type: 'long' })),
+      { name: 'f_str_0', type: 'string' },
+      { name: 'f_str_1', type: 'string' },
+    ],
+  },
+  nested_table: {
+    type: 'record',
+    name: 'NestedRowV2',
+    fields: [
+      { name: 'id', type: 'string' },
+      { name: 'status', type: 'int' },
+      {
+        name: 'meta',
+        type: {
+          type: 'record',
+          name: 'NestedMetaV2',
+          fields: [
+            { name: 'region', type: 'string' },
+            { name: 'version', type: 'int' },
+          ],
+        },
+      },
+      {
+        name: 'items',
+        type: {
+          type: 'array',
+          items: {
+            type: 'record',
+            name: 'NestedItemV2',
+            fields: [
+              { name: 'sku', type: 'string' },
+              { name: 'qty', type: 'int' },
+              { name: 'price_minor', type: 'long' },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  signal: {
+    type: 'record',
+    name: 'SignalV2',
+    fields: [
+      { name: 'seq', type: 'long' },
+      { name: 'ts', type: 'long' },
+      { name: 'price_mantissa', type: 'long' },
+      { name: 'qty', type: 'int' },
+      { name: 'flags', type: 'int' },
+      { name: 'symbol', type: 'string' },
+      { name: 'venue', type: 'string' },
+      {
+        name: 'legs',
+        type: {
+          type: 'array',
+          items: {
+            type: 'record',
+            name: 'SignalLegV2',
+            fields: [
+              { name: 'leg_id', type: 'long' },
+              { name: 'leg_qty', type: 'int' },
+              { name: 'leg_pad', type: 'int' },
+            ],
+          },
+        },
+      },
+    ],
+  },
 };
+avroSchemas.table_project = avroSchemas.table;
 
 let avroType = null;
 let avroPrepared = null;
@@ -108,7 +181,7 @@ export const avscSer = {
   name: 'avsc',
   version: pkgVersion('avsc'),
   category: 'schema',
-  supports: baseSupports,
+  supports: peerSupports,
   prepare(dataName, value) {
     avroDataName = dataName;
     const schema = avroSchemas[dataName];
@@ -131,7 +204,9 @@ export const avscSer = {
     return avroType.toBuffer(avroPrepared);
   },
   deserialize(buf) {
-    return avroType.fromBuffer(Buffer.from(buf));
+    const raw = avroType.fromBuffer(Buffer.from(buf));
+    if (avroDataName === 'table_project') return projectFFloat0(raw);
+    return raw;
   },
   toDomain(raw) {
     // Normalize Avro types (Long/ints) to plain JSON for suite fidelity compare.
@@ -229,6 +304,87 @@ const pbRoot = protobuf.Root.fromJSON({
         items: { rule: 'repeated', type: 'Event', id: 1 },
       },
     },
+    Table: {
+      fields: {
+        f_float_0: { type: 'double', id: 1 },
+        f_float_1: { type: 'double', id: 2 },
+        f_float_2: { type: 'double', id: 3 },
+        f_float_3: { type: 'double', id: 4 },
+        f_float_4: { type: 'double', id: 5 },
+        f_float_5: { type: 'double', id: 6 },
+        f_float_6: { type: 'double', id: 7 },
+        f_float_7: { type: 'double', id: 8 },
+        f_float_8: { type: 'double', id: 9 },
+        f_float_9: { type: 'double', id: 10 },
+        f_float_10: { type: 'double', id: 11 },
+        f_float_11: { type: 'double', id: 12 },
+        f_float_12: { type: 'double', id: 13 },
+        f_float_13: { type: 'double', id: 14 },
+        f_float_14: { type: 'double', id: 15 },
+        f_float_15: { type: 'double', id: 16 },
+        f_int_0: { type: 'int64', id: 17 },
+        f_int_1: { type: 'int64', id: 18 },
+        f_int_2: { type: 'int64', id: 19 },
+        f_int_3: { type: 'int64', id: 20 },
+        f_str_0: { type: 'string', id: 21 },
+        f_str_1: { type: 'string', id: 22 },
+      },
+    },
+    BatchTable: {
+      fields: {
+        items: { rule: 'repeated', type: 'Table', id: 1 },
+      },
+    },
+    NestedMeta: {
+      fields: {
+        region: { type: 'string', id: 1 },
+        version: { type: 'int32', id: 2 },
+      },
+    },
+    NestedItem: {
+      fields: {
+        sku: { type: 'string', id: 1 },
+        qty: { type: 'int32', id: 2 },
+        price_minor: { type: 'int64', id: 3 },
+      },
+    },
+    NestedRow: {
+      fields: {
+        id: { type: 'string', id: 1 },
+        status: { type: 'int32', id: 2 },
+        meta: { type: 'NestedMeta', id: 3 },
+        items: { rule: 'repeated', type: 'NestedItem', id: 4 },
+      },
+    },
+    BatchNestedRow: {
+      fields: {
+        items: { rule: 'repeated', type: 'NestedRow', id: 1 },
+      },
+    },
+    SignalLeg: {
+      fields: {
+        leg_id: { type: 'int64', id: 1 },
+        leg_qty: { type: 'int32', id: 2 },
+        leg_pad: { type: 'int32', id: 3 },
+      },
+    },
+    Signal: {
+      fields: {
+        seq: { type: 'int64', id: 1 },
+        ts: { type: 'int64', id: 2 },
+        price_mantissa: { type: 'int64', id: 3 },
+        qty: { type: 'int32', id: 4 },
+        flags: { type: 'int32', id: 5 },
+        symbol: { type: 'string', id: 6 },
+        venue: { type: 'string', id: 7 },
+        legs: { rule: 'repeated', type: 'SignalLeg', id: 8 },
+      },
+    },
+    BatchSignal: {
+      fields: {
+        items: { rule: 'repeated', type: 'Signal', id: 1 },
+      },
+    },
   },
 });
 
@@ -238,6 +394,10 @@ const pbSingleType = {
   telemetry: 'Telemetry',
   strings: 'Strings',
   event: 'Event',
+  table: 'Table',
+  table_project: 'Table',
+  nested_table: 'NestedRow',
+  signal: 'Signal',
 };
 
 const pbBatchType = {
@@ -246,6 +406,10 @@ const pbBatchType = {
   telemetry: 'BatchTelemetry',
   strings: 'BatchStrings',
   event: 'BatchEvent',
+  table: 'BatchTable',
+  table_project: 'BatchTable',
+  nested_table: 'BatchNestedRow',
+  signal: 'BatchSignal',
 };
 
 let pbType = null;
@@ -268,7 +432,7 @@ function toPbItem(dataName, value) {
       f_string_2: String(v.f_string_2 ?? ''),
     };
   }
-  if (dataName === 'document') {
+  if (dataName === 'document' || dataName === 'nested_table') {
     return {
       id: String(v.id ?? ''),
       status: v.status | 0,
@@ -280,6 +444,30 @@ function toPbItem(dataName, value) {
         sku: String(it.sku ?? ''),
         qty: it.qty | 0,
         price_minor: Number(it.price_minor),
+      })),
+    };
+  }
+  if (dataName === 'table' || dataName === 'table_project') {
+    const o = {};
+    for (let i = 0; i < 16; i++) o[`f_float_${i}`] = Number(v[`f_float_${i}`]);
+    for (let i = 0; i < 4; i++) o[`f_int_${i}`] = Number(v[`f_int_${i}`]);
+    o.f_str_0 = String(v.f_str_0 ?? '');
+    o.f_str_1 = String(v.f_str_1 ?? '');
+    return o;
+  }
+  if (dataName === 'signal') {
+    return {
+      seq: Number(v.seq),
+      ts: Number(v.ts),
+      price_mantissa: Number(v.price_mantissa),
+      qty: v.qty | 0,
+      flags: v.flags | 0,
+      symbol: String(v.symbol ?? ''),
+      venue: String(v.venue ?? ''),
+      legs: (v.legs || []).map((leg) => ({
+        leg_id: Number(leg.leg_id),
+        leg_qty: leg.leg_qty | 0,
+        leg_pad: leg.leg_pad | 0,
       })),
     };
   }
@@ -334,7 +522,7 @@ function fromPbItem(dataName, o) {
       f_string_2: String(o.f_string_2 ?? ''),
     };
   }
-  if (dataName === 'document') {
+  if (dataName === 'document' || dataName === 'nested_table') {
     return {
       id: String(o.id ?? ''),
       status: num(o.status),
@@ -346,6 +534,30 @@ function fromPbItem(dataName, o) {
         sku: String(it.sku ?? ''),
         qty: num(it.qty),
         price_minor: num(it.price_minor),
+      })),
+    };
+  }
+  if (dataName === 'table' || dataName === 'table_project') {
+    const row = {};
+    for (let i = 0; i < 16; i++) row[`f_float_${i}`] = num(o[`f_float_${i}`]);
+    for (let i = 0; i < 4; i++) row[`f_int_${i}`] = num(o[`f_int_${i}`]);
+    row.f_str_0 = String(o.f_str_0 ?? '');
+    row.f_str_1 = String(o.f_str_1 ?? '');
+    return row;
+  }
+  if (dataName === 'signal') {
+    return {
+      seq: num(o.seq),
+      ts: num(o.ts),
+      price_mantissa: num(o.price_mantissa),
+      qty: num(o.qty),
+      flags: num(o.flags),
+      symbol: String(o.symbol ?? ''),
+      venue: String(o.venue ?? ''),
+      legs: (o.legs || []).map((leg) => ({
+        leg_id: num(leg.leg_id),
+        leg_qty: num(leg.leg_qty),
+        leg_pad: num(leg.leg_pad),
       })),
     };
   }
@@ -387,7 +599,7 @@ export const pbSer = {
   name: 'protobufjs',
   version: pkgVersion('protobufjs'),
   category: 'schema',
-  supports: baseSupports,
+  supports: peerSupports,
   prepare(dataName, value) {
     // Optimal: verify + create once outside the timed loop (docs: encode only on hot path).
     pbDataName = dataName;
@@ -405,9 +617,12 @@ export const pbSer = {
   },
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    return pbType.decode(u8);
+    const decoded = pbType.decode(u8);
+    if (pbDataName === 'table_project') return projectFFloat0(pbIsBatch ? decoded.items : decoded);
+    return decoded;
   },
   toDomain(decoded) {
+    if (pbDataName === 'table_project') return decoded;
     return fromPbValue(pbDataName, decoded, pbIsBatch);
   },
 };
@@ -663,6 +878,92 @@ function fbDeserializeEvent(bytes) {
   };
 }
 
+function fbSerializeTable(builder, v) {
+  const s1 = builder.createString(String(v.f_str_1 ?? ''));
+  const s0 = builder.createString(String(v.f_str_0 ?? ''));
+  builder.startObject(22);
+  builder.addFieldOffset(21, s1, 0);
+  builder.addFieldOffset(20, s0, 0);
+  for (let i = 3; i >= 0; i--) {
+    builder.addFieldInt64(16 + i, BigInt(Number(v[`f_int_${i}`]) || 0), 0n);
+  }
+  for (let i = 15; i >= 0; i--) {
+    builder.addFieldFloat64(i, Number(v[`f_float_${i}`]) || 0, 0);
+  }
+  return builder.endObject();
+}
+
+function fbDeserializeTable(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  const out = {};
+  for (let i = 0; i < 16; i++) {
+    const off = field(i);
+    out[`f_float_${i}`] = off ? bb.readFloat64(table + off) : 0;
+  }
+  for (let i = 0; i < 4; i++) {
+    const off = field(16 + i);
+    out[`f_int_${i}`] = off ? Number(bb.readInt64(table + off)) : 0;
+  }
+  out.f_str_0 = fbReadString(bb, u8, table, field(20));
+  out.f_str_1 = fbReadString(bb, u8, table, field(21));
+  return out;
+}
+
+function fbSerializeSignal(builder, v) {
+  const venueOff = builder.createString(String(v.venue ?? ''));
+  const symbolOff = builder.createString(String(v.symbol ?? ''));
+  const legOffs = (v.legs || []).map((leg) => {
+    builder.startObject(3);
+    builder.addFieldInt32(2, leg.leg_pad | 0, 0);
+    builder.addFieldInt32(1, leg.leg_qty | 0, 0);
+    builder.addFieldInt64(0, BigInt(Number(leg.leg_id) || 0), 0n);
+    return builder.endObject();
+  });
+  const legsVec = fbCreateOffsetVector(builder, legOffs);
+  builder.startObject(8);
+  builder.addFieldOffset(7, legsVec, 0);
+  builder.addFieldOffset(6, venueOff, 0);
+  builder.addFieldOffset(5, symbolOff, 0);
+  builder.addFieldInt32(4, v.flags | 0, 0);
+  builder.addFieldInt32(3, v.qty | 0, 0);
+  builder.addFieldInt64(2, BigInt(Number(v.price_mantissa) || 0), 0n);
+  builder.addFieldInt64(1, BigInt(Number(v.ts) || 0), 0n);
+  builder.addFieldInt64(0, BigInt(Number(v.seq) || 0), 0n);
+  return builder.endObject();
+}
+
+function fbDeserializeSignal(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  const legs = [];
+  if (field(7)) {
+    const vec = table + field(7);
+    const start = vec + bb.readInt32(vec);
+    const len = bb.readInt32(start);
+    for (let i = 0; i < len; i++) {
+      const offPos = start + 4 + i * 4;
+      const leg = offPos + bb.readInt32(offPos);
+      const vt = leg - bb.readInt32(leg);
+      const vs = bb.readInt16(vt);
+      const f = (id) => (4 + id * 2 + 2 <= vs ? bb.readInt16(vt + 4 + id * 2) : 0);
+      legs.push({
+        leg_id: f(0) ? Number(bb.readInt64(leg + f(0))) : 0,
+        leg_qty: f(1) ? bb.readInt32(leg + f(1)) : 0,
+        leg_pad: f(2) ? bb.readInt32(leg + f(2)) : 0,
+      });
+    }
+  }
+  return {
+    seq: field(0) ? Number(bb.readInt64(table + field(0))) : 0,
+    ts: field(1) ? Number(bb.readInt64(table + field(1))) : 0,
+    price_mantissa: field(2) ? Number(bb.readInt64(table + field(2))) : 0,
+    qty: field(3) ? bb.readInt32(table + field(3)) : 0,
+    flags: field(4) ? bb.readInt32(table + field(4)) : 0,
+    symbol: fbReadString(bb, u8, table, field(5)),
+    venue: fbReadString(bb, u8, table, field(6)),
+    legs,
+  };
+}
+
 function fbSerializeOne(dataName, value) {
   const builder = new flatbuffers.Builder(1024);
   let root;
@@ -681,6 +982,16 @@ function fbSerializeOne(dataName, value) {
       break;
     case 'event':
       root = fbSerializeEvent(builder, value);
+      break;
+    case 'table':
+    case 'table_project':
+      root = fbSerializeTable(builder, value);
+      break;
+    case 'nested_table':
+      root = fbSerializeDocument(builder, value);
+      break;
+    case 'signal':
+      root = fbSerializeSignal(builder, value);
       break;
     default:
       throw new Error(`flatbuffers: no mapping for ${dataName}`);
@@ -701,6 +1012,13 @@ function fbDeserializeOne(dataName, bytes) {
       return fbDeserializeStrings(bytes);
     case 'event':
       return fbDeserializeEvent(bytes);
+    case 'table':
+    case 'table_project':
+      return fbDeserializeTable(bytes);
+    case 'nested_table':
+      return fbDeserializeDocument(bytes);
+    case 'signal':
+      return fbDeserializeSignal(bytes);
     default:
       throw new Error(`flatbuffers: no mapping for ${dataName}`);
   }
@@ -726,6 +1044,7 @@ function fbSerialize(dataName, value) {
 
 function fbDeserialize(buf) {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  let decoded;
   if (fbIsBatch) {
     const n = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
     let o = 4;
@@ -736,16 +1055,19 @@ function fbDeserialize(buf) {
       items.push(fbDeserializeOne(fbDataName, bytes.subarray(o, o + ln)));
       o += ln;
     }
-    return items;
+    decoded = items;
+  } else {
+    decoded = fbDeserializeOne(fbDataName, bytes);
   }
-  return fbDeserializeOne(fbDataName, bytes);
+  if (fbDataName === 'table_project') return projectFFloat0(decoded);
+  return decoded;
 }
 
 export const flatbuffersSer = {
   name: 'flatbuffers',
   version: pkgVersion('flatbuffers'),
   category: 'schema',
-  supports: baseSupports,
+  supports: peerSupports,
   prepare(dataName, value) {
     fbDataName = dataName;
     fbIsBatch = Array.isArray(value);

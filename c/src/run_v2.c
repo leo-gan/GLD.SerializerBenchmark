@@ -1,6 +1,7 @@
 /* Data Model v2: resolve cells, map onto existing fixture kinds, FULL serializer registry.
  * B-1 schedule: prepare once per cell; mode → rep → Fisher–Yates serializers (default). */
 #include "bench.h"
+#include "optional_io.h"
 #include "schedule.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +84,7 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         FILE *wf = fmemopen(buf, buf_cap, "w+");
         if (!wf) rc = -1;
         else {
-            rc = S->serialize_fp(fx, wf, &out_len);
+            rc = bench_serialize_cell_fp(S, fx, wf, &out_len);
             if (rc == 0) {
                 if (fflush(wf) != 0) rc = -1;
                 else out_len = (size_t)ftell(wf);
@@ -105,12 +106,7 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         return -1;
     }
     if (native_stream) {
-        FILE *rf = fmemopen(buf, out_len ? out_len : 1, "r");
-        if (!rf) rc = -1;
-        else {
-            rc = S->deserialize_fp(rf, &out_fx, fx->kind);
-            fclose(rf);
-        }
+        rc = bench_deserialize_cell_fp(S, buf, out_len, &out_fx, fx->kind);
     } else {
         if (mode[0] == 's') {
             rc = bench_stream_read_all(buf, buf_cap, out_len);
@@ -201,6 +197,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     }
 
     serializer_t sers[BENCH_MAX_SERIALIZERS];
+    memset(sers, 0, sizeof sers);
     int ser_count = 0;
     register_all_serializers(sers, &ser_count);
 
@@ -351,6 +348,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                 serializer_t *S = &sers[si];
                 for (int mi = 0; mi < n_modes; mi++) {
                     const char *mode = modes[mi];
+                    if (mode[0] == 's' && !bench_optional_stream("c", S->name)) continue;
                     int had_error = 0;
                     for (int r = 0; r < repetitions; r++) {
                         if (had_error) break;
@@ -373,7 +371,9 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                     int elig_n = 0;
                     for (int ri = 0; ri < ready_n; ri++) {
                         int si = ready_idx[ri];
-                        if (!failed[si]) elig[elig_n++] = si;
+                        if (failed[si]) continue;
+                        if (mode[0] == 's' && !bench_optional_stream("c", sers[si].name)) continue;
+                        elig[elig_n++] = si;
                     }
                     if (elig_n == 0) continue;
                     uint64_t shuf_seed = schedule_derive_seed(

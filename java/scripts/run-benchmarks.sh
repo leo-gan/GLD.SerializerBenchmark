@@ -99,7 +99,7 @@ ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
 
 export LOG_DIR
 # Kryo / FST need reflective access on JDK 17+
-JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
+JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
 echo "[INFO] Running: java $JAVA_OPTS -jar $JAR ${ARGS[*]}"
 # shellcheck disable=SC2086
 java $JAVA_OPTS -jar "$JAR" "${ARGS[@]}"

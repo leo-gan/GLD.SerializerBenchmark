@@ -1,0 +1,67 @@
+{
+  "format": "arrow",
+  "standard": "Arrow IPC stream",
+  "version": "stream",
+  "standard_url": "https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format",
+  "provenance": "original-work",
+  "notes": "IPC stream framing from the Arrow columnar format. One int64 column. Not the Arrow file format.",
+  "cases": [
+    {
+      "id": "arrow-ipc-berth-rows",
+      "title": "Two-row int64 record batch",
+      "section": "IPC Streaming Format",
+      "section_title": "Record batch",
+      "section_url": "https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format",
+      "paragraph": "A stream is a sequence of encapsulated messages. The first message is the schema and a later message is a record batch whose body holds the column values.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "ffffffff800000001000000000000a000c000600050008000a000000000104000c000000080008000000040008000000040000000100000014000000100014000800060007000c000000100010000000000001021000000020000000040000000000000005000000626572746800000008000c000800070008000000000000014000000000000000ffffffff8800000014000000000000000c0016000600050008000c000c0000000003040018000000100000000000000000000a0018000c00040008000a0000003c0000001000000002000000000000000000000002000000000000000000000000000000000000000000000000000000100000000000000000000000010000000200000000000000000000000000000004000000000000000700000000000000ffffffff00000000",
+      "input_encoding": "hex",
+      "decoded": [
+        {
+          "berth": 4
+        },
+        {
+          "berth": 7
+        }
+      ],
+      "notes": "Original column berth with values 4 and 7. The bytes were written once and frozen in this file. They are not an upstream test vector. A writer version string inside the container is file metadata, not a copied suite."
+    },
+    {
+      "id": "arrow-ipc-empty",
+      "title": "Empty buffer",
+      "section": "Encapsulated Message",
+      "section_title": "Continuation",
+      "section_url": "https://arrow.apache.org/docs/format/Columnar.html#encapsulated-message-format",
+      "paragraph": "An encapsulated message begins with a 4-byte continuation indicator. An empty buffer is not a message.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "arrow-ipc-bad-continuation",
+      "title": "Continuation is not 0xFFFFFFFF",
+      "section": "Encapsulated Message",
+      "section_title": "Continuation",
+      "section_url": "https://arrow.apache.org/docs/format/Columnar.html#encapsulated-message-format",
+      "paragraph": "The continuation indicator of an encapsulated message is the 4-byte value 0xFFFFFFFF. Any other indicator is not this stream framing.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "01000000800000001000000000000a000c000600050008000a000000000104000c000000080008000000040008000000040000000100000014000000100014000800060007000c000000100010000000000001021000000020000000040000000000000005000000626572746800000008000c000800070008000000000000014000000000000000ffffffff8800000014000000000000000c0016000600050008000c000c0000000003040018000000100000000000000000000a0018000c00040008000a0000003c0000001000000002000000000000000000000002000000000000000000000000000000000000000000000000000000100000000000000000000000010000000200000000000000000000000000000004000000000000000700000000000000ffffffff00000000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "arrow-ipc-truncated-metadata",
+      "title": "Metadata length past the buffer",
+      "section": "Encapsulated Message",
+      "section_title": "Metadata length",
+      "section_url": "https://arrow.apache.org/docs/format/Columnar.html#encapsulated-message-format",
+      "paragraph": "The 4-byte little-endian metadata length must be followed by that many metadata bytes. A length that runs past the buffer is not a complete message.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "ffffffff8000000010000000",
+      "input_encoding": "hex"
+    }
+  ]
+}

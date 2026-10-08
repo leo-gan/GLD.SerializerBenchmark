@@ -54,9 +54,14 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
+25 serializers are registered when the optional `simdjson` addon loads, and 24 otherwise. That is the previous registry (22 with `simdjson`, including `js-yaml`) plus `arrow-ipc`, `parquet`, and `parquet-uncompressed`.
+
+The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prepare()` is outside the clock. Every row, including the columnar ones, is **bytes only**: there is no distinct stream loop and no compliance decoder. `arrow-ipc` times the Arrow IPC stream (`tableToIPC(..., 'stream')`), not the Arrow file format. Parquet is registered because one `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. `parquet` keeps the writer default, Snappy. `parquet-uncompressed` sets `codec: 'UNCOMPRESSED'`, which changes the bytes and the column codec metadata. That is a second call path of the same writer, not a second library. `parquet-wasm` is not registered. Schema objects are selected in `prepare()`. Building the columnar batch from rows is inside timed `serialize`. `table_project` deserialize returns `f_float_0` only, an array of length N, including N=1.
+
 | Name | Category | Package | Optimal API |
 |------|----------|---------|-------------|
 | [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) | Binary | `@msgpack/msgpack` | `encode` / `decode` |
+| [arrow-ipc](https://github.com/apache/arrow) | Columnar | `apache-arrow` | `tableToIPC` / IPC stream reader (`'stream'`, not the file format) |
 | [avsc](https://github.com/mtth/avsc) | Schema | `avsc` | `Type.forSchema` + `toBuffer` / `fromBuffer` |
 | [bebop](https://github.com/6over3/bebop) | Schema | `bebop` | `BebopView` JSON-model primitives |
 | [bser](https://github.com/facebook/watchman) | Binary | `bser` | `dumpToBuffer` / `loadFromBuffer` |
@@ -72,9 +77,12 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | `Builder` / `ByteBuffer` |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` (FlexBuffers) | `encode` / `toObject` |
 | [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema | `google-protobuf` | official jspb `serializeBinary` / `deserializeBinary` |
+| [ion-js](https://github.com/amazon-ion/ion-js) | Binary | `ion-js` | `dumpBinary` / `load`; plain-object conversion is outside the timer |
 | [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
 | [JSON.stringify](https://github.com/nodejs/node) | JSON | builtin | `JSON.stringify` / `JSON.parse` |
 | [msgpackr](https://github.com/kriszyp/msgpackr) | Binary | `msgpackr` | reused `Packr` / `Unpackr` |
+| [parquet](https://github.com/hyparam/hyparquet-writer) | Columnar | `hyparquet-writer` | `parquetWriteBuffer` (default Snappy) / `hyparquet` `parquetReadObjects` |
+| [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer) | Columnar | `hyparquet-writer` | same writer, `codec: 'UNCOMPRESSED'` |
 | [protobuf-es](https://github.com/bufbuild/protobuf-es) | Schema | `@bufbuild/protobuf` | `create` + `toBinary` / `fromBinary` |
 | [protobufjs](https://github.com/protobufjs/protobuf.js) | Schema | `protobufjs` | real fixture `Type.encode` / `decode` |
 | [sia](https://github.com/TimeleapLabs/sia) | Binary | `@timeleap/sia` | typed-tag JSON-model over Sia primitives |
@@ -88,6 +96,10 @@ Why each library exists, what problem it was written to solve, and how. Names li
 #### [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) · `3.1.3`
 
 The official MessagePack JavaScript implementation (`@msgpack/msgpack`). MessagePack was created as compact binary JSON. This package is the reference encode/decode API for JS.
+
+#### [arrow-ipc](https://github.com/apache/arrow) · `21.2.0`
+
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. This row times `apache-arrow` `tableToIPC` / the IPC stream reader on the bytes API, not the Arrow file format. Schema objects are selected in `prepare`. Row-to-column conversion stays inside `serialize`. `table_project` deserialize reads `f_float_0` only. There is no compliance decoder.
 
 #### [avsc](https://github.com/mtth/avsc) · `5.7.9`
 
@@ -113,11 +125,21 @@ node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's bi
 
 cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances.
 
-#### [dagr](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
-Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The `dagr-packed` row uses the `packed` layout; its timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode.
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution).
 
-The schema emits every suite type in all four node layouts, one row each: `dagr-packed` (varint scalars, no vtable), `dagr-regular` (vtable, the evolvable default), `dagr-frozen` (fixed field order, presence bitset, no evolution) and `dagr-frozen-packed`. The packed-rooted layouts encode with the generated direct builder; regular and frozen have no direct builder, so their native model is the generated arena, built outside the timer, and the timed encode is the generated arena serializer (`<Graph>_serde.writeInto` into the same reused `Builder` as the direct builder). All four decode through the generated lazy reader.
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution).
+
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable).
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable).
 
 #### [devalue](https://github.com/Rich-Harris/devalue) · `5.9.2`
 
@@ -139,6 +161,10 @@ FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can h
 
 This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`.
 
+#### [ion-js](https://github.com/amazon-ion/ion-js) · `5.2.1`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-js is the official JavaScript implementation. This row times binary dump/load; the Ion DOM is turned into plain objects outside the timer.
+
 #### [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) · `18.30.0`
 
 json-pack (jsonjoy) is a family of binary codecs including MessagePack. It was written to give JavaScript a fast, modular binary JSON toolkit. This row times the MsgPack encoder/decoder.
@@ -150,6 +176,14 @@ json-pack (jsonjoy) is a family of binary codecs including MessagePack. It was w
 #### [msgpackr](https://github.com/kriszyp/msgpackr) · `1.12.1`
 
 msgpackr was written for high-throughput MessagePack in Node, with reusable Packr/Unpackr instances. The problem was that generic MessagePack libraries allocated too much per call. msgpackr solves that with a performance-oriented encoder/decoder.
+
+#### [parquet](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row is registered because a `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. It times `parquetWriteBuffer` at the library default codec, Snappy, and `parquetReadObjects`. `table_project` passes `columns: ['f_float_0']`. The `SerializerVersion` is the writer package. There is no compliance decoder.
+
+#### [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+
+This is the same `hyparquet-writer` path as `parquet`, with `codec: 'UNCOMPRESSED'`. That switch changes the column codec metadata and the bytes. It is not a second library, and `parquet-wasm` is not registered.
 
 #### [protobuf-es](https://github.com/bufbuild/protobuf-es) · `2.15.0`
 
@@ -184,7 +218,8 @@ Node's `v8.serialize` / `v8.deserialize` snapshot V8 values. They exist so the e
 - **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see the benchmark runner for float/array workarounds.
 - **bebop** / **sia** encode a JSON-shaped model via each library’s primitive writers.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
-- **prepare()** builds native messages and compiles schemas outside the timed path.
+- **prepare()** builds native messages and compiles schemas outside the timed path. Columnar schema objects are selected there; building the Arrow or Parquet batch from rows stays inside timed `serialize`.
+- **arrow-ipc / parquet / parquet-uncompressed** encode only `table`, `table_project`, `nested_table`, and `signal`. `table_project` deserialize returns an array of `f_float_0` of length N. Bytes only. No compliance decoder.
 
 Also: [`javascript/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/javascript/README.md).
 

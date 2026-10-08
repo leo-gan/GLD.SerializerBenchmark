@@ -31,9 +31,30 @@ export function pkgVersion(packageName) {
   return '';
 }
 
-/** Suite supports all official V2 type ids (message, document, telemetry, strings, event). */
-export function baseSupports(_name) {
-  return true;
+const PUBLICATION_TYPES = new Set(['message', 'document', 'telemetry', 'strings', 'event']);
+const COLUMNAR_TYPES = new Set(['table', 'table_project', 'nested_table', 'signal']);
+
+/** Original five publication types. Schema codecs without columnar mappings stay here. */
+export function baseSupports(name) {
+  return PUBLICATION_TYPES.has(name);
+}
+
+/** Publication types plus the four columnar ids (allow-list peers). */
+export function peerSupports(name) {
+  return PUBLICATION_TYPES.has(name) || COLUMNAR_TYPES.has(name);
+}
+
+/** Columnar codecs encode only table, table_project, nested_table, and signal. */
+export function columnarSupports(name) {
+  return COLUMNAR_TYPES.has(name);
+}
+
+/** Full rows in, f_float_0 column out. N=1 is a one-element array, not the row. */
+export function projectFFloat0(value) {
+  const rows = Array.isArray(value) ? value : [value];
+  const out = new Array(rows.length);
+  for (let i = 0; i < rows.length; i++) out[i] = rows[i].f_float_0;
+  return out;
 }
 
 /** JSON-clone to strip non-JSON types before schemaless binary codecs if needed. */

@@ -4,6 +4,7 @@ import { Encoder as CborXEncoder, Decoder as CborXDecoder } from 'cbor-x';
 import cbor from 'cbor';
 import { BSON } from 'bson';
 import bser from 'bser';
+import { dumpBinary, load, IonTypes } from 'ion-js';
 import { pkgVersion, baseSupports, asBuffer } from './common.js';
 
 // Reuse encoder instances (msgpackr docs: Packr/Unpackr are stateful and reusable).
@@ -114,6 +115,53 @@ export const bserSer = {
   },
 };
 
+/** ion-js load() returns DOM values. Convert outside the timer (runner calls toDomain). */
+function ionToPlain(v) {
+  if (v == null || typeof v.getType !== 'function') return v;
+  if (typeof v.isNull === 'function' && v.isNull()) return null;
+  const t = v.getType();
+  if (t === IonTypes.BOOL) return v.booleanValue();
+  if (t === IonTypes.INT || t === IonTypes.FLOAT) return v.numberValue();
+  if (t === IonTypes.STRING || t === IonTypes.SYMBOL) return v.stringValue();
+  if (t === IonTypes.DECIMAL) {
+    const d = v.decimalValue();
+    if (d == null) return null;
+    if (typeof d.numberValue === 'function') return d.numberValue();
+    const n = Number(String(d));
+    return Number.isFinite(n) ? n : String(d);
+  }
+  if (t === IonTypes.LIST || t === IonTypes.SEXP) {
+    const out = new Array(v.length);
+    for (let i = 0; i < v.length; i++) out[i] = ionToPlain(v.get(i));
+    return out;
+  }
+  if (t === IonTypes.STRUCT) {
+    const out = {};
+    for (const name of v.fieldNames()) out[name] = ionToPlain(v.get(name));
+    return out;
+  }
+  return v;
+}
+
+export const ionJsSer = {
+  name: 'ion-js',
+  version: pkgVersion('ion-js'),
+  category: 'binary',
+  supports: baseSupports,
+  prepare() {},
+  // dumpBinary accepts plain objects (Value.from internally). Bytes-only runner.
+  // https://github.com/amazon-ion/ion-js
+  serialize(value) {
+    return dumpBinary(value);
+  },
+  deserialize(buf) {
+    return load(buf);
+  },
+  toDomain(native) {
+    return ionToPlain(native);
+  },
+};
+
 export function binarySerializers() {
-  return [msgpackrSer, msgpackOffSer, cborxSer, cborSer, bsonSer, bserSer];
+  return [msgpackrSer, msgpackOffSer, cborxSer, cborSer, bsonSer, bserSer, ionJsSer];
 }

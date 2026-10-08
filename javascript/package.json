@@ -1,13 +1,13 @@
 {
   "name": "serializer-benchmark-javascript",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Node.js harness for cross-language serializer benchmark",
   "type": "module",
   "main": "src/runner.js",
   "scripts": {
     "benchmark": "node src/runner.js",
     "smoke": "node src/runner.js 2 JSON message",
-    "test": "node --test test/runner.test.js",
+    "test": "node --test --test-concurrency=1 test/runner.test.js",
     "generate:protobuf-es": "bash scripts/generate-protobuf-es.sh",
     "generate:google-protobuf": "bash scripts/generate-google-protobuf.sh",
     "generate:protobuf": "npm run generate:protobuf-es && npm run generate:google-protobuf",
@@ -22,6 +22,7 @@
     "@jsonjoy.com/json-pack": "^18.28.0",
     "@msgpack/msgpack": "^3.0.0",
     "@timeleap/sia": "^2.3.0",
+    "apache-arrow": "^21.2.0",
     "avsc": "^5.7.0",
     "bebop": "^3.2.3",
     "bser": "^2.1.1",
@@ -32,6 +33,9 @@
     "fast-json-stringify": "^6.0.0",
     "flatbuffers": "^24.12.23",
     "google-protobuf": "^3.21.4",
+    "hyparquet": "^1.31.2",
+    "hyparquet-writer": "^0.16.10",
+    "ion-js": "^5.2.1",
     "js-yaml": "^4.3.1",
     "msgpackr": "^1.11.0",
     "protobufjs": "^7.4.0"

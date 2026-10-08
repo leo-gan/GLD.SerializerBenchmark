@@ -2,7 +2,7 @@
   <PropertyGroup>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <AssemblyName>GLD.SerializerBenchmark</AssemblyName>
@@ -21,7 +21,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
     <PackageReference Include="LightProto" Version="1.*" />
-    <PackageReference Include="Jil" Version="2.*" />
     <PackageReference Include="ServiceStack.Text" Version="6.*" />
     <PackageReference Include="Bond.Core.CSharp" Version="9.*" />
     <PackageReference Include="Bond.Runtime.CSharp" Version="9.*" />
@@ -44,6 +43,10 @@
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.*" />
     <PackageReference Include="Apache.Avro" Version="1.*" />
+    <!-- net8.0 / netstandard2.0 assets; consumed by net10.0. No net10-specific lib in 23.0.0. -->
+    <PackageReference Include="Apache.Arrow" Version="23.*" />
+    <!-- Explicit net10.0 asset. Library default compression is Snappy. -->
+    <PackageReference Include="Parquet.Net" Version="6.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
     <PackageReference Include="Hyperion" Version="0.12.*" />
@@ -56,6 +59,7 @@
     <PackageReference Include="ZeroFormatter" Version="1.*" />
     <PackageReference Include="BinaryPack" Version="1.*" />
     <PackageReference Include="MessagePack" Version="2.*" />
+    <PackageReference Include="Amazon.IonDotnet" Version="1.*" />
     <PackageReference Include="Nerdbank.MessagePack" Version="1.*" />
     <PackageReference Include="MemoryPack" Version="1.*" />
     <PackageReference Include="MemoryPack.Generator" Version="1.*">
@@ -63,5 +67,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Migrant" Version="0.13.*" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.*" />
+    <PackageReference Include="ShapeShift.Cbor" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.Json" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.MsgPack" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.Protobuf" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.Taml" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.Toml" Version="0.1.1068-alpha" />
+    <PackageReference Include="ShapeShift.Yaml" Version="0.1.1068-alpha" />
   </ItemGroup>
 </Project>

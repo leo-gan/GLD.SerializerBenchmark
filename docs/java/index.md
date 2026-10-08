@@ -5,7 +5,7 @@ title: "Java"
 Java
 ====
 
-Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), and **schema/IDL** stacks (Protocol Buffers, Avro).
+Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **27** serializers.
 
 ## Runtime
 
@@ -75,6 +75,25 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 | [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
 | [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+| [jackson-yaml](https://github.com/FasterXML/jackson-dataformats-text) | YAML | jackson-dataformat-yaml | YAMLFactory | native | Jackson YAML |
+| [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers-java | FlatBufferBuilder | adapted | Generated tables for the original five ids. Columnar types are hand-built in Java |
+| [capnproto](https://github.com/capnproto/capnproto-java) | Schema | runtime | message builder | adapted | Bytes path copied to the stream |
+| [arrow-ipc](https://github.com/apache/arrow-java) | Columnar | arrow-vector | ArrowStreamWriter | adapted | IPC stream bytes, not the Arrow file format. `table_project` loads `f_float_0` only |
+| [parquet](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | Snappy. parquet-java 1.18.1 defaults to UNCOMPRESSED, so this row sets the codec |
+| [parquet-uncompressed](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | `CompressionCodecName.UNCOMPRESSED` |
+| [orc](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | No `compress()` call. ORC 2.3.1 default is ZSTD. `blockPadding(false)` |
+| [orc-uncompressed](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | `CompressionKind.NONE`. `blockPadding(false)` |
+| [sbe](https://github.com/aeron-io/simple-binary-encoding) | Schema | sbe-tool / agrona | flyweight | adapted | Tool 1.40.2. No `nested_table`. Flyweight filled inside the timed serialize |
+
+### Columnar and SBE
+
+The six new rows support `table`, `table_project`, `nested_table`, and `signal` only. SBE returns false for `nested_table` because that body is not in the schema. The original codecs still support `message`, `document`, `telemetry`, `strings`, and `event`. Jackson, protobuf, flatbuffers, and the reflect Avro row also round-trip the four new ids.
+
+`prepare` builds the Arrow schema, the Parquet/Avro schema, and the ORC `TypeDescription` plus writer options. Row-to-column conversion and the SBE flyweight wrap run inside timed `serializeBytes`. There is no compliance decoder. Stream methods on these rows are the adapted bytes path. Columnar smoke times bytes only.
+
+`table_project` serializes the full row and deserializes `f_float_0` only, including when N is 1. The runner compares that column (`Fidelity.expectedForFidelity`), not the full rows. Arrow reads that column with `MessageChannelReader`, `MessageSerializer.deserializeRecordBatch`, and `VectorLoader` on a one-field schema. Parquet sets `AvroReadSupport.setRequestedProjection` and `setAvroReadSchema`. ORC sets `Reader.Options.include` with the root and `f_float_0` column ids. Peers full-decode, then slice inside `deserialize`.
+
+`orc` and `orc-uncompressed` both set `blockPadding(false)`. Default padding would extend a small file toward the 256MB HDFS block. That flag is not a compression override. ORC 2.3.1's own default compression is ZSTD (`OrcConf.COMPRESS`), so `orc` does not call `compress()`. `orc-uncompressed` sets `CompressionKind.NONE`. The `nohive` jars relocate Hive vectors to `org.apache.orc.storage` and protobuf to `org.apache.orc.protobuf`. `orc-core` nohive is paired with `orc-format` nohive 1.1.1; the default `orc-format` jar is compiled against `com.google.protobuf` and does not link. parquet-java 1.18.1 defaults to UNCOMPRESSED, so `parquet` sets `CompressionCodecName.SNAPPY` and `parquet-uncompressed` sets `UNCOMPRESSED`.
 
 ### Specifics
 

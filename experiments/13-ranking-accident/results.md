@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -13,12 +13,12 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | Language | A order | B flat | C sensor | D event | E words | Same as A? | Full table |
 |----------|---------|--------|----------|---------|---------|------------|------------|
 | python | orjson | orjson | orjson | orjson | orjson | yes | [python/results.md](python/results.md) |
-| go | goccy/go-json | segmentio/encoding/json | sonic | goccy/go-json | sonic | no | [go/results.md](go/results.md) |
+| go | goccy/go-json | goccy/go-json | sonic | goccy/go-json | sonic | no | [go/results.md](go/results.md) |
 | java | jsoniter | jsoniter | jsoniter | dsl-json | dsl-json | no | [java/results.md](java/results.md) |
 | kotlin | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | yes | [kotlin/results.md](kotlin/results.md) |
 | php | json | json | json | json | json | yes | [php/results.md](php/results.md) |
 | javascript | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | yes | [javascript/results.md](javascript/results.md) |
-| rust | sonic-rs | sonic-rs | sonic-rs | sonic-rs | sonic-rs | yes | [rust/results.md](rust/results.md) |
+| rust | sonic-rs | sonic-rs | serde_json | sonic-rs | sonic-rs | no | [rust/results.md](rust/results.md) |
 | c | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [c/results.md](c/results.md) |
 | cpp | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [cpp/results.md](cpp/results.md) |
 | csharp | SpanJson | SpanJson | NetJSON | SpanJson | SpanJson | no | [csharp/results.md](csharp/results.md) |
@@ -36,7 +36,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | D (event) | orjson | orjson | yes |
 | python | E (words) | orjson | orjson | yes |
 | go | A (order) | goccy/go-json | sonic | no |
-| go | B (flat) | segmentio/encoding/json | sonic | no |
+| go | B (flat) | goccy/go-json | sonic | no |
 | go | C (sensor) | sonic | sonic | yes |
 | go | D (event) | goccy/go-json | sonic | no |
 | go | E (words) | sonic | sonic | yes |
@@ -62,7 +62,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | javascript | E (words) | JSON.stringify | JSON.stringify | yes |
 | rust | A (order) | sonic-rs | sonic-rs | yes |
 | rust | B (flat) | sonic-rs | sonic-rs | yes |
-| rust | C (sensor) | sonic-rs | serde_json | no |
+| rust | C (sensor) | serde_json | serde_json | yes |
 | rust | D (event) | sonic-rs | sonic-rs | yes |
 | rust | E (words) | sonic-rs | sonic-rs | yes |
 | c | A (order) | yyjson | yyjson | yes |
@@ -101,7 +101,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | Language | Status | Not clearly slower | Small gap |
 |----------|--------|--------------------|-----------|
 | python | ok | `orjson` | — |
-| go | ok | `goccy/go-json`, `segmentio/encoding/json` | `sonic` |
+| go | ok | `goccy/go-json`, `segmentio/encoding/json` | — |
 | java | ok | `jsoniter` | — |
 | kotlin | ok | `moshi-reflect`, `moshi-codegen` | — |
 | php | ok | `json` | — |
@@ -122,111 +122,111 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 3.94 | 448 | fastest |
-| serpyco-rs | 7.79 | 448 | slower |
-| mashumaro | 11.4 | 448 | slower |
-| rapidjson | 13.0 | 448 | slower |
-| json | 20.8 | 448 | slower |
-| pydantic | 25.8 | 448 | slower |
+| orjson | 7.33 | 448 | fastest |
+| serpyco-rs | 15.9 | 448 | slower |
+| mashumaro | 18.4 | 448 | slower |
+| rapidjson | 22.9 | 448 | slower |
+| json | 36.3 | 448 | slower |
+| pydantic | 52.3 | 448 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 184 | 45404 | fastest |
-| serpyco-rs | 402 | 45404 | slower |
-| rapidjson | 475 | 45404 | slower |
-| mashumaro | 545 | 45404 | slower |
-| json | 599 | 45404 | slower |
-| pydantic | 1378 | 51203 | slower |
+| orjson | 236 | 45404 | fastest |
+| serpyco-rs | 481 | 45404 | slower |
+| rapidjson | 554 | 45404 | slower |
+| mashumaro | 645 | 45404 | slower |
+| json | 704 | 45404 | slower |
+| pydantic | 1089 | 45404 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 3.02 | 257 | fastest |
-| serpyco-rs | 5.48 | 257 | slower |
-| mashumaro | 6.96 | 257 | slower |
-| rapidjson | 9.23 | 257 | slower |
-| json | 15.9 | 257 | slower |
-| pydantic | 19.0 | 257 | slower |
+| orjson | 5.12 | 257 | fastest |
+| serpyco-rs | 11.6 | 257 | slower |
+| mashumaro | 11.9 | 257 | slower |
+| rapidjson | 16.3 | 257 | slower |
+| json | 27.4 | 257 | slower |
+| pydantic | 29.7 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 140 | 25746 | fastest |
-| serpyco-rs | 216 | 25746 | slower |
-| rapidjson | 259 | 25746 | slower |
-| mashumaro | 270 | 25746 | slower |
-| json | 360 | 25746 | slower |
-| pydantic | 789 | 28245 | slower |
+| orjson | 155 | 25746 | fastest |
+| serpyco-rs | 228 | 25746 | slower |
+| rapidjson | 261 | 25746 | slower |
+| mashumaro | 286 | 25746 | slower |
+| json | 365 | 25746 | slower |
+| pydantic | 547 | 25746 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 1.83 | 168 | fastest |
-| serpyco-rs | 3.96 | 168 | slower |
-| mashumaro | 4.25 | 168 | slower |
-| rapidjson | 7.59 | 168 | slower |
-| json | 12.0 | 168 | slower |
-| pydantic | 13.5 | 168 | slower |
+| orjson | 3.00 | 168 | fastest |
+| mashumaro | 6.95 | 168 | slower |
+| serpyco-rs | 7.73 | 168 | slower |
+| rapidjson | 10.7 | 168 | slower |
+| pydantic | 17.4 | 168 | slower |
+| json | 19.4 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 55.6 | 16546 | fastest |
-| serpyco-rs | 92.3 | 16546 | slower |
-| mashumaro | 114 | 16546 | slower |
-| rapidjson | 194 | 16546 | slower |
-| json | 218 | 16546 | slower |
-| pydantic | 408 | 18145 | slower |
+| orjson | 73.0 | 16546 | fastest |
+| serpyco-rs | 120 | 16546 | slower |
+| mashumaro | 139 | 16546 | slower |
+| rapidjson | 222 | 16546 | slower |
+| pydantic | 238 | 16546 | slower |
+| json | 259 | 16546 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 2.25 | 410 | fastest |
-| serpyco-rs | 3.86 | 410 | slower |
-| mashumaro | 4.42 | 410 | slower |
-| rapidjson | 7.65 | 410 | slower |
-| pydantic | 13.2 | 410 | slower |
-| json | 13.8 | 410 | slower |
+| orjson | 4.46 | 410 | fastest |
+| mashumaro | 6.92 | 410 | slower |
+| serpyco-rs | 7.87 | 410 | slower |
+| rapidjson | 10.6 | 410 | slower |
+| pydantic | 19.9 | 410 | slower |
+| json | 20.2 | 410 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 179 | 41564 | fastest |
-| serpyco-rs | 219 | 41564 | slower |
-| mashumaro | 246 | 41564 | slower |
-| rapidjson | 279 | 41564 | slower |
-| json | 362 | 41564 | slower |
-| pydantic | 578 | 44863 | slower |
+| orjson | 206 | 41564 | fastest |
+| serpyco-rs | 243 | 41564 | slower |
+| mashumaro | 275 | 41564 | slower |
+| rapidjson | 295 | 41564 | slower |
+| json | 405 | 41564 | slower |
+| pydantic | 494 | 41564 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 3.42 | 663 | fastest |
-| serpyco-rs | 5.71 | 663 | slower |
-| mashumaro | 6.51 | 663 | slower |
-| pydantic | 23.5 | 663 | slower |
-| rapidjson | 25.4 | 663 | slower |
-| json | 30.2 | 663 | slower |
+| orjson | 5.21 | 663 | fastest |
+| mashumaro | 8.90 | 663 | slower |
+| serpyco-rs | 9.20 | 663 | slower |
+| pydantic | 19.6 | 663 | slower |
+| rapidjson | 30.8 | 663 | slower |
+| json | 38.9 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 197 | 65958 | fastest |
-| serpyco-rs | 265 | 65958 | slower |
-| mashumaro | 296 | 65958 | slower |
-| json | 1644 | 65958 | slower |
-| rapidjson | 1682 | 65958 | slower |
-| pydantic | 1906 | 69957 | slower |
+| orjson | 211 | 65958 | fastest |
+| serpyco-rs | 269 | 65958 | slower |
+| mashumaro | 314 | 65958 | slower |
+| pydantic | 488 | 65958 | slower |
+| json | 1683 | 65958 | slower |
+| rapidjson | 1798 | 65958 | slower |
 
 ### go
 
@@ -234,111 +234,111 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| goccy/go-json | 3.66 | 448 | fastest |
-| segmentio/encoding/json | 3.97 | 448 | similar |
-| sonic | 4.26 | 448 | close |
-| jsoniter | 5.20 | 448 | slower |
-| ugorji/json | 5.90 | 448 | slower |
-| encoding/json | 10.2 | 448 | slower |
+| goccy/go-json | 3.85 | 448 | fastest |
+| segmentio/encoding/json | 4.01 | 448 | similar |
+| sonic | 5.24 | 448 | slower |
+| jsoniter | 5.33 | 448 | slower |
+| ugorji/json | 6.61 | 448 | slower |
+| encoding/json | 10.9 | 448 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 158 | 45404 | fastest |
-| goccy/go-json | 173 | 45404 | close |
-| segmentio/encoding/json | 181 | 45404 | slower |
-| jsoniter | 239 | 45404 | slower |
-| ugorji/json | 254 | 45404 | slower |
-| encoding/json | 646 | 45404 | slower |
+| sonic | 157 | 45404 | fastest |
+| segmentio/encoding/json | 172 | 45404 | slower |
+| goccy/go-json | 173 | 45404 | slower |
+| jsoniter | 238 | 45404 | slower |
+| ugorji/json | 251 | 45404 | slower |
+| encoding/json | 625 | 45404 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| goccy/go-json | 2.02 | 257 | fastest |
-| sonic | 2.06 | 257 | similar |
-| segmentio/encoding/json | 2.25 | 257 | close |
-| jsoniter | 2.40 | 257 | slower |
-| ugorji/json | 3.10 | 257 | slower |
-| encoding/json | 4.98 | 257 | slower |
+| goccy/go-json | 2.42 | 257 | fastest |
+| segmentio/encoding/json | 2.80 | 257 | close |
+| sonic | 3.03 | 257 | close |
+| jsoniter | 3.07 | 257 | slower |
+| ugorji/json | 4.09 | 257 | slower |
+| encoding/json | 6.13 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 93.1 | 25746 | fastest |
-| goccy/go-json | 105 | 25746 | slower |
+| sonic | 100 | 25746 | fastest |
+| goccy/go-json | 104 | 25746 | similar |
 | segmentio/encoding/json | 119 | 25746 | slower |
-| jsoniter | 137 | 25746 | slower |
+| jsoniter | 136 | 25746 | slower |
 | ugorji/json | 154 | 25746 | slower |
-| encoding/json | 349 | 25746 | slower |
+| encoding/json | 335 | 25746 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| segmentio/encoding/json | 1.88 | 168 | fastest |
-| sonic | 2.04 | 168 | similar |
-| goccy/go-json | 2.08 | 168 | similar |
-| jsoniter | 2.27 | 168 | slower |
-| ugorji/json | 2.67 | 168 | slower |
-| encoding/json | 3.59 | 168 | slower |
+| goccy/go-json | 1.68 | 168 | fastest |
+| sonic | 1.69 | 168 | similar |
+| segmentio/encoding/json | 1.75 | 168 | similar |
+| jsoniter | 2.32 | 168 | slower |
+| ugorji/json | 2.60 | 168 | slower |
+| encoding/json | 3.52 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 40.2 | 16546 | fastest |
-| goccy/go-json | 56.4 | 16546 | slower |
-| segmentio/encoding/json | 60.5 | 16546 | slower |
-| jsoniter | 87.6 | 16546 | slower |
-| ugorji/json | 88.8 | 16546 | slower |
-| encoding/json | 180 | 16546 | slower |
+| sonic | 46.4 | 16546 | fastest |
+| goccy/go-json | 60.9 | 16546 | slower |
+| segmentio/encoding/json | 62.8 | 16546 | slower |
+| ugorji/json | 93.1 | 16546 | slower |
+| jsoniter | 94.5 | 16546 | slower |
+| encoding/json | 189 | 16546 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 2.32 | 411 | fastest |
-| goccy/go-json | 3.22 | 411 | slower |
-| jsoniter | 3.25 | 411 | slower |
-| segmentio/encoding/json | 3.43 | 411 | slower |
-| ugorji/json | 3.94 | 411 | slower |
-| encoding/json | 7.58 | 411 | slower |
+| sonic | 1.85 | 411 | fastest |
+| goccy/go-json | 2.50 | 411 | slower |
+| segmentio/encoding/json | 2.85 | 411 | slower |
+| jsoniter | 2.96 | 411 | slower |
+| ugorji/json | 3.31 | 411 | slower |
+| encoding/json | 6.62 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 148 | 41431 | fastest |
-| ugorji/json | 214 | 41431 | slower |
-| goccy/go-json | 221 | 41431 | slower |
-| jsoniter | 233 | 41431 | slower |
-| segmentio/encoding/json | 235 | 41431 | slower |
-| encoding/json | 545 | 41431 | slower |
+| sonic | 144 | 41431 | fastest |
+| ugorji/json | 219 | 41431 | slower |
+| goccy/go-json | 222 | 41431 | slower |
+| jsoniter | 238 | 41431 | slower |
+| segmentio/encoding/json | 240 | 41431 | slower |
+| encoding/json | 564 | 41431 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 4.32 | 663 | fastest |
-| segmentio/encoding/json | 7.16 | 663 | slower |
-| goccy/go-json | 7.44 | 663 | slower |
-| ugorji/json | 9.01 | 663 | slower |
-| jsoniter | 10.1 | 663 | slower |
-| encoding/json | 12.2 | 663 | slower |
+| sonic | 4.61 | 663 | fastest |
+| goccy/go-json | 7.40 | 663 | slower |
+| segmentio/encoding/json | 7.62 | 663 | slower |
+| ugorji/json | 9.67 | 663 | slower |
+| jsoniter | 10.6 | 663 | slower |
+| encoding/json | 12.5 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic | 267 | 65958 | fastest |
-| segmentio/encoding/json | 553 | 65958 | slower |
-| goccy/go-json | 574 | 65958 | slower |
-| ugorji/json | 620 | 65958 | slower |
-| jsoniter | 775 | 65958 | slower |
-| encoding/json | 946 | 65958 | slower |
+| sonic | 276 | 65958 | fastest |
+| goccy/go-json | 553 | 65958 | slower |
+| segmentio/encoding/json | 561 | 65958 | slower |
+| ugorji/json | 629 | 65958 | slower |
+| jsoniter | 769 | 65958 | slower |
+| encoding/json | 914 | 65958 | slower |
 
 ### java
 
@@ -642,9 +642,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 7.01 | 448 | fastest |
-| fast-json-stringify | 11.8 | 448 | slower |
-| simdjson-parse+JSON.stringify | 22.6 | 448 | slower |
+| JSON.stringify | 10.5 | 448 | fastest |
+| fast-json-stringify | 15.2 | 448 | slower |
+| simdjson-parse+JSON.stringify | 31.4 | 448 | slower |
 
 **A (order), 100 record(s)**
 
@@ -652,71 +652,71 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |---------|-------------------|--------------|-------|
 | JSON.stringify | 377 | 45404 | fastest |
 | fast-json-stringify | 503 | 45404 | slower |
-| simdjson-parse+JSON.stringify | 731 | 45404 | slower |
+| simdjson-parse+JSON.stringify | 724 | 45404 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 3.54 | 257 | fastest |
-| fast-json-stringify | 5.72 | 257 | slower |
-| simdjson-parse+JSON.stringify | 12.7 | 257 | slower |
+| JSON.stringify | 4.92 | 257 | fastest |
+| fast-json-stringify | 7.14 | 257 | slower |
+| simdjson-parse+JSON.stringify | 14.7 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 223 | 25746 | fastest |
-| fast-json-stringify | 278 | 25746 | slower |
-| simdjson-parse+JSON.stringify | 438 | 25746 | slower |
+| JSON.stringify | 265 | 25746 | fastest |
+| fast-json-stringify | 323 | 25746 | slower |
+| simdjson-parse+JSON.stringify | 426 | 25746 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 3.45 | 168 | fastest |
-| fast-json-stringify | 4.95 | 168 | slower |
-| simdjson-parse+JSON.stringify | 11.8 | 168 | slower |
+| JSON.stringify | 4.42 | 168 | fastest |
+| fast-json-stringify | 6.01 | 168 | slower |
+| simdjson-parse+JSON.stringify | 13.7 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 93.1 | 16546 | fastest |
-| fast-json-stringify | 121 | 16546 | slower |
-| simdjson-parse+JSON.stringify | 223 | 16546 | slower |
+| JSON.stringify | 96.8 | 16546 | fastest |
+| fast-json-stringify | 129 | 16546 | slower |
+| simdjson-parse+JSON.stringify | 220 | 16546 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 3.55 | 411 | fastest |
-| fast-json-stringify | 6.81 | 411 | slower |
-| simdjson-parse+JSON.stringify | 11.8 | 411 | slower |
+| JSON.stringify | 4.30 | 411 | fastest |
+| fast-json-stringify | 7.69 | 411 | slower |
+| simdjson-parse+JSON.stringify | 14.1 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 359 | 41431 | fastest |
-| fast-json-stringify | 520 | 41431 | slower |
-| simdjson-parse+JSON.stringify | 542 | 41431 | slower |
+| JSON.stringify | 447 | 41431 | fastest |
+| fast-json-stringify | 538 | 41431 | slower |
+| simdjson-parse+JSON.stringify | 585 | 41431 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 7.81 | 663 | fastest |
-| fast-json-stringify | 8.81 | 663 | close |
-| simdjson-parse+JSON.stringify | 20.4 | 663 | slower |
+| JSON.stringify | 8.60 | 663 | fastest |
+| fast-json-stringify | 8.79 | 663 | similar |
+| simdjson-parse+JSON.stringify | 26.3 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 540 | 65958 | fastest |
-| fast-json-stringify | 582 | 65958 | close |
-| simdjson-parse+JSON.stringify | 863 | 65958 | slower |
+| JSON.stringify | 546 | 65958 | fastest |
+| fast-json-stringify | 554 | 65958 | similar |
+| simdjson-parse+JSON.stringify | 840 | 65958 | slower |
 
 ### rust
 
@@ -724,81 +724,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 1.50 | 460 | fastest |
-| serde_json | 1.86 | 460 | slower |
-| simd-json | 2.22 | 460 | slower |
+| sonic-rs | 2.63 | 460 | fastest |
+| serde_json | 3.18 | 460 | slower |
+| simd-json | 3.67 | 460 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 149 | 47101 | fastest |
-| serde_json | 217 | 47101 | slower |
-| simd-json | 237 | 47101 | slower |
+| sonic-rs | 136 | 47101 | fastest |
+| serde_json | 195 | 47101 | slower |
+| simd-json | 214 | 47101 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 0.89 | 258 | fastest |
-| serde_json | 1.18 | 258 | slower |
-| simd-json | 1.72 | 258 | slower |
+| sonic-rs | 1.66 | 258 | fastest |
+| serde_json | 2.00 | 258 | slower |
+| simd-json | 2.29 | 258 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 102 | 26978 | fastest |
-| serde_json | 149 | 26978 | slower |
-| simd-json | 182 | 26978 | slower |
+| sonic-rs | 88.6 | 26978 | fastest |
+| serde_json | 136 | 26978 | slower |
+| simd-json | 165 | 26978 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 0.56 | 182 | fastest |
-| serde_json | 0.65 | 182 | slower |
-| simd-json | 0.86 | 182 | slower |
+| sonic-rs | 1.02 | 182 | fastest |
+| serde_json | 1.18 | 182 | slower |
+| simd-json | 1.64 | 182 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 47.1 | 18070 | fastest |
-| serde_json | 67.8 | 18070 | slower |
-| simd-json | 87.1 | 18070 | slower |
+| sonic-rs | 44.4 | 18070 | fastest |
+| serde_json | 66.2 | 18070 | slower |
+| simd-json | 89.4 | 18070 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 1.47 | 390 | fastest |
-| serde_json | 1.77 | 390 | slower |
-| simd-json | 2.54 | 390 | slower |
+| sonic-rs | 2.18 | 390 | fastest |
+| serde_json | 2.80 | 390 | slower |
+| simd-json | 2.99 | 390 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 188 | 42750 | fastest |
-| simd-json | 260 | 42750 | slower |
-| serde_json | 297 | 42750 | slower |
+| sonic-rs | 156 | 42750 | fastest |
+| simd-json | 226 | 42750 | slower |
+| serde_json | 259 | 42750 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 1.95 | 672 | fastest |
-| serde_json | 2.03 | 672 | slower |
-| simd-json | 2.27 | 672 | slower |
+| serde_json | 2.65 | 672 | fastest |
+| sonic-rs | 2.73 | 672 | close |
+| simd-json | 3.27 | 672 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde_json | 216 | 67763 | fastest |
-| sonic-rs | 230 | 67763 | slower |
-| simd-json | 235 | 67763 | slower |
+| serde_json | 203 | 67763 | fastest |
+| sonic-rs | 225 | 67763 | slower |
+| simd-json | 228 | 67763 | slower |
 
 ### c
 
@@ -806,101 +806,101 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 5.75 | 460 | fastest |
-| cJSON | 11.1 | 460 | slower |
-| json-c | 19.3 | 460 | slower |
-| jansson | 20.7 | 460 | slower |
-| parson | 24.5 | 460 | slower |
+| yyjson | 5.79 | 460 | fastest |
+| cJSON | 13.8 | 460 | slower |
+| json-c | 19.2 | 460 | slower |
+| jansson | 22.2 | 460 | slower |
+| parson | 26.4 | 460 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 345 | 45951 | fastest |
-| cJSON | 805 | 45951 | slower |
-| json-c | 1496 | 45951 | slower |
-| jansson | 1647 | 45951 | slower |
-| parson | 1998 | 45951 | slower |
+| yyjson | 340 | 45951 | fastest |
+| cJSON | 818 | 45951 | slower |
+| json-c | 1330 | 45951 | slower |
+| jansson | 1577 | 45951 | slower |
+| parson | 1811 | 45951 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 2.40 | 264 | fastest |
-| cJSON | 5.59 | 264 | slower |
-| json-c | 8.27 | 264 | slower |
-| parson | 9.41 | 264 | slower |
-| jansson | 10.3 | 264 | slower |
+| yyjson | 3.93 | 264 | fastest |
+| cJSON | 7.98 | 264 | slower |
+| json-c | 11.8 | 264 | slower |
+| parson | 12.5 | 264 | slower |
+| jansson | 13.0 | 264 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 207 | 25937 | fastest |
-| cJSON | 436 | 25937 | slower |
-| json-c | 632 | 25937 | slower |
-| parson | 704 | 25937 | slower |
-| jansson | 811 | 25937 | slower |
+| yyjson | 243 | 25937 | fastest |
+| cJSON | 487 | 25937 | slower |
+| json-c | 708 | 25937 | slower |
+| parson | 724 | 25937 | slower |
+| jansson | 897 | 25937 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 1.52 | 171 | fastest |
-| cJSON | 3.84 | 172 | slower |
-| json-c | 5.17 | 172 | slower |
-| jansson | 6.34 | 172 | slower |
-| parson | 6.61 | 172 | slower |
+| yyjson | 2.22 | 171 | fastest |
+| cJSON | 5.29 | 172 | slower |
+| jansson | 7.29 | 171 | slower |
+| json-c | 7.32 | 172 | slower |
+| parson | 7.86 | 172 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 104 | 16878 | fastest |
-| cJSON | 297 | 16910 | slower |
-| json-c | 400 | 16962 | slower |
-| jansson | 495 | 16962 | slower |
-| parson | 566 | 16962 | slower |
+| yyjson | 128 | 16878 | fastest |
+| cJSON | 336 | 16910 | slower |
+| json-c | 423 | 16962 | slower |
+| jansson | 502 | 16878 | slower |
+| parson | 565 | 16962 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 4.28 | 391 | fastest |
-| cJSON | 8.70 | 391 | slower |
+| yyjson | 4.04 | 391 | fastest |
+| cJSON | 9.26 | 391 | slower |
 | parson | 10.6 | 391 | slower |
-| json-c | 11.3 | 391 | slower |
-| jansson | 16.4 | 391 | slower |
+| json-c | 11.7 | 391 | slower |
+| jansson | 14.6 | 391 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 326 | 41352 | fastest |
-| cJSON | 630 | 41352 | slower |
-| parson | 762 | 41352 | slower |
-| json-c | 777 | 41352 | slower |
-| jansson | 1145 | 41352 | slower |
+| yyjson | 355 | 41352 | fastest |
+| cJSON | 700 | 41352 | slower |
+| parson | 797 | 41352 | slower |
+| json-c | 847 | 41352 | slower |
+| jansson | 1211 | 41352 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 3.77 | 657 | fastest |
-| json-c | 26.5 | 688 | slower |
-| jansson | 30.9 | 688 | slower |
-| cJSON | 34.5 | 666 | slower |
-| parson | 43.2 | 688 | slower |
+| yyjson | 4.31 | 657 | fastest |
+| jansson | 24.7 | 657 | slower |
+| json-c | 28.2 | 688 | slower |
+| cJSON | 35.5 | 666 | slower |
+| parson | 42.5 | 688 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 275 | 66315 | fastest |
-| json-c | 2273 | 68605 | slower |
-| jansson | 2623 | 68605 | slower |
-| cJSON | 3158 | 66887 | slower |
-| parson | 3933 | 68605 | slower |
+| yyjson | 297 | 66315 | fastest |
+| jansson | 1928 | 66315 | slower |
+| json-c | 2193 | 68605 | slower |
+| cJSON | 3116 | 66887 | slower |
+| parson | 3908 | 68605 | slower |
 
 ### cpp
 
@@ -1010,171 +1010,171 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 14.1 | 440 | fastest |
-| NetJSON | 22.8 | 440 | slower |
-| Utf8Json | 27.4 | 440 | slower |
-| MS Bond Json | 38.1 | 440 | slower |
-| Jil | 41.1 | 440 | slower |
-| System.Text.Json | 68.3 | 588 | slower |
-| ServiceStack Json | 76.4 | 440 | slower |
-| Json.Net | 90.5 | 560 | slower |
-| fastJson | 91.3 | 972 | slower |
-| Json.Net (Helper) | 93.1 | 541 | slower |
-| MS DataContract Json | 97.1 | 588 | slower |
-| FsPicklerJson | 97.7 | 1024 | slower |
+| SpanJson | 15.9 | 440 | fastest |
+| NetJSON | 24.3 | 440 | slower |
+| Utf8Json | 29.0 | 440 | slower |
+| MS Bond Json | 41.0 | 440 | slower |
+| Jil | 51.7 | 440 | slower |
+| System.Text.Json | 71.1 | 440 | slower |
+| ServiceStack Json | 79.4 | 440 | slower |
+| fastJson | 93.5 | 972 | slower |
+| Json.Net (Helper) | 99.1 | 541 | slower |
+| Json.Net | 99.5 | 560 | slower |
+| FsPicklerJson | 101 | 768 | slower |
+| MS DataContract Json | 104 | 440 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 171 | 44614 | fastest |
-| Utf8Json | 210 | 44614 | slower |
-| NetJSON | 340 | 44383 | slower |
-| Jil | 422 | 44614 | slower |
-| MS Bond Json | 433 | 44383 | slower |
-| System.Text.Json | 489 | 59488 | slower |
-| FsPicklerJson | 788 | 66872 | slower |
-| ServiceStack Json | 797 | 44614 | slower |
-| Json.Net | 1008 | 58628 | slower |
-| Json.Net (Helper) | 1009 | 56520 | slower |
-| fastJson | 1147 | 57174 | slower |
-| MS DataContract Json | 1501 | 59488 | slower |
+| SpanJson | 194 | 44614 | fastest |
+| Utf8Json | 241 | 44614 | slower |
+| NetJSON | 370 | 44383 | slower |
+| MS Bond Json | 463 | 44383 | slower |
+| Jil | 480 | 44614 | slower |
+| System.Text.Json | 489 | 44614 | slower |
+| FsPicklerJson | 799 | 50153 | slower |
+| ServiceStack Json | 838 | 44614 | slower |
+| Json.Net | 999 | 58628 | slower |
+| Json.Net (Helper) | 1028 | 56520 | slower |
+| fastJson | 1218 | 57174 | slower |
+| MS DataContract Json | 1494 | 44614 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 8.04 | 254 | fastest |
-| MS Bond Json | 10.8 | 254 | slower |
-| NetJSON | 10.8 | 254 | slower |
-| Utf8Json | 13.7 | 254 | slower |
-| Json.Net (Helper) | 19.7 | 304 | slower |
-| Json.Net | 19.9 | 329 | slower |
-| System.Text.Json | 20.8 | 340 | slower |
-| ServiceStack Json | 21.2 | 254 | slower |
-| Jil | 21.6 | 254 | slower |
-| fastJson | 24.7 | 585 | slower |
-| MS DataContract Json | 33.8 | 340 | slower |
-| FsPicklerJson | 39.2 | 772 | slower |
+| SpanJson | 8.27 | 254 | fastest |
+| NetJSON | 10.5 | 254 | slower |
+| MS Bond Json | 13.2 | 254 | slower |
+| Utf8Json | 14.6 | 254 | slower |
+| Json.Net (Helper) | 21.9 | 304 | slower |
+| System.Text.Json | 22.2 | 254 | slower |
+| ServiceStack Json | 22.4 | 254 | slower |
+| Jil | 23.5 | 254 | slower |
+| Json.Net | 24.3 | 329 | slower |
+| fastJson | 26.2 | 585 | slower |
+| MS DataContract Json | 34.6 | 254 | slower |
+| FsPicklerJson | 42.9 | 579 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 113 | 25456 | fastest |
-| Utf8Json | 153 | 25456 | slower |
-| NetJSON | 176 | 25456 | slower |
-| MS Bond Json | 221 | 25456 | slower |
-| Jil | 291 | 25456 | slower |
-| System.Text.Json | 297 | 33944 | slower |
-| ServiceStack Json | 447 | 25456 | slower |
-| FsPicklerJson | 484 | 41324 | slower |
-| Json.Net (Helper) | 505 | 31360 | slower |
-| Json.Net | 511 | 32971 | slower |
-| fastJson | 554 | 31872 | slower |
-| MS DataContract Json | 725 | 33944 | slower |
+| SpanJson | 117 | 25456 | fastest |
+| Utf8Json | 157 | 25456 | slower |
+| NetJSON | 186 | 25456 | slower |
+| MS Bond Json | 235 | 25456 | slower |
+| System.Text.Json | 260 | 25456 | slower |
+| Jil | 307 | 25456 | slower |
+| ServiceStack Json | 462 | 25456 | slower |
+| FsPicklerJson | 463 | 30992 | slower |
+| Json.Net (Helper) | 526 | 31360 | slower |
+| Json.Net | 533 | 32971 | slower |
+| fastJson | 565 | 31872 | slower |
+| MS DataContract Json | 666 | 25456 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 8.42 | 157 | fastest |
-| MS Bond Json | 10.3 | 142 | slower |
-| NetJSON | 10.7 | 142 | slower |
-| Jil | 13.6 | 157 | slower |
-| Json.Net (Helper) | 14.1 | 167 | slower |
-| Json.Net | 14.9 | 172 | slower |
-| ServiceStack Json | 18.0 | 157 | slower |
-| Utf8Json | 18.1 | 157 | slower |
-| fastJson | 20.7 | 310 | slower |
-| System.Text.Json | 27.4 | 212 | slower |
-| MS DataContract Json | 30.2 | 212 | slower |
-| FsPicklerJson | 33.1 | 576 | slower |
+| SpanJson | 9.93 | 157 | fastest |
+| NetJSON | 10.9 | 142 | close |
+| MS Bond Json | 10.9 | 142 | slower |
+| Jil | 13.5 | 157 | slower |
+| Json.Net | 16.8 | 172 | slower |
+| Json.Net (Helper) | 16.9 | 167 | slower |
+| Utf8Json | 18.7 | 157 | slower |
+| ServiceStack Json | 18.9 | 157 | slower |
+| fastJson | 23.3 | 310 | slower |
+| System.Text.Json | 29.9 | 157 | slower |
+| MS DataContract Json | 37.0 | 157 | slower |
+| FsPicklerJson | 40.1 | 432 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 95.3 | 15456 | fastest |
-| NetJSON | 144 | 13961 | slower |
-| MS Bond Json | 167 | 13961 | slower |
-| System.Text.Json | 193 | 20608 | slower |
-| Jil | 200 | 15456 | slower |
-| ServiceStack Json | 276 | 15456 | slower |
-| Json.Net (Helper) | 283 | 16560 | slower |
-| Json.Net | 287 | 16971 | slower |
-| FsPicklerJson | 289 | 21060 | slower |
-| fastJson | 292 | 16944 | slower |
-| Utf8Json | 295 | 15456 | slower |
-| MS DataContract Json | 482 | 20608 | slower |
+| SpanJson | 93.0 | 15456 | fastest |
+| NetJSON | 135 | 13961 | slower |
+| MS Bond Json | 161 | 13961 | slower |
+| System.Text.Json | 162 | 15456 | slower |
+| Jil | 188 | 15456 | slower |
+| ServiceStack Json | 257 | 15456 | slower |
+| FsPicklerJson | 258 | 15794 | slower |
+| Json.Net | 267 | 16971 | slower |
+| Utf8Json | 268 | 15456 | slower |
+| Json.Net (Helper) | 275 | 16560 | slower |
+| fastJson | 280 | 16944 | slower |
+| MS DataContract Json | 441 | 15456 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 6.44 | 410 | fastest |
-| NetJSON | 8.27 | 410 | slower |
-| MS Bond Json | 9.04 | 410 | slower |
-| Utf8Json | 13.2 | 410 | slower |
-| Json.Net | 13.5 | 425 | slower |
-| Json.Net (Helper) | 14.1 | 420 | slower |
-| ServiceStack Json | 14.3 | 410 | slower |
-| System.Text.Json | 15.6 | 548 | slower |
-| Jil | 15.9 | 410 | slower |
-| fastJson | 17.9 | 563 | slower |
-| MS DataContract Json | 28.4 | 548 | slower |
-| FsPicklerJson | 34.1 | 960 | slower |
+| SpanJson | 5.67 | 410 | fastest |
+| NetJSON | 8.05 | 410 | slower |
+| MS Bond Json | 9.56 | 410 | slower |
+| Utf8Json | 12.2 | 410 | slower |
+| ServiceStack Json | 13.2 | 410 | slower |
+| Json.Net | 13.9 | 425 | slower |
+| Json.Net (Helper) | 14.8 | 420 | slower |
+| System.Text.Json | 15.9 | 410 | slower |
+| Jil | 16.7 | 410 | slower |
+| fastJson | 18.6 | 563 | slower |
+| MS DataContract Json | 28.0 | 410 | slower |
+| FsPicklerJson | 34.3 | 718 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 209 | 41574 | fastest |
-| NetJSON | 260 | 41574 | slower |
-| Utf8Json | 289 | 41574 | slower |
-| MS Bond Json | 317 | 41574 | slower |
-| System.Text.Json | 395 | 55432 | slower |
-| fastJson | 405 | 43062 | slower |
-| Jil | 414 | 41574 | slower |
-| Json.Net | 467 | 43089 | slower |
-| Json.Net (Helper) | 467 | 42678 | slower |
-| ServiceStack Json | 492 | 41574 | slower |
-| FsPicklerJson | 565 | 60284 | slower |
-| MS DataContract Json | 977 | 55432 | slower |
+| SpanJson | 211 | 41574 | fastest |
+| NetJSON | 264 | 41574 | slower |
+| Utf8Json | 287 | 41574 | slower |
+| MS Bond Json | 315 | 41574 | slower |
+| System.Text.Json | 329 | 41574 | slower |
+| Jil | 404 | 41574 | slower |
+| fastJson | 409 | 43062 | slower |
+| Json.Net | 460 | 43089 | slower |
+| Json.Net (Helper) | 462 | 42678 | slower |
+| ServiceStack Json | 495 | 41574 | slower |
+| FsPicklerJson | 510 | 45212 | slower |
+| MS DataContract Json | 912 | 41574 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| NetJSON | 18.0 | 663 | fastest |
-| MS Bond Json | 21.7 | 663 | slower |
-| SpanJson | 24.0 | 663 | slower |
-| Utf8Json | 27.1 | 663 | slower |
-| Json.Net (Helper) | 27.2 | 673 | slower |
+| NetJSON | 17.6 | 663 | fastest |
+| MS Bond Json | 21.9 | 663 | slower |
+| SpanJson | 23.1 | 663 | slower |
+| Utf8Json | 26.8 | 663 | slower |
 | Json.Net | 28.6 | 678 | slower |
-| Jil | 31.4 | 663 | slower |
-| System.Text.Json | 35.3 | 884 | slower |
-| ServiceStack Json | 35.3 | 663 | slower |
-| fastJson | 36.8 | 818 | slower |
-| MS DataContract Json | 48.7 | 884 | slower |
-| FsPicklerJson | 59.3 | 1340 | slower |
+| Json.Net (Helper) | 29.4 | 673 | slower |
+| Jil | 32.3 | 663 | slower |
+| System.Text.Json | 34.7 | 663 | slower |
+| fastJson | 36.3 | 818 | slower |
+| ServiceStack Json | 37.2 | 663 | slower |
+| MS DataContract Json | 45.5 | 663 | slower |
+| FsPicklerJson | 59.5 | 1004 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 718 | 65968 | fastest |
-| Utf8Json | 809 | 65974 | slower |
-| NetJSON | 847 | 65968 | slower |
-| System.Text.Json | 851 | 87960 | slower |
-| Jil | 1036 | 65968 | slower |
-| MS Bond Json | 1110 | 65968 | slower |
-| ServiceStack Json | 1169 | 65968 | slower |
-| Json.Net | 1286 | 67483 | slower |
-| fastJson | 1289 | 67460 | slower |
-| Json.Net (Helper) | 1304 | 67072 | slower |
-| FsPicklerJson | 1491 | 96944 | slower |
-| MS DataContract Json | 1981 | 87960 | slower |
+| SpanJson | 781 | 65968 | fastest |
+| System.Text.Json | 811 | 65968 | similar |
+| Utf8Json | 846 | 65974 | slower |
+| NetJSON | 862 | 65968 | slower |
+| Jil | 1118 | 65968 | slower |
+| MS Bond Json | 1188 | 65968 | slower |
+| ServiceStack Json | 1240 | 65968 | slower |
+| fastJson | 1356 | 67460 | slower |
+| Json.Net | 1356 | 67483 | slower |
+| Json.Net (Helper) | 1378 | 67072 | slower |
+| FsPicklerJson | 1507 | 72708 | slower |
+| MS DataContract Json | 1935 | 65968 | slower |
 
 ### swift
 

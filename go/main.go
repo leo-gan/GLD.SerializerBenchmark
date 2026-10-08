@@ -100,10 +100,45 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
-	if !model.Fidelity(fx.Value, out) {
+	if !model.Fidelity(expectedForFidelity(fx), out) {
 		err = fmt.Errorf("roundtrip fidelity failed for %s", ser.Name())
 	}
 	return
+}
+
+// expectedForFidelity is the full fixture, except table_project, which compares
+// the f_float_0 column (length N, including N=1).
+func expectedForFidelity(fx model.Fixture) any {
+	if fx.Name == "table_project" {
+		return modelv2.ProjectFFloat0(fx.Value)
+	}
+	return fx.Value
+}
+
+// serializerSelected: empty selects all. A filter with no comma is a
+// case-insensitive substring. A comma-separated list is case-insensitive
+// exact names, so "encoding/json" does not also select encoding/json/v2.
+func serializerSelected(name, filter string) bool {
+	filter = strings.TrimSpace(filter)
+	if filter == "" {
+		return true
+	}
+	if !strings.Contains(filter, ",") {
+		return strings.Contains(strings.ToLower(name), strings.ToLower(filter))
+	}
+	lowered := strings.ToLower(name)
+	saw := false
+	for _, part := range strings.Split(filter, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		saw = true
+		if lowered == strings.ToLower(part) {
+			return true
+		}
+	}
+	return !saw
 }
 
 // measureStream reuses streamBuf across reps (caller owns it; issue #59 buffer policy).
@@ -131,7 +166,7 @@ func measureStream(ser serializers.BenchSerializer, fx model.Fixture, streamBuf 
 	if err != nil {
 		return
 	}
-	if !model.Fidelity(fx.Value, out) {
+	if !model.Fidelity(expectedForFidelity(fx), out) {
 		err = fmt.Errorf("stream roundtrip fidelity failed for %s", ser.Name())
 	}
 	return
@@ -139,7 +174,7 @@ func measureStream(ser serializers.BenchSerializer, fx model.Fixture, streamBuf 
 
 func main() {
 	repsFlag := flag.Uint("reps", 10, "repetitions per serializer+data+mode")
-	serFilter := flag.String("serializer", "", "substring filter for serializer names")
+	serFilter := flag.String("serializer", "", "serializer filter; empty=all, no comma=substring, comma list=exact names")
 	dataFilter := flag.String("data", "", "substring filter for test data names")
 	logDirFlag := flag.String("log-dir", "", "output log directory")
 	flag.Parse()
@@ -187,7 +222,7 @@ func main() {
 
 	var sers []serializers.BenchSerializer
 	for _, s := range serializers.All() {
-		if sf != "" && !strings.Contains(strings.ToLower(s.Name()), strings.ToLower(sf)) {
+		if !serializerSelected(s.Name(), sf) {
 			continue
 		}
 		sers = append(sers, s)
@@ -220,6 +255,12 @@ func main() {
 	if len(resolved.Execution.IOModes) > 0 {
 		modes = resolved.Execution.IOModes
 	}
+	optStream := optionalStreamNames("go")
+	var present []string
+	for _, ser := range sers {
+		present = append(present, ser.Name())
+	}
+	modes = modesWithOptionalStream(modes, optStream, present)
 	for _, c := range resolved.Cells {
 		if df != "" && !strings.Contains(strings.ToLower(c.TypeID), strings.ToLower(df)) {
 			continue
@@ -306,6 +347,9 @@ func main() {
 				}
 				for pos, p := range order {
 					if failed[p.ser.Name()] {
+						continue
+					}
+					if mode == "stream" && !optStream[p.ser.Name()] {
 						continue
 					}
 					ser := p.ser

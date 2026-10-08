@@ -5,13 +5,12 @@
  * (fed by ./scripts/run-compliance.sh). Results live here, not in MkDocs pages.
  */
 import './compliance.css';
-import { serializerDisplayName } from './format.js';
+import { serializerDisplayName, serializerSelectLabel } from './format.js';
 import {
   loadSerializerSources,
   serializerNameHtml,
 } from './serializer-sources.js';
 import {
-  heatmapFromMatrix,
   languageOf as languageOfCell,
   matchesRow as matrixMatchesRow,
   parseRowIdentity,
@@ -24,10 +23,9 @@ import {
   formatLabel,
   noSpecEntries as computeNoSpecEntries,
   normalizeMatrixCell,
-  attachFormats,
   benchMapFromGroups,
+  complianceHeatmap,
   formatSubset,
-  padHeatmap,
   rosterEntries,
   rowIsUnscored,
   standardMenuOptions,
@@ -89,14 +87,14 @@ function matchesRow(row, key) {
   return matrixMatchesRow(row, key, ui.lang === ALL_LANG ? '' : ui.lang);
 }
 
-function serializerLabel(row) {
-  const name = serializerOf(row);
+function versionForLabel(row) {
   const fromRow = row?.serializer_version == null ? '' : String(row.serializer_version).trim();
-  const ver =
-    fromRow && fromRow !== 'unknown' && fromRow !== '—'
-      ? fromRow
-      : benchVersion(String(row?.language || payload?.language || ''), name);
-  return serializerDisplayName(name, ver);
+  if (fromRow && fromRow !== 'unknown' && fromRow !== '—') return fromRow;
+  return benchVersion(String(row?.language || payload?.language || ''), serializerOf(row));
+}
+
+function serializerLabel(row) {
+  return serializerDisplayName(serializerOf(row), versionForLabel(row));
 }
 
 function benchVersion(language, name) {
@@ -173,6 +171,9 @@ function parseHash() {
 
 function setComplianceView(on) {
   document.body.classList.toggle('dash-view-compliance', on);
+  if (on) {
+    document.body.classList.remove('dash-view-overview', 'dash-view-compare', 'dash-view-experiments');
+  }
   const link = document.getElementById('nav-compliance-link');
   if (link) link.parentElement?.classList.toggle('active', on);
   if (on) {
@@ -421,19 +422,13 @@ function renderHeatmap(matrix) {
   const extras = ui.format
     ? formatSubset(matrix, ui.format, group.language, group.benchVersions)
     : rosterEntries(group);
-  const { columns, rows } = attachFormats(
-    padHeatmap(
-      heatmapFromMatrix(matrix, {
-        format: ui.format,
-        serializerKey: ui.serializer,
-      }),
-      extras,
-      { serializerKey: ui.serializer },
-    ),
-    matrix,
-    group.language,
-    group.benchVersions,
-  );
+  const { columns, rows } = complianceHeatmap(matrix, {
+    format: ui.format,
+    serializerKey: ui.serializer,
+    language: group.language,
+    benchVersions: group.benchVersions,
+    extras,
+  });
   if (!rows.length) {
     return '<p class="section-help">No results for this standard.</p><div id="cmp-fail-panel" class="cmp-fail-panel" hidden></div>';
   }
@@ -445,7 +440,10 @@ function renderHeatmap(matrix) {
       const tds = columns
         .map((col) => {
           const acc = row.byStandard.get(col.key);
-          if (!acc) return '<td class="cmp-cell-empty">—</td>';
+          if (!acc) {
+            const title = col.unscored ? ' title="No validity corpus"' : '';
+            return `<td class="cmp-cell-empty"${title}>—</td>`;
+          }
           const judged = acc.passed + acc.failed;
           const rate = judged ? acc.passed / judged : null;
           return `<td class="${rateClass(rate)}">
@@ -573,6 +571,7 @@ function renderMain(root) {
     : allStandards
       ? roster.map((e) => e.key)
       : formatSubset(matrix, ui.format, group.language, group.benchVersions).map((e) => e.key);
+  const namesInList = serializers.map((key) => parseRowIdentity(key).serializer || key);
 
   root.innerHTML = `
     <div class="cmp-header">
@@ -616,13 +615,16 @@ function renderMain(root) {
           const sample = langRows.find(
             (r) => serializerOf(r) === ser && languageOf(r) === language,
           );
-          const label = sample
-            ? serializerLabel(sample)
-            : serializerDisplayName(ser, benchVersion(language, ser));
+          const ver = sample
+            ? versionForLabel(sample)
+            : benchVersion(language, ser);
+          const label = serializerSelectLabel(ser, ver, namesInList);
           return isMultiLang() ? `${langLabel(language)} · ${label}` : label;
         }
         const sample = langRows.find((r) => serializerOf(r) === name);
-        return sample ? serializerLabel(sample) : name;
+        return sample
+          ? serializerSelectLabel(serializerOf(sample), versionForLabel(sample), namesInList)
+          : name;
       })}
     </div>
     <h3 class="cmp-kicker">${noSpec ? 'Serializers not scored under a public spec family' : 'Pass rate by serializer × standard version'}</h3>
@@ -630,8 +632,8 @@ function renderMain(root) {
       noSpec
         ? 'All language serializers minus those that belong to JSON, YAML, MessagePack, Protocol Buffers, or another public family. Private and XML/CSV codecs land here. Group list only — no pass/fail cells.'
         : allStandards
-          ? 'Every Overview serializer once. Family tags come from official docs. A scored cell means that language’s compliance runner decoded the catalog with that library. Empty cells mean the runner has no adapter for that pair yet. Click a scored cell to open failures.'
-          : 'Serializers that implement this family (from official docs). Columns are versions. Empty cells mean this language’s runner does not yet decode that catalog. Click a scored cell to open failures.'
+          ? 'Every Overview serializer once. Family tags come from official docs. A scored cell means that language’s compliance runner decoded the catalog with that library. Empty cells mean the runner has no adapter for that pair yet, or this suite has no validity corpus for that standard. Click a scored cell to open failures.'
+          : 'Serializers that implement this family (from official docs). Columns are versions. Empty cells mean this language’s runner does not yet decode that catalog, or the suite has no validity corpus for that standard. Click a scored cell to open failures.'
     }</p>
     ${renderHeatmap(matrix)}
   `;

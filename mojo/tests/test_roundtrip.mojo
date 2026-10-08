@@ -6,6 +6,7 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
+from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
@@ -14,6 +15,11 @@ from bench.dagr_regular_ser import DagrRegularSer
 from bench.dagr_frozen_ser import DagrFrozenSer
 from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
 from bench.bson_ser import BsonSer
+from bench.ion_ser import IonSer
+from bench.smile_ser import SmileSer
+from bench.arrow_ser import ArrowIpcSer
+from bench.parquet_ser import ParquetSer
+from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -26,11 +32,14 @@ def _roundtrip_all(type_id: String) raises:
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
     var toml = TomlSer()
+    var gldtoml = GldTomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
     var dagr = DagrSer()
     var bson = BsonSer()
+    var ion = IonSer()
+    var smile = SmileSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -45,6 +54,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("flatbuffers fidelity " + type_id)
     if not toml.check(fx, toml.serialize_bytes(fx)):
         raise Error("toml fidelity " + type_id)
+    if not gldtoml.check(fx, gldtoml.serialize_bytes(fx)):
+        raise Error("gld-toml fidelity " + type_id)
     if not gldj.check(fx, gldj.serialize_bytes(fx)):
         raise Error("mojo-json fidelity " + type_id)
     if not yaml.check(fx, yaml.serialize_bytes(fx)):
@@ -64,6 +75,10 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("dagr-frozen-packed fidelity " + type_id)
     if not bson.check(fx, bson.serialize_bytes(fx)):
         raise Error("mojo-bson fidelity " + type_id)
+    if not ion.check(fx, ion.serialize_bytes(fx)):
+        raise Error("mojo-ion fidelity " + type_id)
+    if not smile.check(fx, smile.serialize_bytes(fx)):
+        raise Error("mojo-smile fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:
@@ -72,6 +87,26 @@ def _ehsan_batch(type_id: String) raises:
     var ehsan = EhsanJsonSer()
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
         raise Error("ehsanmok-json fidelity n=100 " + type_id)
+
+
+def _yaml_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var one = make_one(type_id, cfg, UInt64(42), 0)
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var yaml = YamlSer()
+    var small = yaml.serialize_bytes(one)
+    var buf = yaml.serialize_bytes(fx)
+    if not yaml.check(fx, buf):
+        raise Error("gld-yaml fidelity n=100 " + type_id)
+    if len(buf) < len(small) * 50:
+        raise Error(
+            "gld-yaml size n=100 "
+            + type_id
+            + " "
+            + String(len(buf))
+            + " vs n=1 "
+            + String(len(small))
+        )
 
 
 def _flatbuffers_batch(type_id: String) raises:
@@ -101,6 +136,61 @@ def _dagr_batch(type_id: String) raises:
             raise Error("dagr-frozen fidelity n=100 " + type_id)
         if not dagr_fp.check(fx, dagr_fp.serialize_bytes(fx)):
             raise Error("dagr-frozen-packed fidelity n=100 " + type_id)
+def _columnar(type_id: String, n: Int) raises -> Int:
+    var cfg = TypeConfig()
+    if type_id == "nested_table":
+        cfg.children = 4
+        cfg.string_max = 12
+    if type_id == "signal":
+        cfg.group_count = 4
+        cfg.string_max = 12
+    var fx = make_cell(type_id, cfg, UInt64(42), n, "h")
+    var arrow = ArrowIpcSer()
+    var parquet = ParquetSer("parquet", CODEC_SNAPPY)
+    var raw = ParquetSer("parquet-uncompressed", CODEC_NONE)
+    var ab = arrow.serialize_bytes(fx)
+    var pb = parquet.serialize_bytes(fx)
+    var ub = raw.serialize_bytes(fx)
+    if not arrow.check(fx, ab):
+        raise Error("arrow-ipc fidelity " + type_id + " n=" + String(n))
+    if not parquet.check(fx, pb):
+        raise Error("parquet fidelity " + type_id + " n=" + String(n))
+    if not raw.check(fx, ub):
+        raise Error("parquet-uncompressed fidelity " + type_id + " n=" + String(n))
+    if len(ab) < 8 or len(pb) < 8 or len(ub) < 8:
+        raise Error("columnar payload too small " + type_id)
+    return len(ab)
+
+
+def _columnar_scale() raises:
+    var one = _columnar("table", 1)
+    var hundred = _columnar("table", 100)
+    # IPC schema and alignment dominate n=1. The added rows must still grow the file.
+    if hundred - one < 99 * 80:
+        raise Error("arrow-ipc table n=100 did not scale: " + String(hundred) + " vs " + String(one))
+    _ = _columnar("table_project", 1)
+    _ = _columnar("table_project", 100)
+    _ = _columnar("nested_table", 1)
+    _ = _columnar("nested_table", 3)
+    _ = _columnar("signal", 1)
+    _ = _columnar("signal", 3)
+    var cfg = TypeConfig()
+    cfg.group_count = 0
+    cfg.children = 0
+    var empty_sig = make_cell("signal", cfg, UInt64(7), 2, "e")
+    var empty_nest = make_cell("nested_table", cfg, UInt64(7), 2, "e")
+    var arrow = ArrowIpcSer()
+    var parquet = ParquetSer("parquet", CODEC_NONE)
+    if not arrow.check(empty_sig, arrow.serialize_bytes(empty_sig)):
+        raise Error("arrow empty signal legs")
+    if not parquet.check(empty_nest, parquet.serialize_bytes(empty_nest)):
+        raise Error("parquet empty nested items")
+    var neg = make_cell("table", TypeConfig(), UInt64(1), 1, "n")
+    neg.tables[0].floats[0] = -1.5
+    if not arrow.check(neg, arrow.serialize_bytes(neg)):
+        raise Error("arrow negative float")
+    if not parquet.check(neg, parquet.serialize_bytes(neg)):
+        raise Error("parquet negative float")
 
 
 def main() raises:
@@ -121,4 +211,10 @@ def main() raises:
     _dagr_batch("telemetry")
     _dagr_batch("strings")
     _dagr_batch("event")
+    _yaml_batch("message")
+    _yaml_batch("document")
+    _yaml_batch("telemetry")
+    _yaml_batch("strings")
+    _yaml_batch("event")
+    _columnar_scale()
     print("ok")

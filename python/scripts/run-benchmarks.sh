@@ -19,7 +19,8 @@ case " $VALID_MODES custom " in
   *" $MODE "*) ;;
   *)
     echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
-    echo "  dataFilter type_ids: message|document|telemetry|strings|event"
+    echo "  dataFilter type_ids: message|document|telemetry|strings|event|table|table_project|nested_table|signal"
+    echo "  serializerFilter: one substring, or a comma-separated allow-list"
     echo "  Requires: Python 3.12+ and uv (https://docs.astral.sh/uv/)"
     exit 1
     ;;

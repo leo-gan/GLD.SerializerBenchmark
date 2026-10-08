@@ -1,6 +1,6 @@
 # Benchmark modes
 
-This page explains the two different meanings of **mode** in this project. Both show up in docs, scripts, and the Dashboard Mode filter. Mixing them up is a common source of confusion.
+This page explains the two different meanings of **mode** in this project. I/O mode is how a raw CSV row called the library. Run mode is how heavy the experiment was. The dashboard ranks a parent row. An I/O control opens a second level only when one was stored.
 
 | Name | Question it answers | Example values |
 |------|---------------------|----------------|
@@ -16,7 +16,7 @@ A third related idea is **batch size N** (1 vs 100 instances in one call). That 
 After this page you should be able to:
 
 1. Tell I/O mode and run mode apart in one sentence each.
-2. Explain why the Dashboard Mode filter shows **bytes** and **stream** side by side.
+2. Explain why the dashboard ranks one parent row, and when an I/O child is the average of two levels or a C# Base64 string.
 3. Choose a run mode for a quick check vs a publishable snapshot.
 4. Avoid unfair comparisons (different modes, or “adapted” stream vs a real stream API).
 
@@ -119,17 +119,35 @@ If stream and bytes (or string) times are almost the same, check the language **
 | Place | What you see |
 |-------|----------------|
 | Raw CSV | Column `StringOrStream` |
-| Analysis groups | Part of the group key: language + serializer + data type + **I/O mode** |
-| Dashboard | Mode filter **bytes** / **stream** |
-| Fair ranking | Compare serializers in the **same** language, same data type, same **I/O mode** |
+| Published group | Language + serializer + **standard** + **data set** + data type + batch size. I/O is not part of the key |
+| Dashboard | **Standard** filter (default All). Data types are grouped under Suite and Columnar. An **I/O** control opens child rows when a second level was stored |
+| Fair ranking | Compare serializers in the **same** language, same **standard**, same **data set**, same data type. Rankings use the parent row |
 
 ### Fair comparison checklist (I/O)
 
-- Same **language**  
-- Same **category** when possible (JSON with JSON, …)  
-- Same **data type** and same **batch size N**  
-- Same **I/O mode** (do not crown a winner from stream vs someone else’s bytes path)  
-- If stream ≈ bytes, prefer the language Overview’s honesty notes before drawing API conclusions  
+- Same **language**
+- Same **standard** (`json` with `json`, `avro` with `avro`)
+- Same **data set** and same **data type**, and the same batch size N
+- Rank the **parent** row. Open I/O only to read a second level that the opt-in list stored
+- If a child is labeled adapted, read the honesty notes before treating it as a stream API
+
+---
+
+## Dimension contract
+
+Standard and Data Set are labels on rows the suite already measures. The machine-readable contract is [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it does not already support.
+
+| Dimension | Where it comes from | Values |
+|-----------|---------------------|--------|
+| **Standard** | [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) | `json`, `avro`, `parquet`, … |
+| **Data Set** | `data_set` on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) | `suite` (message, document, telemetry, strings, event) and `columnar` (table, table_project, nested_table, signal) |
+| **Data Type** | the type id, child of its Data Set | `message`, `table`, … |
+
+An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.
+
+**Optional I/O.** Under this contract the publication matrix times the in-memory API. A second level is kept only for the opt-in list in the contract: native or text-on-stream, batch N=100, absolute pooled median gap over 10%, and the 95% CI excludes 0. Adapted stream is not a second level. Java, Kotlin, Swift, and Rust stay on the in-memory row until their runners measure a real second API.
+
+When both stored levels have the same payload size, the parent row is the arithmetic mean of the two medians, and the table opens into the two levels. Rankings use that mean. When the string path is Base64 of the raw bytes (size ratio about 3/4), the parent is the raw-byte measurement and the string path is the child. Those two payloads are not averaged.
 
 ---
 
@@ -206,8 +224,8 @@ Read as: Python, **bytes** I/O mode, data type **message**, batch **N=100**, lib
 
 ### Dashboard tables
 
-- **Overview** ranks the current data-type and Mode slice (usually the in-memory path).  
-- Switch the Mode filter to compare **bytes** and **stream** for the same fixture.  
+- **Overview** ranks the parent row for the current language, standard, and data type.
+- **I/O** on a row opens the stored levels. A same-size pair shows **avg** on the parent. A C# Base64 pair shows the raw-byte parent and the string child.
 - **Details** breaks out median / std / P95 / P99 so you can see which workload matters.
 
 If stream and bytes look almost equal, open [stream honesty](#three-levels-of-stream-honesty) before concluding the library’s stream API is “free.”

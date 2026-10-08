@@ -163,7 +163,7 @@ struct ProtobufSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.6.0"
+        self.version = "0.7.0"
 
     def name(self) -> String:
         return "mojo-protobuf"

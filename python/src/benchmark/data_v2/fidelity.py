@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import asdict, fields, is_dataclass
 from typing import Any
 
@@ -40,7 +41,8 @@ def _norm(obj: Any) -> Any:
             pass
     if is_dataclass(obj) and not isinstance(obj, type):
         return {f.name: _norm(getattr(obj, f.name)) for f in fields(obj)}
-    if isinstance(obj, dict):
+    # amazon.ion IonPyDict is a Mapping and not a dict.
+    if isinstance(obj, Mapping):
         return {str(k): _norm(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [_norm(v) for v in obj]
@@ -123,3 +125,34 @@ def _eq(a: Any, b: Any) -> bool:
 
 def fidelity_v2(expected: Any, actual: Any) -> float:
     return 1.0 if _eq(expected, actual) else 0.0
+
+
+def project_f_float_0(decoded: Any) -> list[float]:
+    """Pull ``f_float_0`` from a full table row, a batch, or a batch protobuf message."""
+    if hasattr(decoded, "DESCRIPTOR") and getattr(decoded, "DESCRIPTOR", None) is not None:
+        name = decoded.DESCRIPTOR.name or ""
+        if name.startswith("Batch"):
+            return [float(item.f_float_0) for item in decoded.items]
+        return [float(decoded.f_float_0)]
+    if isinstance(decoded, list):
+        return [float(_row_field(row, "f_float_0")) for row in decoded]
+    return [float(_row_field(decoded, "f_float_0"))]
+
+
+def _row_field(row: Any, name: str) -> Any:
+    if isinstance(row, Mapping):
+        return row[name]
+    return getattr(row, name)
+
+
+def expected_for_fidelity(type_id: str, instances: list[Any]) -> Any:
+    """Value compared after deserialize.
+
+    ``table_project`` serializes the full row and deserializes ``f_float_0`` only,
+    including when N is 1. Other types compare the single instance or the batch list.
+    """
+    if type_id == "table_project":
+        return [float(getattr(row, "f_float_0")) for row in instances]
+    if len(instances) == 1:
+        return instances[0]
+    return list(instances)

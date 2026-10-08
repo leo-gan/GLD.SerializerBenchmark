@@ -18,7 +18,7 @@
 
 use crate::compress::compress_sizes;
 use crate::csv_log::CsvLogger;
-use crate::data::{self, fidelity, Fixture};
+use crate::data::{self, Fixture};
 use crate::schedule::{
     derive_schedule_seed, fisher_yates, resolve_record_run_order, resolve_schedule_strategy,
 };
@@ -107,18 +107,15 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
         let type_id = c["type_id"].as_str().unwrap_or("").to_string();
         let n = c["data_type_instance_count"].as_i64().unwrap_or(1) as i32;
         let hash = c["type_config_hash"].as_str().unwrap_or("").to_string();
-        let children = c["type_config"]["children"].as_i64().unwrap_or(8) as i32;
-        let points = c["type_config"]["points"].as_i64().unwrap_or(32) as i32;
-        let count = c["type_config"]["count"].as_i64().unwrap_or(32) as i32;
-        let attrs = c["type_config"]["attr_count"].as_i64().unwrap_or(4) as i32;
+        let cfg = data::TypeConfig::from_value(
+            c.get("type_config").cloned().unwrap_or(Value::Null),
+        );
         let n = n.max(1);
         // Build all N instances (W×C batch axis). Must not collapse N>1 to a single item
         // while still labeling CSV DataTypeInstanceCount=N (that made Rust look 100× too fast).
         let mut fixtures = Vec::with_capacity(n as usize);
         for i in 0..n {
-            fixtures.push(data::make_one(
-                &type_id, seed, i, children, points, count, attrs,
-            )?);
+            fixtures.push(data::make_one(&type_id, seed, i, &cfg)?);
         }
         out_cells.push(Cell {
             type_id,
@@ -191,20 +188,8 @@ fn deserialize_cell_bytes(
     Ok(out)
 }
 
-fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
-    if expected.len() != got.len() {
-        anyhow::bail!(
-            "fidelity batch len {} != {}",
-            got.len(),
-            expected.len()
-        );
-    }
-    for (a, b) in expected.iter().zip(got.iter()) {
-        if !fidelity(a, b) {
-            anyhow::bail!("fidelity failed for {}", a.name());
-        }
-    }
-    Ok(())
+fn check_batch_fidelity(type_id: &str, expected: &[Fixture], got: &[Fixture]) -> Result<()> {
+    data::check_cell_fidelity(type_id, expected, got)
 }
 
 fn native_kind_str(ser: &dyn BenchSerializer) -> &'static str {
@@ -213,6 +198,7 @@ fn native_kind_str(ser: &dyn BenchSerializer) -> &'static str {
         crate::serializers::NativeKind::Message => "message",
         crate::serializers::NativeKind::Archive => "archive",
         crate::serializers::NativeKind::Direct => "direct",
+        crate::serializers::NativeKind::Table => "table",
     }
 }
 
@@ -237,6 +223,33 @@ fn measure_trial(
 ) -> Result<(u128, u128, usize)> {
     ser_buf.clear();
     cell_scratch.clear();
+    if data::is_columnar_id(&cell.type_id) {
+        // One payload for the whole cell (bytes and stream). Not the old length-prefix frame.
+        // Cursor reset is untimed, same role as serialize_cell_into's begin_cell_encode.
+        ser.begin_cell_encode();
+        let t0 = Instant::now();
+        let size = if mode == "stream" && cell.fixtures.len() == 1 {
+            ser.serialize_stream(black_box(&cell.fixtures[0]), black_box(&mut *ser_buf))?
+        } else if mode == "stream" {
+            ser.serialize_fixtures_stream(black_box(&cell.fixtures), black_box(&mut *ser_buf))?
+        } else {
+            ser.serialize_fixtures(black_box(&cell.fixtures), black_box(&mut *ser_buf))?;
+            ser_buf.len()
+        };
+        let ser_ns = t0.elapsed().as_nanos();
+        black_box(size);
+        let t1 = Instant::now();
+        let out = if mode == "stream" {
+            let mut cursor = std::io::Cursor::new(ser_buf.as_slice());
+            ser.deserialize_stream(black_box(&mut cursor))?
+        } else {
+            ser.deserialize_bytes(black_box(ser_buf.as_slice()))?
+        };
+        let deser_ns = t1.elapsed().as_nanos();
+        black_box(&out);
+        check_batch_fidelity(&cell.type_id, &cell.fixtures, &[out])?;
+        return Ok((ser_ns, deser_ns, size));
+    }
     let t0 = Instant::now();
     if mode == "stream" {
         // B-6: for native stream codecs, timed ser AND deser must use stream APIs.
@@ -255,7 +268,7 @@ fn measure_trial(
             let out = ser.deserialize_stream(black_box(&mut cursor))?;
             let deser_ns = t1.elapsed().as_nanos();
             black_box(&out);
-            check_batch_fidelity(&cell.fixtures, &[out])?;
+            check_batch_fidelity(&cell.type_id, &cell.fixtures, &[out])?;
             Ok((ser_ns, deser_ns, n))
         } else {
             // Multi-instance stream uses batch framing + deserialize_bytes (adapted).
@@ -266,7 +279,7 @@ fn measure_trial(
             let outs = deserialize_cell_bytes(ser, ser_buf, &cell.fixtures)?;
             let deser_ns = t1.elapsed().as_nanos();
             black_box(&outs);
-            check_batch_fidelity(&cell.fixtures, &outs)?;
+            check_batch_fidelity(&cell.type_id, &cell.fixtures, &outs)?;
             Ok((ser_ns, deser_ns, ser_buf.len()))
         }
     } else {
@@ -277,7 +290,7 @@ fn measure_trial(
         let outs = deserialize_cell_bytes(ser, ser_buf, &cell.fixtures)?;
         let deser_ns = t1.elapsed().as_nanos();
         black_box(&outs);
-        check_batch_fidelity(&cell.fixtures, &outs)?;
+        check_batch_fidelity(&cell.type_id, &cell.fixtures, &outs)?;
         Ok((ser_ns, deser_ns, ser_buf.len()))
     }
 }
@@ -337,10 +350,7 @@ pub fn run_v2(
         cells.retain(|c| c.type_id.to_lowercase().contains(&f));
     }
     let mut serializers = all_serializers();
-    if let Some(f) = ser_filter {
-        let f = f.to_lowercase();
-        serializers.retain(|s| s.name().to_lowercase().contains(&f));
-    }
+    serializers.retain(|s| crate::serializer_selected(s.name(), ser_filter));
 
     let strategy = resolve_schedule_strategy();
     let record_ro = resolve_record_run_order();

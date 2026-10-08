@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -12,8 +12,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | A order | B flat | C sensor | D event | E words | Same as A? | Full table |
 |----------|---------|--------|----------|---------|---------|------------|------------|
-| python | — | orjson | msgspec-msgpack | — | orjson | no | [python/results.md](python/results.md) |
-| go | — | protobuf | protobuf | — | protobuf | no | [go/results.md](go/results.md) |
+| python | — | msgspec-msgpack | msgspec-msgpack | — | msgspec-msgpack | no | [python/results.md](python/results.md) |
+| go | — | protobuf | protobuf | — | goccy/go-json | no | [go/results.md](go/results.md) |
 | java | — | protobuf | jsoniter | — | jsoniter | no | [java/results.md](java/results.md) |
 | kotlin | — | protobuf | protobuf | — | moshi-codegen | no | [kotlin/results.md](kotlin/results.md) |
 | php | — | json | rybakit-msgpack | — | json | no | [php/results.md](php/results.md) |
@@ -21,7 +21,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | rust | — | prost | prost | — | rmp-serde | no | [rust/results.md](rust/results.md) |
 | c | — | protobuf-wire | protobuf-wire | — | protobuf-wire | no | [c/results.md](c/results.md) |
 | cpp | — | protobuf-wire | msgpack | — | protobuf-wire | no | [cpp/results.md](cpp/results.md) |
-| csharp | — | SpanJson | Google.Protobuf | — | Google.Protobuf | no | [csharp/results.md](csharp/results.md) |
+| csharp | — | SpanJson | Google.Protobuf | — | SpanJson | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | SwiftProtobuf | — | SwiftProtobuf | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | comptime-bin | — | comptime-bin | no | [zig/results.md](zig/results.md) |
 | mojo | — | mojo-avro | mojo-flatbuffers | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
@@ -30,12 +30,12 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | Sample | Fastest at 1 | Fastest at 100 | Same? |
 |----------|--------|--------------|----------------|-------|
-| python | B (flat) | orjson | — | no |
+| python | B (flat) | msgspec-msgpack | — | no |
 | python | C (sensor) | msgspec-msgpack | — | no |
-| python | E (words) | orjson | — | no |
+| python | E (words) | msgspec-msgpack | — | no |
 | go | B (flat) | protobuf | — | no |
 | go | C (sensor) | protobuf | — | no |
-| go | E (words) | protobuf | — | no |
+| go | E (words) | goccy/go-json | — | no |
 | java | B (flat) | protobuf | — | no |
 | java | C (sensor) | jsoniter | — | no |
 | java | E (words) | jsoniter | — | no |
@@ -59,7 +59,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | E (words) | protobuf-wire | — | no |
 | csharp | B (flat) | SpanJson | — | no |
 | csharp | C (sensor) | Google.Protobuf | — | no |
-| csharp | E (words) | Google.Protobuf | — | no |
+| csharp | E (words) | SpanJson | — | no |
 | swift | B (flat) | SwiftProtobuf | — | no |
 | swift | C (sensor) | SwiftProtobuf | — | no |
 | swift | E (words) | SwiftProtobuf | — | no |
@@ -96,28 +96,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 1.85 | 168 | fastest |
-| msgspec-msgpack | 1.96 | 52 | close |
-| protobuf | 3.35 | 50 | slower |
-| json | 12.5 | 168 | slower |
+| msgspec-msgpack | 2.47 | 52 | fastest |
+| orjson | 2.95 | 168 | close |
+| protobuf | 5.06 | 50 | slower |
+| json | 18.0 | 168 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 2.46 | 410 | fastest |
-| msgspec-msgpack | 3.57 | 339 | slower |
-| protobuf | 4.77 | 367 | slower |
-| json | 15.3 | 410 | slower |
+| msgspec-msgpack | 4.28 | 339 | fastest |
+| orjson | 4.40 | 410 | similar |
+| protobuf | 6.92 | 367 | slower |
+| json | 20.4 | 410 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgspec-msgpack | 5.77 | 1190 | fastest |
-| protobuf | 7.07 | 1061 | close |
-| orjson | 8.04 | 2407 | slower |
-| json | 79.1 | 2407 | slower |
+| msgspec-msgpack | 8.60 | 1190 | fastest |
+| orjson | 10.8 | 2407 | slower |
+| protobuf | 13.8 | 1061 | slower |
+| json | 97.4 | 2407 | slower |
 
 ### go
 
@@ -125,28 +125,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 1.17 | 50 | fastest |
-| goccy/go-json | 1.39 | 168 | slower |
-| vmihailenco/msgpack | 1.60 | 118 | slower |
-| encoding/json | 3.14 | 168 | slower |
+| protobuf | 1.56 | 50 | fastest |
+| goccy/go-json | 2.03 | 168 | slower |
+| vmihailenco/msgpack | 2.36 | 128 | slower |
+| encoding/json | 4.36 | 168 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 2.25 | 368 | fastest |
-| vmihailenco/msgpack | 2.25 | 346 | similar |
-| goccy/go-json | 2.31 | 411 | similar |
-| encoding/json | 6.02 | 411 | slower |
+| goccy/go-json | 3.60 | 411 | fastest |
+| vmihailenco/msgpack | 3.69 | 346 | similar |
+| protobuf | 3.70 | 368 | similar |
+| encoding/json | 9.25 | 411 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 2.21 | 1061 | fastest |
-| vmihailenco/msgpack | 8.72 | 1212 | slower |
-| goccy/go-json | 21.2 | 2407 | slower |
-| encoding/json | 33.2 | 2407 | slower |
+| protobuf | 4.12 | 1061 | fastest |
+| vmihailenco/msgpack | 13.6 | 1212 | slower |
+| goccy/go-json | 27.6 | 2407 | slower |
+| encoding/json | 43.2 | 2407 | slower |
 
 ### java
 
@@ -238,25 +238,25 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 3.59 | 168 | fastest |
-| msgpackr | 11.2 | 126 | slower |
-| protobuf-es | 21.9 | 50 | slower |
+| JSON.stringify | 5.02 | 168 | fastest |
+| msgpackr | 14.3 | 126 | slower |
+| protobuf-es | 17.8 | 50 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 5.54 | 411 | fastest |
-| msgpackr | 11.0 | 348 | slower |
-| protobuf-es | 43.1 | 368 | slower |
+| JSON.stringify | 10.0 | 411 | fastest |
+| msgpackr | 24.9 | 348 | slower |
+| protobuf-es | 42.5 | 368 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgpackr | 13.7 | 1214 | fastest |
-| JSON.stringify | 20.9 | 2407 | slower |
-| protobuf-es | 76.1 | 1061 | slower |
+| msgpackr | 23.0 | 1214 | fastest |
+| JSON.stringify | 27.7 | 2407 | close |
+| protobuf-es | 39.8 | 1061 | slower |
 
 ### rust
 
@@ -264,28 +264,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| prost | 1.36 | 55 | fastest |
-| rmp-serde | 2.70 | 136 | slower |
-| serde_json | 3.06 | 182 | slower |
-| sonic-rs | 4.36 | 182 | slower |
+| prost | 0.50 | 55 | fastest |
+| rmp-serde | 0.92 | 136 | slower |
+| sonic-rs | 1.19 | 182 | slower |
+| serde_json | 1.28 | 182 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rmp-serde | 1.96 | 322 | fastest |
-| sonic-rs | 1.98 | 390 | similar |
-| serde_json | 2.64 | 390 | slower |
-| prost | 3.20 | 335 | slower |
+| rmp-serde | 2.15 | 322 | fastest |
+| sonic-rs | 2.25 | 390 | close |
+| prost | 2.42 | 335 | slower |
+| serde_json | 2.87 | 390 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| prost | 1.26 | 1054 | fastest |
-| rmp-serde | 1.26 | 1216 | similar |
-| serde_json | 6.12 | 2420 | slower |
-| sonic-rs | 7.22 | 2420 | slower |
+| prost | 1.48 | 1054 | fastest |
+| rmp-serde | 1.89 | 1216 | slower |
+| serde_json | 7.22 | 2420 | slower |
+| sonic-rs | 8.48 | 2420 | slower |
 
 ### c
 
@@ -293,28 +293,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.32 | 56 | fastest |
-| mpack | 1.07 | 128 | slower |
-| yyjson | 1.82 | 171 | slower |
-| cJSON | 4.50 | 172 | slower |
+| protobuf-wire | 0.51 | 56 | fastest |
+| mpack | 1.64 | 128 | slower |
+| yyjson | 2.72 | 171 | slower |
+| cJSON | 6.08 | 172 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.81 | 356 | fastest |
-| mpack | 1.84 | 334 | slower |
-| yyjson | 3.41 | 399 | slower |
-| cJSON | 8.34 | 399 | slower |
+| protobuf-wire | 0.90 | 356 | fastest |
+| mpack | 1.97 | 334 | slower |
+| yyjson | 3.77 | 399 | slower |
+| cJSON | 8.91 | 399 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.72 | 1181 | fastest |
-| mpack | 2.74 | 1207 | slower |
-| yyjson | 9.31 | 2409 | slower |
-| cJSON | 125 | 2446 | slower |
+| protobuf-wire | 0.87 | 1181 | fastest |
+| mpack | 3.45 | 1207 | slower |
+| yyjson | 11.0 | 2409 | slower |
+| cJSON | 140 | 2446 | slower |
 
 ### cpp
 
@@ -351,25 +351,25 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 8.74 | 157 | fastest |
-| Google.Protobuf | 10.6 | 68 | slower |
-| System.Text.Json | 29.3 | 212 | slower |
+| SpanJson | 16.3 | 157 | fastest |
+| Google.Protobuf | 18.5 | 68 | close |
+| System.Text.Json | 51.0 | 157 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| Google.Protobuf | 17.4 | 492 | fastest |
-| SpanJson | 17.4 | 410 | similar |
-| System.Text.Json | 44.3 | 548 | slower |
+| SpanJson | 20.4 | 410 | fastest |
+| Google.Protobuf | 26.0 | 492 | slower |
+| System.Text.Json | 54.2 | 410 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| Google.Protobuf | 22.9 | 1416 | fastest |
-| System.Text.Json | 122 | 3212 | slower |
-| SpanJson | 137 | 2407 | slower |
+| Google.Protobuf | 34.7 | 1416 | fastest |
+| System.Text.Json | 140 | 2407 | slower |
+| SpanJson | 158 | 2407 | slower |
 
 ### swift
 

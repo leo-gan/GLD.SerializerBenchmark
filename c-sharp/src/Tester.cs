@@ -107,6 +107,7 @@ namespace GLD.SerializerBenchmark
                 Console.WriteLine($"[DEBUG] Initializing {serializer.Name}");
                 try
                 {
+                    serializer.BindFixture(testDataDescription.Name);
                     serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
                     serializer.PrepareData(testDataDescription.Data);
                 }
@@ -129,8 +130,17 @@ namespace GLD.SerializerBenchmark
 
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
                 instanceCount, typeConfigHash, prepareFailed);
-            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors,
-                instanceCount, typeConfigHash, prepareFailed);
+            var streamSerializers = new List<ISerDeser>();
+            foreach (var serializer in serializers)
+            {
+                if (OptionalIo.IsStreamOptIn(serializer.Name))
+                    streamSerializers.Add(serializer);
+            }
+            if (streamSerializers.Count > 0)
+            {
+                TestsOnRepetition(testDataDescription, true, repetitions, streamSerializers, logStorage, errors,
+                    instanceCount, typeConfigHash, prepareFailed);
+            }
         }
 
         // Shared across stream trials in this process; keyed per serializer (B-1 interleaving).
@@ -321,7 +331,10 @@ namespace GLD.SerializerBenchmark
             }
 
             string errorText;
-            if (Comparer.Compare(original.Data, processed, out errorText, log, false))
+            var expected = string.Equals(original.Name, "table_project", StringComparison.Ordinal)
+                ? ProjectFFloat0(original.Data)
+                : original.Data;
+            if (Comparer.Compare(expected, processed, out errorText, log, false))
             {
                 logStorage.Write(log);
             }
@@ -330,6 +343,25 @@ namespace GLD.SerializerBenchmark
                 error.ErrorText = errorText;
                 isRepeatedError = !error.TryAddTo(errors);
             }
+        }
+
+        /// <summary>
+        /// table_project fidelity expects f_float_0 only, length N, including N=1.
+        /// </summary>
+        private static List<double> ProjectFFloat0(object data)
+        {
+            if (data is TestData.V2.TableRow row)
+                return new List<double> { row.FFloat0 };
+            if (data is TestData.V2.BatchTable batch)
+            {
+                var list = new List<double>(batch.Items?.Count ?? 0);
+                if (batch.Items != null)
+                    foreach (var item in batch.Items)
+                        list.Add(item.FFloat0);
+                return list;
+            }
+            throw new InvalidOperationException(
+                "table_project payload is not TableRow or BatchTable: " + (data?.GetType().FullName ?? "null"));
         }
 
         /// <summary>

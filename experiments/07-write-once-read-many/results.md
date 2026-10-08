@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -65,7 +65,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | php | ok | `protobuf` | — |
 | javascript | ok | `flatbuffers` | — |
 | python | ok | `protobuf` | — |
-| rust | ok | `rkyv` | — |
+| rust | ok | `rkyv`, `prost` | — |
 | c | ok | `flatcc` | — |
 | swift | ok | `FlatBuffers` | — |
 | zig | ok | `comptime-bin` | — |
@@ -101,19 +101,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| ZeroFormatter | 7.79 | 5.50 | 288 | fastest |
-| MemoryPack | 11.0 | 6.88 | 352 | slower |
-| FlatSharp | 16.1 | 9.93 | 572 | slower |
-| ProtoBuf | 13.0 | 14.0 | 208 | slower |
+| ZeroFormatter | 7.71 | 4.61 | 288 | fastest |
+| MemoryPack | 10.7 | 6.86 | 352 | slower |
+| FlatSharp | 15.7 | 9.23 | 572 | slower |
+| ProtoBuf | 12.6 | 14.2 | 208 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| MemoryPack | 20.0 | 30.3 | 5540 | fastest |
-| FlatSharp | 29.1 | 46.0 | 5588 | slower |
-| ZeroFormatter | 32.5 | 47.7 | 5520 | slower |
-| ProtoBuf | 35.9 | 57.4 | 6184 | slower |
+| MemoryPack | 17.5 | 28.4 | 5540 | fastest |
+| FlatSharp | 26.2 | 40.7 | 5588 | slower |
+| ZeroFormatter | 29.7 | 43.0 | 5520 | slower |
+| ProtoBuf | 38.8 | 55.4 | 6184 | slower |
 
 ### java
 
@@ -171,15 +171,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatbuffers | 24.9 | 13.8 | 416 | fastest |
-| flexbuffers | 383 | 55.7 | 579 | slower |
+| flatbuffers | 37.8 | 17.9 | 416 | fastest |
+| flexbuffers | 181 | 68.5 | 579 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatbuffers | 31.0 | 17.5 | 4192 | fastest |
-| flexbuffers | 1012 | 615 | 19841 | slower |
+| flatbuffers | 33.1 | 17.9 | 4192 | fastest |
+| flexbuffers | 980 | 494 | 19841 | slower |
 
 ### python
 
@@ -187,15 +187,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf | 2.55 | 3.00 | 155 | fastest |
-| flatbuffers | 89.7 | 29.6 | 416 | slower |
+| protobuf | 7.26 | 5.77 | 155 | fastest |
+| flatbuffers | 114 | 36.1 | 416 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf | 6.46 | 5.57 | 4128 | fastest |
-| flatbuffers | 206 | 57.4 | 4192 | slower |
+| protobuf | 9.06 | 6.10 | 4128 | fastest |
+| flatbuffers | 217 | 60.9 | 4192 | slower |
 
 ### rust
 
@@ -203,15 +203,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| rkyv | 0.43 | 0.32 | 272 | fastest |
-| prost | 0.51 | 0.58 | 155 | slower |
+| rkyv | 0.87 | 0.76 | 272 | fastest |
+| prost | 0.52 | 1.12 | 155 | similar |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| rkyv | 0.33 | 0.20 | 4144 | fastest |
-| prost | 0.76 | 0.95 | 4131 | slower |
+| rkyv | 0.80 | 0.62 | 4144 | fastest |
+| prost | 0.89 | 2.13 | 4131 | slower |
 
 ### c
 
@@ -219,15 +219,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatcc | 0.47 | 0.12 | 236 | fastest |
-| protobuf-wire | 0.53 | 0.27 | 166 | slower |
+| flatcc | 0.95 | 0.19 | 236 | fastest |
+| protobuf-wire | 0.77 | 0.50 | 166 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf-wire | 0.52 | 1.06 | 4637 | fastest |
-| flatcc | 1.67 | 0.31 | 4164 | close |
+| protobuf-wire | 0.91 | 1.58 | 4637 | fastest |
+| flatcc | 3.24 | 0.41 | 4164 | slower |
 
 ### swift
 

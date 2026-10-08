@@ -32,6 +32,12 @@ namespace GLD.SerializerBenchmark.TestData.V2.Maps
             nameof(Domain.BatchTelemetry) => typeof(Wire.BatchTelemetry),
             nameof(Domain.BatchStrings) => typeof(Wire.BatchStrings),
             nameof(Domain.BatchEvent) => typeof(Wire.BatchEvent),
+            nameof(Domain.TableRow) => typeof(Wire.Table),
+            nameof(Domain.BatchTable) => typeof(Wire.BatchTable),
+            nameof(Domain.NestedRow) => typeof(Wire.NestedRow),
+            nameof(Domain.BatchNestedRow) => typeof(Wire.BatchNestedRow),
+            nameof(Domain.Signal) => typeof(Wire.Signal),
+            nameof(Domain.BatchSignal) => typeof(Wire.BatchSignal),
             _ => throw new NotSupportedException(domain.FullName)
         };
 
@@ -54,6 +60,12 @@ namespace GLD.SerializerBenchmark.TestData.V2.Maps
                 Items = { b.Items.Select(x => new Wire.Strings { Items = { x.Items ?? Enumerable.Empty<string>() } }) }
             },
             Domain.BatchEvent b => new Wire.BatchEvent { Items = { b.Items.Select(ToEvt) } },
+            Domain.TableRow row => ToTable(row),
+            Domain.BatchTable b => new Wire.BatchTable { Items = { b.Items.Select(ToTable) } },
+            Domain.NestedRow row => ToNested(row),
+            Domain.BatchNestedRow b => new Wire.BatchNestedRow { Items = { b.Items.Select(ToNested) } },
+            Domain.Signal s => ToSignal(s),
+            Domain.BatchSignal b => new Wire.BatchSignal { Items = { b.Items.Select(ToSignal) } },
             _ => throw new NotSupportedException(data?.GetType().FullName)
         };
 
@@ -118,7 +130,73 @@ namespace GLD.SerializerBenchmark.TestData.V2.Maps
             Wire.BatchTelemetry b => new Domain.BatchTelemetry { Items = b.Items.Select(x => (Domain.Telemetry)FromWire(x)).ToList() },
             Wire.BatchStrings b => new Domain.BatchStrings { Items = b.Items.Select(x => (Domain.Strings)FromWire(x)).ToList() },
             Wire.BatchEvent b => new Domain.BatchEvent { Items = b.Items.Select(x => (Domain.Event)FromWire(x)).ToList() },
+            Wire.Table row => FromTable(row),
+            Wire.BatchTable b => new Domain.BatchTable { Items = b.Items.Select(FromTable).ToList() },
+            Wire.NestedRow row => FromNested(row),
+            Wire.BatchNestedRow b => new Domain.BatchNestedRow { Items = b.Items.Select(FromNested).ToList() },
+            Wire.Signal s => FromSignal(s),
+            Wire.BatchSignal b => new Domain.BatchSignal { Items = b.Items.Select(FromSignal).ToList() },
             _ => msg
+        };
+
+        static Wire.Table ToTable(Domain.TableRow row) => new Wire.Table
+        {
+            FFloat0 = row.FFloat0, FFloat1 = row.FFloat1, FFloat2 = row.FFloat2, FFloat3 = row.FFloat3,
+            FFloat4 = row.FFloat4, FFloat5 = row.FFloat5, FFloat6 = row.FFloat6, FFloat7 = row.FFloat7,
+            FFloat8 = row.FFloat8, FFloat9 = row.FFloat9, FFloat10 = row.FFloat10, FFloat11 = row.FFloat11,
+            FFloat12 = row.FFloat12, FFloat13 = row.FFloat13, FFloat14 = row.FFloat14, FFloat15 = row.FFloat15,
+            FInt0 = row.FInt0, FInt1 = row.FInt1, FInt2 = row.FInt2, FInt3 = row.FInt3,
+            FStr0 = row.FStr0 ?? "", FStr1 = row.FStr1 ?? "",
+        };
+
+        static Domain.TableRow FromTable(Wire.Table row) => new Domain.TableRow
+        {
+            FFloat0 = row.FFloat0, FFloat1 = row.FFloat1, FFloat2 = row.FFloat2, FFloat3 = row.FFloat3,
+            FFloat4 = row.FFloat4, FFloat5 = row.FFloat5, FFloat6 = row.FFloat6, FFloat7 = row.FFloat7,
+            FFloat8 = row.FFloat8, FFloat9 = row.FFloat9, FFloat10 = row.FFloat10, FFloat11 = row.FFloat11,
+            FFloat12 = row.FFloat12, FFloat13 = row.FFloat13, FFloat14 = row.FFloat14, FFloat15 = row.FFloat15,
+            FInt0 = row.FInt0, FInt1 = row.FInt1, FInt2 = row.FInt2, FInt3 = row.FInt3,
+            FStr0 = row.FStr0 ?? "", FStr1 = row.FStr1 ?? "",
+        };
+
+        static Wire.NestedRow ToNested(Domain.NestedRow row)
+        {
+            var m = new Wire.NestedRow
+            {
+                Id = row.Id ?? "",
+                Status = row.Status,
+                Meta = new Wire.NestedMeta { Region = row.Meta?.Region ?? "", Version = row.Meta?.Version ?? 0 },
+            };
+            foreach (var i in row.Items ?? Enumerable.Empty<Domain.NestedItem>())
+                m.Items.Add(new Wire.NestedItem { Sku = i.Sku ?? "", Qty = i.Qty, PriceMinor = i.PriceMinor });
+            return m;
+        }
+
+        static Domain.NestedRow FromNested(Wire.NestedRow row) => new Domain.NestedRow
+        {
+            Id = row.Id ?? "",
+            Status = row.Status,
+            Meta = new Domain.NestedMeta { Region = row.Meta?.Region ?? "", Version = row.Meta?.Version ?? 0 },
+            Items = row.Items.Select(i => new Domain.NestedItem { Sku = i.Sku ?? "", Qty = i.Qty, PriceMinor = i.PriceMinor }).ToList(),
+        };
+
+        static Wire.Signal ToSignal(Domain.Signal s)
+        {
+            var m = new Wire.Signal
+            {
+                Seq = s.Seq, Ts = s.Ts, PriceMantissa = s.PriceMantissa,
+                Qty = s.Qty, Flags = s.Flags, Symbol = s.Symbol ?? "", Venue = s.Venue ?? "",
+            };
+            foreach (var leg in s.Legs ?? Enumerable.Empty<Domain.SignalLeg>())
+                m.Legs.Add(new Wire.SignalLeg { LegId = leg.LegId, LegQty = leg.LegQty, LegPad = leg.LegPad });
+            return m;
+        }
+
+        static Domain.Signal FromSignal(Wire.Signal s) => new Domain.Signal
+        {
+            Seq = s.Seq, Ts = s.Ts, PriceMantissa = s.PriceMantissa,
+            Qty = s.Qty, Flags = s.Flags, Symbol = s.Symbol ?? "", Venue = s.Venue ?? "",
+            Legs = s.Legs.Select(l => new Domain.SignalLeg { LegId = l.LegId, LegQty = l.LegQty, LegPad = l.LegPad }).ToList(),
         };
     }
 }

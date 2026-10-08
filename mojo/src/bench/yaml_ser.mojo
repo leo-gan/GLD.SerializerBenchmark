@@ -16,29 +16,67 @@ from bench.data import (
 )
 
 
-def _nl_key(mut w: WireWriter, key: String, first: Bool):
+def _key(
+    mut w: WireWriter,
+    key: StaticString,
+    options: EncodeOptions,
+    depth: Int,
+    first: Bool,
+    inline_first: Bool,
+    nested: Bool,
+):
+    """Block-map key at `depth`, matching gld-yaml `encode_to_at`.
+
+    A scalar keeps `: `. A nested value keeps `:` so the break stays tight.
+    Continuation lines inside a `- ` item use `depth` so they share the first
+    key's column. Column 0 would end the map and drop the rest of the record.
+    """
     if not first:
-        w.write_ascii("\n")
+        if depth == 0:
+            w.write_ascii("\n")
+        else:
+            w.write_lf()
+            w.indent_depth = depth
+            w.write_indent(options)
+    elif not inline_first:
+        w.indent_depth = depth
+        w.write_indent(options)
     w.write_ascii(key)
-    w.write_ascii(": ")
+    if nested:
+        w.write_ascii(":")
+    else:
+        w.write_ascii(": ")
 
 
-def message_to_writer(m: Message, mut w: WireWriter, options: EncodeOptions):
-    _nl_key(w, "f_bool", True)
+def _seq_dash(mut w: WireWriter, options: EncodeOptions, depth: Int):
+    w.write_lf()
+    w.indent_depth = depth
+    w.write_indent(options)
+    w.write_ascii("- ")
+
+
+def message_to_writer(
+    m: Message,
+    mut w: WireWriter,
+    options: EncodeOptions,
+    depth: Int,
+    inline_first: Bool,
+):
+    _key(w, "f_bool", options, depth, True, inline_first, False)
     w.write_bool(m.f_bool)
-    _nl_key(w, "f_int32", False)
+    _key(w, "f_int32", options, depth, False, inline_first, False)
     w.write_int(Int64(m.f_int32))
-    _nl_key(w, "f_int64", False)
+    _key(w, "f_int64", options, depth, False, inline_first, False)
     w.write_int(m.f_int64)
-    _nl_key(w, "f_float64", False)
+    _key(w, "f_float64", options, depth, False, inline_first, False)
     w.write_float(m.f_float64)
-    _nl_key(w, "f_string", False)
+    _key(w, "f_string", options, depth, False, inline_first, False)
     w.write_string(m.f_string, options)
-    _nl_key(w, "f_bool_2", False)
+    _key(w, "f_bool_2", options, depth, False, inline_first, False)
     w.write_bool(m.f_bool_2)
-    _nl_key(w, "f_int32_2", False)
+    _key(w, "f_int32_2", options, depth, False, inline_first, False)
     w.write_int(Int64(m.f_int32_2))
-    _nl_key(w, "f_string_2", False)
+    _key(w, "f_string_2", options, depth, False, inline_first, False)
     w.write_string(m.f_string_2, options)
 
 
@@ -67,23 +105,32 @@ def message_from_reader[origin: ImmOrigin](mut r: WireReader[origin]) raises Dec
     return m^
 
 
-def document_to_writer(d: Document, mut w: WireWriter, options: EncodeOptions):
-    _nl_key(w, "id", True)
+def document_to_writer(
+    d: Document,
+    mut w: WireWriter,
+    options: EncodeOptions,
+    depth: Int,
+    inline_first: Bool,
+):
+    _key(w, "id", options, depth, True, inline_first, False)
     w.write_string(d.id, options)
-    _nl_key(w, "status", False)
+    _key(w, "status", options, depth, False, inline_first, False)
     w.write_int(Int64(d.status))
-    w.write_ascii("\nmeta:\n  region: ")
+    _key(w, "meta", options, depth, False, inline_first, True)
+    w.write_lf()
+    _key(w, "region", options, depth + 1, True, False, False)
     w.write_string(d.meta.region, options)
-    w.write_ascii("\n  version: ")
+    _key(w, "version", options, depth + 1, False, False, False)
     w.write_int(Int64(d.meta.version))
-    w.write_ascii("\nitems:")
+    _key(w, "items", options, depth, False, inline_first, True)
     var i = 0
     while i < len(d.items):
-        w.write_ascii("\n- sku: ")
+        _seq_dash(w, options, depth)
+        _key(w, "sku", options, depth + 1, True, True, False)
         w.write_string(d.items[i].sku, options)
-        w.write_ascii("\n  qty: ")
+        _key(w, "qty", options, depth + 1, False, True, False)
         w.write_int(Int64(d.items[i].qty))
-        w.write_ascii("\n  price_minor: ")
+        _key(w, "price_minor", options, depth + 1, False, True, False)
         w.write_int(d.items[i].price_minor)
         i += 1
     if len(d.items) == 0:
@@ -129,23 +176,29 @@ def document_from_reader[origin: ImmOrigin](mut r: WireReader[origin]) raises De
     return d^
 
 
-def telemetry_to_writer(t: Telemetry, mut w: WireWriter, options: EncodeOptions):
-    _nl_key(w, "source", True)
+def telemetry_to_writer(
+    t: Telemetry,
+    mut w: WireWriter,
+    options: EncodeOptions,
+    depth: Int,
+    inline_first: Bool,
+):
+    _key(w, "source", options, depth, True, inline_first, False)
     w.write_string(t.source, options)
-    _nl_key(w, "ts", False)
+    _key(w, "ts", options, depth, False, inline_first, False)
     w.write_int(t.ts)
-    w.write_ascii("\ntags:")
+    _key(w, "tags", options, depth, False, inline_first, True)
     var i = 0
     while i < len(t.tags):
-        w.write_ascii("\n- ")
+        _seq_dash(w, options, depth)
         w.write_string(t.tags[i], options)
         i += 1
     if len(t.tags) == 0:
         w.write_ascii(" []")
-    w.write_ascii("\nvalues:")
+    _key(w, "values", options, depth, False, inline_first, True)
     i = 0
     while i < len(t.values):
-        w.write_ascii("\n- ")
+        _seq_dash(w, options, depth)
         w.write_float(t.values[i])
         i += 1
     if len(t.values) == 0:
@@ -175,11 +228,17 @@ def telemetry_from_reader[origin: ImmOrigin](mut r: WireReader[origin]) raises D
     return t^
 
 
-def strings_to_writer(s: Strings, mut w: WireWriter, options: EncodeOptions):
-    w.write_ascii("items:")
+def strings_to_writer(
+    s: Strings,
+    mut w: WireWriter,
+    options: EncodeOptions,
+    depth: Int,
+    inline_first: Bool,
+):
+    _key(w, "items", options, depth, True, inline_first, True)
     var i = 0
     while i < len(s.items):
-        w.write_ascii("\n- ")
+        _seq_dash(w, options, depth)
         w.write_string(s.items[i], options)
         i += 1
     if len(s.items) == 0:
@@ -200,21 +259,28 @@ def strings_from_reader[origin: ImmOrigin](mut r: WireReader[origin]) raises Dec
     return s^
 
 
-def event_to_writer(e: Event, mut w: WireWriter, options: EncodeOptions):
-    _nl_key(w, "event_id", True)
+def event_to_writer(
+    e: Event,
+    mut w: WireWriter,
+    options: EncodeOptions,
+    depth: Int,
+    inline_first: Bool,
+):
+    _key(w, "event_id", options, depth, True, inline_first, False)
     w.write_string(e.event_id, options)
-    _nl_key(w, "event_type", False)
+    _key(w, "event_type", options, depth, False, inline_first, False)
     w.write_string(e.event_type, options)
-    _nl_key(w, "occurred_at", False)
+    _key(w, "occurred_at", options, depth, False, inline_first, False)
     w.write_int(e.occurred_at)
-    _nl_key(w, "producer", False)
+    _key(w, "producer", options, depth, False, inline_first, False)
     w.write_string(e.producer, options)
-    w.write_ascii("\nattrs:")
+    _key(w, "attrs", options, depth, False, inline_first, True)
     var i = 0
     while i < len(e.attrs):
-        w.write_ascii("\n- key: ")
+        _seq_dash(w, options, depth)
+        _key(w, "key", options, depth + 1, True, True, False)
         w.write_string(e.attrs[i].key, options)
-        w.write_ascii("\n  value: ")
+        _key(w, "value", options, depth + 1, False, True, False)
         w.write_string(e.attrs[i].value, options)
         i += 1
     if len(e.attrs) == 0:
@@ -257,42 +323,50 @@ def fixture_to_writer(fx: Fixture, mut w: WireWriter, options: EncodeOptions) ra
     if fx.n != 1:
         w.write_ascii("items:")
         var i = 0
+        var wrote = False
         if fx.type_id == "message":
             while i < len(fx.messages):
-                w.write_ascii("\n- ")
-                message_to_writer(fx.messages[i], w, options)
+                _seq_dash(w, options, 0)
+                message_to_writer(fx.messages[i], w, options, 1, True)
                 i += 1
+                wrote = True
         elif fx.type_id == "document":
             while i < len(fx.documents):
-                w.write_ascii("\n- ")
-                document_to_writer(fx.documents[i], w, options)
+                _seq_dash(w, options, 0)
+                document_to_writer(fx.documents[i], w, options, 1, True)
                 i += 1
+                wrote = True
         elif fx.type_id == "telemetry":
             while i < len(fx.telemetries):
-                w.write_ascii("\n- ")
-                telemetry_to_writer(fx.telemetries[i], w, options)
+                _seq_dash(w, options, 0)
+                telemetry_to_writer(fx.telemetries[i], w, options, 1, True)
                 i += 1
+                wrote = True
         elif fx.type_id == "strings":
             while i < len(fx.strings):
-                w.write_ascii("\n- ")
-                strings_to_writer(fx.strings[i], w, options)
+                _seq_dash(w, options, 0)
+                strings_to_writer(fx.strings[i], w, options, 1, True)
                 i += 1
+                wrote = True
         else:
             while i < len(fx.events):
-                w.write_ascii("\n- ")
-                event_to_writer(fx.events[i], w, options)
+                _seq_dash(w, options, 0)
+                event_to_writer(fx.events[i], w, options, 1, True)
                 i += 1
+                wrote = True
+        if not wrote:
+            w.write_ascii(" []")
         return
     if fx.type_id == "message":
-        message_to_writer(fx.messages[0], w, options)
+        message_to_writer(fx.messages[0], w, options, 0, False)
     elif fx.type_id == "document":
-        document_to_writer(fx.documents[0], w, options)
+        document_to_writer(fx.documents[0], w, options, 0, False)
     elif fx.type_id == "telemetry":
-        telemetry_to_writer(fx.telemetries[0], w, options)
+        telemetry_to_writer(fx.telemetries[0], w, options, 0, False)
     elif fx.type_id == "strings":
-        strings_to_writer(fx.strings[0], w, options)
+        strings_to_writer(fx.strings[0], w, options, 0, False)
     else:
-        event_to_writer(fx.events[0], w, options)
+        event_to_writer(fx.events[0], w, options, 0, False)
 
 
 def fixture_from_bytes(fx: Fixture, data: List[Byte]) raises DecodeError -> Fixture:
@@ -347,7 +421,7 @@ struct YamlSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.2.0"
+        self.version = "0.6.0"
 
     def name(self) -> String:
         return "gld-yaml"

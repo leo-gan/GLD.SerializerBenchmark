@@ -27,7 +27,7 @@ In other words, the first job is diagnosis. Format rewrites are expensive. They 
 
 | Hypothesis | Investigation |
 |------------|---------------|
-| **H1. Wrong library in the same family** | Compare JSON (or current-family) libraries only ([implementation variance](implementation-variance.md)) |
+| **H1. Wrong library on the same standard** | Compare libraries on that standard only, for example JSON with JSON ([implementation variance](implementation-variance.md)) |
 | **H2. Wrong paradigm for the hop** | Revisit public versus internal, trust, and evolution ([capstones](case-public-rest-api.md)) |
 | **H3. Payload shape and allocations** | Profile; deep graphs versus dense structs ([latency tails](latency-tails-and-gc.md), 201 encode cost) |
 | **H4. Not serialization** | Database, lock, downstream round-trip time, GC from other code |
@@ -42,7 +42,7 @@ A **hypothesis** here is a testable explanation. You should falsify cheap hypoth
 | Action | Speed of learning | Risk |
 |--------|-------------------|------|
 | Profile plus a fair Dashboard slice | Fast | Low |
-| Swap library within the same family | Medium | Low to medium |
+| Swap library on the same standard | Medium | Low to medium |
 | Change the wire format | Slow | High (clients) |
 | Rewrite business logic | Slow | High |
 
@@ -52,7 +52,7 @@ This matters because the order of investigation should match cost. Learn fast an
 
 ## Recommendation (under these constraints)
 
-**Before any format rewrite:** (1) confirm serialization is on the critical path via profiling; (2) re-read the Dashboard with [using this suite](using-this-suite.md) discipline (same language, paradigm, fixture, mode, and metric); (3) try the best-in-family library and payload fixes; (4) only then consider a paradigm change with an explicit contract migration.
+**Before any format rewrite:** (1) confirm serialization is on the critical path via profiling; (2) re-read the Dashboard with [using this suite](using-this-suite.md) discipline (same language, standard, data set, data type, and metric); (3) try the best library on that standard, and the payload fixes; (4) only then consider a different standard, with an explicit contract migration.
 
 In the composite postmortem, the root cause was **unbounded JSON allocations on a deep graph** plus a **slow library**. The root cause was not “JSON is impossible.” Switching libraries and flattening the data-transfer object restored the reliability target. A cross-stack Protobuf migration was not required.
 
@@ -67,15 +67,15 @@ A **data-transfer object (DTO)** is a structure used to carry data across a boun
 ### Setup
 
 1. Production profile or a reproduction under load.
-2. Current codec family and library pin.
-3. Fair suite access for same-language slices.
+2. Current standard and library pin. A family is only the teaching cut that led you there.
+3. Fair suite access for that same cell: one language, one standard, one data set, and one data type.
 
 ### Procedure
 
 1. Profile. Confirm serialize and deserialize is on the critical path (H4).
-2. Fair Dashboard numbers within the **same family** (H1). See [using this suite](using-this-suite.md).
+2. Fair Dashboard numbers on the same language, standard, data set, and data type (H1). See [using this suite](using-this-suite.md).
 3. Inspect payload shape and allocations (H3). See [latency tails](latency-tails-and-gc.md).
-4. Only if the family cannot meet the reliability target, revisit paradigm (H2).
+4. Only if that standard cannot meet the reliability target, revisit the family (H2).
 5. Check compression and network (H5) before rewrite.
 6. Write the postmortem with evidence for the winning hypothesis.
 
@@ -112,5 +112,5 @@ A **data-transfer object (DTO)** is a structure used to carry data across a boun
 
 - “Need it faster” is a **diagnosis** problem first.
 - A wrong chart produces a wrong rewrite.
-- Prefer same-family library and shape fixes before multi-week format migrations.
+- Prefer a same-standard library change, and a shape fix, before a multi-week format migration.
 - The suite is evidence only inside a disciplined question.

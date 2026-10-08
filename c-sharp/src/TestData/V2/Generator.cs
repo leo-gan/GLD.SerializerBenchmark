@@ -19,6 +19,9 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 "telemetry" => MakeTelemetry(rng, typeConfig),
                 "strings" => MakeStrings(rng, typeConfig),
                 "event" => MakeEvent(rng, typeConfig),
+                "table" or "table_project" => MakeTable(rng, typeConfig, seed, typeId),
+                "nested_table" => MakeNestedTable(rng, typeConfig),
+                "signal" => MakeSignal(rng, typeConfig),
                 _ => throw new ArgumentException($"unknown type_id: {typeId}")
             };
         }
@@ -68,6 +71,32 @@ namespace GLD.SerializerBenchmark.TestData.V2
                     if (n == 1) return (list[0], typeof(Strings), new List<Type>());
                     return (new BatchStrings { Items = list }, typeof(BatchStrings),
                         new List<Type> { typeof(Strings) });
+                }
+                case "table":
+                case "table_project":
+                {
+                    var list = new List<TableRow>(n);
+                    for (int i = 0; i < n; i++) list.Add((TableRow)MakeOne(typeId, typeConfig, seed, i));
+                    if (n == 1) return (list[0], typeof(TableRow), new List<Type>());
+                    return (new BatchTable { Items = list }, typeof(BatchTable), new List<Type> { typeof(TableRow) });
+                }
+                case "nested_table":
+                {
+                    var list = new List<NestedRow>(n);
+                    for (int i = 0; i < n; i++) list.Add((NestedRow)MakeOne(typeId, typeConfig, seed, i));
+                    var sec = new List<Type> { typeof(NestedMeta), typeof(NestedItem) };
+                    if (n == 1) return (list[0], typeof(NestedRow), sec);
+                    sec.Insert(0, typeof(NestedRow));
+                    return (new BatchNestedRow { Items = list }, typeof(BatchNestedRow), sec);
+                }
+                case "signal":
+                {
+                    var list = new List<Signal>(n);
+                    for (int i = 0; i < n; i++) list.Add((Signal)MakeOne(typeId, typeConfig, seed, i));
+                    var sec = new List<Type> { typeof(SignalLeg) };
+                    if (n == 1) return (list[0], typeof(Signal), sec);
+                    sec.Insert(0, typeof(Signal));
+                    return (new BatchSignal { Items = list }, typeof(BatchSignal), sec);
                 }
                 default:
                     throw new ArgumentException($"unknown type_id: {typeId}");
@@ -153,6 +182,89 @@ namespace GLD.SerializerBenchmark.TestData.V2
             return new Strings { Items = items };
         }
 
+        static TableRow MakeTable(Rng r, JsonElement cfg, int seed, string typeId)
+        {
+            var (lo, hi) = IRange(cfg);
+            var (smin, smax) = SLen(cfg);
+            double dup = GetDouble(cfg, "duplication", 0.5);
+            var vocab = SharedVocab(seed, typeId, smin, smax);
+            var floats = new double[16];
+            for (int i = 0; i < 16; i++) floats[i] = r.NextF64() * 1000.0;
+            var ints = new long[4];
+            for (int i = 0; i < 4; i++) ints[i] = r.NextInt(lo, hi);
+            return new TableRow
+            {
+                FFloat0 = floats[0], FFloat1 = floats[1], FFloat2 = floats[2], FFloat3 = floats[3],
+                FFloat4 = floats[4], FFloat5 = floats[5], FFloat6 = floats[6], FFloat7 = floats[7],
+                FFloat8 = floats[8], FFloat9 = floats[9], FFloat10 = floats[10], FFloat11 = floats[11],
+                FFloat12 = floats[12], FFloat13 = floats[13], FFloat14 = floats[14], FFloat15 = floats[15],
+                FInt0 = ints[0], FInt1 = ints[1], FInt2 = ints[2], FInt3 = ints[3],
+                FStr0 = PickWord(r, vocab, dup, smin, smax),
+                FStr1 = PickWord(r, vocab, dup, smin, smax),
+            };
+        }
+
+        static List<string> SharedVocab(int seed, string typeId, int smin, int smax, int size = 32)
+        {
+            var vocabRng = new Rng(MixSeed((ulong)seed, typeId + "#vocab", 0));
+            var vocab = new List<string>(size);
+            for (int i = 0; i < size; i++) vocab.Add(vocabRng.Word(smin, smax));
+            return vocab;
+        }
+
+        static string PickWord(Rng r, List<string> vocab, double duplication, int smin, int smax)
+        {
+            if (vocab.Count > 0 && r.NextF64() < duplication)
+                return vocab[r.NextInt(0, vocab.Count - 1)];
+            return r.Word(smin, smax);
+        }
+
+        static NestedRow MakeNestedTable(Rng r, JsonElement cfg)
+        {
+            int children = GetInt(cfg, "children", 4);
+            var (smin, smax) = SLen(cfg, 3, 12);
+            var items = new List<NestedItem>(children);
+            for (int i = 0; i < children; i++)
+                items.Add(new NestedItem
+                {
+                    Sku = r.Word(smin, smax),
+                    Qty = r.NextInt(1, 100),
+                    PriceMinor = r.NextInt(0, 100_000),
+                });
+            return new NestedRow
+            {
+                Id = r.Word(8, 12),
+                Status = r.NextInt(0, 5),
+                Meta = new NestedMeta { Region = r.Word(2, 4), Version = r.NextInt(1, 10) },
+                Items = items,
+            };
+        }
+
+        static Signal MakeSignal(Rng r, JsonElement cfg)
+        {
+            int groupCount = GetInt(cfg, "group_count", 4);
+            var (smin, smax) = SLen(cfg);
+            var legs = new List<SignalLeg>(groupCount);
+            for (int i = 0; i < groupCount; i++)
+                legs.Add(new SignalLeg
+                {
+                    LegId = r.NextInt(0, 1_000_000),
+                    LegQty = r.NextInt(0, 10_000),
+                    LegPad = 0,
+                });
+            return new Signal
+            {
+                Seq = r.NextInt(0, 1_000_000_000),
+                Ts = BaseTsMs + r.NextInt(0, 86_400_000),
+                PriceMantissa = r.NextInt(0, 1_000_000_000),
+                Qty = r.NextInt(0, 10_000),
+                Flags = r.NextInt(0, 65_535),
+                Symbol = r.Word(smin, smax),
+                Venue = r.Word(smin, smax),
+                Legs = legs,
+            };
+        }
+
         static Event MakeEvent(Rng r, JsonElement cfg)
         {
             int attrCount = GetInt(cfg, "attr_count", 4);
@@ -170,9 +282,9 @@ namespace GLD.SerializerBenchmark.TestData.V2
             };
         }
 
-        static (int min, int max) SLen(JsonElement cfg)
+        static (int min, int max) SLen(JsonElement cfg, int defMin = 3, int defMax = 16)
         {
-            int min = 3, max = 16;
+            int min = defMin, max = defMax;
             if (cfg.ValueKind == JsonValueKind.Object && cfg.TryGetProperty("string_len", out var sl) &&
                 sl.ValueKind == JsonValueKind.Object)
             {

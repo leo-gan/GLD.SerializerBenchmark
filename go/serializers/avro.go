@@ -3,6 +3,8 @@ package serializers
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -82,7 +84,7 @@ func (s *hambaAvro) DeserializeBytes(buf []byte) (any, error) {
 	if err := s.api.Unmarshal(s.schema, buf, dst); err != nil {
 		return nil, err
 	}
-	return model.Deref(dst), nil
+	return finishAvro(s.fxName, model.Deref(dst)), nil
 }
 
 func (s *hambaAvro) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
@@ -100,19 +102,40 @@ func (s *hambaAvro) DeserializeStream(r io.Reader) (any, error) {
 	if err := dec.Decode(dst); err != nil {
 		return nil, err
 	}
-	return model.Deref(dst), nil
+	return finishAvro(s.fxName, model.Deref(dst)), nil
+}
+
+func finishAvro(name string, v any) any {
+	if name == "table_project" {
+		return modelv2.ProjectFFloat0(v)
+	}
+	return v
 }
 
 // Schemas use field names matching avro struct tags on data types.
 // Parsed schemas are cached for the process lifetime.
+func benchmarkRepoRoot() string {
+	cwd, _ := os.Getwd()
+	for dir := cwd; dir != "/" && dir != "."; dir = filepath.Dir(dir) {
+		if _, err := os.Stat(filepath.Join(dir, "config", "benchmark_config.yaml")); err == nil {
+			return dir
+		}
+	}
+	return cwd
+}
+
 func schemaFor(name string) (avro.Schema, error) {
 	avroSchemaMu.Lock()
 	defer avroSchemaMu.Unlock()
-	if sch, ok := avroSchemaCache[name]; ok {
+	key := name
+	if name == "table_project" {
+		key = "table"
+	}
+	if sch, ok := avroSchemaCache[key]; ok {
 		return sch, nil
 	}
 	var raw string
-	switch name {
+	switch key {
 	// Data Model v2 type_ids (JSON field names match model/v2 struct tags)
 	case "message":
 		raw = `{"type":"record","name":"Message","fields":[
@@ -149,6 +172,13 @@ func schemaFor(name string) (avro.Schema, error) {
 				{"name":"key","type":"string"},{"name":"value","type":"string"}
 			]}}}
 		]}`
+	case "table", "nested_table", "signal":
+		path := filepath.Join(benchmarkRepoRoot(), "schemas", "v2", "avro", key+".avsc")
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		raw = string(b)
 	default:
 		return nil, fmt.Errorf("avro: no schema for %s", name)
 	}
@@ -156,6 +186,6 @@ func schemaFor(name string) (avro.Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	avroSchemaCache[name] = sch
+	avroSchemaCache[key] = sch
 	return sch, nil
 }

@@ -23,10 +23,10 @@
       "section": "Version markers",
       "section_title": "Ion 1.1 BVM",
       "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
-      "paragraph": "The binary version marker for Ion 1.1 is 0xE0 0x01 0x01 0xEA.",
+      "paragraph": "The binary version marker for Ion 1.1 is 0xE0 0x01 0x01 0xEA, followed here by integer 0 (opcode 0x60). Opcode 0x0F is an e-expression, not a 1.1 value.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "e00101ea0f",
+      "input": "e00101ea60",
       "input_encoding": "hex"
     },
     {

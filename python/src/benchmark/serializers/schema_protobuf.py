@@ -7,6 +7,7 @@ from typing import Any
 
 from .base import Serializer
 from ..data_v2 import protobuf_bridge
+from ..data_v2.fidelity import project_f_float_0
 
 
 class ProtobufSerializer(Serializer):
@@ -24,7 +25,15 @@ class ProtobufSerializer(Serializer):
 
     def supports(self, test_data_name: str) -> bool:
         return test_data_name in {
-            "message", "document", "telemetry", "strings", "event",
+            "message",
+            "document",
+            "telemetry",
+            "strings",
+            "event",
+            "table",
+            "table_project",
+            "nested_table",
+            "signal",
         } and protobuf_bridge.available()
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
@@ -46,6 +55,8 @@ class ProtobufSerializer(Serializer):
             raise RuntimeError("prepare required")
         msg = self._msg_cls()
         msg.ParseFromString(data)
+        if self._test_data_name == "table_project":
+            return project_f_float_0(msg)
         return msg
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:

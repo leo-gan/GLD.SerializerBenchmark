@@ -9,6 +9,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
+import { tableFromIPC } from 'apache-arrow';
+import { parquetReadObjects } from 'hyparquet';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -258,6 +260,10 @@ function makeAdapters() {
     const { BSON } = require('bson');
     add('bson', 'bson', (buf) => BSON.deserialize(buf), 'mongodb bson', 'bson');
   } catch { /* optional */ }
+  try {
+    const ion = require('ion-js');
+    add('ion-js', 'ion', (buf) => ion.loadAll(buf).length, 'ion-js loadAll (accept/reject)', 'ion-js');
+  } catch { /* optional */ }
   add('flexbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers flexbuffers', 'flatbuffers');
   add('flatbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers table/flex root', 'flatbuffers');
   try {
@@ -294,6 +300,9 @@ function makeAdapters() {
       '@bufbuild/protobuf',
     );
   } catch { /* optional */ }
+  add('arrow-ipc', 'arrow', (buf) => arrowRows(tableFromIPC(buf)), 'apache-arrow tableFromIPC', 'apache-arrow');
+  add('parquet', 'parquet', (buf) => parquetRows(buf), 'hyparquet parquetReadObjects', 'hyparquet');
+  add('parquet-uncompressed', 'parquet', (buf) => parquetRows(buf), 'hyparquet parquetReadObjects', 'hyparquet');
   try {
     const bebop = require('bebop');
     add('bebop', 'bebop', (buf) => {
@@ -306,13 +315,52 @@ function makeAdapters() {
   return adapters.filter((a) => typeof a.decode === 'function');
 }
 
-function runOne(suite, c, adapter) {
+function arrowRows(table) {
+  const names = table.schema.fields.map((field) => field.name);
+  const cols = names.map((name) => table.getChild(name));
+  const rows = [];
+  for (let i = 0; i < table.numRows; i++) {
+    const row = {};
+    for (let c = 0; c < names.length; c++) {
+      let value = cols[c].get(i);
+      if (typeof value === 'bigint') value = Number(value);
+      row[names[c]] = value;
+    }
+    rows.push(row);
+  }
+  if (!rows.length) throw new Error('arrow-ipc: no rows');
+  return rows;
+}
+
+function parquetFile(buf) {
+  const u8 = buf instanceof Uint8Array ? buf : Buffer.from(buf);
+  if (u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength) return u8.buffer;
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+}
+
+async function parquetRows(buf) {
+  if (!buf || buf.length === 0) throw new Error('parquet: empty');
+  const rows = await parquetReadObjects({ file: parquetFile(buf) });
+  if (!rows.length) throw new Error('parquet: no rows');
+  return rows.map((row) => {
+    const out = {};
+    for (const key of Object.keys(row)) {
+      let value = row[key];
+      if (typeof value === 'bigint') value = Number(value);
+      out[key] = value;
+    }
+    return out;
+  });
+}
+
+async function runOne(suite, c, adapter) {
   const raw = inputBytes(c);
   let observed;
   let decodedOk = true;
   let decodeError = null;
   try {
     observed = adapter.decode(raw, c.schema);
+    if (observed && typeof observed.then === 'function') observed = await observed;
   } catch (err) {
     decodedOk = false;
     decodeError = `${err?.name || 'Error'}: ${err?.message || err}`;
@@ -360,7 +408,7 @@ function runOne(suite, c, adapter) {
   return { ...base, outcome: 'pass', observed: preview(observed) };
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv);
   const suites = loadSuites().filter((s) => !args.formats.length || args.formats.includes(s.format));
   const adapters = applyMapping(
@@ -384,7 +432,7 @@ function main() {
     }
     for (const adapter of chosen) {
       for (const c of suite.cases) {
-        results.push(runOne(suite, c, adapter));
+        results.push(await runOne(suite, c, adapter));
       }
     }
   }

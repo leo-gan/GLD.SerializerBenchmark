@@ -33,7 +33,7 @@ Benchmark runners assume compilers/runtimes are already on the machine. That is 
 
 | Language | Host toolchain | Project deps (inside runner) |
 |----------|----------------|------------------------------|
-| csharp | .NET SDK 8+ | `dotnet restore/build` |
+| csharp | .NET SDK 10+ | `dotnet restore/build` |
 | python | [uv](https://docs.astral.sh/uv/) | `uv sync` |
 | go | Go bootstrap 1.22+ | `go build` (+ module toolchain) |
 | rust | rustc/cargo | `cargo build --release` |

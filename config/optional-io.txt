@@ -1,0 +1,38 @@
+c	ion-c
+c	yyjson
+cpp	arduinojson
+cpp	cereal
+cpp	rapidjson
+csharp	BinaryPack
+csharp	FlatSharp
+csharp	Google.Protobuf
+csharp	GroBuf
+csharp	Hyperion
+csharp	LightProto
+csharp	MS Binary
+csharp	MS Bond Compact
+csharp	MS Bond Fast
+csharp	MS DataContract
+csharp	MemoryPack
+csharp	MessagePack-CSharp
+csharp	Migrant
+csharp	Nerdbank.MessagePack
+csharp	NetSerializer
+csharp	ProtoBuf
+csharp	ShapeShift.Json
+csharp	ShapeShift.MsgPack
+csharp	ZeroFormatter
+go	encoding/json
+go	fxamacker/cbor
+go	goccy/go-json
+go	hamba/avro
+go	jsoniter
+go	kelindar/binary
+go	segmentio/encoding/json
+go	shamaton/msgpack
+go	shamaton/msgpack (array)
+go	sonic
+go	ugorji/cbor
+go	ugorji/json
+go	ugorji/msgpack
+go	vmihailenco/msgpack

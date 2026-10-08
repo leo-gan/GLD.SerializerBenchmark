@@ -104,7 +104,7 @@ A **trust boundary** is any place where data may come from outside your fully co
 
 **Prefer these when** you run data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style scans, wide tables, or read-heavy analytics.
 
-**Avoid them when** you mostly fetch one nested document by key at low latency. That is still a **row or document** problem, or a specialized store. It is not Parquet’s sweet spot.
+**Avoid them when** you mostly fetch one nested document by key at low latency. That is still a **row or document** problem, or a specialized store. It is not Parquet’s sweet spot. A columnar layout pays off when the row count is large. At one row, file headers and alignment padding dominate both size and time.
 
 ### Arrow
 
@@ -168,6 +168,7 @@ Schema-driven remote-procedure-call formats show up when machine-learning **serv
 | Portable inference across languages | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, framework export formats, or dedicated model servers |
 | Bundle preprocessing and model for one Python service | Still better with a versioned registry and immutable artifact IDs than ad-hoc pickles in chat threads |
 | Audit and compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
+| Quantized weights shared across runtimes | A file that records how many bits each number uses, how the numbers are grouped, and the multiplier that turns those bits back into approximate real values. Loading the file must not run code. The order on disk and the order a matrix calculation expects can differ ([Bit width is not bus width](../201/bit-width-and-bus-width.md)). |
 
 ### Experiments versus production
 
@@ -218,9 +219,9 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ## How this suite helps (and what it does not)
 
-This repository benchmarks **serializers** across languages and categories. Those categories include the JSON family, schemaless binary, schema-driven, and language-native formats. That work is invaluable for **encode and decode cost** of in-memory objects.
+This repository benchmarks **serializers** across languages. A family is a teaching cut: text, schemaless binary, schema-driven, language-native, or columnar. The comparison cell is language, standard, data set, and data type. The Suite data set is `message`, `document`, `telemetry`, `strings`, and `event`. Published `all@all` averages only those five types. The Columnar data set is `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only `f_float_0`.
 
-Data platform success also depends on **input/output layout, compression, partitioning, cluster execution, and schema governance**. Those topics are larger than a single serialize call. Use the [Dashboard](../../dashboard/) to compare libraries. Use this page to pick the **paradigm** before you micro-optimize a codec.
+Those measurements are the encode and decode cost of a fixture. Data platform success also depends on input/output layout, compression, partitioning, cluster execution, and schema governance. Those topics are larger than a single serialize call. Use the [Dashboard](../../dashboard/) inside one comparison cell. Use this page to choose the job before you micro-optimize a library.
 
 ---
 

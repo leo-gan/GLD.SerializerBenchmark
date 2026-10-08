@@ -101,9 +101,11 @@ Logical value: `id = 42`, `label = "x"`.
 
 ### What this comparison is not
 
-- Not “Protocol Buffers versus Avro.” Both are schema-centric. Operational cultures differ. See the [data science perspective](../101/data_science_perspective.md) for Avro-oriented workloads.
-- Not “binary versus zero-copy.” FlatBuffers-class designs are a separate point. See [zero-copy layouts](zero-copy.md).
-- Not a guarantee that any MessagePack library outperforms any Protocol Buffers library in a given language.
+Protocol Buffers versus Avro is not the question on this page. Both are schema-centric. Their operational cultures differ. See the [data science perspective](../101/data_science_perspective.md) for Avro-oriented workloads.
+
+Binary versus zero-copy is a different question. FlatBuffers-class designs are a separate point. See [zero-copy layouts](zero-copy.md).
+
+A MessagePack library is not guaranteed to outperform a Protocol Buffers library in a given language.
 
 ---
 
@@ -136,7 +138,7 @@ Logical value: `id = 42`, `label = "x"`.
 | Schemaless binary | Python `msgpack` / `cbor2`; JavaScript `msgpackr` / `cbor-x`; Go MessagePack/CBOR libraries; Rust `rmp-serde` / CBOR crates; C mpack/msgpack/cbor variants |
 | Schema-driven | Protocol Buffers bindings where registered; other IDL or schema codecs per language |
 
-Compare **within one language**. Prefer same-family charts when asking whether a library is competitive in its class. Cross-family ranking tables are decision inputs only when the workload genuinely lies on the boundary. See [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/).
+Compare within one language, one standard, one data set, and one data type. MessagePack and CBOR are standards. Protocol Buffers is a standard. A family chart is a teaching cut. A cross-standard ranking is a decision input when the workload sits on the boundary between two contracts. See [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/).
 
 ---
 

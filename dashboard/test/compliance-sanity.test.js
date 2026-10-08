@@ -44,7 +44,7 @@ const csharpBench = {
   csharp: {
     'System.Text.Json': '8.0',
     'Json.Net': '13.0',
-    Jil: '3.0',
+    'ShapeShift.Json': '0.1.1068-alpha',
     ProtoBuf: '3.2',
     'MS Binary': '8.0',
     YamlDotNet: '16.0',
@@ -115,18 +115,18 @@ test('Standard menu is populated families, No public spec, separator, then empty
 
 test('bench roster keeps serializers that have no published version', () => {
   const map = benchMapFromGroups([
-    { serializer: 'Jil', serializer_version: '3.0.0' },
+    { serializer: 'ShapeShift.Json', serializer_version: '0.1.1068-alpha' },
     { serializer: 'SpanJson' },
-    { serializer: 'Jil', serializer_version: 'ignored-dup' },
+    { serializer: 'ShapeShift.Json', serializer_version: 'ignored-dup' },
     { serializer: '' },
   ]);
-  assert.deepEqual(map, { Jil: '3.0.0', SpanJson: '' });
+  assert.deepEqual(map, { 'ShapeShift.Json': '0.1.1068-alpha', SpanJson: '' });
   const all = rosterEntries({
     language: 'csharp',
     benchVersions: { csharp: map },
     matrix: [],
   });
-  assert.deepEqual(all.map((e) => e.serializer), ['Jil', 'SpanJson']);
+  assert.deepEqual(all.map((e) => e.serializer), ['ShapeShift.Json', 'SpanJson']);
 });
 
 test('aliases map compliance adapter names onto Overview names', () => {
@@ -141,10 +141,10 @@ test('C# All is the full language roster, not the scored subset', () => {
   const all = rosterEntries({ language: 'csharp', benchVersions: csharpBench, matrix: csharpMatrix });
   const names = all.map((e) => e.serializer);
   assert.deepEqual(names.sort(), [
-    'Jil',
     'Json.Net',
     'MS Binary',
     'ProtoBuf',
+    'ShapeShift.Json',
     'SpanJson',
     'System.Text.Json',
     'YamlDotNet',
@@ -165,7 +165,7 @@ test('No public spec is All minus every classified Standard', () => {
     assert.equal(scored.has(name), !noSpec.has(name), name);
   }
   assert.deepEqual([...noSpec].sort(), ['MS Binary']);
-  assert.equal(noSpec.has('Jil'), false);
+  assert.equal(noSpec.has('ShapeShift.Json'), false);
   assert.equal(noSpec.has('SpanJson'), false);
   assert.equal(noSpec.has('System.Text.Json'), false);
   assert.equal(noSpec.has('ProtoBuf'), false);
@@ -233,14 +233,14 @@ test('All heatmap pads every language serializer, including ungraded ones', () =
     extras,
   );
   const names = rows.map((r) => r.serializer);
-  assert.ok(names.includes('Jil'));
+  assert.ok(names.includes('ShapeShift.Json'));
   assert.ok(names.includes('MS Binary'));
   assert.ok(names.includes('SpanJson'));
   assert.ok(names.includes('ProtoBuf'));
   assert.equal(names.includes('protobuf-net'), false);
   assert.equal(rows.length, extras.length);
-  const jil = rows.find((r) => r.serializer === 'Jil');
-  assert.equal(jil.byStandard.size, 0);
+  const shapeShiftJson = rows.find((r) => r.serializer === 'ShapeShift.Json');
+  assert.equal(shapeShiftJson.byStandard.size, 0);
   const jsonNet = rows.find((r) => r.serializer === 'Json.Net');
   assert.ok(jsonNet.byStandard.size > 0);
 });
@@ -277,7 +277,7 @@ test('classification comes from official docs, not the spelling of the name', ()
   assert.deepEqual(classifySerializer('python', 'msgspec'), ['json']);
   assert.deepEqual(classifySerializer('python', 'msgspec-msgpack'), ['msgpack']);
   assert.deepEqual(classifySerializer('csharp', 'MS Bond Json'), ['json', 'bond']);
-  assert.deepEqual(classifySerializer('csharp', 'Jil'), ['json']);
+  assert.deepEqual(classifySerializer('csharp', 'ShapeShift.Json'), ['json']);
   assert.deepEqual(classifySerializer('c', 'custom-binary'), []);
   const jansson = CATALOG.find((e) => e.language === 'c' && e.name === 'jansson');
   assert.ok(jansson.docs.startsWith('https://'));
@@ -363,8 +363,9 @@ test('live C# payload: All includes every Overview serializer', () => {
   assert.ok(all.length > scored.length, 'All must be larger than the scored C# subset');
   assert.ok(!allNames.has('protobuf-net'));
   assert.ok(allNames.has('ProtoBuf'));
-  assert.equal(noSpec.some((e) => e.serializer === 'Jil'), false);
-  assert.ok(scored.some((e) => e.serializer === 'Jil'));
+  assert.equal(allNames.has('Jil'), false);
+  assert.equal(noSpec.some((e) => e.serializer === 'ShapeShift.Json'), false);
+  assert.ok(scored.some((e) => e.serializer === 'ShapeShift.Json'));
   assert.equal(
     scored.some((e) => e.serializer === 'System.Text.Json'),
     true,

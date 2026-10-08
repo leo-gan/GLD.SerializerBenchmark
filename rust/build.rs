@@ -82,8 +82,11 @@ fn write_dep_versions(manifest: &std::path::Path) -> Result<(), Box<dyn std::err
         "prost",
         "serde_avro_fast",
         "bson",
+        "ion-rs",
         "nanoserde",
         "speedy",
+        "arrow",
+        "parquet",
     ];
     let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
     let out = out_dir.join("dep_versions.rs");

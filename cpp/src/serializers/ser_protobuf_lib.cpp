@@ -147,6 +147,130 @@ Event from_pb_event(const benchmark::v2::Event& e) {
   return out;
 }
 
+benchmark::v2::Table to_pb_table(const Table& t) {
+  benchmark::v2::Table out;
+  out.set_f_float_0(t.f_float[0]);
+  out.set_f_float_1(t.f_float[1]);
+  out.set_f_float_2(t.f_float[2]);
+  out.set_f_float_3(t.f_float[3]);
+  out.set_f_float_4(t.f_float[4]);
+  out.set_f_float_5(t.f_float[5]);
+  out.set_f_float_6(t.f_float[6]);
+  out.set_f_float_7(t.f_float[7]);
+  out.set_f_float_8(t.f_float[8]);
+  out.set_f_float_9(t.f_float[9]);
+  out.set_f_float_10(t.f_float[10]);
+  out.set_f_float_11(t.f_float[11]);
+  out.set_f_float_12(t.f_float[12]);
+  out.set_f_float_13(t.f_float[13]);
+  out.set_f_float_14(t.f_float[14]);
+  out.set_f_float_15(t.f_float[15]);
+  out.set_f_int_0(t.f_int[0]);
+  out.set_f_int_1(t.f_int[1]);
+  out.set_f_int_2(t.f_int[2]);
+  out.set_f_int_3(t.f_int[3]);
+  out.set_f_str_0(t.f_str_0);
+  out.set_f_str_1(t.f_str_1);
+  return out;
+}
+
+Table from_pb_table(const benchmark::v2::Table& t) {
+  Table out;
+  out.f_float[0] = t.f_float_0();
+  out.f_float[1] = t.f_float_1();
+  out.f_float[2] = t.f_float_2();
+  out.f_float[3] = t.f_float_3();
+  out.f_float[4] = t.f_float_4();
+  out.f_float[5] = t.f_float_5();
+  out.f_float[6] = t.f_float_6();
+  out.f_float[7] = t.f_float_7();
+  out.f_float[8] = t.f_float_8();
+  out.f_float[9] = t.f_float_9();
+  out.f_float[10] = t.f_float_10();
+  out.f_float[11] = t.f_float_11();
+  out.f_float[12] = t.f_float_12();
+  out.f_float[13] = t.f_float_13();
+  out.f_float[14] = t.f_float_14();
+  out.f_float[15] = t.f_float_15();
+  out.f_int[0] = t.f_int_0();
+  out.f_int[1] = t.f_int_1();
+  out.f_int[2] = t.f_int_2();
+  out.f_int[3] = t.f_int_3();
+  out.f_str_0 = t.f_str_0();
+  out.f_str_1 = t.f_str_1();
+  return out;
+}
+
+benchmark::v2::NestedRow to_pb_nested(const NestedRow& row) {
+  benchmark::v2::NestedRow out;
+  out.set_id(row.id);
+  out.set_status(row.status);
+  out.mutable_meta()->set_region(row.meta.region);
+  out.mutable_meta()->set_version(row.meta.version);
+  for (const auto& it : row.items) {
+    auto* p = out.add_items();
+    p->set_sku(it.sku);
+    p->set_qty(it.qty);
+    p->set_price_minor(it.price_minor);
+  }
+  return out;
+}
+
+NestedRow from_pb_nested(const benchmark::v2::NestedRow& row) {
+  NestedRow out;
+  out.id = row.id();
+  out.status = row.status();
+  out.meta.region = row.meta().region();
+  out.meta.version = row.meta().version();
+  out.items.reserve(static_cast<size_t>(row.items_size()));
+  for (const auto& it : row.items()) {
+    NestedItem x;
+    x.sku = it.sku();
+    x.qty = it.qty();
+    x.price_minor = it.price_minor();
+    out.items.push_back(std::move(x));
+  }
+  return out;
+}
+
+benchmark::v2::Signal to_pb_signal(const Signal& s) {
+  benchmark::v2::Signal out;
+  out.set_seq(s.seq);
+  out.set_ts(s.ts);
+  out.set_price_mantissa(s.price_mantissa);
+  out.set_qty(s.qty);
+  out.set_flags(s.flags);
+  out.set_symbol(s.symbol);
+  out.set_venue(s.venue);
+  for (const auto& leg : s.legs) {
+    auto* p = out.add_legs();
+    p->set_leg_id(leg.leg_id);
+    p->set_leg_qty(leg.leg_qty);
+    p->set_leg_pad(leg.leg_pad);
+  }
+  return out;
+}
+
+Signal from_pb_signal(const benchmark::v2::Signal& s) {
+  Signal out;
+  out.seq = s.seq();
+  out.ts = s.ts();
+  out.price_mantissa = s.price_mantissa();
+  out.qty = s.qty();
+  out.flags = s.flags();
+  out.symbol = s.symbol();
+  out.venue = s.venue();
+  out.legs.reserve(static_cast<size_t>(s.legs_size()));
+  for (const auto& leg : s.legs()) {
+    SignalLeg x;
+    x.leg_id = leg.leg_id();
+    x.leg_qty = leg.leg_qty();
+    x.leg_pad = leg.leg_pad();
+    out.legs.push_back(x);
+  }
+  return out;
+}
+
 std::unique_ptr<MessageLite> to_proto(const Fixture& fx) {
   if (fx.instance_count > 1) {
     if (fx.type_id == "message") {
@@ -184,6 +308,27 @@ std::unique_ptr<MessageLite> to_proto(const Fixture& fx) {
       }
       return batch;
     }
+    if (fx.type_id == "table" || fx.type_id == "table_project") {
+      auto batch = std::make_unique<benchmark::v2::BatchTable>();
+      for (const auto& t : std::get<std::vector<Table>>(fx.value)) {
+        *batch->add_items() = to_pb_table(t);
+      }
+      return batch;
+    }
+    if (fx.type_id == "nested_table") {
+      auto batch = std::make_unique<benchmark::v2::BatchNestedRow>();
+      for (const auto& row : std::get<std::vector<NestedRow>>(fx.value)) {
+        *batch->add_items() = to_pb_nested(row);
+      }
+      return batch;
+    }
+    if (fx.type_id == "signal") {
+      auto batch = std::make_unique<benchmark::v2::BatchSignal>();
+      for (const auto& s : std::get<std::vector<Signal>>(fx.value)) {
+        *batch->add_items() = to_pb_signal(s);
+      }
+      return batch;
+    }
   }
   if (fx.type_id == "message") {
     return std::make_unique<benchmark::v2::Message>(to_pb_message(std::get<Message>(fx.value)));
@@ -199,6 +344,15 @@ std::unique_ptr<MessageLite> to_proto(const Fixture& fx) {
   }
   if (fx.type_id == "event") {
     return std::make_unique<benchmark::v2::Event>(to_pb_event(std::get<Event>(fx.value)));
+  }
+  if (fx.type_id == "table" || fx.type_id == "table_project") {
+    return std::make_unique<benchmark::v2::Table>(to_pb_table(std::get<Table>(fx.value)));
+  }
+  if (fx.type_id == "nested_table") {
+    return std::make_unique<benchmark::v2::NestedRow>(to_pb_nested(std::get<NestedRow>(fx.value)));
+  }
+  if (fx.type_id == "signal") {
+    return std::make_unique<benchmark::v2::Signal>(to_pb_signal(std::get<Signal>(fx.value)));
   }
   throw std::runtime_error("libprotobuf: unsupported type " + fx.type_id);
 }
@@ -237,6 +391,31 @@ Value from_proto(const std::string& type_id, int n, const MessageLite& msg) {
       for (const auto& it : b.items()) out.push_back(from_pb_event(it));
       return out;
     }
+    if (type_id == "table") {
+      std::vector<Table> out;
+      const auto& b = static_cast<const benchmark::v2::BatchTable&>(msg);
+      for (const auto& it : b.items()) out.push_back(from_pb_table(it));
+      return out;
+    }
+    if (type_id == "table_project") {
+      std::vector<double> col;
+      const auto& b = static_cast<const benchmark::v2::BatchTable&>(msg);
+      col.reserve(static_cast<size_t>(b.items_size()));
+      for (const auto& it : b.items()) col.push_back(it.f_float_0());
+      return col;
+    }
+    if (type_id == "nested_table") {
+      std::vector<NestedRow> out;
+      const auto& b = static_cast<const benchmark::v2::BatchNestedRow&>(msg);
+      for (const auto& it : b.items()) out.push_back(from_pb_nested(it));
+      return out;
+    }
+    if (type_id == "signal") {
+      std::vector<Signal> out;
+      const auto& b = static_cast<const benchmark::v2::BatchSignal&>(msg);
+      for (const auto& it : b.items()) out.push_back(from_pb_signal(it));
+      return out;
+    }
   }
   if (type_id == "message") {
     return from_pb_message(static_cast<const benchmark::v2::Message&>(msg));
@@ -250,7 +429,22 @@ Value from_proto(const std::string& type_id, int n, const MessageLite& msg) {
   if (type_id == "strings") {
     return from_pb_strings(static_cast<const benchmark::v2::Strings&>(msg));
   }
-  return from_pb_event(static_cast<const benchmark::v2::Event&>(msg));
+  if (type_id == "event") {
+    return from_pb_event(static_cast<const benchmark::v2::Event&>(msg));
+  }
+  if (type_id == "table") {
+    return from_pb_table(static_cast<const benchmark::v2::Table&>(msg));
+  }
+  if (type_id == "table_project") {
+    return std::vector<double>{static_cast<const benchmark::v2::Table&>(msg).f_float_0()};
+  }
+  if (type_id == "nested_table") {
+    return from_pb_nested(static_cast<const benchmark::v2::NestedRow&>(msg));
+  }
+  if (type_id == "signal") {
+    return from_pb_signal(static_cast<const benchmark::v2::Signal&>(msg));
+  }
+  throw std::runtime_error("libprotobuf: unsupported type " + type_id);
 }
 
 class LibProtobufSer final : public ISerializer {

@@ -9,6 +9,8 @@
  * so the visible name is a link to the library source.
  */
 
+import { CATALOG_BY_KEY } from './compliance-catalog.js';
+
 const DATA_URL = 'data/serializer-sources.json';
 
 /** @type {Record<string, Record<string, { source_url: string, version?: string, specifics?: string }>>} */
@@ -40,11 +42,22 @@ export function setSerializerSources(data) {
       : {};
 }
 
+function catalogDocsUrl(language, name) {
+  const entry = CATALOG_BY_KEY.get(`${language}\0${name}`);
+  const docs = entry && entry.docs;
+  return typeof docs === 'string' ? docs : '';
+}
+
 export function serializerSourceUrl(language, name) {
   if (!language || name == null || name === '') return '';
-  const entry = languages[String(language)]?.[String(name)];
+  const lang = String(language);
+  const key = String(name);
+  const entry = languages[lang]?.[key];
   const url = entry && entry.source_url;
-  return typeof url === 'string' ? url : '';
+  if (typeof url === 'string' && url) return url;
+  // serializer-sources.json is fetched at runtime and can lag the JS bundle.
+  // The compliance catalog ships in that bundle, so a new row still links.
+  return catalogDocsUrl(lang, key);
 }
 
 /** Last measured SerializerVersion from the catalog, or ''. */

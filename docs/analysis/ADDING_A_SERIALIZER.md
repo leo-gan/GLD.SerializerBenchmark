@@ -26,7 +26,7 @@ After this page you should be able to:
 | Which **language** tree? (`c-sharp/`, `python/`, …) | Each tree has its own interface and registration list |
 | Can the library serialize the **suite domain types**? | Prefer the library’s normal path on domain POCOs; use untimed maps only when the codec needs a native shape |
 | What is the library’s **recommended** ser/de entry point? | README “Getting started” snippets are often *minimal*, not *optimal* for a tight loop |
-| Source generators / AOT / special toolchain? | Document host SDK requirements (example: LightProto needs **.NET SDK 9+** for its generator while the project still targets net8.0) |
+| Source generators / AOT / special toolchain? | Document host SDK requirements (example: the C# project targets **net10.0**, so the host needs **.NET SDK 10+**; that SDK also runs LightProto's source generator) |
 | Default configuration only? | The suite measures **library defaults**, not hand-tuned production settings |
 
 Pick an existing sibling under `<lang>/…/Serializers/` (or equivalent) and copy its structure.
@@ -212,7 +212,7 @@ If the library needs a **newer compiler or analyzer** than the suite’s default
 2. Update `scripts/install-host-requirements.sh` and `scripts/check-host-requirements.sh` if install/check should enforce it.
 3. Update CI (`.github/workflows/benchmark-ci.yml`) so smoke jobs use a compatible SDK.
 
-Example lesson from LightProto: the package builds on .NET 8 targeting packs, but its **source generator requires Roslyn 4.14+ (.NET SDK 9+)**. With SDK 8 alone the project compiles, parsers are never generated, and every cell fails with `No ProtoParser registered…`.
+Example lesson from LightProto: its **source generator requires Roslyn 4.14+**. The C# project now targets **net10.0**, so SDK 10 covers both the target framework and that generator. An older SDK either fails the target or compiles without generating parsers, and every LightProto cell then fails with `No ProtoParser registered…`.
 
 ### 7. Inventory and counts
 
@@ -222,9 +222,10 @@ Update human-facing inventory so the site matches the runner:
 2. **Source URL + Specifics:** add the log name to `dashboard/scripts/write-serializer-sources.py` (`URL_OVERRIDE` if the compliance catalog docs URL is not the repo, `SPEC_KEY` / `SPECIFICS` for the origin paragraph). Run `python3 dashboard/scripts/write-serializer-sources.py` then `python3 scripts/apply-serializer-sources-to-docs.py` **after** a bench so `version` is the measured `SerializerVersion`. Serializer names in the language table, Specifics headings, and the Dashboard must link to that source.
 3. Language README serializer count (if it states a number).
 4. Root `README.md` language bullet count (if present).
-5. Comment in `config/benchmark_config.yaml` for that language (if it mentions a count).
-6. Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).
-7. Optional one-line **call-path** note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).
+5. The language row in `docs/analysis/index.md` (registered-serializer count).
+6. Comment in `config/benchmark_config.yaml` for that language (if it mentions a count).
+7. Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).
+8. Optional one-line **call-path** note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).
 
 ### 8. Build, peer-smoke, then full results
 

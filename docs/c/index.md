@@ -64,6 +64,7 @@ The steps to install the toolchain and run the benchmark are in [`c/README.md`](
 | [tinycbor](https://github.com/intel/tinycbor), [libcbor](https://github.com/PJK/libcbor), [libcbor-stream](https://github.com/PJK/libcbor), [qcbor](https://github.com/laurencelundblade/QCBOR), [zcbor](https://github.com/NordicSemiconductor/zcbor) | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`). Do not read `libcbor-stream` deserialize as a streaming decoder. |
 | [ubj](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_ubj.c) | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 | [libyaml](https://github.com/yaml/libyaml) | Text | Official C YAML 1.1 emitter/parser (`yaml_emitter_*` / `yaml_parser_*`) |
+| [ion-c](https://github.com/amazon-ion/ion-c) | Binary | Official Ion binary writer/reader (`ion_writer_*` / `ion_reader_*`) via visitor ops; native `FILE*` stream |
 
 ### Specifics
 
@@ -157,9 +158,13 @@ This row is the suite's in-tree UBJSON marker codec around the V2 binary payload
 
 libyaml is the official C library for YAML 1.1, written so other languages (PyYAML, Yams, ext-yaml) can share one parser/emitter. YAML exists as a human-friendly config language. This row times the C library directly.
 
+#### [ion-c](https://github.com/amazon-ion/ion-c) · `1.1.6`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-c is the official C implementation. This row times the binary writer and reader on the suite visitor, including a native FILE* stream.
+
 ### Caveats
 
-- **Visitor (map codecs):** JSON / MessagePack / CBOR / BSON serializers only implement library primitives; field layout lives in `v2_codec.c`.
+- **Visitor (map codecs):** JSON / MessagePack / CBOR / BSON / Ion serializers only implement library primitives; field layout lives in `v2_codec.c`.
 - **Protobuf family honesty:** the official **Google** row is `protobuf` (libprotobuf + sysroot). `nanopb` / `protobuf-c` / `protobuf-wire` currently time the shared `fixture_pb_v2` wire codec (domain encode/decode), not each library’s full generated-message stack. Do not read those three as “full library codegen benchmarks.”
 - **Payload-wrapped:** `ubj`, `flatcc`, and `avro-c` keep kind + binary payload (or builder vector) without full multi-type schema codegen.
 - **Symbol prefixing:** `parson` and `tinycbor` are linked with renamed symbols so they co-exist with `jansson` and `libcbor`.
@@ -167,7 +172,7 @@ libyaml is the official C library for YAML 1.1, written so other languages (PyYA
 
 ### Stream honesty
 
-Stream mode uses an in-memory `FILE*` (`fmemopen`) wrapper around full encode/decode buffers — **`StreamMode=adapted`** for every stream row. It is not a per-library incremental stream API. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
+Stream mode uses an in-memory `FILE*` (`fmemopen`). **`ion-c` and `yyjson` set both FILE* callbacks, so those rows are `StreamMode=native`.** Every other stream row is **`StreamMode=adapted`**: the harness writes the already-encoded buffer. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
 ## Numbers
 

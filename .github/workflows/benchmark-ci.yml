@@ -173,13 +173,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # SDK 9 for LightProto source generator (Roslyn 4.14+); SDK 8 for net8.0 TFM.
-      - name: Setup .NET SDK 8 and 9
+      # SDK 10 for the net10.0 target; it also supports LightProto's source generator.
+      - name: Setup .NET SDK 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
+          dotnet-version: 10.0.x
 
       # resolve_run_config.py (v2 cells) needs PyYAML; analysis package optional for sidecars
       - name: Setup Python for run-config resolution
@@ -197,6 +195,22 @@ jobs:
         run: |
           cd c-sharp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # sbe is omitted (no Org.SbeTool.Sbe.Dll 1.40.2). No ORC row.
+      - name: Run C# columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-csharp-columnar
+        run: |
+          cd c-sharp
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,System.Text.Json,Google.Protobuf,FlatSharp,Apache.Avro"
+          err="../logs/csharp/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
   python-benchmark:
     needs: changes
@@ -224,6 +238,15 @@ jobs:
           cd python
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Second smoke: the four columnar types are not in smoke.yaml.
+      # The allow-list is required. "parquet" and "orc" also match the
+      # uncompressed rows. Do not point smoke_run_config at this file.
+      - name: Run Python columnar smoke
+        run: |
+          cd python
+          BENCHMARK_RUN_CONFIG="${GITHUB_WORKSPACE}/config/library/columnar-smoke.yaml" \
+            ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,orc,orjson,protobuf,flatbuffers,avro"
+
   rust-benchmark:
     needs: changes
     if: >-
@@ -243,6 +266,24 @@ jobs:
         run: |
           cd rust
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Second smoke: the four columnar types are not in smoke.yaml.
+      # Comma-separated names are case-insensitive exact matches, so
+      # "parquet" does not also select parquet-uncompressed.
+      # Do not point smoke_run_config at this file.
+      - name: Run Rust columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-rust-columnar
+        run: |
+          cd rust
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,sbe,serde_json,prost,serde_avro_fast"
+          err="../logs/rust/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
   c-benchmark:
     needs: changes
@@ -293,6 +334,14 @@ jobs:
           cd javascript
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. custom mode does not force
+      # the message data filter. The comma list is an exact-name allow-list.
+      - name: Run JavaScript columnar smoke
+        run: |
+          cd javascript
+          BENCHMARK_RUN_CONFIG="${GITHUB_WORKSPACE}/config/library/columnar-smoke.yaml" \
+            ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,JSON.stringify,protobufjs,flatbuffers,avsc"
+
   go-benchmark:
     needs: changes
     if: >-
@@ -305,8 +354,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          # Match go/go.mod (go 1.24.0 / toolchain go1.24.13)
-          go-version: '1.24.x'
+          # Match go/go.mod (go 1.27.0 / toolchain go1.27.1)
+          go-version: '1.27.x'
           cache-dependency-path: go/go.sum
 
       - name: Install protoc (optional regen of committed gen/pb)
@@ -325,6 +374,23 @@ jobs:
         run: |
           cd go
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Columnar types are not in smoke.yaml. The comma list is an exact-name
+      # allow-list. SBE sources are committed, so this job does not need a JDK.
+      - name: Run Go columnar smoke
+        env:
+          GOTOOLCHAIN: auto
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-columnar
+        run: |
+          cd go
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,sbe,encoding/json,protobuf,hamba/avro"
+          err="../logs/go/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
   java-benchmark:
     needs: changes
@@ -365,6 +431,22 @@ jobs:
           cd java
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # Do not point smoke_run_config at this file.
+      - name: Run Java columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-java-columnar
+        run: |
+          cd java
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,orc,orc-uncompressed,sbe,jackson,protobuf,flatbuffers,avro"
+          err="../logs/java/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
+
   kotlin-benchmark:
     needs: changes
     if: >-
@@ -397,6 +479,22 @@ jobs:
         run: |
           cd kotlin
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # Do not point smoke_run_config at this file.
+      - name: Run Kotlin columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-kotlin-columnar
+        run: |
+          cd kotlin
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,orc,orc-uncompressed,sbe,kotlinx-json,protobuf,flatbuffers,avro"
+          err="../logs/kotlin/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
   php-benchmark:
     needs: changes
@@ -456,10 +554,58 @@ jobs:
       - name: Check host requirements (cpp)
         run: ./scripts/check-host-requirements.sh cpp
 
+      # Columnar rows link only when ARROW_ROOT is set. Fail if this
+      # runner cannot install Arrow 25.0.1, instead of skipping the rows.
+      - name: Install Apache Arrow C++ 25.0.1
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          case "${VERSION_CODENAME}" in
+            jammy|noble) ;;
+            *)
+              echo "Apache Arrow apt packages are published for jammy and noble, not ${VERSION_CODENAME}."
+              echo "Refusing to build C++ without the Arrow rows."
+              exit 1
+              ;;
+          esac
+          sudo apt-get install -y ca-certificates wget
+          wget -O /tmp/apache-arrow-apt-source.deb \
+            "https://packages.apache.org/artifactory/arrow/ubuntu/apache-arrow-apt-source-latest-${VERSION_CODENAME}.deb"
+          sudo apt-get install -y -V /tmp/apache-arrow-apt-source.deb
+          sudo apt-get update
+          cand="$(apt-cache madison libarrow-dev | awk '{print $3}' | grep '^25\.0\.1-' | head -1)"
+          pq="$(apt-cache madison libparquet-dev | awk '{print $3}' | grep '^25\.0\.1-' | head -1)"
+          if [[ -z "${cand}" || -z "${pq}" ]]; then
+            echo "libarrow-dev / libparquet-dev 25.0.1 are not in the Apache Arrow apt repo for ${VERSION_CODENAME}."
+            apt-cache madison libarrow-dev || true
+            apt-cache madison libparquet-dev || true
+            exit 1
+          fi
+          sudo apt-get install -y -V "libarrow-dev=${cand}" "libparquet-dev=${pq}"
+          grep -q 'ARROW_VERSION_STRING "25.0.1"' /usr/include/arrow/util/config.h
+          test -e /usr/lib/x86_64-linux-gnu/libarrow.so
+          echo "ARROW_ROOT=/usr" >> "$GITHUB_ENV"
+
       - name: Run C++ Benchmark
         run: |
           cd cpp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+      # Columnar types are not in smoke.yaml. A comma means exact names.
+      # ARROW_ROOT from the install step keeps the five Arrow rows in the binary.
+      - name: Run C++ columnar smoke
+        env:
+          BENCHMARK_RUN_CONFIG: ${{ github.workspace }}/config/library/columnar-smoke.yaml
+          BENCHMARK_TS: ${{ github.run_id }}-cpp-columnar
+        run: |
+          cd cpp
+          ./scripts/run-benchmarks.sh custom 2 "arrow-ipc,parquet,parquet-uncompressed,orc,orc-uncompressed,sbe,nlohmann_json,protobuf,flatbuffers,avro"
+          err="../logs/cpp/${BENCHMARK_TS}.errors.csv"
+          if [[ -f "$err" ]]; then
+            echo "columnar smoke wrote an error CSV"
+            cat "$err"
+            exit 1
+          fi
 
 
   swift-benchmark:

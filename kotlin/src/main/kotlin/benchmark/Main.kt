@@ -246,7 +246,7 @@ private fun measureBytes(ser: BenchSerializer, fx: Fixture): Measure {
     val deserNs = System.nanoTime() - t0
     keep(out)
     out = ser.toDomain(out)
-    if (!Fidelity.check(fx.value, out)) {
+    if (!Fidelity.check(Fidelity.expectedForFidelity(fx.name, fx.value), out)) {
         throw IllegalStateException("roundtrip fidelity failed for ${ser.name()}")
     }
     return Measure(serNs, deserNs, buf.size)
@@ -265,7 +265,7 @@ private fun measureStream(ser: BenchSerializer, fx: Fixture, baos: ByteArrayOutp
     val deserNs = System.nanoTime() - t0
     keep(out)
     out = ser.toDomain(out)
-    if (!Fidelity.check(fx.value, out)) {
+    if (!Fidelity.check(Fidelity.expectedForFidelity(fx.name, fx.value), out)) {
         throw IllegalStateException("stream roundtrip fidelity failed for ${ser.name()}")
     }
     return Measure(serNs, deserNs, if (n > 0) n else baos.size())

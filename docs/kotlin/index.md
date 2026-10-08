@@ -5,7 +5,7 @@ title: "Kotlin"
 Kotlin
 ======
 
-Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt); and **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift).
+Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt); **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift, SBE); and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **32** serializers (26 plus these 6).
 
 ## Runtime
 
@@ -55,6 +55,7 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
+| [arrow-ipc](https://github.com/apache/arrow-java) | Columnar | arrow-vector | ArrowStreamWriter | adapted | IPC stream bytes, not the Arrow file format. `table_project` loads `f_float_0` only |
 | [avro](https://github.com/apache/avro) | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
 | [avro4k](https://github.com/avro-kotlin/avro4k) | Schema | avro4k-core | encodeToByteArray | adapted | kotlinx Avro |
 | [capnproto](https://github.com/capnproto/capnproto-java) | Schema | org.capnproto:runtime | Serialize.write/read | adapted | Generated suite schema |
@@ -76,15 +77,34 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 | [moshi-reflect](https://github.com/square/moshi) | JSON | moshi-kotlin | KotlinJsonAdapterFactory | native | Reflection; factory added first |
 | [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java + Kotlin module |
 | [obor](https://github.com/orandja/obor) | CBOR | obor | encodeToByteArray | adapted | kotlinx CBOR alternative |
+| [orc](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | No `compress()` call. ORC 2.3.1 default is ZSTD. `blockPadding(false)` |
+| [orc-uncompressed](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | `CompressionKind.NONE`. `blockPadding(false)` |
+| [parquet](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | Snappy. parquet-java 1.18.1 defaults to UNCOMPRESSED, so this row sets the codec |
+| [parquet-uncompressed](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | `CompressionCodecName.UNCOMPRESSED` |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Java `newBuilder()` |
 | [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-kotlin | Kotlin DSL + wire | native | `message { }` builders |
 | [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+| [sbe](https://github.com/aeron-io/simple-binary-encoding) | Schema | sbe-tool / agrona | flyweight | adapted | Tool 1.40.2. No `nested_table`. Flyweight filled inside the timed serialize |
 | [thrift](https://github.com/apache/thrift) | Schema | libthrift | TCompactProtocol | adapted | Field ids match suite proto |
 | [tomlkt](https://github.com/Peanuuutz/tomlkt) | TOML | tomlkt | encodeToString | adapted | List wrap `{ items = [...] }` for N>1 |
+
+### Columnar and SBE
+
+The six columnar rows support `table`, `table_project`, `nested_table`, and `signal` only. SBE returns false for `nested_table` because that body is not in the schema. The original codecs still support `message`, `document`, `telemetry`, `strings`, and `event`. kotlinx-json, protobuf (the Java API row, not kotlinx-protobuf or protobuf-kotlin), flatbuffers, and the reflect Avro row also round-trip the four new ids.
+
+`prepare` builds the Arrow schema, the Parquet/Avro schema, and the ORC `TypeDescription` plus writer options. SBE codegen runs at build time. Row-to-column conversion and the SBE flyweight wrap run inside timed `serializeBytes`. There is no compliance decoder. Stream methods on these rows are the adapted bytes path.
+
+`table_project` serializes the full row and deserializes `f_float_0` only, including when N is 1. The runner compares that column (`Fidelity.expectedForFidelity`), not the full rows. Arrow reads that column with `MessageChannelReader`, `MessageSerializer.deserializeRecordBatch`, and `VectorLoader` on a one-field schema. Parquet sets `AvroReadSupport.setRequestedProjection` and `setAvroReadSchema`. ORC sets `Reader.Options.include` with the root and `f_float_0` column ids. Peers full-decode, then slice inside `deserialize`.
+
+`orc` and `orc-uncompressed` both set `blockPadding(false)`. Default padding would extend a small file toward the 256MB HDFS block. That flag is not a compression override. ORC 2.3.1's own default compression is ZSTD (`OrcConf.COMPRESS`), so `orc` does not call `compress()`. `orc-uncompressed` sets `CompressionKind.NONE`. The `nohive` jars relocate Hive vectors to `org.apache.orc.storage` and protobuf to `org.apache.orc.protobuf`. `orc-core` nohive is paired with `orc-format` nohive 1.1.1; the default `orc-format` jar is compiled against `com.google.protobuf` and does not link. parquet-java 1.18.1 defaults to UNCOMPRESSED, so `parquet` sets `CompressionCodecName.SNAPPY` and `parquet-uncompressed` sets `UNCOMPRESSED`.
 
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [arrow-ipc](https://github.com/apache/arrow-java) · `19.0.0`
+
+Apache Arrow was created so analytic engines could share a columnar memory layout. Arrow IPC is the stream of that layout. This row writes an IPC stream (not the Arrow file format and not Arrow Dataset) and, for `table_project`, loads only the `f_float_0` buffers. There is no compliance decoder.
 
 #### [avro](https://github.com/apache/avro) · `1.12.1`
 
@@ -170,6 +190,22 @@ msgpack-java is the official MessagePack library for the JVM. MessagePack exists
 
 obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one.
 
+#### [orc](https://github.com/apache/orc) · `2.3.1`
+
+ORC was created for Hive as a columnar file with indexes and compression. This row uses `orc-core` and `orc-format` with the `nohive` classifier so vectors live in `org.apache.orc.storage` and the writer calls `org.apache.orc.protobuf`. The default `orc-format` jar is compiled against `com.google.protobuf` and does not link. ORC 2.3.1 defaults to ZSTD, so this row does not call `compress()`. Both ORC rows set `blockPadding(false)`. `table_project` uses `Reader.Options.include`. There is no compliance decoder.
+
+#### [orc-uncompressed](https://github.com/apache/orc) · `2.3.1`
+
+Same ORC writer as `orc`, with `CompressionKind.NONE` and `blockPadding(false)`. The payload differs from the ZSTD default row.
+
+#### [parquet](https://github.com/apache/parquet-java) · `1.18.1`
+
+Apache Parquet was created as a columnar file for analytic scans. This row uses parquet-avro. parquet-java 1.18.1's default codec is UNCOMPRESSED, so this row sets `CompressionCodecName.SNAPPY`. `table_project` sets an Avro requested projection on `f_float_0`. There is no compliance decoder.
+
+#### [parquet-uncompressed](https://github.com/apache/parquet-java) · `1.18.1`
+
+Same Parquet writer as `parquet`, with `CompressionCodecName.UNCOMPRESSED`. The footer codec and the bytes differ from the Snappy row.
+
 #### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.35.0`
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
@@ -181,6 +217,10 @@ Protocol Buffers were created at Google so many languages could share a compact,
 #### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
 
 protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
+
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+
+Simple Binary Encoding was created for low-latency finance messages: a schema compiler emits flyweights over a direct buffer instead of allocating a message object. This row times sbe-tool 1.40.2 with Agrona at runtime. Codegen is untimed. The flyweight fill is inside timed serialize. `nested_table` is not an SBE body. There is no compliance decoder.
 
 #### [thrift](https://github.com/apache/thrift) · `0.21.0`
 
@@ -194,6 +234,7 @@ tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config langu
 
 ```text
 prepare(fixture)                 # untimed: mappers, schemas, Fory register, proto convert
+                                 # columnar: schema and writer options only; row-to-column stays in serialize
 for rep:
   serialize_bytes / stream       # timed
   deserialize_bytes / stream     # timed (codec only)
@@ -209,6 +250,7 @@ for rep:
 - **protobuf** uses the Java builder API; **protobuf-kotlin** uses the generated Kotlin DSL on the same wire types.
 - **kotlinx-ion** uses official `ion-java` through a kotlinx `BinaryFormat` (the community `kotlinx-serialization-ion` artifact is JitPack-only and unmaintained).
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
+- **arrow-ipc**, **parquet**, **parquet-uncompressed**, **orc**, **orc-uncompressed**, and **sbe** support only `table`, `table_project`, `nested_table`, and `signal`. **sbe** does not support `nested_table`. There is no compliance decoder for these rows. This page does not report a full columnar publish.
 
 Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 

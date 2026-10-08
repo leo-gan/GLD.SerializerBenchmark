@@ -1017,6 +1017,9 @@ def compute_statistics(
             entry=entry,
             meta=m,
         )
+        from benchmark_analysis.dimensions import label_result_group
+
+        label_result_group(entry)
         # B-6: majority StreamMode label for this group (stream I/O rows)
         sms = [s for s in (data.get("stream_modes") or []) if s]
         if sms:
@@ -1105,6 +1108,8 @@ _EXPORT_IDENTITY_KEYS: Tuple[str, ...] = (
     "mode",
     "language",
     "serializer_version",
+    "standard",
+    "data_set",
 )
 
 
@@ -1338,6 +1343,23 @@ def build_stats_export_payload(
                     catalog[pid]["exclude_warmup"] = fb["exclude_warmup"]
 
         slim_groups.append({**identity, "variants": variants})
+
+    from benchmark_analysis.fold_io import fold_io_groups
+
+    slim_groups = fold_io_groups(slim_groups)
+
+    missing = [
+        f"{g.get('language')}/{g.get('serializer')}"
+        for g in slim_groups
+        if not g.get("standard")
+    ]
+    if missing:
+        from benchmark_analysis.dimensions import DimensionError
+
+        sample = ", ".join(missing[:8])
+        raise DimensionError(
+            f"{len(missing)} groups have no compliance standard ({sample})"
+        )
 
     return {
         "schema_version": "2.2",

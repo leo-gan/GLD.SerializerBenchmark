@@ -1,6 +1,6 @@
 [project]
 name = "serializer-benchmark"
-version = "0.3.1"
+version = "0.4.0"
 description = "Python serializer benchmark suite matching the C# benchmark design"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -32,6 +32,7 @@ dependencies = [
     "amazon-ion>=0.13,<1",
     "py-ubjson>=0.16,<1",
     "newsmile>=1.1,<2",
+    "pyarrow>=25.0.1,<26",
 ]
 
 [project.optional-dependencies]

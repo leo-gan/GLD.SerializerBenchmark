@@ -1,4 +1,11 @@
 from .base import Serializer
+from .columnar_arrow import (
+    ArrowIpcSerializer,
+    OrcSerializer,
+    OrcUncompressedSerializer,
+    ParquetSerializer,
+    ParquetUncompressedSerializer,
+)
 from .json_orjson import OrjsonSerializer
 from .json_msgspec import MsgspecMessagePackSerializer, MsgspecSerializer
 from .json_rapidjson import RapidjsonSerializer
@@ -8,6 +15,7 @@ from .json_mashumaro import MashumaroSerializer
 from .json_serpyco import SerpycoSerializer
 from .binary_msgpack import MsgpackSerializer
 from .binary_cbor2 import Cbor2Serializer
+from .binary_ion import AmazonIonSerializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
@@ -29,6 +37,7 @@ __all__ = [
     "SerpycoSerializer",
     "MsgpackSerializer",
     "Cbor2Serializer",
+    "AmazonIonSerializer",
     "ProtobufSerializer",
     "AvroSerializer",
     "FlatBuffersSerializer",
@@ -37,4 +46,9 @@ __all__ = [
     "PickleSerializer",
     "CloudpickleSerializer",
     "DillSerializer",
+    "ArrowIpcSerializer",
+    "ParquetSerializer",
+    "ParquetUncompressedSerializer",
+    "OrcSerializer",
+    "OrcUncompressedSerializer",
 ]

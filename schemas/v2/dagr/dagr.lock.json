@@ -2315,7 +2315,7 @@
     "../../../python/generated/dagr/dagr/runtime/dagr_serialize.py": "sha256:b91db7619677b1c84c425a61010c9103e38c6444c010acef0ebe93f9c508b37d",
     "../../../python/generated/dagr/dagr/runtime/dagr_typed.py": "sha256:911c336680f995768632e45c8a54fa9d5d92d7afb784251b58bd11d9a309b5a7",
     "../../../python/generated/dagr/dagr/runtime/dagr_writer.py": "sha256:c24074c1dc3753603354feda03b73ac5b8bcaa8d3d4edb6c237ebd2cbc3e09d5",
-    "../../../python/generated/dagr/dagr_schema.py": "sha256:e0e5ef66af1d15214c8ffeb26d176cab90fb7d17b4b9585dbc8c1da20102cba9",
+    "../../../python/generated/dagr/dagr_schema.py": "sha256:aadbd70b2b852d80e9da7bfe05feb550f75d8b0092ed2caf86a7b3e778d04e4e",
     "../../../python/generated/dagr/document_frozen_graph.py": "sha256:4ea0199d1c55927fda9e47f9effe5f624620087066cbac54c767b264bc00a830",
     "../../../python/generated/dagr/document_frozen_packed_graph.py": "sha256:299ce86133045fadbd5b69b6859b7d6e9311e51ae8fba7369a9938d54ade18c7",
     "../../../python/generated/dagr/document_graph.py": "sha256:5be9497251d07218e9e9a8e31289df2fbef0fb14e6312fb7fb84477de7c5f7ec",
@@ -2336,7 +2336,7 @@
     "../../../python/generated/dagr/telemetry_frozen_packed_graph.py": "sha256:beeab95aca334025e4d35bb65c01f0a1479798c9be1d2f8a4d76902440f94fec",
     "../../../python/generated/dagr/telemetry_graph.py": "sha256:c91d4abf9c57608e63a2fecd0bf6965c664ceb6af8e8b13d55be11b8690cbd25",
     "../../../python/generated/dagr/telemetry_regular_graph.py": "sha256:38306ec622fc0eb2b20cf5b128f89df83405c90f032ba5c1bc42d62fa0a0fcb0",
-    "../../../rust/dagr_gen/Cargo.toml": "sha256:b276828fa78d567a6506c86854d8ef08521130ab97a837277c4b23aff1bdbdc8",
+    "../../../rust/dagr_gen/Cargo.toml": "sha256:0492650bddba9a4dfb20398e0ea4e615737bf82eb40a1589ca733fb3920eb64c",
     "../../../rust/dagr_gen/build.rs": "sha256:ef0170542199cbb707b78fb06eac8978eceb6bf64e710aabd54943134da4a62c",
     "../../../rust/dagr_gen/src/dagr_runtime.rs": "sha256:b17624a505d75ab4d8a4f5db96ec76d0d2c3ae0120e1a7a9b500b188f3a25b54",
     "../../../rust/dagr_gen/src/document_frozen_graph.rs": "sha256:da0b4ab773864a11678bd5a1a4c57f8d6f2741a36bc7cc465163de152eb35e0d",
@@ -2435,7 +2435,7 @@
   },
   "provenance": {
     "command": "dagr build",
-    "generated_at": "2026-09-26T06:59:24.920393+00:00",
+    "generated_at": "2026-10-08T08:19:22.467861+00:00",
     "host": null,
     "tool_version": "dagr 2026.9.2"
   },
@@ -2449,7 +2449,7 @@
       "lang": "rust",
       "layout": "crate",
       "out": "../../../rust/dagr_gen",
-      "package": null
+      "package": "dagr_benchmark_v2"
     },
     {
       "exclude": [],

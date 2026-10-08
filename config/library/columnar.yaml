@@ -1,0 +1,37 @@
+# Run config: publication cells for columnar and aligned-record types.
+# Not default.yaml. Invoke with:
+#   BENCHMARK_RUN_CONFIG=config/library/columnar.yaml
+# Pass an explicit serializer allow-list (see columnar-smoke.yaml).
+# A type row may set data_type_instance_count and override the file-level list.
+# The large step stays 10000. On the Python proof, one warmed repetition of
+# the slowest peer (flatbuffers) on table at N=10000 was under 2 seconds.
+id: columnar
+description: "table and table_project at N=1,100,10000; nested_table and signal at N=1,100; bytes; no post-compression"
+data_model_version: 2
+
+types:
+  - type_id: table
+    type_config: {}
+    data_type_instance_count: [1, 100, 10000]
+  - type_id: table_project
+    type_config: {}
+    data_type_instance_count: [1, 100, 10000]
+  - type_id: nested_table
+    type_config: {}
+  - type_id: signal
+    type_config: {}
+
+# Fallback for rows that do not set their own counts.
+data_type_instance_count: [1, 100]
+
+compression:
+  mode: none
+
+execution:
+  mode: full
+  io_modes: [bytes]
+
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

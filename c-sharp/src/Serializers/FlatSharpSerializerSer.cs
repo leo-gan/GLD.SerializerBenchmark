@@ -61,7 +61,10 @@ namespace GLD.SerializerBenchmark.Serializers
             => Convert.ToBase64String(_ser(NativeOf(serializable)));
 
         public override object Deserialize(string serialized)
-            => _parse(Convert.FromBase64String(serialized));
+        {
+            var native = _parse(Convert.FromBase64String(serialized));
+            return IsTableProject ? ColumnarProject.FFloat0(native) : native;
+        }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
@@ -74,7 +77,8 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
-            return _parse(ms.ToArray());
+            var native = _parse(ms.ToArray());
+            return IsTableProject ? ColumnarProject.FFloat0(native) : native;
         }
     }
 }

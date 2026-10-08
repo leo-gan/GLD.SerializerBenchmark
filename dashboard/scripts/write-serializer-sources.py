@@ -90,6 +90,11 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("python", "dill"): "https://github.com/uqfoundation/dill",
     ("python", "tomllib"): "https://github.com/python/cpython/tree/main/Lib/tomllib",
     ("python", "amazon-ion"): "https://github.com/amazon-ion/ion-python",
+    ("javascript", "ion-js"): "https://github.com/amazon-ion/ion-js",
+    ("go", "ion-go"): "https://github.com/amazon-ion/ion-go",
+    ("csharp", "Amazon.IonDotnet"): "https://github.com/amazon-ion/ion-dotnet",
+    ("rust", "ion-rs"): "https://github.com/amazon-ion/ion-rust",
+    ("c", "ion-c"): "https://github.com/amazon-ion/ion-c",
     ("python", "bson"): "https://github.com/mongodb/mongo-python-driver",
     ("python", "flexbuffers"): "https://github.com/google/flatbuffers",
     ("python", "newsmile"): "https://github.com/FasterXML/smile-format-specification",
@@ -104,6 +109,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("javascript", "bser"): "https://github.com/facebook/watchman",
     # Go
     ("go", "encoding/json"): "https://github.com/golang/go/tree/master/src/encoding/json",
+    ("go", "encoding/json/v2"): "https://github.com/golang/go/tree/master/src/encoding/json/v2",
     ("go", "protobuf"): "https://github.com/protocolbuffers/protobuf-go",
     ("go", "mongo-bson"): "https://github.com/mongodb/mongo-go-driver",
     ("go", "encoding/gob"): "https://github.com/golang/go/tree/master/src/encoding/gob",
@@ -148,6 +154,13 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("csharp", "Apache.Avro"): "https://github.com/apache/avro",
     ("csharp", "CsvHelper"): "https://github.com/JoshClose/CsvHelper",
     ("csharp", "Nerdbank.MessagePack"): "https://github.com/AArnott/Nerdbank.MessagePack",
+    ("csharp", "ShapeShift.Cbor"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Json"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.MsgPack"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Protobuf"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Taml"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Toml"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Yaml"): "https://github.com/AArnott/ShapeShift",
     # Rust
     ("rust", "serde_json"): "https://github.com/serde-rs/json",
     ("rust", "simd-json"): "https://github.com/simd-lite/simd-json",
@@ -239,6 +252,43 @@ EXTRA_ROWS: list[tuple[str, str, str]] = [
     ("php", "yaml-pecl", "https://github.com/php/pecl-file_formats-yaml"),
     ("go", "shamaton/msgpack (array)", "https://github.com/shamaton/msgpack"),
     ("javascript", "bebop", "https://github.com/6over3/bebop"),
+    ("python", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("python", "parquet", "https://github.com/apache/arrow"),
+    ("python", "parquet-uncompressed", "https://github.com/apache/arrow"),
+    ("python", "orc", "https://github.com/apache/arrow"),
+    ("python", "orc-uncompressed", "https://github.com/apache/arrow"),
+    ("go", "arrow-ipc", "https://github.com/apache/arrow-go"),
+    ("go", "parquet", "https://github.com/apache/arrow-go"),
+    ("go", "parquet-uncompressed", "https://github.com/apache/arrow-go"),
+    ("go", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("javascript", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("javascript", "parquet", "https://github.com/hyparam/hyparquet-writer"),
+    ("javascript", "parquet-uncompressed", "https://github.com/hyparam/hyparquet-writer"),
+    ("cpp", "arrow-ipc", "https://github.com/apache/arrow"),
+    ("cpp", "parquet", "https://github.com/apache/arrow"),
+    ("cpp", "parquet-uncompressed", "https://github.com/apache/arrow"),
+    ("cpp", "orc", "https://github.com/apache/arrow"),
+    ("cpp", "orc-uncompressed", "https://github.com/apache/arrow"),
+    ("cpp", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("csharp", "arrow-ipc", "https://github.com/apache/arrow-dotnet"),
+    ("csharp", "parquet", "https://github.com/aloneguid/parquet-dotnet"),
+    ("csharp", "parquet-uncompressed", "https://github.com/aloneguid/parquet-dotnet"),
+    ("rust", "arrow-ipc", "https://github.com/apache/arrow-rs"),
+    ("rust", "parquet", "https://github.com/apache/arrow-rs"),
+    ("rust", "parquet-uncompressed", "https://github.com/apache/arrow-rs"),
+    ("rust", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("java", "arrow-ipc", "https://github.com/apache/arrow-java"),
+    ("java", "parquet", "https://github.com/apache/parquet-java"),
+    ("java", "parquet-uncompressed", "https://github.com/apache/parquet-java"),
+    ("java", "orc", "https://github.com/apache/orc"),
+    ("java", "orc-uncompressed", "https://github.com/apache/orc"),
+    ("java", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
+    ("kotlin", "arrow-ipc", "https://github.com/apache/arrow-java"),
+    ("kotlin", "parquet", "https://github.com/apache/parquet-java"),
+    ("kotlin", "parquet-uncompressed", "https://github.com/apache/parquet-java"),
+    ("kotlin", "orc", "https://github.com/apache/orc"),
+    ("kotlin", "orc-uncompressed", "https://github.com/apache/orc"),
+    ("kotlin", "sbe", "https://github.com/aeron-io/simple-binary-encoding"),
 ]
 
 # Shared origin stories: why the library exists, the problem, the solution.
@@ -372,6 +422,42 @@ SPECIFICS: dict[str, str] = {
         "C-accelerated codec over Python objects; this suite times that path "
         "as the baseline."
     ),
+    "arrow-ipc": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times pyarrow's IPC stream writer and "
+        "reader inside the suite's bytes mode, not the Arrow file format. "
+        "Schema objects are selected in prepare. Row-to-column conversion "
+        "stays inside serialize. table_project deserialize reads f_float_0 only."
+    ),
+    "parquet": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times pyarrow.parquet.write_table "
+        "and read_table with pyarrow's default page compression, Snappy. "
+        "Encodings stay at the library default. table_project passes "
+        "columns=['f_float_0'] on read."
+    ),
+    "parquet-uncompressed": (
+        "This is the same pyarrow Parquet writer as parquet, with "
+        "compression='NONE'. Encodings stay at the library default. The name "
+        "is the override. Use this size when the question is layout rather "
+        "than Snappy."
+    ),
+    "orc": (
+        "Apache ORC was created at Hive as a columnar stripe file with "
+        "indexes and compression. This row times pyarrow.orc.write_table and "
+        "read_table with no compression argument. pyarrow's default is "
+        "uncompressed. Apache ORC's own C++ and Java writers default to Zlib; "
+        "this binding does not. table_project passes columns=['f_float_0'] on read."
+    ),
+    "orc-uncompressed": (
+        "This is the same pyarrow ORC writer as orc, with "
+        "compression='uncompressed'. On pyarrow 25 that codec is also the "
+        "default, so the bytes match orc. The name stays so the allow-list "
+        "matches languages whose ORC writer defaults to Zlib."
+    ),
     "orjson": (
         "orjson was written to give CPython a JSON codec that is both fast "
         "and correct. The problem was that stdlib `json` is slow on large "
@@ -475,6 +561,44 @@ SPECIFICS: dict[str, str] = {
         "superset of JSON (text and binary) for internal services. The "
         "problem was JSON's limited types. ion-python is the official "
         "Python implementation."
+    ),
+    "ion-js": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-js is the official "
+        "JavaScript implementation. This row times binary dump/load; the "
+        "Ion DOM is turned into plain objects outside the timer."
+    ),
+    "ion-go": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-go is the official Go "
+        "implementation. This row times MarshalBinary / Unmarshal and the "
+        "binary encoder stream."
+    ),
+    "ion-dotnet": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. Amazon.IonDotnet is the Ion "
+        "team .NET reader and writer. NuGet marks the package deprecated "
+        "and the GitHub repository is archived; the Ion libraries page "
+        "still lists it. This row pins NuGet 1.3.2 (the newest package "
+        "there; it fixes CVE-2025-11573) and reflects over the suite types "
+        "to write binary Ion."
+    ),
+    "ion-rs": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-rs is the official Rust "
+        "implementation. This row uses the crate's experimental serde "
+        "feature (to_binary / from_ion)."
+    ),
+    "ion-c": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-c is the official C "
+        "implementation. This row times the binary writer and reader on "
+        "the suite visitor, including a native FILE* stream."
     ),
     "bson": (
         "BSON (Binary JSON) was created for MongoDB so documents could be "
@@ -610,7 +734,16 @@ SPECIFICS: dict[str, str] = {
     "go-json": (
         "Go's `encoding/json` is the standard library JSON codec. It "
         "exists so every Go program can speak RFC 8259 with struct tags. "
-        "This row is the baseline other Go JSON libraries try to beat."
+        "This row is the baseline other Go JSON libraries try to beat. "
+        "On Go 1.27 the package keeps v1 semantics. The stricter defaults "
+        "are the separate `encoding/json/v2` row."
+    ),
+    "go-json-v2": (
+        "`encoding/json/v2` is the Go 1.27 standard library JSON API with "
+        "stricter defaults than `encoding/json`: invalid UTF-8 and duplicate "
+        "object names are errors, and `<`, `>`, and `&` are not HTML-escaped. "
+        "This row times `Marshal` / `Unmarshal` and `MarshalWrite` / "
+        "`UnmarshalRead`."
     ),
     "goccy-json": (
         "goccy/go-json was written as a faster drop-in for `encoding/json`. "
@@ -834,12 +967,6 @@ SPECIFICS: dict[str, str] = {
         "attribute-driven serializer that still defines much of the "
         "ecosystem."
     ),
-    "jil": (
-        "Jil was written by Kevin Montrose for very fast JSON on .NET "
-        "using Sigil-generated IL. The problem was JSON cost in Stack "
-        "Overflow-scale services. Jil solves it with a compiled "
-        "serialize/deserialize path."
-    ),
     "spanjson": (
         "SpanJson was created to serialize JSON on .NET using `Span<T>` "
         "and modern memory primitives. The problem was older JSON "
@@ -976,6 +1103,12 @@ SPECIFICS: dict[str, str] = {
         "Nerdbank.MessagePack is a modern .NET MessagePack serializer built "
         "on type shapes. This row uses reflection-based POCO shapes with "
         "stable numeric keys and the library's default value retention."
+    ),
+    "shapeshift": (
+        "ShapeShift is a source-generated serialization framework built on "
+        "PolyType contracts. It solves the reflection and trimming limitations "
+        "of conventional serializers by generating strongly typed conversion "
+        "logic for each model at compile time."
     ),
     "migrant": (
         "Migrant is Antmicro's .NET binary serializer for object graphs. "
@@ -1376,14 +1509,21 @@ SPECIFICS: dict[str, str] = {
     ),
     "gld-flatbuffers": (
         "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for "
-        "Mojo. FlatBuffers exists so a reader can use fields without "
-        "unpacking the buffer. This row times a reused Builder and "
-        "generated pack/unpack on the suite tables."
+        "Mojo. FlatBuffers exists so a reader can take fields from the "
+        "buffer without first copying the whole message into a new "
+        "object. This row keeps one `Builder`, calls `clear` before each "
+        "message, and times generated `pack` / `unpack` against the suite "
+        "tables in `cpp/schemas/benchmark.fbs`."
     ),
     "mojo-toml": (
         "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as "
-        "an obvious config language. This is the published Mojo TOML "
-        "implementation (`gld-toml` is not out yet)."
+        "an obvious config language. This row times that library. "
+        "leo-gan/gld-toml is a different library and is the gld-toml row."
+    ),
+    "gld-toml": (
+        "gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. "
+        "It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml "
+        "so its package name does not collide with DataBooth's toml package."
     ),
     "gld-yaml": (
         "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML "
@@ -1399,8 +1539,301 @@ SPECIFICS: dict[str, str] = {
         "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON "
         "exists so MongoDB can store JSON-like documents in a binary, "
         "traversable layout. This row times WireWriter / WireReader on "
-        "suite types. Package 0.1.0 is the latest release that builds "
-        "on Mojo 1.1."
+        "suite types."
+    ),
+    "gld-ion": (
+        "gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. "
+        "Ion exists as a typed superset of JSON with text and binary "
+        "encodings. This row times Ion 1.0 binary encode and decode of "
+        "a document built from the suite value."
+    ),
+    "gld-smile": (
+        "gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. "
+        "Smile exists as a compact binary form of JSON. This row times "
+        "`encode_doc` and `decode_bytes` on a document built from the "
+        "suite value."
+    ),
+    "gld-arrow": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a "
+        "from-scratch Arrow library for Mojo. This row times "
+        "`encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not "
+        "the Arrow file. The record batch is built inside serialize. "
+        "gld-arrow has no included-fields reader, so table_project decodes "
+        "the stream and then materializes f_float_0 only. Suite columns are "
+        "required because these rows have no nulls."
+    ),
+    "gld-parquet": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made "
+        "every reader parse every column. gld-parquet (leo-gan) is a "
+        "from-scratch Parquet library for Mojo. The library default is "
+        "uncompressed, so this row sets Snappy, the suite page codec. "
+        "table_project decodes the file and then reads f_float_0 only, "
+        "because decode_table has no column projection. Lists use the "
+        "standard three-level group."
+    ),
+    "gld-parquet-raw": (
+        "This is the same gld-parquet writer as parquet, with the page "
+        "codec left uncompressed. Encodings stay at the library default. "
+        "The name is the override."
+    ),
+    "arrow-ipc-go": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-go's IPC stream writer and "
+        "reader inside the suite's bytes mode, not the Arrow file format. "
+        "Record batches are built inside SerializeBytes. table_project reads "
+        "the f_float_0 value buffer only, because arrow-go's ipc.Reader has "
+        "no included-fields option. No compliance decoder."
+    ),
+    "parquet-go": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times arrow-go pqarrow. "
+        "arrow-go WriterProperties defaults to uncompressed, so this row sets "
+        "Snappy, which is the suite's parquet page codec. table_project "
+        "passes column index 0 to GetRecordReader. The schema is prepared "
+        "untimed. The batch is built inside SerializeBytes. No compliance decoder."
+    ),
+    "parquet-uncompressed-go": (
+        "This is the same arrow-go pqarrow writer as parquet, with compression "
+        "left off (Codecs.Uncompressed). Encodings stay at the library default. "
+        "The name is the override. No compliance decoder."
+    ),
+    "sbe-go": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Go flyweight inside "
+        "SerializeBytes. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. No compliance decoder."
+    ),
+    "arrow-ipc-js": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times the apache-arrow IPC stream writer "
+        "and reader (tableToIPC with type stream) inside the suite's bytes "
+        "mode, not the Arrow file format. Schema objects are selected in "
+        "prepare. Row-to-column conversion stays inside serialize. "
+        "table_project deserialize reads f_float_0 only. No compliance decoder."
+    ),
+    "parquet-js": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times hyparquet-writer "
+        "parquetWriteBuffer at the library default codec, Snappy, and "
+        "hyparquet 1.31.2 parquetReadObjects. A nested_table value (struct "
+        "plus a list of structs, int32 not widened) round-tripped, which is "
+        "why the row is registered. table_project passes columns "
+        "['f_float_0'] on read. SerializerVersion is the writer package. "
+        "No compliance decoder."
+    ),
+    "parquet-uncompressed-js": (
+        "This is the same hyparquet-writer path as parquet, with codec "
+        "UNCOMPRESSED. That switch changes the column codec metadata and the "
+        "bytes. Encodings stay at the library default. It is the same writer, "
+        "not a second Parquet library. No compliance decoder."
+    ),
+    "arrow-ipc-cpp": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter "
+        "into a buffer: the IPC stream inside the bytes API, not the Arrow file "
+        "format. The record batch is built inside serialize_bytes. table_project "
+        "sets IpcReadOptions.included_fields to f_float_0. The row is omitted "
+        "when ARROW_ROOT is unset. No compliance decoder."
+    ),
+    "parquet-cpp": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times Arrow C++ 25.0.1 "
+        "parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to "
+        "UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project "
+        "reads leaf column 0. The batch is built inside serialize_bytes. "
+        "Optional on ARROW_ROOT. No compliance decoder."
+    ),
+    "parquet-uncompressed-cpp": (
+        "This is the same Arrow C++ Parquet writer as parquet, with "
+        "WriterProperties compression set to UNCOMPRESSED. Encodings stay at "
+        "the builder default. The name is the override. No compliance decoder."
+    ),
+    "orc-cpp": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to "
+        "UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row "
+        "sets Compression::GZIP. The adapter stores that value as ORC ZLIB. "
+        "table_project calls Read of f_float_0. The batch is built inside "
+        "serialize_bytes. Optional on ARROW_ROOT. No compliance decoder."
+    ),
+    "orc-uncompressed-cpp": (
+        "This is the same Arrow C++ ORC adapter as orc, with "
+        "WriteOptions.compression set to UNCOMPRESSED. The name is the "
+        "override. No compliance decoder."
+    ),
+    "sbe-cpp": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside "
+        "serialize_bytes. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. The signal wire order is fixed "
+        "fields, then the legs group, then symbol and venue. No compliance decoder."
+    ),
+    "arrow-ipc-csharp": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times Apache.Arrow 23.0.0 stream writer "
+        "and reader on the string path (Base64 of the IPC stream), not the "
+        "Arrow file format. Row-to-column conversion stays inside serialize. "
+        "table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no "
+        "net10.0 asset; the net10.0 project consumes the net8.0 asset. "
+        "No compliance decoder."
+    ),
+    "parquet-csharp": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times Parquet.Net 6.1.0 at the "
+        "library default, Snappy. The timed call is the string path (Base64 "
+        "of the Parquet bytes). table_project reads the FFloat0 data field. "
+        "The package has an explicit net10.0 asset. No compliance decoder."
+    ),
+    "parquet-uncompressed-csharp": (
+        "This is the same Parquet.Net writer as parquet, with "
+        "CompressionMethod.None. Encodings stay at the library default. The "
+        "name is the override. No compliance decoder."
+    ),
+    "arrow-ipc-rust": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-rs 60.0.0 IPC stream writer "
+        "and reader inside the bytes API, not the Arrow file format. The "
+        "schema is chosen in prepare. The RecordBatch is built inside "
+        "serialize. table_project passes field index 0 to StreamReader::try_new. "
+        "No compliance decoder."
+    ),
+    "parquet-rust": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times arrow-rs 60 ArrowWriter. "
+        "arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets "
+        "Compression::SNAPPY. Encodings stay at the builder default. "
+        "table_project uses ProjectionMask::columns on f_float_0. "
+        "No compliance decoder."
+    ),
+    "parquet-uncompressed-rust": (
+        "This is the same arrow-rs Parquet writer as parquet, with "
+        "Compression::UNCOMPRESSED. Encodings stay at the builder default. "
+        "The name is the override. No compliance decoder."
+    ),
+    "sbe-rust": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight "
+        "inside serialize. The logged version is the generator, not the "
+        "vendored crate 0.1.0. It encodes table, table_project, and signal. "
+        "nested_table is not an SBE body. The signal wire order is fixed "
+        "fields, then the legs group, then symbol and venue. No compliance decoder."
+    ),
+    "arrow-ipc-java": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This row times arrow-vector 19.0.0 "
+        "ArrowStreamWriter inside the bytes API, not the Arrow file format "
+        "and not arrow-dataset. The schema is built in prepare. Row-to-column "
+        "conversion stays inside serializeBytes. table_project loads "
+        "f_float_0 only. No compliance decoder."
+    ),
+    "parquet-java": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This row times parquet-avro 1.18.1 "
+        "AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so "
+        "this row sets CompressionCodecName.SNAPPY. table_project sets "
+        "AvroReadSupport requested projection to f_float_0. No compliance decoder."
+    ),
+    "parquet-uncompressed-java": (
+        "This is the same parquet-avro writer as parquet, with "
+        "CompressionCodecName.UNCOMPRESSED. The name is the override. "
+        "No compliance decoder."
+    ),
+    "orc-java": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. This row times orc-core 2.3.1 (classifier nohive). "
+        "OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). "
+        "orc-uncompressed sets CompressionKind.NONE. Both rows set "
+        "blockPadding(false) so a small file is not padded toward the 256MB "
+        "HDFS block. table_project includes f_float_0 only. No compliance decoder."
+    ),
+    "orc-uncompressed-java": (
+        "This is the same orc-core writer as orc, with CompressionKind.NONE "
+        "and blockPadding(false). The name is the override. No compliance decoder."
+    ),
+    "sbe-java": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This row fills the sbe-tool 1.40.2 Java flyweight "
+        "inside serializeBytes. Agrona is the runtime. The generator jar is "
+        "sbe-all, copied from Maven at build time. It encodes table, "
+        "table_project, and signal. nested_table is not an SBE body. The "
+        "signal wire order is fixed fields, then the legs group, then symbol "
+        "and venue. No compliance decoder."
+    ),
+    "arrow-ipc-kotlin": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
+        "for those batches. This Kotlin row times arrow-vector 19.0.0 "
+        "ArrowStreamWriter inside the bytes API, not the Arrow file format "
+        "and not arrow-dataset. The schema is built in prepare. Row-to-column "
+        "conversion stays inside serialize. table_project loads f_float_0 "
+        "only. No compliance decoder."
+    ),
+    "parquet-kotlin": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made every "
+        "reader parse every column. This Kotlin row times parquet-avro 1.18.1 "
+        "AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so "
+        "this row sets CompressionCodecName.SNAPPY. table_project sets "
+        "AvroReadSupport requested projection to f_float_0. No compliance decoder."
+    ),
+    "parquet-uncompressed-kotlin": (
+        "This is the same parquet-avro writer as parquet, with "
+        "CompressionCodecName.UNCOMPRESSED. The name is the override. "
+        "No compliance decoder."
+    ),
+    "orc-kotlin": (
+        "Apache ORC was created as a columnar file with stripe indexes for "
+        "scans. This Kotlin row times orc-core 2.3.1 (classifier nohive) and "
+        "orc-format 1.1.1 nohive. OrcConf.COMPRESS defaults to ZSTD, so orc "
+        "does not call compress(). orc-uncompressed sets CompressionKind.NONE. "
+        "Both rows set blockPadding(false) so a small file is not padded "
+        "toward the 256MB HDFS block. table_project includes f_float_0 only. "
+        "No compliance decoder."
+    ),
+    "orc-uncompressed-kotlin": (
+        "This is the same orc-core writer as orc, with CompressionKind.NONE "
+        "and blockPadding(false). The name is the override. No compliance decoder."
+    ),
+    "sbe-kotlin": (
+        "SBE (Simple Binary Encoding) was created for word-aligned financial "
+        "messages: a fixed block, then repeating groups, then variable-length "
+        "data. The problem was tag/length codecs that touch every field on "
+        "the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java "
+        "flyweight inside serialize. Agrona is the runtime. The generator jar "
+        "is sbe-all, copied from Maven at build time. It encodes table, "
+        "table_project, and signal. nested_table is not an SBE body. The "
+        "signal wire order is fixed fields, then the legs group, then symbol "
+        "and venue. No compliance decoder."
     ),
 }
 
@@ -1448,6 +1881,48 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "dill"): "dill",
     ("python", "tomllib"): "tomllib",
     ("python", "amazon-ion"): "amazon-ion",
+    ("python", "arrow-ipc"): "arrow-ipc",
+    ("python", "parquet"): "parquet",
+    ("python", "parquet-uncompressed"): "parquet-uncompressed",
+    ("python", "orc"): "orc",
+    ("python", "orc-uncompressed"): "orc-uncompressed",
+    ("go", "arrow-ipc"): "arrow-ipc-go",
+    ("go", "parquet"): "parquet-go",
+    ("go", "parquet-uncompressed"): "parquet-uncompressed-go",
+    ("go", "sbe"): "sbe-go",
+    ("javascript", "arrow-ipc"): "arrow-ipc-js",
+    ("javascript", "parquet"): "parquet-js",
+    ("javascript", "parquet-uncompressed"): "parquet-uncompressed-js",
+    ("cpp", "arrow-ipc"): "arrow-ipc-cpp",
+    ("cpp", "parquet"): "parquet-cpp",
+    ("cpp", "parquet-uncompressed"): "parquet-uncompressed-cpp",
+    ("cpp", "orc"): "orc-cpp",
+    ("cpp", "orc-uncompressed"): "orc-uncompressed-cpp",
+    ("cpp", "sbe"): "sbe-cpp",
+    ("csharp", "arrow-ipc"): "arrow-ipc-csharp",
+    ("csharp", "parquet"): "parquet-csharp",
+    ("csharp", "parquet-uncompressed"): "parquet-uncompressed-csharp",
+    ("rust", "arrow-ipc"): "arrow-ipc-rust",
+    ("rust", "parquet"): "parquet-rust",
+    ("rust", "parquet-uncompressed"): "parquet-uncompressed-rust",
+    ("rust", "sbe"): "sbe-rust",
+    ("java", "arrow-ipc"): "arrow-ipc-java",
+    ("java", "parquet"): "parquet-java",
+    ("java", "parquet-uncompressed"): "parquet-uncompressed-java",
+    ("java", "orc"): "orc-java",
+    ("java", "orc-uncompressed"): "orc-uncompressed-java",
+    ("java", "sbe"): "sbe-java",
+    ("kotlin", "arrow-ipc"): "arrow-ipc-kotlin",
+    ("kotlin", "parquet"): "parquet-kotlin",
+    ("kotlin", "parquet-uncompressed"): "parquet-uncompressed-kotlin",
+    ("kotlin", "orc"): "orc-kotlin",
+    ("kotlin", "orc-uncompressed"): "orc-uncompressed-kotlin",
+    ("kotlin", "sbe"): "sbe-kotlin",
+    ("javascript", "ion-js"): "ion-js",
+    ("go", "ion-go"): "ion-go",
+    ("csharp", "Amazon.IonDotnet"): "ion-dotnet",
+    ("rust", "ion-rs"): "ion-rs",
+    ("c", "ion-c"): "ion-c",
     ("python", "bson"): "bson",
     ("python", "flexbuffers"): "flexbuffers",
     ("python", "newsmile"): "smile",
@@ -1475,6 +1950,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("javascript", "sia"): "sia",
     ("javascript", "bser"): "bser",
     ("go", "encoding/json"): "go-json",
+    ("go", "encoding/json/v2"): "go-json-v2",
     ("go", "goccy/go-json"): "goccy-json",
     ("go", "jsoniter"): "jsoniter-go",
     ("go", "segmentio/encoding/json"): "segmentio-json",
@@ -1544,7 +2020,6 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "System.Text.Json"): "stj",
     ("csharp", "Json.Net"): "newtonsoft",
     ("csharp", "Json.Net (Helper)"): "newtonsoft",
-    ("csharp", "Jil"): "jil",
     ("csharp", "SpanJson"): "spanjson",
     ("csharp", "Utf8Json"): "utf8json",
     ("csharp", "NetJSON"): "netjson",
@@ -1577,6 +2052,13 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "Hyperion"): "hyperion",
     ("csharp", "MemoryPack"): "memorypack",
     ("csharp", "Nerdbank.MessagePack"): "nerdbank-messagepack",
+    ("csharp", "ShapeShift.Cbor"): "shapeshift",
+    ("csharp", "ShapeShift.Json"): "shapeshift",
+    ("csharp", "ShapeShift.MsgPack"): "shapeshift",
+    ("csharp", "ShapeShift.Protobuf"): "shapeshift",
+    ("csharp", "ShapeShift.Taml"): "shapeshift",
+    ("csharp", "ShapeShift.Toml"): "shapeshift",
+    ("csharp", "ShapeShift.Yaml"): "shapeshift",
     ("csharp", "Migrant"): "migrant",
     ("csharp", "NetSerializer"): "netserializer",
     ("csharp", "SharpSerializer"): "sharpserializer",
@@ -1709,9 +2191,15 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-flatbuffers"): "gld-flatbuffers",
     ("mojo", "mojo-avro"): "gld-avro",
     ("mojo", "mojo-toml"): "mojo-toml",
+    ("mojo", "gld-toml"): "gld-toml",
     ("mojo", "gld-yaml"): "gld-yaml",
     ("mojo", "mojo-msgpack"): "gld-msgpack",
     ("mojo", "mojo-bson"): "gld-bson",
+    ("mojo", "mojo-ion"): "gld-ion",
+    ("mojo", "mojo-smile"): "gld-smile",
+    ("mojo", "arrow-ipc"): "gld-arrow",
+    ("mojo", "parquet"): "gld-parquet",
+    ("mojo", "parquet-uncompressed"): "gld-parquet-raw",
 }
 
 # Extra sentence for a specific row (path / format variant).
@@ -1752,6 +2240,36 @@ EXTRA: dict[tuple[str, str], str] = {
     ("csharp", "MS Bond Json"): "This row times the Bond JSON protocol.",
     ("csharp", "ServiceStack"): "This row times the non-JSON ServiceStack type serializer.",
     ("csharp", "ServiceStack Json"): "This row times ServiceStack.Text JSON.",
+    ("csharp", "ShapeShift.Cbor"): (
+        "String mode Base64-encodes the CBOR bytes. The package has no stream API, "
+        "so the stream row adapts its byte-array API."
+    ),
+    ("csharp", "ShapeShift.Json"): (
+        "String mode uses the serializer's string API. The stream row uses "
+        "`SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+    ),
+    ("csharp", "ShapeShift.MsgPack"): (
+        "String mode Base64-encodes MessagePack bytes. The stream row uses "
+        "`SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+    ),
+    ("csharp", "ShapeShift.Protobuf"): (
+        "String mode Base64-encodes bytes. The package has no stream API, so "
+        "the stream row adapts its byte-array API."
+    ),
+    ("csharp", "ShapeShift.Taml"): (
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output. "
+        "The `strings` fixture is unsupported because its N=100 batch cannot "
+        "be deserialized."
+    ),
+    ("csharp", "ShapeShift.Toml"): (
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output."
+    ),
+    ("csharp", "ShapeShift.Yaml"): (
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output."
+    ),
     ("cpp", "nlohmann_cbor"): "This row times `to_cbor` / `from_cbor`.",
     ("cpp", "nlohmann_msgpack"): "This row times `to_msgpack` / `from_msgpack`.",
     ("cpp", "nlohmann_bson"): "This row times `to_bson` / `from_bson`.",

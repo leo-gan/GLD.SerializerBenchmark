@@ -14,6 +14,10 @@ import java.io.OutputStream
  * toDomain (optional)              # untimed
  * fidelity                         # untimed
  * ```
+ *
+ * For table, table_project, nested_table, and signal only, row-to-column conversion and
+ * the SBE flyweight fill stay inside serialize. Schema objects and writer properties stay
+ * in prepare.
  */
 interface BenchSerializer {
     fun name(): String
@@ -26,7 +30,8 @@ interface BenchSerializer {
     /** reflect | message | schema */
     fun nativeKind(): String = "reflect"
 
-    fun supports(testDataName: String): Boolean = true
+    /** Original five publication types. Columnar rows and the four peers override this. */
+    fun supports(testDataName: String): Boolean = testDataName in TypeUtil.ORIGINAL_IDS
 
     fun prepare(fx: Fixture)
 

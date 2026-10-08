@@ -1,4 +1,5 @@
-// C++ compliance runner (nlohmann JSON / CBOR / MessagePack / UBJSON / BSON).
+// C++ compliance runner (nlohmann JSON / CBOR / MessagePack / UBJSON / BSON,
+// plus Arrow, Parquet, ORC, and SBE when those headers are on the include path).
 // Built ad-hoc by run-compliance.sh when nlohmann headers are present.
 #include <nlohmann/json.hpp>
 #include <functional>
@@ -12,6 +13,14 @@
 #if __has_include(<msgpack.hpp>)
 #include <msgpack.hpp>
 #endif
+#if defined(COMPLIANCE_WITH_ARROW)
+#include <arrow/adapters/orc/adapter.h>
+#include <arrow/api.h>
+#include <arrow/io/memory.h>
+#include <arrow/ipc/api.h>
+#include <parquet/arrow/reader.h>
+#endif
+#include "Signal.h"
 static bool too_deep(const std::vector<uint8_t>& raw) {
   if (raw.size() > 200000) return true;
   int n = 0;
@@ -157,6 +166,101 @@ static std::vector<uint8_t> from_hex(const std::string& s) {
   return out;
 }
 
+#if defined(COMPLIANCE_WITH_ARROW)
+static json columnar_rows(const std::shared_ptr<arrow::Table>& table) {
+  if (!table || table->num_rows() == 0) throw std::runtime_error("columnar: no rows");
+  auto combined = table->CombineChunks(arrow::default_memory_pool());
+  if (!combined.ok()) throw std::runtime_error(combined.status().ToString());
+  auto flat = combined.ValueOrDie();
+  json rows = json::array();
+  for (int64_t i = 0; i < flat->num_rows(); ++i) {
+    json row = json::object();
+    for (int c = 0; c < flat->num_columns(); ++c) {
+      auto arr = flat->column(c)->chunk(0);
+      const std::string& name = flat->schema()->field(c)->name();
+      if (arr->IsNull(i)) {
+        row[name] = nullptr;
+        continue;
+      }
+      if (arr->type_id() == arrow::Type::INT64) {
+        row[name] = static_cast<const arrow::Int64Array&>(*arr).Value(i);
+      } else if (arr->type_id() == arrow::Type::INT32) {
+        row[name] = static_cast<int64_t>(static_cast<const arrow::Int32Array&>(*arr).Value(i));
+      } else {
+        throw std::runtime_error("columnar: unsupported type " + arr->type()->ToString());
+      }
+    }
+    rows.push_back(std::move(row));
+  }
+  return rows;
+}
+
+static std::shared_ptr<arrow::io::RandomAccessFile> arrow_reader(const std::vector<uint8_t>& raw) {
+  auto buf = arrow::AllocateBuffer(static_cast<int64_t>(raw.size()));
+  if (!buf.ok()) throw std::runtime_error(buf.status().ToString());
+  auto owned = std::move(buf).ValueOrDie();
+  if (!raw.empty()) std::memcpy(owned->mutable_data(), raw.data(), raw.size());
+  return std::make_shared<arrow::io::BufferReader>(std::shared_ptr<arrow::Buffer>(std::move(owned)));
+}
+
+static json decode_arrow_ipc(const std::vector<uint8_t>& raw, const std::string&) {
+  if (raw.empty()) throw std::runtime_error("arrow-ipc: empty");
+  auto opened = arrow::ipc::RecordBatchStreamReader::Open(arrow_reader(raw));
+  if (!opened.ok()) throw std::runtime_error(opened.status().ToString());
+  auto table = opened.ValueOrDie()->ToTable();
+  if (!table.ok()) throw std::runtime_error(table.status().ToString());
+  return columnar_rows(table.ValueOrDie());
+}
+
+static json decode_parquet(const std::vector<uint8_t>& raw, const std::string&) {
+  if (raw.empty()) throw std::runtime_error("parquet: empty");
+  auto opened = parquet::arrow::OpenFile(arrow_reader(raw), arrow::default_memory_pool());
+  if (!opened.ok()) throw std::runtime_error(opened.status().ToString());
+  auto table = opened.ValueOrDie()->ReadTable();
+  if (!table.ok()) throw std::runtime_error(table.status().ToString());
+  return columnar_rows(table.ValueOrDie());
+}
+
+static json decode_orc(const std::vector<uint8_t>& raw, const std::string&) {
+  if (raw.empty()) throw std::runtime_error("orc: empty");
+  auto opened = arrow::adapters::orc::ORCFileReader::Open(arrow_reader(raw), arrow::default_memory_pool());
+  if (!opened.ok()) throw std::runtime_error(opened.status().ToString());
+  auto table = opened.ValueOrDie()->Read();
+  if (!table.ok()) throw std::runtime_error(table.status().ToString());
+  return columnar_rows(table.ValueOrDie());
+}
+#endif
+
+static json decode_sbe(const std::vector<uint8_t>& raw, const std::string&) {
+  if (raw.size() < benchmark::v2::MessageHeader::encodedLength()) {
+    throw std::runtime_error("sbe: short header");
+  }
+  std::vector<char> buf(raw.begin(), raw.end());
+  const uint64_t cap = buf.size();
+  benchmark::v2::MessageHeader hdr;
+  hdr.wrap(buf.data(), 0, 0, cap);
+  if (hdr.templateId() != benchmark::v2::Signal::sbeTemplateId()) {
+    throw std::runtime_error("sbe: template " + std::to_string(hdr.templateId()));
+  }
+  benchmark::v2::Signal dec;
+  dec.wrapForDecode(buf.data(), benchmark::v2::MessageHeader::encodedLength(), hdr.blockLength(),
+                    hdr.version(), cap);
+  json legs = json::array();
+  auto& group = dec.legs();
+  while (group.hasNext()) {
+    auto& leg = group.next();
+    legs.push_back({{"leg_id", leg.leg_id()}, {"leg_qty", leg.leg_qty()}, {"leg_pad", leg.leg_pad()}});
+  }
+  return {{"seq", dec.seq()},
+          {"ts", dec.ts()},
+          {"price_mantissa", dec.price_mantissa()},
+          {"qty", dec.qty()},
+          {"flags", dec.flags()},
+          {"legs", std::move(legs)},
+          {"symbol", dec.getSymbolAsString()},
+          {"venue", dec.getVenueAsString()}};
+}
+
 int main(int argc, char** argv) {
   std::string json_out;
   std::vector<std::string> formats;
@@ -199,6 +303,7 @@ int main(int argc, char** argv) {
       struct Ad {
         std::string name;
         std::function<json(const std::vector<uint8_t>&, const std::string&)> dec;
+        std::string version = "3.11.3";
       };
       std::vector<Ad> ads;
       if (fmt == "json") {
@@ -230,10 +335,14 @@ int main(int argc, char** argv) {
           return json::parse(raw.begin(), raw.end());
         }});
       } else if (fmt == "cbor") {
-        ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
-        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
+        // The binary decoders are called with the default allow_exceptions=true:
+        // with allow_exceptions=false, malformed input is reported by returning a
+        // discarded value instead of throwing, which the catch block below would
+        // miss and score as "accepted".
+        ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
+        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
       } else if (fmt == "msgpack") {
-        ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
 #if __has_include(<msgpack.hpp>)
         // Real msgpack-c / msgpack-cxx. It throws on invalid input
         // (msgpack::parse_error for reserved bytes such as 0xc1, and
@@ -253,12 +362,12 @@ int main(int argc, char** argv) {
           return json(mp_type_name(oh.get().type));
         }});
 #endif
-        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
       } else if (fmt == "ubjson") {
-        ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw, true, false); }});
+        ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw); }});
       } else if (fmt == "bson") {
-        ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
-        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
+        ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
+        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
       } else if (fmt == "protobuf") {
         ads.push_back({"protobuf-wire", decode_protobuf});
         ads.push_back({"protobuf", decode_protobuf});
@@ -298,6 +407,18 @@ int main(int argc, char** argv) {
           if (raw.empty()) throw std::runtime_error("empty");
           return json(raw.size());
         }});
+#if defined(COMPLIANCE_WITH_ARROW)
+      } else if (fmt == "arrow") {
+        ads.push_back({"arrow-ipc", decode_arrow_ipc, ARROW_VERSION_STRING});
+      } else if (fmt == "parquet") {
+        ads.push_back({"parquet", decode_parquet, ARROW_VERSION_STRING});
+        ads.push_back({"parquet-uncompressed", decode_parquet, ARROW_VERSION_STRING});
+      } else if (fmt == "orc") {
+        ads.push_back({"orc", decode_orc, ARROW_VERSION_STRING});
+        ads.push_back({"orc-uncompressed", decode_orc, ARROW_VERSION_STRING});
+#endif
+      } else if (fmt == "sbe") {
+        ads.push_back({"sbe", decode_sbe, "1.40.2"});
       }
       {
         std::vector<Ad> keep;
@@ -312,7 +433,7 @@ int main(int argc, char** argv) {
       for (auto& c : suite["cases"]) {
         json row = {
           {"id", c.value("id", "")}, {"language", "cpp"}, {"serializer", ad.name},
-          {"serializer_version", "3.11.3"}, {"format", fmt},
+          {"serializer_version", ad.version}, {"format", fmt},
           {"standard", suite.value("standard", "")}, {"standard_url", suite.value("standard_url", "")},
           {"version", suite.value("version", "")},
           {"version_key", fmt + "." + suite.value("version", "")},
@@ -337,7 +458,9 @@ int main(int argc, char** argv) {
           if (c.value("expect", "") == "reject") {
             row["outcome"] = "fail";
             row["detail"] = "parser accepted input the spec requires to be rejected";
-            row["observed"] = std::string("accepted as ") + got.dump();
+            // Non-throwing dump: an accepted value may hold invalid UTF-8, and a
+            // throw here would leave the row marked "fail" but counted as a pass.
+            row["observed"] = std::string("accepted as ") + got.dump(-1, ' ', false, json::error_handler_t::replace);
             f++;
           } else {
             try {

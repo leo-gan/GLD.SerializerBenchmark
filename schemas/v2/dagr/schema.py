@@ -92,7 +92,9 @@ library = Library(
     # Output dirs are relative to this directory; each lands where that language's
     # harness keeps its other generated code.
     targets=[
-        Rust(out="../../../rust/dagr_gen", features=["lazy"]),
+        # `crate`: the SBE rows' generated crate (rust/gen/sbe) is also named `benchmark_v2`,
+        # and Cargo cannot hold two packages of one name and version.
+        Rust(out="../../../rust/dagr_gen", features=["lazy"], crate="dagr_benchmark_v2"),
         Swift(out="../../../swift/DagrGen", features=["lazy"]),
         # package-per-graph: the flavours share node names (Message, …), so each graph
         # needs its own Go package.

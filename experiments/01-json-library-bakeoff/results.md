@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,7 +15,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | Language | Status | Not clearly slower | Small gap | Not both slower and larger | Full table |
 |----------|--------|--------------------|-----------|----------------------------|------------|
 | python | ok | `orjson` | — | `orjson` | [python/results.md](python/results.md) |
-| go | ok | `goccy/go-json` | `segmentio/encoding/json`, `sonic` | `goccy/go-json` | [go/results.md](go/results.md) |
+| go | ok | `goccy/go-json`, `segmentio/encoding/json`, `sonic` | — | `goccy/go-json` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen`, `moshi-reflect` | — | `moshi-codegen` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json` | [php/results.md](php/results.md) |
@@ -36,23 +36,23 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 3.89 | 448 | fastest |
-| serpyco-rs | 7.86 | 448 | slower |
-| mashumaro | 11.8 | 448 | slower |
-| rapidjson | 13.2 | 448 | slower |
-| json | 21.6 | 448 | slower |
-| pydantic | 26.2 | 448 | slower |
+| orjson | 5.63 | 448 | fastest |
+| serpyco-rs | 11.2 | 448 | slower |
+| mashumaro | 14.3 | 448 | slower |
+| rapidjson | 17.0 | 448 | slower |
+| json | 27.3 | 448 | slower |
+| pydantic | 32.2 | 448 | slower |
 
 ### go
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| goccy/go-json | 3.12 | 448 | fastest |
-| segmentio/encoding/json | 3.36 | 448 | close |
-| sonic | 3.49 | 448 | close |
-| jsoniter | 4.29 | 448 | slower |
-| ugorji/json | 4.97 | 448 | slower |
-| encoding/json | 9.00 | 448 | slower |
+| goccy/go-json | 4.26 | 448 | fastest |
+| segmentio/encoding/json | 4.45 | 448 | similar |
+| sonic | 4.51 | 448 | similar |
+| jsoniter | 5.56 | 448 | slower |
+| ugorji/json | 7.00 | 448 | slower |
+| encoding/json | 11.6 | 448 | slower |
 
 ### java
 
@@ -87,27 +87,27 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 7.06 | 448 | fastest |
-| fast-json-stringify | 10.8 | 448 | slower |
-| simdjson-parse+JSON.stringify | 20.3 | 448 | slower |
+| JSON.stringify | 9.27 | 448 | fastest |
+| fast-json-stringify | 13.0 | 448 | slower |
+| simdjson-parse+JSON.stringify | 28.2 | 448 | slower |
 
 ### rust
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| sonic-rs | 1.30 | 460 | fastest |
-| serde_json | 1.63 | 460 | slower |
-| simd-json | 1.97 | 460 | slower |
+| sonic-rs | 2.66 | 460 | fastest |
+| serde_json | 3.22 | 460 | slower |
+| simd-json | 3.75 | 460 | slower |
 
 ### c
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 4.67 | 460 | fastest |
-| cJSON | 9.50 | 460 | slower |
-| json-c | 16.6 | 460 | slower |
-| jansson | 17.8 | 460 | slower |
-| parson | 20.3 | 460 | slower |
+| yyjson | 5.66 | 460 | fastest |
+| cJSON | 13.9 | 460 | slower |
+| json-c | 18.8 | 460 | slower |
+| jansson | 22.1 | 460 | slower |
+| parson | 26.2 | 460 | slower |
 
 ### cpp
 
@@ -123,18 +123,18 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 12.9 | 440 | fastest |
-| NetJSON | 23.0 | 440 | slower |
-| Utf8Json | 26.3 | 440 | slower |
-| MS Bond Json | 36.2 | 440 | slower |
-| Jil | 38.4 | 440 | slower |
-| System.Text.Json | 63.9 | 588 | slower |
-| ServiceStack Json | 72.4 | 440 | slower |
-| fastJson | 85.7 | 972 | slower |
-| Json.Net (Helper) | 86.9 | 541 | slower |
-| Json.Net | 87.3 | 560 | slower |
-| FsPicklerJson | 92.6 | 1024 | slower |
-| MS DataContract Json | 93.2 | 588 | slower |
+| SpanJson | 14.2 | 440 | fastest |
+| NetJSON | 22.7 | 440 | slower |
+| Utf8Json | 26.7 | 440 | slower |
+| MS Bond Json | 37.3 | 440 | slower |
+| Jil | 40.8 | 440 | slower |
+| System.Text.Json | 62.0 | 440 | slower |
+| ServiceStack Json | 73.2 | 440 | slower |
+| fastJson | 87.0 | 972 | slower |
+| MS DataContract Json | 87.8 | 440 | slower |
+| FsPicklerJson | 91.9 | 768 | slower |
+| Json.Net | 92.6 | 560 | slower |
+| Json.Net (Helper) | 93.9 | 541 | slower |
 
 ### swift
 

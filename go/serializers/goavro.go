@@ -43,7 +43,8 @@ func (s *linkedInGoavro) Version() string        { return ModuleVersion("github.
 func (s *linkedInGoavro) StreamMode() StreamMode { return StreamAdapted }
 func (s *linkedInGoavro) NativeKind() NativeKind { return NativeSchema }
 func (s *linkedInGoavro) Supports(n string) bool {
-	return modelv2.IsV2TypeName(n)
+	// Original five only. hamba/avro encodes table, table_project, nested_table, and signal.
+	return modelv2.IsOriginalV2TypeName(n)
 }
 
 func (s *linkedInGoavro) Prepare(fx model.Fixture) error {

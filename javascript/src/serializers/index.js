@@ -12,6 +12,7 @@ import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
 import { yamlSerializers } from './yaml.js';
 import { dagrSerializers } from './dagr.js';
+import { columnarSerializers } from './columnar.js';
 
 export const ALL_SERIALIZERS = [
   ...jsonSerializers(),
@@ -21,6 +22,7 @@ export const ALL_SERIALIZERS = [
   ...modernSerializers(),
   ...yamlSerializers(),
   ...dagrSerializers(),
+  ...columnarSerializers(),
 ];
 
 export { deepEqual, performance };

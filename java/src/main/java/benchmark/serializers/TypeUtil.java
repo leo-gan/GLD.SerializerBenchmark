@@ -3,7 +3,10 @@ package benchmark.serializers;
 import benchmark.model.v2.Document;
 import benchmark.model.v2.Event;
 import benchmark.model.v2.Message;
+import benchmark.model.v2.NestedRow;
+import benchmark.model.v2.Signal;
 import benchmark.model.v2.Strings;
+import benchmark.model.v2.TableRow;
 import benchmark.model.v2.Telemetry;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -49,6 +52,9 @@ public final class TypeUtil {
     if (first instanceof Telemetry) return new TypeReference<List<Telemetry>>() {};
     if (first instanceof Strings) return new TypeReference<List<Strings>>() {};
     if (first instanceof Event) return new TypeReference<List<Event>>() {};
+    if (first instanceof TableRow) return new TypeReference<List<TableRow>>() {};
+    if (first instanceof NestedRow) return new TypeReference<List<NestedRow>>() {};
+    if (first instanceof Signal) return new TypeReference<List<Signal>>() {};
     return new TypeReference<List<Object>>() {};
   }
 

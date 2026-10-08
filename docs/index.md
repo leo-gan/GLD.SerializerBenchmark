@@ -50,18 +50,20 @@ Thirteen runners share the same fixtures and analysis rules.
 | Language | Serializers |
 |----------|------------:|
 | [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
-| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 38 |
-| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 27+ |
-| [Go](go/) · [Dashboard](dashboard/?lang=go) | 19 |
-| [Java](java/) · [Dashboard](dashboard/?lang=java) | 18 |
-| [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 20 |
-| [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 26 |
-| [Mojo](mojo/) · [Dashboard](dashboard/?lang=mojo) | 6 |
+| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 50 |
+| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
+| [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
+| [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |
+| [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 25 |
+| [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 32 |
+| [Mojo](mojo/) · [Dashboard](dashboard/?lang=mojo) | 13 |
 | [PHP](php/) · [Dashboard](dashboard/?lang=php) | 15 |
-| [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
-| [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
+| [Python](python/) · [Dashboard](dashboard/?lang=python) | 23 |
+| [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 22 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
 | [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |
+
+C++ is 35 when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
 
 ---
 
@@ -80,7 +82,7 @@ Then return to the **[Dashboard](dashboard/)** with clearer questions.
 
 ## Honesty rules (short)
 
-- Prefer comparisons **within one language** and one paradigm family.  
+- Prefer comparisons **within one language and one standard**. A family is a teaching cut, coarser than the standard. See [Serialization categories](analysis/serialization_categories.md).  
 - Implementation quality often matters more than the format brand name.  
 - Payload shape changes costs a great deal.  
 - Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.

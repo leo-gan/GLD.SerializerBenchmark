@@ -1,0 +1,37 @@
+# Run config: smoke for columnar and aligned-record types.
+# Not the suite smoke path. Invoke with:
+#   BENCHMARK_RUN_CONFIG=config/library/columnar-smoke.yaml
+# Pass an explicit serializer allow-list. The list is the new rows registered
+# in that language (arrow-ipc, parquet, parquet-uncompressed, orc,
+# orc-uncompressed, sbe) plus one existing JSON peer, the primary protobuf
+# row, one FlatBuffers or Cap'n Proto row when the tree already has one, and
+# the Avro row when the tree already has one.
+# Do not run this file unfiltered. Several harnesses treat Supports() as true
+# for every type name.
+id: columnar-smoke
+description: "table, table_project, nested_table, signal at N=1; bytes; no post-compression"
+data_model_version: 2
+
+types:
+  - type_id: table
+    type_config: {}
+  - type_id: table_project
+    type_config: {}
+  - type_id: nested_table
+    type_config: {}
+  - type_id: signal
+    type_config: {}
+
+data_type_instance_count: [1]
+
+compression:
+  mode: none
+
+execution:
+  mode: smoke
+  io_modes: [bytes]
+
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

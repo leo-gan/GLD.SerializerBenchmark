@@ -45,8 +45,8 @@ By the end of this course you should be able to:
 1. **Analyze** trust boundaries. State when portable formats are required. State when language-native formats might still be acceptable. A **trust boundary** is a place where data leaves one controlled world. That world might be a process, a team, or a network. Beyond the boundary, someone else may see or produce the data.
 2. **Distinguish** operational schema cultures without re-deriving wire rules from scratch. One example is Avro-style writer and reader resolution. Another is Protobuf field-number discipline.
 3. **Evaluate** workload fit. That includes row versus columnar storage at system scale. It includes multi-language (*polyglot*) contracts across languages. It also includes the different shapes of **RPC** versus messaging payloads. **RPC** means remote procedure call. It is a synchronous request and response between services.
-4. **Critique** benchmark claims. Use this suite’s rules about paradigm families and single-language comparisons.
-5. **Recommend** a format family or approach under stated constraints. **Justify** the recommendation with serialization categories and the Dashboard.
+4. **Critique** benchmark claims. Use this suite’s rule: same language, same standard, same data set, and same data type.
+5. **Recommend** a format family, then name the standard inside it. **Justify** the recommendation with serialization categories and the Dashboard.
 6. **Identify** what this benchmark runner cannot answer. That skill stops you from over-claiming.
 
 ---
@@ -109,8 +109,8 @@ You do not need to read every article in order. Pick a track that matches the pr
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Using this suite without fooling yourself](using-this-suite.md) | Read Dashboard numbers within one paradigm family and one language |
-| [Implementation variance within a family](implementation-variance.md) | Choose libraries without ranking formats globally |
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Dashboard numbers within one language, one standard, one data set, and one data type |
+| [Implementation variance within a standard](implementation-variance.md) | Choose a library after the standard is fixed |
 | [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge 99th-percentile latency (*p99*: 99% of requests are faster than this) and allocation pressure. |
 | [Compression as a system choice](compression-as-system-choice.md) | Place gzip or zstd in the stack without treating compression as a format |
 
@@ -149,7 +149,7 @@ The same program rules apply as in 101 and 201:
 1. There are no universal winners. Every recommendation is under stated constraints.
 2. How well a library is written often matters more than the name of the format. Two libraries can share a format label and still differ sharply.
 3. Payload shape matters. Dense records and deep graphs are different jobs.
-4. Compare within one paradigm family and within one language before making cross-cutting claims.
+4. Compare within one language, one standard, one data set, and one data type before making a broader claim. A family is a teaching cut.
 5. Security and trust are first-class concerns. They are not afterthoughts.
 6. Numbers in prose are illustrative. The **Dashboard** owns measured numbers for this benchmark runner.
 

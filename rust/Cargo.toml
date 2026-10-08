@@ -1,6 +1,6 @@
 [package]
 name = "serializer-benchmark-rust"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 description = "Rust harness for the Multi-Language Serializer Benchmark"
 license = "MIT"
@@ -25,7 +25,7 @@ rkyv = { version = "0.8", features = ["std", "bytecheck", "alloc"] }
 minicbor = { version = "0.25", features = ["std", "derive"] }
 prost = "0.13"
 # Dagr: generated crate (schemas/v2/dagr/schema.py → `dagr build`); no runtime dependency.
-benchmark_v2 = { path = "dagr_gen" }
+dagr_benchmark_v2 = { path = "dagr_gen" }
 # High-perf Avro datum codec (wire-compatible with apache-avro; avoids Value intermediate).
 # Official apache-avro 0.21 deser is multi-× slower than serde_json on small records.
 serde_avro_fast = "2"
@@ -35,6 +35,8 @@ clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 # Priority B
 bson = "2"
+# Amazon Ion. experimental-serde is the supported serde path (to_binary / from_ion).
+ion-rs = { version = "1", features = ["experimental-serde"] }
 nanoserde = "0.1.37"  # ^0.1.37 → latest 0.1.x only (0.2 is a separate minor line)
 speedy = "0.8"
 bytes = "1"
@@ -45,6 +47,11 @@ sha2 = "0.10"
 serde_yaml = "0.9"
 flate2 = "1"
 zstd = "0.13"
+# Columnar rows. Exact 60.0.0 (caret would float to 60.x).
+arrow = "=60.0.0"
+parquet = "=60.0.0"
+# SBE flyweights from schemas/v2/sbe/signal.xml (sbe-tool 1.40.2). Crate version stays 0.1.0.
+benchmark_v2 = { path = "gen/sbe" }
 
 [build-dependencies]
 prost-build = "0.13"

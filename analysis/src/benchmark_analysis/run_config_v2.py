@@ -96,6 +96,17 @@ def resolve_type_config(
     return merged
 
 
+def _as_count_list(counts: Any, where: str) -> list[int]:
+    if isinstance(counts, int):
+        counts = [counts]
+    if not isinstance(counts, list) or not counts:
+        raise RunConfigError(f"{where} must be int or non-empty list[int]")
+    for n in counts:
+        if not isinstance(n, int) or n < 1:
+            raise RunConfigError(f"{where} values must be int >= 1, got {n!r}")
+    return list(counts)
+
+
 def expand_cells(
     run_cfg: dict[str, Any],
     catalog: dict[str, Any],
@@ -103,19 +114,16 @@ def expand_cells(
     types = run_cfg.get("types")
     if not types:
         raise RunConfigError("run config missing non-empty 'types'")
-    counts = run_cfg.get("data_type_instance_count")
-    if counts is None:
+    if run_cfg.get("data_type_instance_count") is None:
         raise RunConfigError("run config missing 'data_type_instance_count'")
-    if isinstance(counts, int):
-        counts = [counts]
-    if not isinstance(counts, list) or not counts:
-        raise RunConfigError("data_type_instance_count must be int or non-empty list[int]")
-    for n in counts:
-        if not isinstance(n, int) or n < 1:
-            raise RunConfigError(f"data_type_instance_count values must be int >= 1, got {n!r}")
+    file_counts = _as_count_list(
+        run_cfg.get("data_type_instance_count"),
+        "data_type_instance_count",
+    )
 
     cells: list[dict[str, Any]] = []
     for row in types:
+        row_counts = file_counts
         if isinstance(row, str):
             type_id, tc = row, {}
         elif isinstance(row, dict):
@@ -125,11 +133,16 @@ def expand_cells(
             tc = row.get("type_config") or {}
             if not isinstance(tc, dict):
                 raise RunConfigError(f"type_config must be a mapping for {type_id}")
+            if "data_type_instance_count" in row:
+                row_counts = _as_count_list(
+                    row["data_type_instance_count"],
+                    f"{type_id} data_type_instance_count",
+                )
         else:
             raise RunConfigError(f"invalid type row: {row!r}")
         resolved = resolve_type_config(type_id, tc, catalog)
         th = type_config_hash(resolved)
-        for n in counts:
+        for n in row_counts:
             cells.append(
                 {
                     "type_id": type_id,

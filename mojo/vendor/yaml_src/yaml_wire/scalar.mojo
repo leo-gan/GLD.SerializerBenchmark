@@ -58,36 +58,68 @@ def _is_space(c: Int) -> Bool:
     return c == 32 or c == 9
 
 
+def _core_word[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
+    """Null, bool, or non-decimal float spellings that must be quoted."""
+    var n = len(data)
+    if n == 1:
+        return Int(data[0]) == 126
+    if n == 4:
+        var a = Int(data[0])
+        var b = Int(data[1])
+        var c = Int(data[2])
+        var d = Int(data[3])
+        if a == 110 and b == 117 and c == 108 and d == 108:
+            return True
+        if a == 78 and b == 117 and c == 108 and d == 108:
+            return True
+        if a == 78 and b == 85 and c == 76 and d == 76:
+            return True
+        if a == 116 and b == 114 and c == 117 and d == 101:
+            return True
+        if a == 84 and b == 114 and c == 117 and d == 101:
+            return True
+        if a == 84 and b == 82 and c == 85 and d == 69:
+            return True
+        if a == 46 and b == 105 and c == 110 and d == 102:
+            return True
+        if a == 46 and b == 73 and c == 110 and d == 102:
+            return True
+        if a == 46 and b == 73 and c == 78 and d == 70:
+            return True
+        if a == 46 and b == 110 and c == 97 and d == 110:
+            return True
+        if a == 46 and b == 78 and c == 97 and d == 78:
+            return True
+        if a == 46 and b == 78 and c == 65 and d == 78:
+            return True
+        return False
+    if n != 5:
+        return False
+    var a = Int(data[0])
+    var b = Int(data[1])
+    var c = Int(data[2])
+    var d = Int(data[3])
+    var e = Int(data[4])
+    if a == 102 and b == 97 and c == 108 and d == 115 and e == 101:
+        return True
+    if a == 70 and b == 97 and c == 108 and d == 115 and e == 101:
+        return True
+    if a == 70 and b == 65 and c == 76 and d == 83 and e == 69:
+        return True
+    if (a == 45 or a == 43) and b == 46:
+        if c == 105 and d == 110 and e == 102:
+            return True
+        if c == 73 and d == 110 and e == 102:
+            return True
+        if c == 73 and d == 78 and e == 70:
+            return True
+    return False
+
+
 def _looks_core_special[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
     """True if a plain would be read back as null/bool/int/float."""
     var n = len(data)
-    if n == 1 and Int(data[0]) == 126:
-        return True
-    if _eq(data, "null") or _eq(data, "Null") or _eq(data, "NULL"):
-        return True
-    if (
-        _eq(data, "true")
-        or _eq(data, "True")
-        or _eq(data, "TRUE")
-        or _eq(data, "false")
-        or _eq(data, "False")
-        or _eq(data, "FALSE")
-    ):
-        return True
-    if (
-        _eq(data, ".inf")
-        or _eq(data, ".Inf")
-        or _eq(data, ".INF")
-        or _eq(data, "-.inf")
-        or _eq(data, "-.Inf")
-        or _eq(data, "-.INF")
-        or _eq(data, ".nan")
-        or _eq(data, ".NaN")
-        or _eq(data, ".NAN")
-        or _eq(data, "+.inf")
-        or _eq(data, "+.Inf")
-        or _eq(data, "+.INF")
-    ):
+    if _core_word(data):
         return True
     if n == 0:
         return False
@@ -119,16 +151,17 @@ def _looks_core_special[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
     return saw_digit
 
 
-def _eq[origin: ImmOrigin](data: Span[Byte, origin], lit: String) -> Bool:
-    var b = lit.as_bytes()
-    if len(data) != len(b):
-        return False
+def string_from_plain_scalar[
+    origin: ImmOrigin
+](span: Span[Byte, origin], offset: Int) raises DecodeError -> String:
+    """Copy a plain scalar. ASCII skips UTF-8 validation; other bytes still check."""
+    var n = len(span)
     var i = 0
-    while i < len(b):
-        if Int(data[i]) != Int(b[i]):
-            return False
+    while i < n:
+        if Int(span[i]) >= 128:
+            return string_from_utf8(span, offset)
         i += 1
-    return True
+    return String(unsafe_from_utf8=span)
 
 
 def encoded_string_len[origin: ImmOrigin](data: Span[Byte, origin], options: EncodeOptions) -> Int:
@@ -346,6 +379,23 @@ def parse_single_quoted[
 ](data: Span[Byte, origin], mut pos: Int, min_col: Int = 0) raises DecodeError -> String:
     if pos >= len(data) or Int(data[pos]) != 39:
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
+    var i = pos + 1
+    var n = len(data)
+    var simple = True
+    while i < n:
+        var c = Int(data[i])
+        if c == 39:
+            if i + 1 < n and Int(data[i + 1]) == 39:
+                simple = False
+            break
+        if c == 10 or c == 13:
+            simple = False
+            break
+        i += 1
+    if simple and i < n and Int(data[i]) == 39:
+        var text = string_from_plain_scalar(data[pos + 1 : i], pos + 1)
+        pos = i + 1
+        return text^
     pos += 1
     var start = pos
     var out = List[Byte]()

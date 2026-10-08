@@ -40,18 +40,18 @@ Compare 200+ serialization libraries across **13 languages**.
 
 ## Supported languages
 
-- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 20
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 40 serializers registered
-- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 27+
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 21
-- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
-- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 21
-- [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 26
-- [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 11
+- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 50 serializers registered
+- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 35 with Arrow (30 without; sbe still registers)
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 30
+- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 27
+- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 29
+- [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 32
+- [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 21
 - [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
-- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 17
-- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 17
-- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 15
+- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 27
+- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 26
+- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 18
 - [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 17
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/) · [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/).
@@ -121,7 +121,7 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 ## Test data
 
-Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event`.
+Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event` are the row matrix. Dashboard `all@all` averages those five only. `table`, `table_project`, `nested_table`, and `signal` are separate data types, timed by `config/library/columnar.yaml` and appended to the published snapshot by `dashboard/scripts/splice-columnar-stats.py`.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
 Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).

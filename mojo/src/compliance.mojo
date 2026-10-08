@@ -1,6 +1,6 @@
 """Mojo compliance runner — same catalog as the other languages."""
 
-from std.collections import List
+from std.collections import List, Span
 from std.sys import argv
 from emberjson import parse, to_string
 from ehsanmok_json import loads as ehsan_loads
@@ -9,7 +9,11 @@ from yaml import decode_all_values as yaml_decode_all
 from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
 from bson_runtime.value import decode_document
+from smile import decode_bytes as smile_decode
+from ion import decode as ion_decode
+from ion_runtime.symtab import Catalog
 from toml import parse as toml_parse
+from gldtoml import decode_toml as gld_decode_toml
 from avro import GenericDatum, parse_avsc
 from emberjson import Value
 from fb_flex.kind import (
@@ -28,6 +32,8 @@ from fb_flex.kind import (
 )
 from fb_flex.reader import FlexTree, flex_loads
 from fb_wire.verify import verify_file_identifier, verify_root
+from arrow_wire.ipc import decode_ipc_stream
+from parquet_wire.decode import decode_table
 
 
 
@@ -158,6 +164,10 @@ def _try_toml(text: String) raises:
     _ = toml_parse(text)
 
 
+def _try_gldtoml(text: String) raises:
+    _ = gld_decode_toml(text)
+
+
 def _try_cbor(buf: List[Byte]) raises:
     _ = cbor_decode(buf)
 
@@ -168,6 +178,25 @@ def _try_msgpack(buf: List[Byte]) raises:
 
 def _try_bson(buf: List[Byte]) raises:
     _ = decode_document(Span(buf))
+
+
+def _try_smile(buf: List[Byte]) raises:
+    _ = smile_decode(Span(buf))
+
+
+def _try_arrow(buf: List[Byte]) raises:
+    var decoded = decode_ipc_stream(Span(buf))
+    # An empty buffer has no schema message. A real stream starts with one.
+    if len(decoded.fields) == 0:
+        raise Error("arrow ipc: missing schema")
+
+
+def _try_parquet(buf: List[Byte]) raises:
+    _ = decode_table(Span(buf))
+
+
+def _try_ion(buf: List[Byte]) raises:
+    _ = ion_decode(Span(buf), Catalog())
 
 
 def _try_avro(buf: List[Byte], schema_json: String) raises:
@@ -280,18 +309,57 @@ def _try_flatbuffers(buf: List[Byte], version: String, has_decoded: Bool, decode
     verify_root(buf, False)
 
 
+def _digit_string(s: String) -> Bool:
+    var b = s.as_bytes()
+    if len(b) == 0:
+        return False
+    var i = 0
+    if Int(b[0]) == 45:
+        i = 1
+        if i >= len(b):
+            return False
+    while i < len(b):
+        var c = Int(b[i])
+        if c < 48 or c > 57:
+            return False
+        i += 1
+    return True
+
+
+def _proto_int_like(v: Value) -> Bool:
+    if v.is_null() or v.is_int() or v.is_uint() or v.is_float():
+        return True
+    if v.is_string():
+        return _digit_string(v.string())
+    return False
+
+
 def _try_protobuf(buf: List[Byte], schema: String, text: String) raises:
     if schema == "json":
-        var b = text.as_bytes()
-        var i = 0
-        while i < len(b):
-            var c = Int(b[i])
-            if c != 32 and c != 9 and c != 10 and c != 13:
-                break
-            i += 1
-        if i >= len(b) or Int(b[i]) != 123:
+        # Same probe as C and C++: the catalog message is {n,s,ok,tags}, not a generic JSON parse.
+        var root = parse(text)
+        if not root.is_object():
             raise Error("proto3 JSON message must be an object")
-        _ = parse(text)
+        # Object and Value are not implicitly copyable; index them in place.
+        if "n" in root.object():
+            if not _proto_int_like(root.object()["n"]):
+                raise Error("int32 must be a number or digit string")
+        if "s" in root.object():
+            if not root.object()["s"].is_null() and not root.object()["s"].is_string():
+                raise Error("s must be a string")
+        if "ok" in root.object():
+            if not root.object()["ok"].is_null() and not root.object()["ok"].is_bool():
+                raise Error("ok must be a bool")
+        if "tags" in root.object():
+            if not root.object()["tags"].is_null():
+                if not root.object()["tags"].is_array():
+                    raise Error("tags must be an array")
+                var ntags = len(root.object()["tags"].array())
+                var ti = 0
+                while ti < ntags:
+                    if not _proto_int_like(root.object()["tags"].array()[ti]):
+                        raise Error("int32 must be a number or digit string")
+                    ti += 1
         return
     var i = 0
     while i < len(buf):
@@ -347,7 +415,13 @@ def _row(
     version: String,
     requirement: String,
     expect: String,
+    section: String,
+    section_title: String,
     section_url: String,
+    paragraph: String,
+    title: String,
+    input_text: String,
+    enc: String,
     observed: String,
     outcome: String,
     detail: String,
@@ -373,9 +447,21 @@ def _row(
         + _esc(requirement)
         + ",\"expect\":"
         + _esc(expect)
-        + ",\"section\":\"\",\"section_title\":\"\",\"section_url\":"
+        + ",\"section\":"
+        + _esc(section)
+        + ",\"section_title\":"
+        + _esc(section_title)
+        + ",\"section_url\":"
         + _esc(section_url)
-        + ",\"paragraph\":\"\",\"title\":\"\",\"input\":\"\",\"input_encoding\":\"\",\"detail\":"
+        + ",\"paragraph\":"
+        + _esc(paragraph)
+        + ",\"title\":"
+        + _esc(title)
+        + ",\"input\":"
+        + _esc(input_text)
+        + ",\"input_encoding\":"
+        + _esc(enc)
+        + ",\"detail\":"
         + _esc(detail)
         + ",\"observed\":"
         + _esc(observed)
@@ -395,7 +481,11 @@ def _run_one(
     id: String,
     requirement: String,
     expect: String,
+    section: String,
+    section_title: String,
     section_url: String,
+    paragraph: String,
+    title: String,
     input_text: String,
     enc: String,
     schema: String,
@@ -415,7 +505,10 @@ def _run_one(
         elif fmt == "yaml":
             _try_yaml(input_text)
         elif fmt == "toml":
-            _try_toml(input_text)
+            if ser == "gld-toml":
+                _try_gldtoml(input_text)
+            else:
+                _try_toml(input_text)
         elif fmt == "cbor":
             _try_cbor(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "msgpack":
@@ -433,6 +526,14 @@ def _run_one(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
                 schema,
             )
+        elif fmt == "ion":
+            _try_ion(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "smile":
+            _try_smile(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "arrow":
+            _try_arrow(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "parquet":
+            _try_parquet(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "flatbuffers":
             _try_flatbuffers(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
@@ -448,26 +549,31 @@ def _run_one(
         err = String(e)
     if expect == "any":
         return _row(
-            id, ser, ver, fmt, standard, standard_url, version, requirement, expect, section_url,
+            id, ser, ver, fmt, standard, standard_url, version, requirement, expect,
+            section, section_title, section_url, paragraph, title, input_text, enc,
             "ok" if ok else err, "pass", "",
         )
     if expect == "reject":
         if not ok:
             return _row(
-                id, ser, ver, fmt, standard, standard_url, version, requirement, expect, section_url,
+                id, ser, ver, fmt, standard, standard_url, version, requirement, expect,
+            section, section_title, section_url, paragraph, title, input_text, enc,
                 err, "pass", "",
             )
         return _row(
-            id, ser, ver, fmt, standard, standard_url, version, requirement, expect, section_url,
+            id, ser, ver, fmt, standard, standard_url, version, requirement, expect,
+            section, section_title, section_url, paragraph, title, input_text, enc,
             "accepted", "fail", "parser accepted input the spec requires to be rejected",
         )
     if not ok:
         return _row(
-            id, ser, ver, fmt, standard, standard_url, version, requirement, expect, section_url,
+            id, ser, ver, fmt, standard, standard_url, version, requirement, expect,
+            section, section_title, section_url, paragraph, title, input_text, enc,
             err, "fail", "parser rejected input the spec requires to accept",
         )
     return _row(
-        id, ser, ver, fmt, standard, standard_url, version, requirement, expect, section_url,
+        id, ser, ver, fmt, standard, standard_url, version, requirement, expect,
+        section, section_title, section_url, paragraph, title, input_text, enc,
         "ok", "pass", "",
     )
 
@@ -574,12 +680,8 @@ def main() raises:
                 continue
             if not _want_fmt(formats, fmt):
                 continue
-            # Official YAML/TOML catalogs are large JSON files of small cases.
-            # Skip only TOML (parser panics); YAML cases are scored one-by-one.
-            if fmt == "toml" and text.byte_length() > 100000:
-                adapter_errs.append("skipped large official " + fmt + " suite")
-                print("skip large", fmt, path)
-                continue
+            # Official catalogs are split into small chunks by run-compliance.sh.
+            # A single unsplit TOML file is still large enough to OOM EmberJson.
             var standard = ""
             var version = ""
             var standard_url = ""
@@ -603,30 +705,46 @@ def main() raises:
                 sers.append("ehsanmok-json")
                 vers.append("0.4.0")
                 sers.append("mojo-json")
-                vers.append("0.4.0")
+                vers.append("0.5.0")
             elif fmt == "yaml":
                 sers.append("gld-yaml")
-                vers.append("0.5.0")
+                vers.append("0.6.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
                 vers.append("0.9.1")
+                sers.append("gld-toml")
+                vers.append("0.1.0")
             elif fmt == "cbor":
                 sers.append("mojo-cbor")
-                vers.append("0.7.0")
+                vers.append("0.8.0")
             elif fmt == "msgpack":
                 sers.append("mojo-msgpack")
-                vers.append("0.3.0")
+                vers.append("0.4.0")
             elif fmt == "bson":
                 sers.append("mojo-bson")
                 vers.append("0.1.0")
             elif fmt == "protobuf":
                 sers.append("mojo-protobuf")
-                vers.append("0.6.0")
+                vers.append("0.7.0")
             elif fmt == "avro":
                 sers.append("mojo-avro")
                 vers.append("0.4.0")
             elif fmt == "flatbuffers":
                 sers.append("mojo-flatbuffers")
+                vers.append("0.4.0")
+            elif fmt == "ion":
+                sers.append("mojo-ion")
+                vers.append("0.2.0")
+            elif fmt == "smile":
+                sers.append("mojo-smile")
+                vers.append("0.2.0")
+            elif fmt == "arrow":
+                sers.append("arrow-ipc")
+                vers.append("0.2.0")
+            elif fmt == "parquet":
+                sers.append("parquet")
+                vers.append("0.2.0")
+                sers.append("parquet-uncompressed")
                 vers.append("0.2.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
@@ -672,7 +790,11 @@ def main() raises:
                 var input_text = ""
                 var enc = "utf-8"
                 var requirement = ""
+                var section = ""
+                var section_title = ""
                 var section_url = ""
+                var paragraph = ""
+                var title = ""
                 try:
                     id = String(c["id"].string())
                 except:
@@ -681,6 +803,22 @@ def main() raises:
                     expect = String(c["expect"].string())
                 except:
                     expect = ""
+                try:
+                    title = String(c["title"].string())
+                except:
+                    title = ""
+                try:
+                    section = String(c["section"].string())
+                except:
+                    section = ""
+                try:
+                    section_title = String(c["section_title"].string())
+                except:
+                    section_title = ""
+                try:
+                    paragraph = String(c["paragraph"].string())
+                except:
+                    paragraph = ""
                 try:
                     input_text = String(c["input"].string())
                 except:
@@ -729,7 +867,11 @@ def main() raises:
                         id,
                         requirement,
                         expect,
+                        section,
+                        section_title,
                         section_url,
+                        paragraph,
+                        title,
                         input_text,
                         enc,
                         schema,
@@ -760,7 +902,7 @@ def main() raises:
         errs += "]"
         var rows = open(rows_path, "r").read()
         var head = (
-            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\",\"bson\"]},\"passed\":"
+            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\",\"bson\",\"ion\",\"smile\",\"arrow\",\"parquet\"]},\"passed\":"
             + String(passed)
             + ",\"failed\":"
             + String(failed)

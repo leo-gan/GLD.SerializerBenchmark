@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -15,6 +16,50 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+static std::unordered_set<std::string> optional_stream_names() {
+  std::unordered_set<std::string> out;
+  fs::path dir = fs::current_path();
+  fs::path file;
+  for (;;) {
+    fs::path cand = dir / "config" / "optional-io.txt";
+    if (fs::exists(cand)) {
+      file = cand;
+      break;
+    }
+    if (!dir.has_parent_path() || dir == dir.root_path()) break;
+    dir = dir.parent_path();
+  }
+  if (file.empty()) return out;
+  std::ifstream in(file);
+  std::string line;
+  while (std::getline(in, line)) {
+    auto tab = line.find('\t');
+    if (tab == std::string::npos) continue;
+    if (line.substr(0, tab) != "cpp") continue;
+    auto name = line.substr(tab + 1);
+    if (!name.empty()) out.insert(name);
+  }
+  return out;
+}
+
+static std::vector<std::string> modes_with_optional_stream(
+    std::vector<std::string> modes, const std::unordered_set<std::string>& opt,
+    const std::vector<std::unique_ptr<bench::ISerializer>>& sers) {
+  bool hit = false;
+  for (const auto& ser : sers) {
+    if (opt.count(ser->name())) {
+      hit = true;
+      break;
+    }
+  }
+  if (!hit) return modes;
+  for (const auto& mode : modes) {
+    if (mode == "stream") return modes;
+  }
+  modes.push_back("stream");
+  return modes;
+}
 
 static uint64_t now_ns() {
   using clock = std::chrono::steady_clock;
@@ -60,6 +105,8 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
   // Policy: timed path measures codec APIs that return/fill buffers. Many C++
   // codecs allocate a fresh vector each call; stream mode reuses scratch.
   // Warmup (rep 0) absorbs cold alloc; analysis drops it when exclude_warmup.
+  // table_project compares the projected column, not the full row stored on fx.
+  const bench::Value expected = bench::expected_for_fidelity(fx);
   uint64_t t0 = now_ns();
   auto buf = ser.serialize_bytes(fx);
   m.ser_ns = now_ns() - t0;
@@ -70,7 +117,7 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
   m.deser_ns = now_ns() - t0;
   do_not_optimize(out);
   out = ser.to_domain(std::move(out));
-  if (!bench::fidelity(fx.value, out)) {
+  if (!bench::fidelity(expected, out)) {
     throw std::runtime_error(std::string("roundtrip fidelity failed for ") + ser.name());
   }
   auto [gz, zs] = bench::compress_sizes(buf.data(), buf.size());
@@ -83,6 +130,7 @@ static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
                               std::vector<uint8_t>& buf) {
   Measure m;
   buf.clear();  // capacity reused across reps (issue #59)
+  const bench::Value expected = bench::expected_for_fidelity(fx);
   uint64_t t0 = now_ns();
   size_t n = ser.serialize_stream(fx, buf);
   m.ser_ns = now_ns() - t0;
@@ -93,7 +141,7 @@ static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
   m.deser_ns = now_ns() - t0;
   do_not_optimize(out);
   out = ser.to_domain(std::move(out));
-  if (!bench::fidelity(fx.value, out)) {
+  if (!bench::fidelity(expected, out)) {
     throw std::runtime_error(std::string("stream roundtrip fidelity failed for ") + ser.name());
   }
   auto [gz, zs] = bench::compress_sizes(buf.data(), m.size);
@@ -163,7 +211,9 @@ int main(int argc, char** argv) {
   auto resolved = bench::load_resolved(run_cfg, seed);
   seed = resolved.seed;
   auto modes = resolved.io_modes;
-  if (modes.empty()) modes = {"bytes", "stream"};
+  if (modes.empty()) modes = {"bytes"};
+  const auto opt_stream = optional_stream_names();
+  modes = modes_with_optional_stream(std::move(modes), opt_stream, sers);
 
   std::vector<std::pair<bench::Fixture, const bench::Cell*>> work;
   for (const auto& c : resolved.cells) {
@@ -239,6 +289,7 @@ int main(int argc, char** argv) {
         for (auto& p : ready) {
           if (failed.count(p.ser->name())) continue;
           for (const auto& mode : modes) {
+            if (mode == "stream" && !opt_stream.count(p.ser->name())) continue;
             bool had_error = false;
             for (int i = 0; i < reps; ++i) {
               if (had_error) break;
@@ -261,7 +312,9 @@ int main(int argc, char** argv) {
             std::vector<std::string> pool;
             pool.reserve(ready.size());
             for (const auto& p : ready) {
-              if (!failed.count(p.ser->name())) pool.push_back(p.ser->name());
+              if (failed.count(p.ser->name())) continue;
+              if (mode == "stream" && !opt_stream.count(p.ser->name())) continue;
+              pool.push_back(p.ser->name());
             }
             auto order = bench::shuffle_serializer_names(pool, seed, fx.type_id, fx.instance_count,
                                                          fx.type_config_hash, mode, i);

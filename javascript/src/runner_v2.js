@@ -14,7 +14,8 @@ import { spawnSync } from 'node:child_process';
 import { compressSizes } from './compress.js';
 import { makeOne, instances } from './data_v2.js';
 import { ALL_SERIALIZERS, performance } from './serializers/index.js';
-import { deepEqual } from './data.js';
+import { deepEqual, expectedForFidelity } from './data.js';
+import { serializerSelected } from './filter.js';
 import {
   resolveRecordRunOrder,
   resolveScheduleStrategy,
@@ -25,7 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '../..');
 
 const repetitions = parseInt(process.argv[2] || '10', 10);
-const serFilter = (process.argv[3] || '').toLowerCase();
+const serFilter = process.argv[3] || '';
 const dataFilter = (process.argv[4] || '').toLowerCase();
 const logDirEnv = process.env.LOG_DIR || path.join(projectRoot, 'logs');
 const logDir = logDirEnv.endsWith('javascript') ? logDirEnv : path.join(logDirEnv, 'javascript');
@@ -91,9 +92,7 @@ if (modesRaw.some((m) => String(m).toLowerCase() === 'stream')) {
 }
 
 // Full registry — schema codecs must support v2 type_ids or skip via supports().
-const serializers = ALL_SERIALIZERS.filter(
-  (s) => !serFilter || s.name.toLowerCase().includes(serFilter),
-);
+const serializers = ALL_SERIALIZERS.filter((s) => serializerSelected(s.name, serFilter));
 
 const strategy = resolveScheduleStrategy();
 const recordRO = resolveRecordRunOrder();
@@ -106,6 +105,11 @@ function nowNs() {
   return BigInt(Math.round(performance.now() * 1e6));
 }
 
+function isThenable(v) {
+  return v != null && typeof v.then === 'function';
+}
+
+await (async function runCells() {
 let runOrder = 0;
 
 for (const cell of cells) {
@@ -164,16 +168,19 @@ for (const cell of cells) {
         if (failed.has(ser.name)) continue;
         try {
           const t0 = nowNs();
-          const buf = ser.serialize(value);
+          let buf = ser.serialize(value);
+          if (isThenable(buf)) buf = await buf;
           const t1 = nowNs();
-          const native = ser.deserialize(buf);
+          let native = ser.deserialize(buf);
+          if (isThenable(native)) native = await native;
           const t2 = nowNs();
           const out = typeof ser.toDomain === 'function' ? ser.toDomain(native) : native;
           const serNs = Number(t1 - t0);
           const deserNs = Number(t2 - t1);
           const total = serNs + deserNs;
           const size = buf.length ?? Buffer.byteLength(buf);
-          if (!deepEqual(value, out)) throw new Error('roundtrip fidelity mismatch');
+          const expected = expectedForFidelity(typeId, value);
+          if (!deepEqual(expected, out)) throw new Error('roundtrip fidelity mismatch');
           const opsSer = serNs > 0 ? 1e9 / serNs : 0;
           const opsDeser = deserNs > 0 ? 1e9 / deserNs : 0;
           const opsTot = total > 0 ? 1e9 / total : 0;
@@ -227,3 +234,4 @@ fs.writeFileSync(logPath, lines.join(''));
 if (errors.length > 1) fs.writeFileSync(errPath, errors.join(''));
 else if (fs.existsSync(errPath)) fs.unlinkSync(errPath);
 console.log(`[PROGRESS] Complete. Results: ${logPath}`);
+})();

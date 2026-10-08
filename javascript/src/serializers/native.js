@@ -1,11 +1,11 @@
 import v8 from 'node:v8';
-import { asBuffer } from './common.js';
+import { asBuffer, baseSupports } from './common.js';
 
 export const v8Ser = {
   name: 'v8-serializer',
   version: `v8-${process.versions.v8}`,
   category: 'native',
-  supports: () => true,
+  supports: baseSupports,
   prepare() {},
   serialize(value) {
     return v8.serialize(value);

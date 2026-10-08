@@ -69,6 +69,42 @@ def test_python_runner_filters_to_serializer_standards_json():
     assert have == (raw & mapped)
 
 
+def test_columnar_corpus_is_scored_by_the_pyarrow_adapters():
+    from compliance.adapters import builtin_adapters
+    from compliance.mapping import allowed_pairs
+    from compliance.models import Report
+    from compliance.runner import _note_mapping_gaps, run_suites
+
+    pairs = allowed_pairs("python")
+    assert ("arrow-ipc", "arrow") in pairs
+    assert ("parquet", "parquet") in pairs
+    assert ("parquet-uncompressed", "parquet") in pairs
+    assert ("orc", "orc") in pairs
+    assert ("orc-uncompressed", "orc") in pairs
+    assert ("sbe", "sbe") not in pairs
+
+    report = Report()
+    _note_mapping_gaps(report, [], formats=["arrow", "parquet", "orc"])
+    assert any("arrow-ipc" in e for e in report.adapter_errors)
+    assert any("parquet" in e for e in report.adapter_errors)
+    assert any("orc" in e for e in report.adapter_errors)
+
+    report = Report()
+    _note_mapping_gaps(report, builtin_adapters(), formats=["arrow", "parquet", "orc", "sbe"])
+    assert report.adapter_errors == []
+
+    scored = run_suites(formats=["arrow", "parquet", "orc"])
+    assert scored.catalog_errors == []
+    assert scored.adapter_errors == []
+    failed = [row for row in scored.results if row.outcome != "pass"]
+    assert not failed, "\n".join(row.failure_block() for row in failed)
+    assert len(scored.results) == 4 * 5
+
+    report = Report()
+    _note_mapping_gaps(report, [], formats=["json"])
+    assert any("json" in e for e in report.adapter_errors)
+
+
 def test_forbidden_split_names_are_gone_from_python_adapters():
     from compliance.adapters import builtin_adapters
 

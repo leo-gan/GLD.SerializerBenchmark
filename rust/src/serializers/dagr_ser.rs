@@ -1,4 +1,4 @@
-//! Dagr path: schemas/v2/dagr/schema.py → `dagr build` → rust/dagr_gen (crate `benchmark_v2`).
+//! Dagr path: schemas/v2/dagr/schema.py → `dagr build` → rust/dagr_gen (crate `dagr_benchmark_v2`).
 //!
 //! The schema emits every suite type in four node layouts (Dagr `spec/16-choosing-a-node-layout.md`),
 //! one DataGraph each, so there are four rows:
@@ -27,7 +27,7 @@ use crate::data::{
     Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, Message, Strings, Telemetry,
 };
 use anyhow::{anyhow, Result};
-use benchmark_v2::dagr_runtime::{DagrBuilder, DagrError, PackedSink};
+use dagr_benchmark_v2::dagr_runtime::{DagrBuilder, DagrError, PackedSink};
 use std::marker::PhantomData;
 
 use super::{BenchSerializer, NativeKind};
@@ -38,6 +38,16 @@ fn err(e: DagrError) -> anyhow::Error {
 
 fn kind_err() -> anyhow::Error {
     anyhow!("dagr: mixed fixture kinds in one cell")
+}
+
+/// The columnar fixtures (`table`, `nested_table`, `signal`, …) have no Dagr schema;
+/// `supports` keeps them out, so reaching one is a harness error.
+fn unsupported_kind() -> anyhow::Error {
+    anyhow!("dagr: fixture kind not in the Dagr schema")
+}
+
+fn decode_unsupported(_: &[u8]) -> Result<Fixture, DagrError> {
+    Err(DagrError::InvalidData)
 }
 
 /// Extend a borrow of a `Prepared`'s own heap storage to `'static`.
@@ -80,9 +90,9 @@ macro_rules! direct_cell {
     ($m:ident: $msg:ident, $doc:ident, $tel:ident, $str:ident, $ev:ident) => {
         mod $m {
             use super::*;
-            use benchmark_v2::$doc::direct as dd;
-            use benchmark_v2::$ev::direct as ed;
-            use benchmark_v2::{$msg as msg_core, $str as str_core, $tel as tel_core};
+            use dagr_benchmark_v2::$doc::direct as dd;
+            use dagr_benchmark_v2::$ev::direct as ed;
+            use dagr_benchmark_v2::{$msg as msg_core, $str as str_core, $tel as tel_core};
 
             enum Values {
                 None,
@@ -169,6 +179,7 @@ macro_rules! direct_cell {
                             }
                             Values::Event(es)
                         }
+                        Some(_) => return Err(unsupported_kind()),
                     };
                     Ok(p)
                 }
@@ -214,10 +225,10 @@ macro_rules! arena_cell {
      $ev:ident($EA:ident, $EG:ident)) => {
         mod $m {
             use super::*;
-            use benchmark_v2::dagr_runtime::NodeStoreRef;
-            use benchmark_v2::{$doc as doc, $ev as ev, $msg as msg, $str as strs, $tel as tel};
+            use dagr_benchmark_v2::dagr_runtime::NodeStoreRef;
+            use dagr_benchmark_v2::{$doc as doc, $ev as ev, $msg as msg, $str as strs, $tel as tel};
             // The graph traits carry the `new_<node>` constructors.
-            use benchmark_v2::{$doc::$DG as _, $ev::$EG as _, $msg::$MG as _, $str::$SG as _, $tel::$TG as _};
+            use dagr_benchmark_v2::{$doc::$DG as _, $ev::$EG as _, $msg::$MG as _, $str::$SG as _, $tel::$TG as _};
 
             type MsgArena = msg::$MA<0>;
             type DocArena = doc::$DA<0>;
@@ -331,6 +342,7 @@ macro_rules! arena_cell {
                                 _ => Err(kind_err()),
                             }).collect::<Result<_>>()?)
                         }
+                        Some(_) => return Err(unsupported_kind()),
                     };
                     Ok(p)
                 }
@@ -397,7 +409,7 @@ arena_cell!(frozen_cell:
 // `sc` / `st` / `nd` normalize those to `Result<T>` / `Result<String>` / `Result<Option<Acc>>`.
 
 mod adapt {
-    use benchmark_v2::dagr_runtime::DagrError;
+    use dagr_benchmark_v2::dagr_runtime::DagrError;
     type R<T> = Result<T, DagrError>;
 
     pub mod packed {
@@ -439,14 +451,14 @@ macro_rules! node_arr_len {
 }
 
 node_arr_len!(
-    count: benchmark_v2::document_regular_graph_lazy::DocumentItemArrayAccessor<'_>,
-           benchmark_v2::event_regular_graph_lazy::EventAttrArrayAccessor<'_>,
-           benchmark_v2::document_frozen_graph_lazy::DocumentItemArrayAccessor<'_>,
-           benchmark_v2::event_frozen_graph_lazy::EventAttrArrayAccessor<'_>;
-    len: benchmark_v2::document_graph_lazy::DocumentItemPackedNodeArray<'_>,
-         benchmark_v2::event_graph_lazy::EventAttrPackedNodeArray<'_>,
-         benchmark_v2::document_frozen_packed_graph_lazy::DocumentItemPackedNodeArray<'_>,
-         benchmark_v2::event_frozen_packed_graph_lazy::EventAttrPackedNodeArray<'_>
+    count: dagr_benchmark_v2::document_regular_graph_lazy::DocumentItemArrayAccessor<'_>,
+           dagr_benchmark_v2::event_regular_graph_lazy::EventAttrArrayAccessor<'_>,
+           dagr_benchmark_v2::document_frozen_graph_lazy::DocumentItemArrayAccessor<'_>,
+           dagr_benchmark_v2::event_frozen_graph_lazy::EventAttrArrayAccessor<'_>;
+    len: dagr_benchmark_v2::document_graph_lazy::DocumentItemPackedNodeArray<'_>,
+         dagr_benchmark_v2::event_graph_lazy::EventAttrPackedNodeArray<'_>,
+         dagr_benchmark_v2::document_frozen_packed_graph_lazy::DocumentItemPackedNodeArray<'_>,
+         dagr_benchmark_v2::event_frozen_packed_graph_lazy::EventAttrPackedNodeArray<'_>
 );
 
 macro_rules! lazy_decoders {
@@ -454,7 +466,7 @@ macro_rules! lazy_decoders {
         mod $m {
             use super::adapt::$adapt::{nd, sc, st};
             use super::*;
-            use benchmark_v2::{$doc as doc_lazy, $ev as ev_lazy, $msg as msg_lazy, $str as str_lazy, $tel as tel_lazy};
+            use dagr_benchmark_v2::{$doc as doc_lazy, $ev as ev_lazy, $msg as msg_lazy, $str as str_lazy, $tel as tel_lazy};
 
             fn decode_message(data: &[u8]) -> Result<Fixture, DagrError> {
                 let m = msg_lazy::read_root(data)?;
@@ -551,6 +563,7 @@ macro_rules! lazy_decoders {
                     Fixture::Telemetry(_) => decode_telemetry,
                     Fixture::Strings(_) => decode_strings,
                     Fixture::Event(_) => decode_event,
+                    _ => decode_unsupported,
                 }
             }
         }
@@ -682,7 +695,7 @@ mod tests {
     fn arena_encode_matches_to_bytes() {
         for kind in ["message", "document", "telemetry", "strings", "event"] {
             let fxs: Vec<Fixture> =
-                (0..3).map(|i| make_one(kind, 42, i, 8, 32, 32, 4).unwrap()).collect();
+                (0..3).map(|i| make_one(kind, 42, i, &crate::data::TypeConfig::default()).unwrap()).collect();
             let mut b = DagrBuilder::with_capacity(16);
             let reg = regular_cell::Prepared::build(&fxs).unwrap();
             let frz = frozen_cell::Prepared::build(&fxs).unwrap();

@@ -3326,26 +3326,26 @@
       "section": "4",
       "section_title": "Objects",
       "section_url": "https://www.rfc-editor.org/rfc/rfc8259#section-4",
-      "paragraph": "An object is a pair of curly brackets surrounding zero or more name/value pairs.",
-      "requirement": "MUST",
+      "paragraph": "The names within an object SHOULD be unique. When they are not, the behavior is unpredictable across implementations.",
+      "requirement": "SHOULD",
       "input": "{\"a\":\"b\",\"a\":\"c\"}",
       "input_encoding": "utf-8",
-      "notes": "Vendored from nst/JSONTestSuite test_parsing/y_object_duplicated_key.json (MIT).",
+      "notes": "Vendored from nst/JSONTestSuite test_parsing/y_object_duplicated_key.json (MIT). JSONTestSuite marks this file y_ (must accept). This catalog scores it implementation-defined: the RFC says member names SHOULD be unique and behavior is unpredictable when they are not.",
       "id": "jts-8259-y_object_duplicated_key",
-      "expect": "accept"
+      "expect": "any"
     },
     {
       "title": "y object duplicated key and value",
       "section": "4",
       "section_title": "Objects",
       "section_url": "https://www.rfc-editor.org/rfc/rfc8259#section-4",
-      "paragraph": "An object is a pair of curly brackets surrounding zero or more name/value pairs.",
-      "requirement": "MUST",
+      "paragraph": "The names within an object SHOULD be unique. When they are not, the behavior is unpredictable across implementations.",
+      "requirement": "SHOULD",
       "input": "{\"a\":\"b\",\"a\":\"b\"}",
       "input_encoding": "utf-8",
-      "notes": "Vendored from nst/JSONTestSuite test_parsing/y_object_duplicated_key_and_value.json (MIT).",
+      "notes": "Vendored from nst/JSONTestSuite test_parsing/y_object_duplicated_key_and_value.json (MIT). JSONTestSuite marks this file y_ (must accept). This catalog scores it implementation-defined: the RFC says member names SHOULD be unique and behavior is unpredictable when they are not.",
       "id": "jts-8259-y_object_duplicated_key_and_value",
-      "expect": "accept"
+      "expect": "any"
     },
     {
       "title": "y object empty",
@@ -4491,10 +4491,10 @@
       "section_url": "https://www.rfc-editor.org/rfc/rfc8259#section-4",
       "paragraph": "The names within an object SHOULD be unique. When they are not, the behavior is unpredictable across implementations.",
       "requirement": "SHOULD",
-      "expect": "accept",
+      "expect": "any",
       "input": "{\"harbor\":1,\"harbor\":2}",
       "input_encoding": "utf-8",
-      "notes": "SHOULD, not MUST. Recording which value wins (first vs last) is useful; both accepting and taking one of the values is common."
+      "notes": "SHOULD, not MUST. Accepting either value, or rejecting the object, is conforming. The observed behavior is recorded and not scored."
     },
     {
       "id": "json-8259-surrogate-pair",

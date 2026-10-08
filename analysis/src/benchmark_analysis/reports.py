@@ -1334,8 +1334,10 @@ def generate_language_results_pages(
             "",
             "| Term | Meaning |",
             "|------|---------|",
-            "| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` "
-            "(CSV `TestDataName`; older text may say “fixture”) |",
+            "| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, `event`, "
+            "`table`, `table_project`, `nested_table`, or `signal` "
+            "(CSV `TestDataName`; older text may say “fixture”). "
+            "The last four are on the columnar run config. |",
             "| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer). "
             "On C# this is often the **string** path — see [Modes](../analysis/modes.md). |",
             "| **stream mode** | Stream-style API (write/read through a stream). "

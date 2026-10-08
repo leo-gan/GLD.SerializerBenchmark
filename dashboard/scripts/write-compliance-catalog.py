@@ -67,6 +67,8 @@ add("c", "custom-binary", [], "https://github.com/leo-gan/GLD.SerializerBenchmar
     "Suite length-prefixed V2 baseline; no public interchange spec.")
 add("c", "libyaml", ["yaml"], "https://github.com/yaml/libyaml",
     "libyaml: official C library for YAML 1.1 (the parser under PyYAML / Yams).")
+add("c", "ion-c", ["ion"], "https://github.com/amazon-ion/ion-c",
+    "ion-c: Ion team C implementation of the Amazon Ion data format (binary and text).")
 
 # --- Python ---
 add("python", "json", ["json"], "https://docs.python.org/3/library/json.html",
@@ -117,6 +119,16 @@ add("python", "plistlib", ["plist"], "https://docs.python.org/3/library/plistlib
     "stdlib plistlib: Apple property lists.")
 add("python", "py-ubjson", ["ubjson"], "https://github.com/Iotic-Labs/py-ubjson",
     "py-ubjson: Universal Binary JSON.")
+add("python", "arrow-ipc", ["arrow"], "https://arrow.apache.org/docs/python/ipc.html",
+    "pyarrow IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("python", "parquet", ["parquet"], "https://arrow.apache.org/docs/python/parquet.html",
+    "pyarrow Parquet writer and reader. Library default compression is Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("python", "parquet-uncompressed", ["parquet"], "https://arrow.apache.org/docs/python/parquet.html",
+    "Same pyarrow Parquet writer as parquet, with compression NONE. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("python", "orc", ["orc"], "https://arrow.apache.org/docs/python/orc.html",
+    "pyarrow ORC writer and reader. pyarrow 25 defaults to uncompressed ORC, so this row does not force Zlib. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("python", "orc-uncompressed", ["orc"], "https://arrow.apache.org/docs/python/orc.html",
+    "Same pyarrow ORC writer as orc, with compression set to uncompressed. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
 
 # --- JavaScript ---
 add("javascript", "JSON.stringify", ["json"], "https://tc39.es/ecma262/#sec-json.stringify",
@@ -139,6 +151,8 @@ add("javascript", "cbor-x", ["cbor"], "https://github.com/kriszyp/cbor-x",
     "cbor-x: CBOR encoder/decoder.")
 add("javascript", "bson", ["bson"], "https://www.mongodb.com/docs/drivers/node/current/data-formats/bson/",
     "Official MongoDB Node bson package.")
+add("javascript", "ion-js", ["ion"], "https://github.com/amazon-ion/ion-js",
+    "ion-js: Ion team JavaScript implementation of Amazon Ion.")
 add("javascript", "avsc", ["avro"], "https://github.com/mtth/avsc",
     "avsc: Apache Avro for JavaScript.")
 add("javascript", "protobufjs", ["protobuf"], "https://github.com/protobufjs/protobuf.js",
@@ -161,10 +175,18 @@ add("javascript", "sia", [], "https://github.com/TimeleapLabs/sia",
     "Sia: project-specific binary tags, no public MUST/MUST NOT spec.")
 add("javascript", "bser", [], "https://facebook.github.io/watchman/docs/bser.html",
     "Watchman BSER: Facebook Watchman binary protocol, not a general interchange spec.")
+add("javascript", "arrow-ipc", ["arrow"], "https://arrow.apache.org/docs/js/",
+    "Apache Arrow JavaScript IPC stream writer and reader, inside the bytes API. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("javascript", "parquet", ["parquet"], "https://github.com/hyparam/hyparquet-writer",
+    "hyparquet-writer Parquet writer. The omitted codec is the library default, Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("javascript", "parquet-uncompressed", ["parquet"], "https://github.com/hyparam/hyparquet-writer",
+    "Same hyparquet-writer path as parquet, with codec UNCOMPRESSED. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
     "Go stdlib encoding/json: RFC 7159 JSON.")
+add("go", "encoding/json/v2", ["json"], "https://pkg.go.dev/encoding/json/v2",
+    "Go 1.27 encoding/json/v2: stricter JSON defaults (invalid UTF-8 and duplicate names rejected).")
 add("go", "goccy/go-json", ["json"], "https://github.com/goccy/go-json",
     "goccy/go-json: fast encoding/json-compatible JSON library.")
 add("go", "jsoniter", ["json"], "https://github.com/json-iterator/go",
@@ -197,12 +219,22 @@ add("go", "linkedin/goavro", ["avro"], "https://github.com/linkedin/goavro",
     "LinkedIn goavro: Apache Avro binary codec.")
 add("go", "mongo-bson", ["bson"], "https://pkg.go.dev/go.mongodb.org/mongo-driver/bson",
     "Official MongoDB Go BSON package.")
+add("go", "ion-go", ["ion"], "https://github.com/amazon-ion/ion-go",
+    "ion-go: Ion team Go implementation of Amazon Ion.")
 add("go", "pelletier/go-toml", ["toml"], "https://github.com/pelletier/go-toml",
     "go-toml: TOML parser/encoder (TOML 1.0).")
 add("go", "encoding/gob", [], "https://pkg.go.dev/encoding/gob",
     "Go gob: Go-only binary stream, not a public interchange spec.")
 add("go", "kelindar/binary", [], "https://github.com/kelindar/binary",
     "kelindar/binary: Go-only compact packer.")
+add("go", "arrow-ipc", ["arrow"], "https://github.com/apache/arrow-go",
+    "arrow-go IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("go", "parquet", ["parquet"], "https://github.com/apache/arrow-go",
+    "arrow-go Parquet writer. This row sets Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("go", "parquet-uncompressed", ["parquet"], "https://github.com/apache/arrow-go",
+    "Same arrow-go Parquet writer as parquet, with uncompressed pages. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("go", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
+    "sbe-tool 1.40.2 generated Go codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 
 # --- Java ---
 add("java", "jackson", ["json"], "https://github.com/FasterXML/jackson-databind",
@@ -247,6 +279,18 @@ add("java", "hessian", [], "http://hessian.caucho.com/",
     "Caucho Hessian: RPC binary protocol, not in the Compliance catalog.")
 add("java", "protostuff", [], "https://github.com/protostuff/protostuff",
     "protostuff-runtime: schema-from-class binary; not the protobuf wire spec.")
+add("java", "arrow-ipc", ["arrow"], "https://arrow.apache.org/docs/java/",
+    "Apache Arrow Java IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("java", "parquet", ["parquet"], "https://parquet.apache.org/docs/file-format/",
+    "parquet-java writer. The library default is uncompressed, so this row sets Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("java", "parquet-uncompressed", ["parquet"], "https://parquet.apache.org/docs/file-format/",
+    "Same parquet-java writer as parquet, with compression UNCOMPRESSED. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("java", "orc", ["orc"], "https://orc.apache.org/specification/ORCv1/",
+    "orc-core writer. The library default is ZSTD, so this row keeps that default. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("java", "orc-uncompressed", ["orc"], "https://orc.apache.org/specification/ORCv1/",
+    "Same orc-core writer as orc, with compression NONE. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("java", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
+    "sbe-tool 1.40.2 generated Java codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 
 # --- Kotlin ---
 add("kotlin", "kotlinx-json", ["json"], "https://github.com/Kotlin/kotlinx.serialization",
@@ -301,6 +345,18 @@ add("kotlin", "fory", [], "https://fory.apache.org/",
     "Apache Fory: not a cited RFC/IDL in this catalog.")
 add("kotlin", "protostuff", [], "https://github.com/protostuff/protostuff",
     "protostuff-runtime, not protobuf wire.")
+add("kotlin", "arrow-ipc", ["arrow"], "https://arrow.apache.org/docs/java/",
+    "Apache Arrow Java IPC stream writer and reader, called from Kotlin. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("kotlin", "parquet", ["parquet"], "https://parquet.apache.org/docs/file-format/",
+    "parquet-java writer from Kotlin. The library default is uncompressed, so this row sets Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("kotlin", "parquet-uncompressed", ["parquet"], "https://parquet.apache.org/docs/file-format/",
+    "Same parquet-java writer as parquet, with compression UNCOMPRESSED. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("kotlin", "orc", ["orc"], "https://orc.apache.org/specification/ORCv1/",
+    "orc-core writer from Kotlin. The library default is ZSTD, so this row keeps that default. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("kotlin", "orc-uncompressed", ["orc"], "https://orc.apache.org/specification/ORCv1/",
+    "Same orc-core writer as orc, with compression NONE. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("kotlin", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
+    "sbe-tool 1.40.2 generated Java codec called from Kotlin. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 
 # --- C# ---
 add("csharp", "System.Text.Json", ["json"], "https://learn.microsoft.com/dotnet/api/system.text.json",
@@ -309,8 +365,6 @@ add("csharp", "Json.Net", ["json"], "https://www.newtonsoft.com/json/help/html/I
     "Newtonsoft Json.NET: JSON framework.")
 add("csharp", "Json.Net (Helper)", ["json"], "https://www.newtonsoft.com/json/help/html/Introduction.htm",
     "Same Json.NET library, helper call path.")
-add("csharp", "Jil", ["json"], "https://github.com/kevin-montrose/Jil",
-    "Jil: fast JSON serializer for .NET.")
 add("csharp", "SpanJson", ["json"], "https://github.com/Tornhoof/SpanJson",
     "SpanJson: .NET JSON serializer.")
 add("csharp", "Utf8Json", ["json"], "https://github.com/neuecc/Utf8Json",
@@ -333,6 +387,8 @@ add("csharp", "SharpYaml", ["yaml"], "https://github.com/xoofx/SharpYaml",
     "SharpYaml: YAML parser/emitter for .NET.")
 add("csharp", "MessagePack-CSharp", ["msgpack"], "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
     "Official MessagePack for C#.")
+add("csharp", "Amazon.IonDotnet", ["ion"], "https://github.com/amazon-ion/ion-dotnet",
+    "Amazon.IonDotnet: Ion team .NET reader/writer for Amazon Ion (NuGet Amazon.IonDotnet).")
 add("csharp", "Google.Protobuf", ["protobuf"], "https://protobuf.dev/",
     "Official Google.Protobuf C# runtime.")
 add("csharp", "ProtoBuf", ["protobuf"], "https://github.com/protobuf-net/protobuf-net",
@@ -373,6 +429,20 @@ add("csharp", "MemoryPack", [], "https://github.com/Cysharp/MemoryPack",
     "MemoryPack: .NET binary; no public RFC/IDL in this catalog.")
 add("csharp", "Nerdbank.MessagePack", ["msgpack"], "https://github.com/AArnott/Nerdbank.MessagePack",
     "Nerdbank.MessagePack: MessagePack serializer using reflection-based POCO shapes with stable numeric keys in this suite.")
+add("csharp", "ShapeShift.Cbor", ["cbor"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift CBOR serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Json", ["json"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift JSON serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.MsgPack", ["msgpack"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift MessagePack serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Protobuf", [], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift protobuf-style serializer; its encoding is not registered as standard Protocol Buffers wire format.")
+add("csharp", "ShapeShift.Taml", [], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift TAML serializer; TAML is not a public interchange specification in this catalog.")
+add("csharp", "ShapeShift.Toml", ["toml"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift TOML serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Yaml", ["yaml"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift YAML serializer using source-generated PolyType contracts.")
 add("csharp", "Migrant", [], "https://github.com/antmicro/Migrant",
     "Migrant: .NET binary (suite row is a JSON envelope).")
 add("csharp", "NetSerializer", [], "https://github.com/tomba/netserializer",
@@ -383,6 +453,12 @@ add("csharp", "SharpSerializer", [], "https://github.com/polenter/SharpSerialize
     "SharpSerializer: .NET binary/XML.")
 add("csharp", "ZeroFormatter", [], "https://github.com/neuecc/ZeroFormatter",
     "ZeroFormatter: .NET binary.")
+add("csharp", "arrow-ipc", ["arrow"], "https://github.com/apache/arrow-dotnet",
+    "Apache.Arrow IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("csharp", "parquet", ["parquet"], "https://github.com/aloneguid/parquet-dotnet",
+    "Parquet.Net writer. The library default is Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("csharp", "parquet-uncompressed", ["parquet"], "https://github.com/aloneguid/parquet-dotnet",
+    "Same Parquet.Net writer as parquet, with CompressionMethod.None. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 
 # --- Rust ---
 add("rust", "serde_json", ["json"], "https://docs.rs/serde_json",
@@ -405,6 +481,8 @@ add("rust", "serde_avro_fast", ["avro"], "https://docs.rs/serde_avro_fast",
     "serde_avro_fast: Apache Avro via Serde.")
 add("rust", "bson", ["bson"], "https://docs.rs/bson",
     "Official MongoDB Rust BSON crate.")
+add("rust", "ion-rs", ["ion"], "https://github.com/amazon-ion/ion-rust",
+    "ion-rs: Ion team Rust implementation of Amazon Ion (serde via the experimental-serde feature).")
 add("rust", "flexbuffers", ["flatbuffers"], "https://docs.rs/flexbuffers",
     "flexbuffers crate: FlatBuffers FlexBuffers.")
 add("rust", "bincode", [], "https://docs.rs/bincode",
@@ -419,6 +497,14 @@ add("rust", "speedy", [], "https://docs.rs/speedy",
     "speedy: Rust binary framework.")
 add("rust", "rkyv", [], "https://rkyv.org/",
     "rkyv: Rust zero-copy archive, not a public RFC/IDL here.")
+add("rust", "arrow-ipc", ["arrow"], "https://docs.rs/arrow",
+    "arrow-rs IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("rust", "parquet", ["parquet"], "https://docs.rs/parquet",
+    "arrow-rs Parquet writer with SNAPPY. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("rust", "parquet-uncompressed", ["parquet"], "https://docs.rs/parquet",
+    "Same arrow-rs Parquet writer as parquet, with uncompressed pages. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("rust", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
+    "sbe-tool 1.40.2 generated Rust codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 
 # --- C++ ---
 add("cpp", "nlohmann_json", ["json"], "https://json.nlohmann.me/",
@@ -481,6 +567,18 @@ add("cpp", "zpp_bits", [], "https://github.com/eyalz800/zpp_bits",
     "zpp_bits: C++ compile-time binary.")
 add("cpp", "boost_serialization", [], "https://www.boost.org/doc/libs/release/libs/serialization/",
     "Boost.Serialization: C++-native archives.")
+add("cpp", "arrow-ipc", ["arrow"], "https://arrow.apache.org/docs/cpp/ipc.html",
+    "Arrow C++ IPC stream writer and reader. This row times the Arrow IPC stream, not the Arrow file format. Optional on ARROW_ROOT. Validity cases live in compliance/data/arrow/. This library's own reader decodes them.")
+add("cpp", "parquet", ["parquet"], "https://arrow.apache.org/docs/cpp/parquet.html",
+    "Arrow C++ Parquet writer. WriterProperties on 25.0.1 default to uncompressed, so this row sets SNAPPY. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("cpp", "parquet-uncompressed", ["parquet"], "https://arrow.apache.org/docs/cpp/parquet.html",
+    "Same Arrow C++ Parquet writer as parquet, with compression UNCOMPRESSED. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("cpp", "orc", ["orc"], "https://arrow.apache.org/docs/cpp/orc.html",
+    "Arrow C++ ORC adapter. WriteOptions default to uncompressed, which is not the Apache ORC Zlib default, so this row sets GZIP (stored as ORC ZLIB). Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("cpp", "orc-uncompressed", ["orc"], "https://arrow.apache.org/docs/cpp/orc.html",
+    "Same Arrow C++ ORC adapter as orc, with compression UNCOMPRESSED. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("cpp", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
+    "sbe-tool 1.40.2 generated C++ flyweight. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 
 # --- Swift ---
 add("swift", "Foundation.JSONEncoder", ["json"], "https://developer.apple.com/documentation/foundation/jsonencoder",
@@ -592,13 +690,25 @@ add("mojo", "mojo-flatbuffers", ["flatbuffers"], "https://github.com/leo-gan/gld
 add("mojo", "mojo-avro", ["avro"], "https://github.com/leo-gan/gld-avro",
     "gld-avro: Avro datum encode/decode.")
 add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
-    "DataBooth/mojo-toml: TOML.")
+    "DataBooth/mojo-toml: TOML. Not leo-gan/gld-toml.")
+add("mojo", "gld-toml", ["toml"], "https://github.com/leo-gan/gld-toml",
+    "gld-toml: TOML 1.1 TomlDoc encode/decode. Vendored as gldtoml so it does not collide with DataBooth's toml package.")
 add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-messagepack",
     "gld-messagepack: MessagePack wire.")
 add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",
-    "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1).")
+    "gld-bson: BSON documents via decode_document (Mojo 1.1).")
+add("mojo", "mojo-ion", ["ion"], "https://github.com/leo-gan/gld-ion",
+    "gld-ion 0.2.0: Amazon Ion text and binary decode.")
+add("mojo", "mojo-smile", ["smile"], "https://github.com/leo-gan/gld-smile",
+    "gld-smile 0.2.0: Smile decode_bytes.")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
+add("mojo", "arrow-ipc", ["arrow"], "https://github.com/leo-gan/gld-arrow",
+    "gld-arrow 0.2.0: Arrow IPC stream encode_ipc_stream / decode_ipc_stream.")
+add("mojo", "parquet", ["parquet"], "https://github.com/leo-gan/gld-parquet",
+    "gld-parquet 0.2.0: Parquet file encode_table / decode_table with Snappy.")
+add("mojo", "parquet-uncompressed", ["parquet"], "https://github.com/leo-gan/gld-parquet",
+    "gld-parquet 0.2.0: same writer with page compression off.")
 
 # --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):

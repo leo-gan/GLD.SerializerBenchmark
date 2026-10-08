@@ -140,6 +140,21 @@ public final class Cells {
               for (Object o : insts) list.add((Event) o);
               yield list;
             }
+            case "table", "table_project" -> {
+              List<TableRow> list = new ArrayList<>(n);
+              for (Object o : insts) list.add((TableRow) o);
+              yield list;
+            }
+            case "nested_table" -> {
+              List<NestedRow> list = new ArrayList<>(n);
+              for (Object o : insts) list.add((NestedRow) o);
+              yield list;
+            }
+            case "signal" -> {
+              List<Signal> list = new ArrayList<>(n);
+              for (Object o : insts) list.add((Signal) o);
+              yield list;
+            }
             default -> insts;
           };
     }

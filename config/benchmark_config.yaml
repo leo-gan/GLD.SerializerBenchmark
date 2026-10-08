@@ -98,6 +98,22 @@ test_data:
       category: envelope
       description: "Event envelope with attributes"
       supports_circular: false
+    - name: table
+      category: columnar_flat
+      description: "Wide flat row (16 float64, 4 int64, 2 trailing strings). Columnar run config only."
+      supports_circular: false
+    - name: table_project
+      category: columnar_project
+      description: "Same row as table; deserialize returns f_float_0 only. Columnar run config only."
+      supports_circular: false
+    - name: nested_table
+      category: columnar_nested
+      description: "Struct plus list of structs. Columnar run config only."
+      supports_circular: false
+    - name: signal
+      category: aligned_record
+      description: "Fixed fields, then variable strings, then a repeating group. Columnar run config only."
+      supports_circular: false
 
 # -----------------------------------------------------------------------------
 # Dual-mode I/O contract (every language implements both when applicable)
@@ -332,7 +348,7 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 40 serializers registered (Program.cs); all run on all V2 data types.
+    # 47 serializers registered (Program.cs); ShapeShift.Taml skips the strings fixture.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
     # Added: System.Text.Json, Apache.Avro. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
@@ -369,6 +385,11 @@ languages:
         category: binary
         package: cbor2
         rationale: "IETF CBOR with cycle support option"
+      - name: amazon-ion
+        category: binary
+        package: amazon-ion
+        rationale: "Official Amazon Ion Python library (binary dump/load)"
+        optimal_api: "simpleion.dumps/loads; stream dump/load on BytesIO"
       - name: protobuf
         category: schema
         package: protobuf
@@ -497,6 +518,11 @@ languages:
         crate: benchmark_v2
         rationale: "Dagr data-graph format (generated crate from schemas/v2/dagr via `dagr build`; frozen+packed nodes)"
         optimal_api: "direct builder write_into a reused DagrBuilder / lazy read_root → domain"
+      - name: ion-rs
+        category: binary
+        crate: ion-rs
+        rationale: "Official Amazon Ion Rust library (experimental serde)"
+        optimal_api: "serde::to_binary / from_ion (allocating; stream adapted)"
 
   c:
     display_name: C
@@ -613,6 +639,11 @@ languages:
         library: zcbor
         rationale: "Nordic zcbor structured CBOR encode/decode"
         optimal_api: "zcbor_map_start_encode / zcbor_map_start_decode"
+      - name: ion-c
+        category: binary
+        library: ion-c
+        rationale: "Official Amazon Ion C library (binary datagram)"
+        optimal_api: "ion_writer_open_buffer / ion_reader_open_buffer; native FILE* via ion_stream_open_file_out"
 
   javascript:
     display_name: "JavaScript (Node.js)"
@@ -667,6 +698,11 @@ languages:
         package: bson
         rationale: "MongoDB BSON"
         optimal_api: "BSON.serialize / deserialize"
+      - name: ion-js
+        category: binary
+        package: ion-js
+        rationale: "Official Amazon Ion JavaScript library"
+        optimal_api: "dumpBinary / load; toDomain outside the timer"
       - name: bser
         category: binary
         package: bser
@@ -756,13 +792,18 @@ languages:
     log_dir: logs/go
     time_unit: nanoseconds
     docs_dir: docs/go
-    min_go_version: "1.23"
+    min_go_version: "1.27"
     serializers:
       - name: encoding/json
         category: json
         package: stdlib
-        rationale: "Go standard library JSON baseline"
+        rationale: "Go standard library JSON v1 API (v1 semantics on the Go 1.27 engine)"
         optimal_api: "json.Marshal / Unmarshal; Encoder/Decoder for streams"
+      - name: encoding/json/v2
+        category: json
+        package: stdlib
+        rationale: "Go 1.27 encoding/json/v2 defaults (rejects invalid UTF-8 and duplicate names)"
+        optimal_api: "json/v2.Marshal / Unmarshal; MarshalWrite / UnmarshalRead"
       - name: sonic
         category: json
         package: github.com/bytedance/sonic
@@ -845,6 +886,11 @@ languages:
         package: go.mongodb.org/mongo-driver/bson
         rationale: "Official MongoDB BSON codec"
         optimal_api: "Encoder+UseJSONStructTags / Decoder; stream length-prefixed doc; arrays as {items}"
+      - name: ion-go
+        category: binary
+        package: github.com/amazon-ion/ion-go
+        rationale: "Official Amazon Ion Go library"
+        optimal_api: "MarshalBinary / Unmarshal; stream NewBinaryEncoder + Finish"
       - name: protobuf
         category: schema
         package: google.golang.org/protobuf
@@ -1373,8 +1419,13 @@ languages:
       - name: mojo-toml
         category: text
         package: DataBooth/mojo-toml
-        rationale: "Pure-Mojo TOML 1.0 parser and writer"
+        rationale: "Pure-Mojo TOML 1.0 parser and writer (DataBooth). Not gld-toml."
         optimal_api: "to_toml(Dict) / parse(text)"
+      - name: gld-toml
+        category: text
+        package: leo-gan/gld-toml
+        rationale: "Pure-Mojo TOML 1.1 (leo-gan/gld-toml). Distinct from DataBooth/mojo-toml; vendored as gldtoml so the toml package name does not collide."
+        optimal_api: "encode_toml / decode_toml on a TomlDoc (vendored as gldtoml)"
       - name: gld-yaml
         category: text
         package: https://github.com/leo-gan/gld-yaml
@@ -1408,8 +1459,18 @@ languages:
       - name: mojo-bson
         category: binary
         package: leo-gan/gld-bson
-        rationale: "Pure-Mojo BSON 1.0/1.1 via WireWriter / WireReader (last release that builds on Mojo 1.1)"
+        rationale: "Pure-Mojo BSON via WireWriter / WireReader"
         optimal_api: "bson WireWriter / WireReader on suite types (vendored as bson_*)"
+      - name: mojo-ion
+        category: binary
+        package: leo-gan/gld-ion
+        rationale: "Pure-Mojo Amazon Ion 1.0 binary via document encode / decode"
+        optimal_api: "ion.encode / ion.decode on an IonDoc built from the suite value (vendored as ion_*)"
+      - name: mojo-smile
+        category: binary
+        package: leo-gan/gld-smile
+        rationale: "Pure-Mojo Smile 1.0 via document encode / decode"
+        optimal_api: "smile.encode_doc / smile.decode_bytes on a SmileDoc built from the suite value (vendored as smile_*)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

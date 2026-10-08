@@ -12,7 +12,9 @@ import {
   getRankSort,
   exportScatterPng,
   exportBarPng,
+  resizeCharts,
 } from './charts.js';
+import { paretoOptimalGroups } from './pareto.js';
 import {
   formatSig,
   formatIntGrouped,
@@ -27,12 +29,30 @@ import {
   chooseLatencyUnit,
   chooseOpsUnit,
   serializerLabelFromGroup,
+  serializerSelectLabel,
 } from './format.js';
 import {
   loadSerializerSources,
   serializerNameHtml,
   serializerSourceUrl,
 } from './serializer-sources.js';
+import {
+  SUITE_TYPE_IDS,
+  baseTypeId,
+  instanceCount,
+  compoundFixtureKey,
+  dataSetForFixture,
+  discoverFixtureOptions,
+  pickPreferredFixture,
+  resolveStandardDataSet,
+} from './fixture-types.js';
+import {
+  applyDimensionLabels,
+  benchmarkStandardMenu,
+  matchesStandard,
+} from './dimension-labels.js';
+import { formatLabel, scoredFormatIds } from './compliance-groups.js';
+import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -51,8 +71,6 @@ const GROUP_META_KEYS = new Set([
   'compounded',
   'compound_parts',
 ]);
-const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
-
 /** Named sample-filter policies (must match analysis FILTER_POLICY_IDS). */
 const FILTER_POLICY_FALLBACK = {
   all: {
@@ -93,25 +111,6 @@ function fixtureKey(g) {
     return `${base}@n=${Number(n)}`;
   }
   return base;
-}
-
-function baseTypeId(key) {
-  if (!key) return '';
-  const i = String(key).indexOf('@n=');
-  return i >= 0 ? String(key).slice(0, i) : String(key);
-}
-
-function pickPreferredFixture(options) {
-  if (!options || !options.length) return '';
-  const preferred = [];
-  for (const id of SUITE_TYPE_IDS) {
-    preferred.push(`${id}@n=1`, id, `${id}@n=100`);
-  }
-  for (const p of preferred) {
-    if (options.includes(p)) return p;
-  }
-  const cleaned = options.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
-  return cleaned[0] || options[0] || '';
 }
 
 const LANGUAGE_CATALOG = [
@@ -186,9 +185,13 @@ const METRIC_PRESETS = {
 /** Open metric accordion groups (name -> bool). */
 const metricAccordionOpen = {};
 
+const expandedParents = new Set();
+
 let state = {
   currentLanguage: 'csharp',
+  currentDataSet: 'suite',
   currentTestData: '',
+  currentStandard: 'all',
   currentMode: '',
   displayMetric: 'ops', // charts / ranking toolbar
   /** Detailed Analytics only: 'ops' | 'time' (independent of displayMetric). */
@@ -272,8 +275,26 @@ function syncLanguageSelects() {
   });
 }
 
+function syncDatasetSelect() {
+  const el = document.getElementById('dataset-value');
+  if (!el) return;
+  el.textContent = state.currentDataSet === 'columnar' ? 'Columnar' : 'Suite';
+}
+
+function refreshCrossLangForSharedFilters() {
+  if (!state.crossLangLoaded) return;
+  state.xlTestData = state.currentTestData;
+  if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
+  else pruneCrossLangSelection();
+  refreshCrossLangAddSerializerOptions();
+  renderCrossLangSelection();
+  updateXlBaselineSelect();
+  renderCompareMatrix();
+  updateCompareStatusLine();
+}
+
 function syncFixtureModeSelects() {
-  ['data-select', 'same-data-select'].forEach((id) => {
+  ['data-select'].forEach((id) => {
     const el = document.getElementById(id);
     if (el && [...el.options].some((o) => o.value === state.currentTestData)) {
       el.value = state.currentTestData;
@@ -296,6 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCharts();
   applyUiFromState();
   await loadSerializerSources();
+  await loadDimensionLabels();
   await loadHistoryList();
   await probeLogsAvailability();
   await loadLanguageData(state.currentLanguage);
@@ -347,7 +369,9 @@ function loadSettings() {
 function saveSettings() {
   const payload = {
     currentLanguage: state.currentLanguage,
+    currentDataSet: state.currentDataSet,
     currentTestData: state.currentTestData,
+    currentStandard: state.currentStandard,
     currentMode: state.currentMode,
     displayMetric: state.displayMetric,
     rosterMetric: state.rosterMetric,
@@ -380,7 +404,16 @@ function applySavedSettings(saved) {
   if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
     state.currentLanguage = saved.currentLanguage;
   }
+  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar')) {
+    state.currentDataSet = saved.currentDataSet;
+  }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
+  if (!saved.currentDataSet && state.currentTestData) {
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+  }
+  if (typeof saved.currentStandard === 'string' && saved.currentStandard) {
+    state.currentStandard = saved.currentStandard;
+  }
   if (typeof saved.currentMode === 'string') {
     state.currentMode = normalizeMode(saved.currentMode) || saved.currentMode;
   }
@@ -438,7 +471,14 @@ function applySavedSettings(saved) {
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
+  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar')) {
+    state.currentDataSet = p.get('dataset');
+  }
   if (p.has('data')) state.currentTestData = p.get('data');
+  if (!p.has('dataset') && state.currentTestData) {
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+  }
+  if (p.has('standard')) state.currentStandard = p.get('standard') || 'all';
   if (p.has('mode')) state.currentMode = normalizeMode(p.get('mode')) || p.get('mode');
   if (p.get('metric') === 'ops' || p.get('metric') === 'time') state.displayMetric = p.get('metric');
   if (p.get('scope') === 'cross' || p.get('scope') === 'same') state.compareScope = p.get('scope');
@@ -458,7 +498,11 @@ function syncUrlFromState() {
   try {
     const p = new URLSearchParams();
     p.set('lang', state.currentLanguage);
+    if (state.currentDataSet) p.set('dataset', state.currentDataSet);
     if (state.currentTestData) p.set('data', state.currentTestData);
+    if (state.currentStandard && state.currentStandard !== 'all') {
+      p.set('standard', state.currentStandard);
+    }
     const mode = normalizeMode(state.currentMode) || state.currentMode;
     if (mode) p.set('mode', mode);
     p.set('metric', state.displayMetric);
@@ -590,6 +634,52 @@ function updateCompareStatusLine() {
   if (metricsEl) metricsEl.textContent = String(m);
 }
 
+const DASH_VIEW_NAV = {
+  overview: 'nav-dash-link',
+  compare: 'nav-compare-link',
+  experiments: 'nav-experiments-link',
+  compliance: 'nav-compliance-link',
+};
+
+let dashViewName = '';
+
+/** Show exactly one tab. Overview and Compare share the filter bar. */
+function applyDashView() {
+  const hash = window.location.hash || '';
+  const view = dashboardViewFromHash(hash);
+  const runOpen = view === 'overview' && dashboardRunPanelOpen(hash);
+  const entered = view !== dashViewName;
+  dashViewName = view;
+  for (const name of Object.keys(DASH_VIEW_NAV)) {
+    document.body.classList.toggle(`dash-view-${name}`, name === view);
+  }
+  document.body.classList.toggle('dash-run-open', runOpen);
+  const navId = DASH_VIEW_NAV[view];
+  document.querySelectorAll('.section-nav li').forEach((li) => {
+    li.classList.toggle('active', !!li.querySelector(`#${navId}`));
+  });
+  document.getElementById('run-picker-toggle')?.setAttribute('aria-expanded', runOpen ? 'true' : 'false');
+  if (runOpen) {
+    requestAnimationFrame(() => {
+      document.getElementById('history-custom')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else if (view === 'overview' && hash === '#detailed-analytics') {
+    requestAnimationFrame(() => {
+      document.getElementById('detailed-analytics')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else if (entered) {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  if (view === 'overview') {
+    requestAnimationFrame(() => resizeCharts());
+  }
+}
+
+function closeRunPanel() {
+  if (!dashboardRunPanelOpen(window.location.hash)) return;
+  window.location.hash = '#overview';
+}
+
 function setupEventListeners() {
   document.getElementById('filter-policy-select')?.addEventListener('change', (e) => {
     setFilterPolicy(e.target.value);
@@ -623,12 +713,24 @@ function setupEventListeners() {
 
   const onDataChange = (e) => {
     state.currentTestData = e.target.value;
+    state.currentDataSet = dataSetForFixture(state.currentTestData);
+    syncDatasetSelect();
     syncFixtureModeSelects();
     saveSettings();
     filterAndRefresh();
+    refreshCrossLangForSharedFilters();
   };
   document.getElementById('data-select')?.addEventListener('change', onDataChange);
-  document.getElementById('same-data-select')?.addEventListener('change', onDataChange);
+
+  document.getElementById('standard-select')?.addEventListener('change', (e) => {
+    state.currentStandard = e.target.value || 'all';
+    applyFilterPolicyToAllGroups({ refreshSelectors: true });
+    syncDatasetSelect();
+    syncFixtureModeSelects();
+    saveSettings();
+    filterAndRefresh();
+    refreshCrossLangForSharedFilters();
+  });
 
   const onModeChange = (e) => {
     state.currentMode = e.target.value;
@@ -832,19 +934,6 @@ function setupEventListeners() {
     setMetricsPresetActive('custom');
   });
 
-  // Cross-lang filters
-  document.getElementById('xl-data-select')?.addEventListener('change', (e) => {
-    state.xlTestData = e.target.value;
-    if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
-    else pruneCrossLangSelection();
-    refreshCrossLangAddSerializerOptions();
-    renderCrossLangSelection();
-    updateXlBaselineSelect();
-    renderCompareMatrix();
-    saveSettings();
-    updateCompareStatusLine();
-  });
-
   document.getElementById('xl-mode-select')?.addEventListener('change', (e) => {
     state.xlMode = e.target.value;
     if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
@@ -913,7 +1002,7 @@ function setupEventListeners() {
   document.getElementById('btn-copy-roster-md')?.addEventListener('click', () => copyRosterMarkdown());
   document.getElementById('btn-copy-compare-md')?.addEventListener('click', () => copyCompareMarkdown());
 
-  // Section-nav smooth scroll; close mobile drawer on any nav click
+  // Section tabs switch views. Experiments and Compliance set their own hashes.
   const closeMobileNav = () => {
     document.getElementById('main-nav')?.classList.remove('open');
     document.getElementById('nav-toggle')?.setAttribute('aria-expanded', 'false');
@@ -921,15 +1010,24 @@ function setupEventListeners() {
 
   document.querySelectorAll('.section-nav a').forEach((link) => {
     link.addEventListener('click', (e) => {
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('#')) {
-        e.preventDefault();
-        document.querySelectorAll('.section-nav li').forEach((li) => li.classList.remove('active'));
-        link.parentElement.classList.add('active');
-        document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        closeMobileNav();
+      const href = link.getAttribute('href') || '';
+      if (!href.startsWith('#')) return;
+      closeMobileNav();
+      if (href.startsWith('#experiments') || href.startsWith('#compliance')) {
+        queueMicrotask(() => applyDashView());
+        return;
       }
+      e.preventDefault();
+      if (window.location.hash !== href) window.location.hash = href;
+      else applyDashView();
     });
+  });
+
+  document.getElementById('run-picker-toggle')?.addEventListener('click', () => {
+    window.location.hash = dashboardRunPanelOpen(window.location.hash) ? '#overview' : '#history-custom';
+  });
+  document.getElementById('run-picker-close')?.addEventListener('click', () => {
+    closeRunPanel();
   });
 
   document.querySelectorAll('.site-links a').forEach((link) => {
@@ -1404,6 +1502,7 @@ async function loadHistoricalRunIntoDashboard(runId) {
     state.currentRunErrors = '';
     processStatsData({ groups });
     updateRunMeta();
+    closeRunPanel();
     showNotification(`Successfully loaded run ${runId}`, 'success');
   } catch (error) {
     console.error(error);
@@ -1419,6 +1518,8 @@ const GROUP_IDENTITY_KEYS = new Set([
   'mode',
   'language',
   'serializer_version',
+  'standard',
+  'data_set',
   'StreamMode',
   'variants',
 ]);
@@ -1450,10 +1551,13 @@ function expandVariantGroups(slimGroups, catalog) {
       'mode',
       'language',
       'serializer_version',
+      'standard',
+      'data_set',
     ]) {
       if (k in g) identity[k] = g[k];
     }
     if (g.StreamMode != null) identity.StreamMode = g.StreamMode;
+    applyDimensionLabels(identity, dimensionLabels);
 
     for (const [pid, metrics] of Object.entries(variants)) {
       if (!metrics || typeof metrics !== 'object') continue;
@@ -1468,6 +1572,21 @@ function expandVariantGroups(slimGroups, catalog) {
         filter,
         test_data: fixtureKey({ ...identity, ...metrics }),
       };
+      applyDimensionLabels(row, dimensionLabels);
+      row.io_parent = g.io_parent || '';
+      row.optional = (Array.isArray(g.optional) ? g.optional : []).map((child) => {
+        const childMetrics = (child.variants && child.variants[pid]) || {};
+        return {
+          level: child.level,
+          mode: child.mode,
+          StreamMode: child.StreamMode,
+          serializer: g.serializer,
+          language: identity.language,
+          test_data: row.test_data,
+          io_child: true,
+          ...childMetrics,
+        };
+      });
       if (!byPolicy[pid]) byPolicy[pid] = [];
       byPolicy[pid].push(row);
     }
@@ -1560,24 +1679,43 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
   state.allGroups = groups;
 
   if (refreshSelectors) {
-    const discovered = discoverFixtureOptions(state.allGroups);
-    const testDataOptions = discovered.all;
+    populateStandardSelect();
+    const resolved = resolveStandardDataSet({
+      groups: state.allGroups,
+      standard: state.currentStandard,
+      testData: state.currentTestData,
+    });
+    if (resolved.keepType) {
+      state.currentDataSet = dataSetForFixture(state.currentTestData) || state.currentDataSet || 'suite';
+      const dataSel = document.getElementById('data-select');
+      if (!dataSel || dataSel.options.length === 0) {
+        const languageMenu = resolveStandardDataSet({
+          groups: state.allGroups,
+          standard: 'all',
+          testData: state.currentTestData,
+        });
+        if (!languageMenu.keepType) {
+          populateFixtureSelect(languageMenu.keys, {
+            groupByDataSet: languageMenu.sets.length > 1,
+            previous: state.currentTestData,
+          });
+        }
+      }
+    } else {
+      state.currentDataSet = resolved.dataSet;
+      state.currentTestData = resolved.testData;
+      populateFixtureSelect(resolved.keys, {
+        groupByDataSet: resolved.sets.length > 1,
+        previous: state.currentTestData,
+      });
+    }
     const modeOptions = [
       ...new Set(state.allGroups.map((g) => normalizeMode(g.mode)).filter(Boolean)),
     ];
 
-    populateFixtureSelect(testDataOptions);
-    populateFixtureSelect(testDataOptions, {
-      selectId: 'same-data-select',
-      previous: state.currentTestData,
-    });
+    syncDatasetSelect();
     populateSelect('mode-select', modeOptions, modeDisplayLabel);
     populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
-
-    if (!testDataOptions.includes(state.currentTestData)) {
-      state.currentTestData =
-        pickPreferredFixture(discovered.natural) || testDataOptions[0] || '';
-    }
     const wantMode = normalizeMode(state.currentMode) || state.currentMode;
     if (modeOptions.includes(wantMode)) {
       state.currentMode = wantMode;
@@ -1738,6 +1876,42 @@ function populateSelect(id, options, labelFn) {
  * @param {string[]} options
  * @param {{ selectId?: string, previous?: string }} [cfg]
  */
+let dimensionLabels = null;
+
+async function loadDimensionLabels() {
+  try {
+    const response = await fetch('data/dimension-labels.json');
+    if (!response.ok) return;
+    dimensionLabels = await response.json();
+  } catch (e) {
+    console.warn('Could not load dimension labels:', e);
+  }
+}
+
+function populateStandardSelect() {
+  const sel = document.getElementById('standard-select');
+  if (!sel) return;
+  const items = benchmarkStandardMenu({
+    groups: state.allGroups,
+    labels: dimensionLabels,
+    language: state.currentLanguage,
+    allStandardIds: scoredFormatIds(),
+    labelOf: (id) => (id === 'custom' ? 'Custom' : formatLabel(id)),
+  });
+  const selectable = items.filter((item) => !item.disabled).map((item) => item.id);
+  const prev = state.currentStandard || 'all';
+  sel.innerHTML = '';
+  for (const item of items) {
+    const opt = document.createElement('option');
+    opt.value = item.id;
+    opt.textContent = item.label;
+    opt.disabled = !!item.disabled;
+    sel.appendChild(opt);
+  }
+  state.currentStandard = selectable.includes(prev) ? prev : 'all';
+  sel.value = state.currentStandard;
+}
+
 function populateFixtureSelect(options, cfg = {}) {
   const selectId = cfg.selectId || 'data-select';
   const sel = document.getElementById(selectId);
@@ -1745,36 +1919,50 @@ function populateFixtureSelect(options, cfg = {}) {
   const prev = cfg.previous != null ? cfg.previous : sel.value || state.currentTestData;
   sel.innerHTML = '';
 
-  const natural = options.filter((o) => parseFixtureSelection(o).kind === 'natural');
-  const batchCompound = options.filter((o) => parseFixtureSelection(o).kind === 'batch_compound');
-  const allTypes = options.filter((o) => parseFixtureSelection(o).kind === 'all_n');
-  const allAll = options.filter((o) => parseFixtureSelection(o).kind === 'all_all');
-
-  const addOpt = (o) => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    opt.textContent = fixtureOptionLabel(o);
-    sel.appendChild(opt);
+  const appendFixtureOptions = (parent, keys) => {
+    const natural = keys.filter((o) => parseFixtureSelection(o).kind === 'natural');
+    const batchCompound = keys.filter((o) => parseFixtureSelection(o).kind === 'batch_compound');
+    const allTypes = keys.filter((o) => parseFixtureSelection(o).kind === 'all_n');
+    const allAll = keys.filter((o) => parseFixtureSelection(o).kind === 'all_all');
+    const addOpt = (o) => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = fixtureOptionLabel(o);
+      parent.appendChild(opt);
+    };
+    const addSep = (label) => {
+      const sep = document.createElement('option');
+      sep.disabled = true;
+      sep.textContent = label;
+      parent.appendChild(sep);
+    };
+    natural.forEach(addOpt);
+    if (batchCompound.length) {
+      addSep('── compounded batch ──');
+      batchCompound.forEach(addOpt);
+    }
+    if (allTypes.length) {
+      addSep('── compounded data types ──');
+      allTypes.forEach(addOpt);
+    }
+    if (allAll.length) {
+      addSep('── compounded all ──');
+      allAll.forEach(addOpt);
+    }
   };
-  const addSep = (label) => {
-    const sep = document.createElement('option');
-    sep.disabled = true;
-    sep.textContent = label;
-    sel.appendChild(sep);
-  };
 
-  natural.forEach(addOpt);
-  if (batchCompound.length) {
-    addSep('── compounded batch ──');
-    batchCompound.forEach(addOpt);
-  }
-  if (allTypes.length) {
-    addSep('── compounded data types ──');
-    allTypes.forEach(addOpt);
-  }
-  if (allAll.length) {
-    addSep('── compounded all ──');
-    allAll.forEach(addOpt);
+  if (cfg.groupByDataSet) {
+    const addGroup = (label, keys) => {
+      if (!keys.length) return;
+      const group = document.createElement('optgroup');
+      group.label = label;
+      appendFixtureOptions(group, keys);
+      sel.appendChild(group);
+    };
+    addGroup('Suite', options.filter((key) => dataSetForFixture(key) === 'suite'));
+    addGroup('Columnar', options.filter((key) => dataSetForFixture(key) === 'columnar'));
+  } else {
+    appendFixtureOptions(sel, options);
   }
 
   if ([...sel.options].some((o) => o.value === prev)) {
@@ -1793,17 +1981,6 @@ function populateFixtureSelect(options, cfg = {}) {
  *   `runs` is summed; non-numeric: first non-empty (e.g. serializer_version).
  * - `total_median_ns` falls back to `avg_time_total_ns` when missing.
  */
-
-/** Instance count from group (column or @n= suffix). */
-function instanceCount(g) {
-  let n = g?.data_type_instance_count;
-  if (n != null && n !== '') {
-    const num = Number(n);
-    if (Number.isFinite(num) && num > 0) return num;
-  }
-  const m = String(g?.test_data ?? '').match(/@n=(\d+)/i);
-  return m ? Number(m[1]) : null;
-}
 
 /**
  * Data-type selection kinds:
@@ -1838,12 +2015,6 @@ function parseCompoundFixture(key) {
   return null;
 }
 
-function compoundFixtureKey(base, nA, nB) {
-  const a = Math.min(nA, nB);
-  const b = Math.max(nA, nB);
-  return `${base}@n=${a}+${b}`;
-}
-
 function isSyntheticFixture(key) {
   const k = parseFixtureSelection(key).kind;
   return k === 'batch_compound' || k === 'all_n' || k === 'all_all';
@@ -1874,6 +2045,8 @@ function averageGroupsForSerializer(serializer, entries, meta) {
     }
   }
   if (version) row.serializer_version = version;
+  if (entries[0]?.standard) row.standard = entries[0].standard;
+  if (entries[0]?.data_set) row.data_set = entries[0].data_set;
 
   const streamModes = [
     ...new Set(
@@ -1928,7 +2101,6 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
   const want = new Set([nA, nB]);
   const matched = (allGroups || []).filter((g) => {
     if (baseTypeId(g.test_data) !== base) return false;
-    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     const n = instanceCount(g);
     return n != null && want.has(n);
   });
@@ -1986,7 +2158,6 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
 function buildAllTypesAtNGroups(allGroups, n, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     return instanceCount(g) === n;
   });
 
@@ -2043,7 +2214,7 @@ function buildAllTypesAtNGroups(allGroups, n, mode) {
 function buildAllAllGroups(allGroups, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    return normalizeMode(g.mode) === normalizeMode(mode);
+    return true;
   });
 
   const bySer = new Map();
@@ -2091,74 +2262,31 @@ function buildAllAllGroups(allGroups, mode) {
   return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
 }
 
-/** Natural + synthetic data-type keys for the Test Data dropdown. */
-function discoverFixtureOptions(allGroups) {
-  const natural = [
-    ...new Set(
-      (allGroups || [])
-        .map((g) => g.test_data)
-        .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
-    ),
-  ].sort();
-
-  const byBase = new Map();
-  const nsGlobal = new Set();
-  for (const g of allGroups || []) {
-    const base = baseTypeId(g.test_data);
-    if (!SUITE_TYPE_IDS.includes(base)) continue;
-    const n = instanceCount(g);
-    if (n == null) continue;
-    if (!byBase.has(base)) byBase.set(base, new Set());
-    byBase.get(base).add(n);
-    nsGlobal.add(n);
-  }
-
-  // Per-type batch compounds: message@n=1+100, …
-  const batchCompound = [];
-  for (const [base, ns] of byBase) {
-    if (ns.has(1) && ns.has(100)) {
-      batchCompound.push(compoundFixtureKey(base, 1, 100));
-    }
-  }
-  batchCompound.sort();
-
-  // Cross-type at fixed n
-  const allTypes = [];
-  if (nsGlobal.has(1)) allTypes.push('all@1');
-  if (nsGlobal.has(100)) allTypes.push('all@100');
-
-  // Everything
-  const allAll = natural.length ? ['all@all'] : [];
-
-  return {
-    natural,
-    batchCompound,
-    allTypes,
-    allAll,
-    all: [...natural, ...batchCompound, ...allTypes, ...allAll],
-  };
-}
-
 function fixtureOptionLabel(key) {
   const p = parseFixtureSelection(key);
   if (p.kind === 'batch_compound') {
     return `${p.base}@n=${p.nA}+${p.nB} (compounded batch)`;
   }
   if (p.kind === 'all_n') {
-    return `all@${p.n} (all data types, n=${p.n})`;
+    return `all@${p.n} (five row data types, n=${p.n})`;
   }
   if (p.kind === 'all_all') {
-    return 'all@all (all types × all n)';
+    return 'all@all (five row data types × all n)';
   }
   return key;
+}
+
+function groupsMatchingStandard(groups) {
+  return (groups || []).filter((g) => matchesStandard(g, state.currentStandard));
 }
 
 function resolveFixtureGroups() {
   const sel = parseFixtureSelection(state.currentTestData);
   const mode = state.currentMode;
+  const allGroups = groupsMatchingStandard(state.allGroups);
   if (sel.kind === 'batch_compound') {
     return buildCompoundedFixtureGroups(
-      state.allGroups,
+      allGroups,
       sel.base,
       sel.nA,
       sel.nB,
@@ -2166,16 +2294,12 @@ function resolveFixtureGroups() {
     );
   }
   if (sel.kind === 'all_n') {
-    return buildAllTypesAtNGroups(state.allGroups, sel.n, mode);
+    return buildAllTypesAtNGroups(allGroups, sel.n, mode);
   }
   if (sel.kind === 'all_all') {
-    return buildAllAllGroups(state.allGroups, mode);
+    return buildAllAllGroups(allGroups, mode);
   }
-  return state.allGroups.filter(
-    (g) =>
-      g.test_data === state.currentTestData &&
-      normalizeMode(g.mode) === normalizeMode(mode)
-  );
+  return allGroups.filter((g) => g.test_data === state.currentTestData);
 }
 
 function filterAndRefresh() {
@@ -2226,10 +2350,13 @@ function filterAndRefresh() {
 }
 
 function setViewMetric(metric) {
-  state.displayMetric = metric;
-  document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
-  document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
+  state.displayMetric = metric === 'time' ? 'time' : 'ops';
+  document.getElementById('btn-ops-sec')?.classList.toggle('active', state.displayMetric === 'ops');
+  document.getElementById('btn-time-ns')?.classList.toggle('active', state.displayMetric === 'time');
   updateRankSortPrimaryLabel();
+  calculateParetoFrontier();
+  updateKPIs();
+  renderTable();
   saveSettings();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
@@ -2383,28 +2510,11 @@ function formatRosterRelativeCell(row, key, higherIsBetter, scales, baselineGrou
   return formatRelativeCell(v, baseVal, higherIsBetter, scales, key, 'base');
 }
 
-function isParetoDominated(g, groups) {
-  const gOps = g.avg_ops_per_sec;
-  const gSize = g.median_size_bytes;
-  if (gOps == null || gSize == null) return true;
-  return groups.some((other) => {
-    if (other === g) return false;
-    const oOps = other.avg_ops_per_sec;
-    const oSize = other.median_size_bytes;
-    if (oOps == null || oSize == null) return false;
-    const betterOrEqualOps = oOps >= gOps;
-    const betterOrEqualSize = oSize <= gSize;
-    const strictlyBetter = oOps > gOps || oSize < gSize;
-    return betterOrEqualOps && betterOrEqualSize && strictlyBetter;
-  });
-}
-
-function paretoOptimalGroups(groups) {
-  return groups.filter((g) => !isParetoDominated(g, groups));
-}
-
 function calculateParetoFrontier() {
-  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map((g) => g.serializer);
+  state.paretoSerializerNames = paretoOptimalGroups(
+    state.filteredGroups,
+    state.displayMetric
+  ).map((g) => g.serializer);
 }
 
 // ---------- Cross-language ----------
@@ -2585,11 +2695,8 @@ function initCrossLangControls() {
   const dataTypes = discovered.all;
   const modes = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
 
-  // Same grouped options as top toolbar Test Data (natural + compounds)
-  populateFixtureSelect(dataTypes, {
-    selectId: 'xl-data-select',
-    previous: state.xlTestData,
-  });
+  // Compare uses the Overview data type. Keep xlTestData aligned for any leftover reader.
+  state.xlTestData = state.currentTestData;
 
   const modeSel = document.getElementById('xl-mode-select');
   if (modeSel) {
@@ -2602,24 +2709,14 @@ function initCrossLangControls() {
     });
   }
 
-  if (!dataTypes.includes(state.xlTestData)) {
-    state.xlTestData =
-      pickPreferredFixture(discovered.natural) || dataTypes[0] || '';
+  if (!state.currentTestData) {
+    state.currentTestData = pickPreferredFixture(discovered.natural) || dataTypes[0] || '';
   }
+  state.xlTestData = state.currentTestData;
   if (!modes.includes(state.xlMode)) {
     state.xlMode = modes.includes('bytes') ? 'bytes' : modes[0] || '';
   }
-  const xd = document.getElementById('xl-data-select');
   const xm = document.getElementById('xl-mode-select');
-  if (xd && [...xd.options].some((o) => o.value === state.xlTestData)) {
-    xd.value = state.xlTestData;
-  } else if (xd && xd.options.length) {
-    const first = [...xd.options].find((o) => !o.disabled && o.value);
-    if (first) {
-      xd.value = first.value;
-      state.xlTestData = first.value;
-    }
-  }
   if (xm) xm.value = state.xlMode;
 
   const langSel = document.getElementById('xl-add-lang');
@@ -2640,14 +2737,12 @@ function initCrossLangControls() {
  * (supports natural, batch compound, all@1/all@100, all@all).
  */
 function filterGroupsForCrossLang(groups) {
-  const modeNorm = state.xlMode;
-  const modeGroups = (groups || []).filter(
-    (g) => normalizeMode(g.mode) === modeNorm
-  );
+  const modeNorm = 'published';
+  const modeGroups = groupsMatchingStandard(groups || []);
   // Normalize mode field so builders can match with exact equality
   const normalized = modeGroups.map((g) => ({ ...g, mode: modeNorm }));
 
-  const sel = parseFixtureSelection(state.xlTestData);
+  const sel = parseFixtureSelection(state.currentTestData);
   if (sel.kind === 'batch_compound') {
     return buildCompoundedFixtureGroups(
       normalized,
@@ -2663,7 +2758,7 @@ function filterGroupsForCrossLang(groups) {
   if (sel.kind === 'all_all') {
     return buildAllAllGroups(normalized, modeNorm);
   }
-  return normalized.filter((g) => g.test_data === state.xlTestData);
+  return normalized.filter((g) => g.test_data === state.currentTestData);
 }
 
 function findCrossLangGroup(lang, serializer) {
@@ -2675,7 +2770,7 @@ function applyCrossLangParetoSelection() {
   const selected = [];
   for (const lang of LANGUAGE_CATALOG) {
     const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
-    const pareto = paretoOptimalGroups(groups)
+    const pareto = paretoOptimalGroups(groups, 'ops')
       .sort((a, b) => b.avg_ops_per_sec - a.avg_ops_per_sec)
       .slice(0, 2);
     pareto.forEach((g) => selected.push({ lang: lang.id, serializer: g.serializer }));
@@ -2713,7 +2808,8 @@ function refreshCrossLangAddSerializerOptions() {
       const g = groups.find((x) => x.serializer === n);
       const opt = document.createElement('option');
       opt.value = n;
-      opt.textContent = g ? serializerLabelFromGroup(g) : n;
+      opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', names);
+      opt.title = g ? serializerLabelFromGroup(g) : n;
       serSel.appendChild(opt);
     });
 }
@@ -2864,7 +2960,8 @@ function populateSameSerAddSelect() {
     const g = groupForSerializer(n);
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = g ? serializerLabelFromGroup(g) : n;
+    opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', state.serializerNames);
+    opt.title = g ? serializerLabelFromGroup(g) : n;
     sel.appendChild(opt);
   });
 }
@@ -2935,8 +3032,10 @@ function updateXlBaselineSelect() {
     const opt = document.createElement('option');
     opt.value = `${x.lang}|${x.serializer}`;
     const g = findCrossLangGroup(x.lang, x.serializer);
-    const serLabel = g ? serializerLabelFromGroup(g) : x.serializer;
+    const peers = state.xlSelected.filter((y) => y.lang === x.lang).map((y) => y.serializer);
+    const serLabel = serializerSelectLabel(x.serializer, g?.serializer_version || '', peers);
     opt.textContent = `${languageLabel(x.lang)} / ${serLabel}`;
+    opt.title = g ? `${languageLabel(x.lang)} / ${serializerLabelFromGroup(g)}` : opt.textContent;
     sel.appendChild(opt);
   });
   if (
@@ -3012,7 +3111,8 @@ function updateKPIs() {
   if (paretoDesc) {
     const pl =
       state.filterPolicies[state.filterPolicy]?.label || state.filterPolicy || 'default';
-    paretoDesc.textContent = `Optimal trade-offs · samples: ${pl}`;
+    const axis = state.displayMetric === 'time' ? 'latency / size' : 'ops/s / size';
+    paretoDesc.textContent = `Undominated ${axis} · samples: ${pl}`;
   }
 }
 
@@ -3040,10 +3140,12 @@ function populateBaselineSelect() {
       const opt = document.createElement('option');
       opt.value = name;
       const g = groupForSerializer(name);
-      const label = g ? serializerLabelFromGroup(g) : name;
+      const ver = g?.serializer_version || '';
+      const label = serializerSelectLabel(name, ver, state.serializerNames);
       opt.textContent = label + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
+      const full = g ? serializerLabelFromGroup(g) : name;
       const href = serializerSourceUrl(state.currentLanguage, name);
-      if (href) opt.title = href;
+      opt.title = href ? `${full} · ${href}` : full;
       sel.appendChild(opt);
     });
     if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
@@ -3284,7 +3386,7 @@ function renderTable() {
   const help = document.getElementById('detailed-analytics-help');
   if (help) {
     const scope = parseFixtureSelection(state.currentTestData);
-    let scopeNote = ' Full roster for the current language, data type, and mode.';
+    let scopeNote = ' Full roster for the current language, data type, and standard.';
     if (scope.kind === 'batch_compound') {
       scopeNote =
         ` <strong>Compounded batch</strong>: mean of <code>${escapeHtml(scope.base)}@n=${scope.nA}</code> and <code>${escapeHtml(scope.base)}@n=${scope.nB}</code>.`;
@@ -3333,10 +3435,32 @@ function renderTable() {
     const displayName = serializerLabelFromGroup(r);
     const lang = r.language || state.currentLanguage || '';
     let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
+    if (r.standard) {
+      nameHtml += ` <span class="badge badge-slate">${escapeHtml(r.standard)}</span>`;
+    }
+    if (r.io_parent === 'average') {
+      nameHtml += ' <span class="badge badge-slate">avg</span>';
+    }
     if (isBaseline) {
       nameHtml += ' <span class="badge badge-cyan">Baseline</span>';
     }
     tdName.innerHTML = nameHtml;
+    const children = Array.isArray(r.optional) ? r.optional : [];
+    const expandKey = `${lang}|${r.serializer}|${r.test_data}`;
+    if (children.length) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tab-btn chart-tool-btn';
+      btn.textContent = expandedParents.has(expandKey) ? 'Hide' : 'I/O';
+      btn.title = 'Show the I/O levels under this average or raw-byte parent';
+      btn.addEventListener('click', () => {
+        if (expandedParents.has(expandKey)) expandedParents.delete(expandKey);
+        else expandedParents.add(expandKey);
+        renderTable();
+      });
+      tdName.appendChild(document.createTextNode(' '));
+      tdName.appendChild(btn);
+    }
     tdName.title = r.serializer_version
       ? `${r.serializer} @ ${r.serializer_version}`
       : r.serializer;
@@ -3372,8 +3496,43 @@ function renderTable() {
     });
 
     tbody.appendChild(tr);
+    if (children.length && expandedParents.has(expandKey)) {
+      children.forEach((child) => tbody.appendChild(renderChildRow(child, metricKeys, scales, baselineGroup)));
+    }
   });
   updateSortIndicators();
+}
+
+function renderChildRow(child, metricKeys, scales, baselineGroup) {
+  const tr = document.createElement('tr');
+  tr.className = 'roster-child-row';
+  const tdName = document.createElement('td');
+  tdName.className = 'str';
+  const level = child.level || child.mode || 'level';
+  const honesty = child.StreamMode ? ` (${child.StreamMode})` : '';
+  tdName.textContent = `${level}${honesty}`;
+  tr.appendChild(tdName);
+  const tdHonesty = document.createElement('td');
+  tdHonesty.className = 'str roster-col-honesty';
+  tr.appendChild(tdHonesty);
+  metricKeys.forEach(({ key, higherIsBetter }) => {
+    const td = document.createElement('td');
+    if (key.startsWith('ops_')) td.classList.add('roster-col-ops');
+    if (key.startsWith('total_')) td.classList.add('roster-col-latency');
+    const enriched = withOpsDerivedStats(child);
+    const v = enriched[key];
+    if (v === null || v === undefined) {
+      td.textContent = '—';
+      td.classList.add('num', 'sm-missing');
+      tr.appendChild(td);
+      return;
+    }
+    const cell = formatRosterRelativeCell(enriched, key, higherIsBetter, scales, baselineGroup, false);
+    td.textContent = cell.text;
+    td.className = (td.className + ' ' + cell.className).trim();
+    tr.appendChild(td);
+  });
+  return tr;
 }
 
 function renderCompareMatrix() {
@@ -3459,6 +3618,9 @@ function renderCompareMatrix() {
     const serName = col.group?.serializer || (col.key.includes('|') ? col.key.split('|').slice(1).join('|') : col.key);
     const serLang = col.group?.language || (col.key.includes('|') ? col.key.split('|')[0] : state.currentLanguage);
     const src = serializerSourceUrl(serLang, serName);
+    // The node actually parented by <th>. insertBefore must use this, not the
+    // inner name span, or Cross-language headers throw and the matrix stays empty.
+    let nameHost = nameEl;
     if (src) {
       const a = document.createElement('a');
       a.className = 'serializer-link';
@@ -3466,10 +3628,9 @@ function renderCompareMatrix() {
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.appendChild(nameEl);
-      th.appendChild(a);
-    } else {
-      th.appendChild(nameEl);
+      nameHost = a;
     }
+    th.appendChild(nameHost);
     if (ver) {
       const verEl = document.createElement('span');
       verEl.className = 'cmp-th-ver';
@@ -3480,7 +3641,7 @@ function renderCompareMatrix() {
       const subEl = document.createElement('span');
       subEl.className = 'cmp-th-lang';
       subEl.textContent = sub;
-      th.insertBefore(subEl, nameEl);
+      th.insertBefore(subEl, nameHost);
     }
     if (col.isBaseline) {
       const baseEl = document.createElement('span');
@@ -3625,10 +3786,10 @@ function copyRosterMarkdown() {
         return `Scope: compounded batch ${state.currentTestData} · mode ${state.currentMode}`;
       }
       if (s.kind === 'all_n') {
-        return `Scope: all data types @ n=${s.n} · mode ${state.currentMode}`;
+        return `Scope: five row data types @ n=${s.n} · mode ${state.currentMode}`;
       }
       if (s.kind === 'all_all') {
-        return `Scope: all@all (all types × all n) · mode ${state.currentMode}`;
+        return `Scope: all@all (five row data types × all n) · mode ${state.currentMode}`;
       }
       return `Scope: data type ${state.currentTestData} · mode ${state.currentMode}`;
     })(),
@@ -3708,6 +3869,7 @@ function handleFileUpload(file) {
         status.style.color = 'var(--color-green)';
         status.textContent = `Successfully loaded ${file.name}`;
       }
+      closeRunPanel();
       showNotification(`Loaded ${file.name} successfully.`, 'success');
     } catch (err) {
       if (status) {
@@ -3881,3 +4043,6 @@ function showNotification(msg, type) {
     setTimeout(() => notif.remove(), 300);
   }, 2800);
 }
+
+window.addEventListener('hashchange', applyDashView);
+applyDashView();

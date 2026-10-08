@@ -71,7 +71,7 @@ The README is explicit: the format is **not** version-resilient. That is the Spe
 
 ## What Bond Fast writes
 
-[Microsoft Bond](https://github.com/microsoft/bond) (open-sourced 2015, after internal use at Microsoft) is a schema-driven stack in the Protocol Buffers family. **Fast binary** is the simpler of Bond’s two binary protocols: little-endian values, no variable-length integers. Compact binary adds those. This runner uses Fast.
+[Microsoft Bond](https://github.com/microsoft/bond) (open-sourced 2015, after internal use at Microsoft) is its own schema-driven standard. It is not Protocol Buffers. **Fast binary** is the simpler of Bond’s two binary protocols: little-endian values, no variable-length integers. Compact binary adds those. This runner uses Fast.
 
 Every field on the wire is:
 

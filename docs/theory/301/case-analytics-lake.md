@@ -98,7 +98,7 @@ In other words, row events and columnar tables are two hops of one pipeline. The
 
 ## What would change the answer
 
-- Tiny data that fits in OLTP replicas can make a warehouse optional.
+- Tiny data that fits in OLTP replicas can make a warehouse optional. A one-row columnar file also pays header and alignment cost. Columnar layout pays off when the row count is large.
 - Streaming SQL directly on the bus with acceptable cost still needs a plan for compacting history.
 
 ---

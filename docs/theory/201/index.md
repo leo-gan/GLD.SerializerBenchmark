@@ -21,17 +21,18 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
+**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
 
 ---
 
 ## Suggested order (MVP path)
 
-The table below gives a suggested order for a first pass through Serialization 201. Each row states what you should be able to explain after reading that article.
+The table below gives a suggested order for a first pass through Serialization 201. Each row states what you should be able to explain after reading that article. The optional row sits after memory layout. It is not part of the first pass.
 
 | Step | Article | You should be able to… |
 |------|---------|------------------------|
 | 1 | [Memory layout](memory-layout.md) | Explain why dumping raw process memory is not a portable interchange format |
+| optional | [Bit width is not bus width](bit-width-and-bus-width.md) | Explain the difference between how many bits a value needs, the byte a program indexes, and the wide chunk of bytes hardware moves at once |
 | 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parsing structure, converting numbers, allocating, copying). Do not say only that “JSON is slow.” |
 | 3 | [Self-describing vs schema](self-describing-vs-schema-dependent.md) | Say whether field identity lives in the payload itself or in a shared contract outside the message |
 | 4 | [Schema evolution](schema-evolution.md) | Plan additive changes that keep older readers and writers working during a rollout |
@@ -48,6 +49,7 @@ The table below gives a suggested order for a first pass through Serialization 2
 These articles explain how values become bytes, and where the time and memory go when you encode or decode them.
 
 - [Memory layout](memory-layout.md)
+- [Bit width is not bus width](bit-width-and-bus-width.md) (optional). Read this when a value is narrower than a byte, or when someone suggests matching the serializer to a wide bus.
 - [Encode/decode cost](encode-decode-cost.md)
 
 ### Contracts & change
@@ -59,7 +61,7 @@ These articles explain where the meaning of a field lives, and how systems stay 
 
 ### Families in practice
 
-These articles compare common binary families and specialized layout designs you will meet in real systems.
+These articles compare common binary mechanisms and specialized layout designs you will meet in real systems. MessagePack, CBOR, Protocol Buffers, and FlatBuffers are **standards**. A family groups them. The spec for each name is the [compliance catalog](../../compliance/). These articles stay about mechanisms.
 
 - [Dynamic vs IDL binary](dynamic-vs-idl-binary.md)
 - [Zero-copy](zero-copy.md)

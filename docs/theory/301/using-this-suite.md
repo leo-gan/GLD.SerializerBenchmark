@@ -4,17 +4,21 @@
 
 Benchmark tables are easy to misuse. A single chart often becomes a policy decision. Someone says “library A is 3× faster than library B.” Nobody asks whether A and B implement the **same job**. Nobody checks the **same payload shape**. Nobody checks the **same language**. Nobody checks the **same timing rules**. Organizations then switch codecs. They observe little improvement. They conclude that “benchmarks lie.” The real issue was **misaligned comparison**.
 
-This multi-language suite is built to support **fair, local** comparisons. It is not built to crown a global winner across paradigms or languages. In this section you will learn how to read the numbers as a first-year student should. Read them as answers to carefully stated questions.
+This multi-language suite is built to support **fair, local** comparisons. It answers a question inside one language, one standard, one data set, and one data type. In this section you will learn how to read the numbers as a first-year student should. Read them as answers to carefully stated questions.
 
 ---
 
 ## Short answer
 
-Treat every published number as the answer to a **narrow question**. For a given **language**, **fixture** (`TestDataName`), and **string versus stream mode**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
+Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
 
-Prefer comparisons **within one paradigm family**. Examples include JSON text, schemaless binary, schema-driven, and language-native. A **paradigm family** groups formats that solve roughly the same product job. See [Serialization categories](../../analysis/serialization_categories.md).
+The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. Data set is Suite or Columnar. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only `f_float_0`.
 
-Do not promote cross-language or cross-paradigm “champions” into architecture policy without re-stating the workload. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are not the whole argument. See the rest of Serialization 301.
+The Dashboard sets the data set from the standard. Where a language registers them on both sets, JSON, Avro, Protocol Buffers, and FlatBuffers still need a matching data type. Arrow IPC, Parquet, and ORC are Columnar only. SBE (Simple Binary Encoding) is Columnar only as a data set. It is schema-driven. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet.
+
+A **family** is a teaching cut. It groups formats that solve roughly the same product job: JSON text, schemaless binary, schema-driven, language-native, or columnar. See [Serialization categories](../../analysis/serialization_categories.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
+
+A cross-language or cross-standard chart needs the workload stated again before it becomes architecture policy. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are one part of the argument. See the rest of Serialization 301.
 
 ---
 
@@ -23,7 +27,8 @@ Do not promote cross-language or cross-paradigm “champions” into architectur
 | Constraint | Why it breaks naive rankings |
 |------------|------------------------------|
 | **Language and runtime** | Different virtual machines, garbage collectors, and standard libraries; “Protobuf in Python” is not “Protobuf in C.” |
-| **Paradigm family** | JSON and schema-driven binary solve different product problems; speed alone is not interchangeability. |
+| **Standard** | JSON and YAML are both readable text. They are different contracts. Protocol Buffers and Avro are both schema-driven. They are different contracts. |
+| **Data set and data type** | Suite `message` and Columnar `table` are different jobs, including inside one standard that has both. |
 | **Payload shape** | Dense structs versus deep graphs change cost centers (see [Encode/decode cost](../201/encode-decode-cost.md)). |
 | **Implementation** | Several libraries can share a format label and differ by an order of magnitude. |
 | **What is timed** | Benchmark runner paths measure serialize and deserialize of prepared fixtures—not network round-trip time, disk I/O, or your production validation layer. |
@@ -31,7 +36,7 @@ Do not promote cross-language or cross-paradigm “champions” into architectur
 
 **Warmup** means early iterations that may be slower while the runtime heats up. That includes **just-in-time (JIT) compilation**—the runtime optimizes frequently used code while the program runs—and caches. Analysis often drops those so the table reflects steady state. It does not reflect cold start.
 
-This matters because a mixed chart can look like a tournament. The honest use is a same-language, same-family shortlist.
+This matters because a mixed chart can look like a tournament. The honest use is a same-language, same-standard shortlist.
 
 ---
 
@@ -40,17 +45,19 @@ This matters because a mixed chart can look like a tournament. The honest use is
 Use this checklist **before** quoting a Dashboard number:
 
 1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
-2. **Same paradigm?** Prefer [Serialization categories](../../analysis/serialization_categories.md) families. Cross family only when the product decision is “which family.” Then treat speed as one axis among many.
-3. **Same fixture?** `message` versus `telemetry` (and other type identifiers) are different jobs.
-4. **Same mode?** String versus stream must match. Also match any stream-mode caveats on the language Overview.
-5. **Which metric?** Mean encode, mean decode, size, operations per second, or tails. Pick the one your reliability target (*service-level objective*) cares about. Do not swap them mid-argument.
+2. **Same standard?** This is the Dashboard **Standard** control. Cross-standard only when the product question is which contract. Then speed is one axis among others. The family is the teaching cut that led you to the standard. See [Serialization categories](../../analysis/serialization_categories.md).
+3. **Same data set?** Suite or Columnar. The Dashboard sets this from the standard. When a standard has both, read the label and then check the data type.
+4. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
+5. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
 6. **Still missing?** Compression on the wire, authentication, schema registry behavior, and multi-hop delivery of one message to many consumers (*fan-out*) sit outside the core tables. Design a separate experiment for those.
+
+Bytes versus stream is a caveat on languages that still publish a stream row. Keep that row off the parent-row chart. It is a language Overview note, and it is a separate axis from the four filters above.
 
 ```text
   Question: “Is X better than Y for us?”
         │
         ▼
-  Fix language + paradigm + fixture + mode + metric
+  Fix language + standard + data set + data type + metric
         │
         ▼
   Read the Dashboard for that slice only
@@ -92,7 +99,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 | Resource | Use it for |
 |----------|------------|
-| [Serialization categories](../../analysis/serialization_categories.md) | Paradigm families and the within-paradigm rule |
+| [Serialization categories](../../analysis/serialization_categories.md) | Families as orientation, then the named standard |
 | Language **Overview** | Registered names, categories, fidelity caveats (inventory source of truth) |
 | [Dashboard](../../dashboard/) | Published timings and sizes (filter by language) |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
@@ -102,7 +109,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 | Dashboard (top-level **Dashboard** tab) | Interactive slices of the same analysis story |
 
 **Grouping key for fair peers (conceptually):**  
-`(Language, paradigm, TestDataName, StringOrStream)` — then compare `SerializerName` rows inside that cell.
+`(Language, Standard, Data set, Data type)` — then compare `SerializerName` rows inside that cell.
 
 **Illustrative only:** prose in theory pages must not invent winners. When you need a number, open the **Dashboard** for the language you will actually run.
 
@@ -120,8 +127,8 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 ### Procedure
 
-1. Apply the checklist in **Decision frame**. Check language, then paradigm, then fixture, then mode, then metric.
-2. Pull only the matching rows from the Dashboard. Discard cross-family and cross-language ranks for the policy claim.
+1. Apply the checklist in **Decision frame**. Check language, then standard, then data set, then data type, then metric.
+2. Pull only the matching rows from the Dashboard. Leave cross-standard and cross-language ranks out of the policy claim.
 3. Record which metric column you will use. Examples include encode versus decode versus size versus operations per second.
 4. List product constraints the suite does **not** measure. Examples include trust, registry, and network RTT.
 5. Either decide from that slice or design an out-of-suite experiment for the missing constraints.
@@ -137,18 +144,18 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 | Metric / signal | Role |
 |-----------------|------|
-| **Comparison validity** (same language, paradigm, fixture, mode) | **Primary gate.** Binary pass/fail before any number. |
+| **Comparison validity** (same language, standard, data set, data type) | **Primary gate.** Binary pass/fail before any number. |
 | Chosen reliability-target (SLO) metric (for example decode median or size) | The one number allowed in the argument |
 | `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on the Dashboard |
 | `median_size_bytes` | Density and bandwidth axis |
-| `mean_fidelity` | Eligibility filter: non-faithful rows are out |
+| `mean_fidelity` | Fixture round trip (write, then read). Not specification compliance. Non-faithful rows are out. |
 | `serializer_version` | Reproducibility of the claim |
 | `runs`, warmup, outliers removed | Trust in the statistic |
 | Dashboard or CSV **filter state** | Document what you hid |
 
-**Conclusion style:** “Under Python, JSON family, message fixture, and bytes mode, A beats B on deserialize median; size is similar; fidelity is 1.0.”
+**Conclusion style:** “Under Python, standard JSON, Suite, `message` at n=1, A beats B on deserialize median; size is similar; fidelity is 1.0.”
 
-**Not decision metrics:** mixed-paradigm leaderboards; cross-language “champions.”
+**Outside the claim:** a chart that mixes standards, and a cross-language champion.
 
 ---
 
@@ -165,7 +172,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 ## Common mistakes
 
-- Screenshotting one latency distribution into an architecture decision record without stating language, fixture, and paradigm.
+- Screenshotting one latency distribution into an architecture decision record without stating language, standard, and data type.
 - Averaging ranks across languages “to be fair.”
 - Changing fixture generation parameters and comparing to old published snapshots without regenerating both sides.
 - Using language-native serializers’ speed as an argument for **network** interchange.
@@ -175,7 +182,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 ## Key takeaways
 
 - Suite numbers answer **narrow, local** questions. They do not answer “what format should the industry use.”
-- Fix **language, paradigm, fixture, mode, and metric** before comparing serializers.
+- Fix **language, standard, data set, data type, and metric** before comparing serializers.
 - Implementation quality and payload shape often dominate format brand.
 - Analysis policies are part of the claim. Know warmup and outlier rules.
 - Use Dashboard numbers as evidence inside a larger 301 decision about trust, contracts, and workload.

@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **40 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **50 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,8 +8,8 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **40 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Nerdbank.MessagePack, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
-- **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
+- **50 serializers** registered in `Program.cs` (was 47, plus `arrow-ipc`, `parquet`, `parquet-uncompressed`). Also Json.NET, protobuf-net, LightProto, Bond, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Amazon.IonDotnet, Nerdbank.MessagePack, ShapeShift, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more. **Not** included: Wire; Jil (incompatible with .NET 10); Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs); **sbe** (no NuGet `Org.SbeTool.Sbe.Dll` on the 1.40.2 line); ORC; ParquetSharp.
+- **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event`, plus columnar `table`, `table_project`, `nested_table`, `signal` — domain POCOs in `TestData/V2/Models.cs`. The new Arrow/Parquet rows support only those four ids. Older rows still default `Supports` to true, so a columnar config must pass a comma-separated exact-name allow-list.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
 - Most codecs use domain types (or codegen forms) on the timed path. **Exceptions:** ExtendedXmlSerializer and Migrant time a **JSON envelope** only — see [envelope codecs](../docs/c-sharp/index.md#envelope-codecs-not-native-domain-wire).
@@ -27,14 +27,38 @@ Domain types live under `TestData/V2/` and match `schemas/data_catalog_v2.yaml` 
 | **telemetry** | `Telemetry` | Source, timestamp, tags, numeric series |
 | **strings** | `Strings` | String list |
 | **event** | `Event` | Id/type/time/producer + attribute list |
+| **table** / **table_project** | `TableRow` | 16 doubles, 4 longs, two strings. `table_project` deserialize returns `FFloat0` only (length N) |
+| **nested_table** | `NestedRow` | Id, status, meta, child items |
+| **signal** | `Signal` | Scalars, symbol, venue, legs (`leg_pad` is 0) |
 
-For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need a single root object stay happy.
+For `N>1`, payloads use batch wrappers (`BatchMessage`, `BatchTable`, `BatchNestedRow`, `BatchSignal`, …) so codecs that need a single root object stay happy.
+
+### Columnar rows
+
+`arrow-ipc` is Apache.Arrow **23.0.0** (net8.0 asset, consumed from `net10.0`; no net10-specific lib). `parquet` and `parquet-uncompressed` are Parquet.Net **6.1.0** (explicit `net10.0`). `parquet` uses the library default, Snappy. `parquet-uncompressed` sets `CompressionMethod.None`.
+
+The timed call is the **string** path: Base64 of the IPC stream or Parquet bytes. There is no compliance decoder. The stream path is adapted (the same buffer written to the harness `Stream`), not a native streaming writer. Arrow and Parquet project `FFloat0` inside `table_project` deserialize. System.Text.Json, Google.Protobuf, FlatSharp, and Apache.Avro full-decode, then slice that column.
+
+**sbe** was not registered. sbe-tool 1.40.2 accepts `schemas/v2/sbe/signal.xml`, but no NuGet package provides `Org.SbeTool.Sbe.Dll` at 1.40.2. NuGet `sbe-tool` 1.23.1.1 is an older `SBE.dll` (`net45` / `netstandard2.0`). The generated namespace would also collide with Google.Protobuf's `Benchmark.V2`.
+
+A filter with **no comma** is a case-insensitive substring. A **comma-separated** filter is case-insensitive exact names. `json` matches many JSON libraries; `json,` matches none. `protobuf,` matches only `ProtoBuf`.
+
+Columnar smoke (does not replace the default smoke path):
+
+```bash
+cd c-sharp
+BENCHMARK_RUN_CONFIG=../config/library/columnar-smoke.yaml \
+  ./scripts/run-benchmarks.sh custom 2 \
+  "arrow-ipc,parquet,parquet-uncompressed,System.Text.Json,Google.Protobuf,FlatSharp,Apache.Avro"
+```
+
+`./scripts/run-benchmarks.sh smoke` still uses `config/library/smoke.yaml` (message + telemetry) and the Json.Net / message filter. In-process checks: `dotnet run --project src -c Release -- selfcheck`.
 
 ---
 
 ## Requirements
 
-- **.NET SDK 9.0+** (host toolchain — prepare once). The project still targets **net8.0**; SDK 9+ is required so LightProto’s source generator (Roslyn 4.14+) runs. SDK 8 alone builds the project but leaves LightProto parsers ungenerated.
+- **.NET SDK 10.0+** (host toolchain — prepare once). The project targets **net10.0** because the ShapeShift packages require it. This also satisfies LightProto’s source generator requirement (Roslyn 4.14+).
   ```bash
   ../scripts/install-host-requirements.sh csharp
   ../scripts/check-host-requirements.sh csharp

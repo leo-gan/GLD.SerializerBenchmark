@@ -3,11 +3,16 @@
 //!   cargo run --quiet --bin compliance -- --json-out ../../logs/compliance/rust.json
 
 use anyhow::{Context, Result};
-use std::str::FromStr;
-use serde_json::{json, Value};
+use arrow::array::{Array, Int32Array, Int64Array};
+use arrow::ipc::reader::StreamReader;
+use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::fs;
+use std::io::Cursor;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 struct Adapter {
     name: &'static str,
@@ -247,6 +252,16 @@ fn builtin() -> Vec<Adapter> {
             },
         },
         Adapter {
+            name: "ion-rs",
+            format: "ion",
+            version: crate_version("ion-rs").to_string(),
+            decode: |b, _| {
+                // Element walk accepts Ion-only types (symbols, decimals, sexps).
+                let seq = ion_rs::Element::read_all(b).map_err(|e| anyhow::anyhow!("{e}"))?;
+                Ok(Value::from(seq.len() as u64))
+            },
+        },
+        Adapter {
             name: "flexbuffers",
             format: "flatbuffers",
             version: crate_version("flexbuffers").to_string(),
@@ -290,7 +305,143 @@ fn builtin() -> Vec<Adapter> {
             version: crate_version("serde_avro_fast").to_string(),
             decode: decode_avro,
         },
+        Adapter {
+            name: "arrow-ipc",
+            format: "arrow",
+            version: crate_version("arrow").to_string(),
+            decode: decode_arrow_ipc,
+        },
+        Adapter {
+            name: "parquet",
+            format: "parquet",
+            version: crate_version("parquet").to_string(),
+            decode: decode_parquet,
+        },
+        Adapter {
+            name: "parquet-uncompressed",
+            format: "parquet",
+            version: crate_version("parquet").to_string(),
+            decode: decode_parquet,
+        },
+        Adapter {
+            name: "sbe",
+            format: "sbe",
+            version: "1.40.2".to_string(),
+            decode: decode_sbe,
+        },
     ]
+}
+
+fn decode_arrow_ipc(b: &[u8], _: &str) -> Result<Value> {
+    let reader = StreamReader::try_new(Cursor::new(b), None).map_err(|e| anyhow::anyhow!("{e}"))?;
+    rows_from_batches(reader)
+}
+
+fn decode_parquet(b: &[u8], _: &str) -> Result<Value> {
+    let bytes = bytes::Bytes::from(b.to_vec());
+    let reader = ParquetRecordBatchReaderBuilder::try_new(bytes)
+        .map_err(|e| anyhow::anyhow!("{e}"))?
+        .build()
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    rows_from_batches(reader)
+}
+
+fn rows_from_batches<I, E>(reader: I) -> Result<Value>
+where
+    I: Iterator<Item = std::result::Result<arrow::record_batch::RecordBatch, E>>,
+    E: std::fmt::Display,
+{
+    let mut rows = Vec::new();
+    for batch in reader {
+        let batch = batch.map_err(|e| anyhow::anyhow!("{e}"))?;
+        let schema = batch.schema();
+        for i in 0..batch.num_rows() {
+            let mut obj = Map::new();
+            for (c, field) in schema.fields().iter().enumerate() {
+                obj.insert(field.name().clone(), arrow_cell(batch.column(c).as_ref(), i)?);
+            }
+            rows.push(Value::Object(obj));
+        }
+    }
+    if rows.is_empty() {
+        anyhow::bail!("columnar: no rows");
+    }
+    Ok(Value::Array(rows))
+}
+
+fn arrow_cell(array: &dyn Array, i: usize) -> Result<Value> {
+    if array.is_null(i) {
+        return Ok(Value::Null);
+    }
+    if let Some(col) = array.as_any().downcast_ref::<Int64Array>() {
+        return Ok(Value::Number(col.value(i).into()));
+    }
+    if let Some(col) = array.as_any().downcast_ref::<Int32Array>() {
+        return Ok(Value::Number((col.value(i) as i64).into()));
+    }
+    anyhow::bail!("unsupported arrow type {}", array.data_type())
+}
+
+fn decode_sbe(b: &[u8], _: &str) -> Result<Value> {
+    let owned = b.to_vec();
+    match catch_unwind(AssertUnwindSafe(|| decode_sbe_message(&owned))) {
+        Ok(result) => result,
+        Err(_) => anyhow::bail!("sbe: buffer too short"),
+    }
+}
+
+fn decode_sbe_message(b: &[u8]) -> Result<Value> {
+    use benchmark_v2::message_header_codec::{MessageHeaderDecoder, ENCODED_LENGTH};
+    use benchmark_v2::signal_codec::decoder::SignalDecoder;
+    use benchmark_v2::signal_codec::SBE_TEMPLATE_ID;
+    use benchmark_v2::{ReadBuf, Reader};
+
+    if b.len() < ENCODED_LENGTH {
+        anyhow::bail!("sbe: short header");
+    }
+    let header = MessageHeaderDecoder::default().wrap(ReadBuf::new(b), 0);
+    let template = header.template_id();
+    if template != SBE_TEMPLATE_ID {
+        anyhow::bail!("sbe: template {template}");
+    }
+    let block = header.block_length() as usize;
+    if b.len() < ENCODED_LENGTH + block {
+        anyhow::bail!("sbe: block shorter than blockLength");
+    }
+    let dec = SignalDecoder::default().header(header, 0);
+    let seq = dec.seq();
+    let ts = dec.ts();
+    let price = dec.price_mantissa();
+    let qty = dec.qty() as i64;
+    let flags = dec.flags() as i64;
+    let mut legs_dec = dec.legs_decoder();
+    let mut legs = Vec::new();
+    while legs_dec.advance().map_err(|e| anyhow::anyhow!("sbe legs: {e}"))?.is_some() {
+        legs.push(json!({
+            "leg_id": legs_dec.leg_id(),
+            "leg_qty": legs_dec.leg_qty() as i64,
+            "leg_pad": legs_dec.leg_pad() as i64,
+        }));
+    }
+    let mut dec = legs_dec.parent().map_err(|e| anyhow::anyhow!("sbe signal parent: {e}"))?;
+    let symbol_at = dec.symbol_decoder();
+    let symbol = std::str::from_utf8(dec.get_buf().get_slice_at(symbol_at.0, symbol_at.1))
+        .context("sbe symbol")?
+        .to_string();
+    let venue_at = dec.venue_decoder();
+    let venue = std::str::from_utf8(dec.get_buf().get_slice_at(venue_at.0, venue_at.1))
+        .context("sbe venue")?
+        .to_string();
+    Ok(json!({
+        "seq": seq,
+        "ts": ts,
+        "price_mantissa": price,
+        "qty": qty,
+        "flags": flags,
+        "legs": legs,
+        "symbol": symbol,
+        "venue": venue,
+    }))
 }
 
 fn avro_schema_json(schema: &str) -> String {

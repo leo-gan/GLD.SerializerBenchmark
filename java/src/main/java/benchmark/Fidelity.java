@@ -1,5 +1,7 @@
 package benchmark;
 
+import benchmark.model.v2.V2Rows;
+
 import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Objects;
@@ -7,6 +9,17 @@ import java.util.Objects;
 /** Semantic equality for suite fixtures (float tolerance). */
 public final class Fidelity {
   private Fidelity() {}
+
+  /**
+   * Value compared after deserialize. {@code table_project} serializes the full row and
+   * returns {@code f_float_0} only, including when N is 1.
+   */
+  public static Object expectedForFidelity(String typeId, Object value) {
+    if ("table_project".equals(typeId)) {
+      return V2Rows.float0(value);
+    }
+    return value;
+  }
 
   public static boolean check(Object expected, Object actual) {
     if (expected == actual) return true;

@@ -4,11 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Amazon.IonDotnet;
+using Amazon.IonDotnet.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
 using Google.Protobuf;
 using ProtoBuf;
+using Apache.Arrow;
+using Apache.Arrow.Ipc;
+using Parquet;
+using Parquet.Schema;
 
 namespace GLD.SerializerBenchmark
 {
@@ -121,7 +127,7 @@ namespace GLD.SerializerBenchmark
                     ["failed"] = f,
                     ["skipped"] = s,
                     ["errors"] = e,
-                    ["catalog_errors"] = Array.Empty<string>(),
+                    ["catalog_errors"] = System.Array.Empty<string>(),
                     ["serializer_errors"] = adapterErrs,
                 };
                 var head = JsonConvert.SerializeObject(meta, JsonWriteSettings).TrimEnd('}') + ",\"results\":";
@@ -179,6 +185,14 @@ namespace GLD.SerializerBenchmark
                 if (!have.Contains(key))
                 {
                     var parts = key.Split('\0');
+                    if (parts.Length < 2 || string.IsNullOrEmpty(parts[1]))
+                        continue;
+                    // No compliance/data/<fmt>/ directory means the standard is
+                    // catalogued but this suite has no validity corpus yet.
+                    // That is an empty cell, not a missing adapter.
+                    var fmtDir = Path.Combine(root, "compliance", "data", parts[1]);
+                    if (!Directory.Exists(fmtDir))
+                        continue;
                     errs.Add($"mapped serializer '{parts[0]}' has no {parts[1]} adapter");
                 }
             }
@@ -224,11 +238,6 @@ namespace GLD.SerializerBenchmark
                 new("System.Text.Json", "json", SerializerVersionRegistry.Resolve("System.Text.Json"), (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
                 new("Json.Net", "json", SerializerVersionRegistry.Resolve("Json.Net"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("Json.Net (Helper)", "json", SerializerVersionRegistry.Resolve("Json.Net (Helper)"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
-                new("Jil", "json", SerializerVersionRegistry.Resolve("Jil"), (b, _) =>
-                {
-                    if (TooDeep(b)) throw new InvalidDataException("too nested for Jil");
-                    return Jil.JSON.Deserialize<object>(Encoding.UTF8.GetString(b));
-                }, 4096),
                 new("SpanJson", "json", SerializerVersionRegistry.Resolve("SpanJson"), (b, _) => SpanJson.JsonSerializer.Generic.Utf8.Deserialize<object>(b), 8192),
                 new("Utf8Json", "json", SerializerVersionRegistry.Resolve("Utf8Json"), (b, _) => Utf8Json.JsonSerializer.Deserialize<object>(b), 8192),
                 new("NetJSON", "json", SerializerVersionRegistry.Resolve("NetJSON"), (b, _) => NetJSON.NetJSON.Deserialize<object>(Encoding.UTF8.GetString(b)), 4096),
@@ -240,6 +249,7 @@ namespace GLD.SerializerBenchmark
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
                 new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Amazon.IonDotnet", "ion", SerializerVersionRegistry.Resolve("Amazon.IonDotnet"), DecodeIon),
                 new("Nerdbank.MessagePack", "msgpack", SerializerVersionRegistry.Resolve("Nerdbank.MessagePack"), DecodeNerdbankMessagePack),
                 new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
                 new("ProtoBuf", "protobuf", SerializerVersionRegistry.Resolve("ProtoBuf"), DecodeProtobufNet),
@@ -249,7 +259,151 @@ namespace GLD.SerializerBenchmark
                 new("MS Bond Fast", "bond", SerializerVersionRegistry.Resolve("MS Bond Fast"), DecodeBondBinary),
                 new("MS Bond Json", "bond", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("FlatSharp", "flatbuffers", SerializerVersionRegistry.Resolve("FlatSharp"), (b, _) => b.Length >= 4 ? (object)b.Length : throw new InvalidDataException("short")),
+                new("arrow-ipc", "arrow", SerializerVersionRegistry.Resolve("arrow-ipc"), DecodeArrowIpc),
+                new("parquet", "parquet", SerializerVersionRegistry.Resolve("parquet"), DecodeParquet),
+                new("parquet-uncompressed", "parquet", SerializerVersionRegistry.Resolve("parquet-uncompressed"), DecodeParquet),
             };
+        }
+
+        private static object DecodeArrowIpc(byte[] data, string schema)
+        {
+            using var reader = new ArrowStreamReader(new ReadOnlyMemory<byte>(data));
+            var rows = new List<Dictionary<string, object>>();
+            RecordBatch batch;
+            while ((batch = reader.ReadNextRecordBatch()) != null)
+            {
+                using (batch)
+                {
+                    for (int i = 0; i < batch.Length; i++)
+                    {
+                        var row = new Dictionary<string, object>();
+                        for (int c = 0; c < batch.ColumnCount; c++)
+                        {
+                            var field = batch.Schema.GetFieldByIndex(c);
+                            row[field.Name] = ArrowCell(batch.Column(c), i);
+                        }
+                        rows.Add(row);
+                    }
+                }
+            }
+            if (rows.Count == 0) throw new InvalidDataException("arrow-ipc: no rows");
+            return rows;
+        }
+
+        private static object ArrowCell(IArrowArray array, int index)
+        {
+            if (array.IsNull(index)) return null;
+            if (array is Int64Array i64) return i64.Values[index];
+            if (array is Int32Array i32) return (long)i32.Values[index];
+            throw new InvalidDataException("arrow column " + array.GetType().Name);
+        }
+
+        private static object DecodeParquet(byte[] data, string schema)
+        {
+            using var ms = new MemoryStream(data);
+            var reader = ParquetReader.CreateAsync(ms).GetAwaiter().GetResult();
+            try
+            {
+                var rows = new List<Dictionary<string, object>>();
+                var fields = reader.Schema.GetDataFields();
+                for (int g = 0; g < reader.RowGroupCount; g++)
+                {
+                    using var rg = reader.OpenRowGroupReader(g);
+                    int n = checked((int)rg.RowCount);
+                    var cols = new Dictionary<string, long?[]>();
+                    foreach (DataField field in fields)
+                    {
+                        // Arrow writes this column as optional, so Parquet.Net requires
+                        // definition levels. The nullable overload supplies that buffer.
+                        long?[] dest;
+                        if (field.MaxDefinitionLevel > 0)
+                        {
+                            dest = new long?[n];
+                            rg.ReadAsync(field, dest.AsMemory()).GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            var required = new long[n];
+                            rg.ReadAsync(field, required.AsMemory()).GetAwaiter().GetResult();
+                            dest = System.Array.ConvertAll(required, v => (long?)v);
+                        }
+                        cols[field.Name] = dest;
+                    }
+                    for (int i = 0; i < n; i++)
+                    {
+                        var row = new Dictionary<string, object>();
+                        foreach (var kv in cols) row[kv.Key] = kv.Value[i];
+                        rows.Add(row);
+                    }
+                }
+                if (rows.Count == 0) throw new InvalidDataException("parquet: no rows");
+                return rows;
+            }
+            finally
+            {
+                reader.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>Walk the datagram. Accept/reject follows the reader, not a POCO mapping.</summary>
+        private static object DecodeIon(byte[] data, string schema)
+        {
+            using var reader = IonReaderBuilder.Build(data);
+            var n = 0;
+            while (reader.MoveNext() != IonType.None)
+            {
+                n++;
+                ConsumeIon(reader);
+            }
+            return n;
+        }
+
+        private static void ConsumeIon(IIonReader reader)
+        {
+            if (reader.IsInStruct)
+                _ = reader.GetFieldNameSymbol();
+            _ = reader.GetTypeAnnotations();
+            if (reader.CurrentIsNull || reader.CurrentType == IonType.Null)
+                return;
+            var t = reader.CurrentType;
+            if (t.IsContainer())
+            {
+                reader.StepIn();
+                while (reader.MoveNext() != IonType.None)
+                    ConsumeIon(reader);
+                reader.StepOut();
+                return;
+            }
+            switch (t)
+            {
+                case IonType.Bool:
+                    _ = reader.BoolValue();
+                    break;
+                case IonType.Int:
+                    _ = reader.BigIntegerValue();
+                    break;
+                case IonType.Float:
+                    _ = reader.DoubleValue();
+                    break;
+                case IonType.Decimal:
+                    _ = reader.DecimalValue();
+                    break;
+                case IonType.Timestamp:
+                    _ = reader.TimestampValue();
+                    break;
+                case IonType.Symbol:
+                    _ = reader.SymbolValue();
+                    break;
+                case IonType.String:
+                    _ = reader.StringValue();
+                    break;
+                case IonType.Blob:
+                case IonType.Clob:
+                    _ = reader.NewByteArray();
+                    break;
+                default:
+                    throw new InvalidDataException("unsupported ion type " + t);
+            }
         }
 
         private static bool TooDeep(byte[] b)
@@ -359,7 +513,9 @@ namespace GLD.SerializerBenchmark
             try
             {
                 var raw = InputBytes(c);
-                if (TooDeep(raw) || raw.Length > a.MaxBytes)
+                // TooDeep counts '{'/'[' bytes for text parsers that blow the stack.
+                // Ion binary uses those bytes as data, and Ion text uses them as containers.
+                if ((a.Format != "ion" && TooDeep(raw)) || raw.Length > a.MaxBytes)
                     throw new InvalidDataException("input too nested or large for this runner");
                 got = a.Decode(raw, SchemaText(c.Schema));
             }
@@ -411,7 +567,7 @@ namespace GLD.SerializerBenchmark
             if (enc == "hex")
             {
                 var compact = new string(input.Where(ch => !char.IsWhiteSpace(ch)).ToArray());
-                return compact.Length == 0 ? Array.Empty<byte>() : Convert.FromHexString(compact);
+                return compact.Length == 0 ? System.Array.Empty<byte>() : Convert.FromHexString(compact);
             }
             return Encoding.UTF8.GetBytes(input);
         }
@@ -514,7 +670,7 @@ namespace GLD.SerializerBenchmark
                 ["failed"] = f,
                 ["skipped"] = s,
                 ["errors"] = e,
-                ["catalog_errors"] = Array.Empty<string>(),
+                ["catalog_errors"] = System.Array.Empty<string>(),
                 ["serializer_errors"] = adapterErrs,
                 ["results"] = results,
             };
