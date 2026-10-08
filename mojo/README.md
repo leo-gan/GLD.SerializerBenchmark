@@ -1,8 +1,8 @@
 # Mojo Serializer Benchmark
 
-Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
+Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`, plus columnar `table`, `table_project`, `nested_table`, and `signal`).
 
-## Serializers (14)
+## Serializers (17)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -20,8 +20,11 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources) |
 | mojo-ion | Binary | leo-gan/gld-ion 0.2.0 | Ion 1.0 binary `encode` / `decode` on a document (vendored sources) |
 | mojo-smile | Binary | leo-gan/gld-smile 0.2.0 | Smile `encode_doc` / `decode_bytes` on a document (vendored sources) |
+| arrow-ipc | Columnar | leo-gan/gld-arrow 0.2.0 | IPC stream `encode_ipc_stream` / `decode_ipc_stream` on columnar types (vendored sources) |
+| parquet | Columnar | leo-gan/gld-parquet 0.2.0 | Parquet file with Snappy pages (vendored sources) |
+| parquet-uncompressed | Columnar | leo-gan/gld-parquet 0.2.0 | Same writer with page compression off |
 
-JSON, CBOR, Protobuf, YAML, MessagePack, FlatBuffers, Avro, BSON, Ion, and Smile are compiled from `vendor/` with colliding internals renamed (`runtime`, `wire`, `json`, and the rest) so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub. The vendored ehsanmok/json tree spells `Array` where v0.4.0 still says `InlineArray`, which Mojo 1.1 removed.
+JSON, CBOR, Protobuf, YAML, MessagePack, FlatBuffers, Avro, BSON, Ion, Smile, Arrow, and Parquet are compiled from `vendor/` with colliding internals renamed (`runtime`, `wire`, `compress`, and the rest) so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub. The vendored ehsanmok/json tree spells `Array` where v0.4.0 still says `InlineArray`, which Mojo 1.1 removed. Columnar rows run from `config/library/columnar.yaml` with an allow-list. They are not in the default suite matrix.
 
 ## Host tools
 

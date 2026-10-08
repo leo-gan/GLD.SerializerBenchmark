@@ -897,6 +897,15 @@
       ],
       "gld-yaml": [
         "yaml"
+      ],
+      "arrow-ipc": [
+        "arrow"
+      ],
+      "parquet": [
+        "parquet"
+      ],
+      "parquet-uncompressed": [
+        "parquet"
       ]
     }
   }

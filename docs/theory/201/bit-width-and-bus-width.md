@@ -92,7 +92,7 @@ The order of bits inside a byte is part of the contract. Writer and reader have 
 
 An aligned layout and a packed layout serve different ways of reading.
 
-An aligned layout places each multi-byte field on a boundary that matches its size, and sometimes pads a buffer out to a cache line. Cap’n Proto lays each message out as a sequence of 64-bit words, and aligns each field to that field’s own size. SBE (Simple Binary Encoding) gives each field a fixed offset and aligns it to the field’s size. Arrow’s format recommends aligning its buffers to 64 bytes. A reader that uses the same byte order can load such a field with an ordinary load. The cost is the unused padding. See [zero-copy](zero-copy.md).
+An aligned layout places each multi-byte field on a boundary that matches its size, and sometimes pads a buffer out to a cache line. Cap’n Proto lays each message out as a sequence of 64-bit words, and aligns each field to that field’s own size. SBE (Simple Binary Encoding) gives each field inside one record a fixed offset and aligns it to the field’s size. Arrow’s format recommends aligning its column buffers to 64 bytes. A reader that uses the same byte order can load such a field with an ordinary load. The cost is the unused padding. See [zero-copy](zero-copy.md). SBE and Cap’n Proto are single-record layouts. Arrow’s alignment is for columns.
 
 A packed layout uses those bits for more values. Unaligned PER and integer bit-packing work this way. Reading one value in the middle of the array often means unpacking the block that contains it. Scanning a column of similar numbers in order is the case where arranging those values for a SIMD register earns back the unpacking work.
 
@@ -144,9 +144,9 @@ A matrix of 4-bit weights has the same split, one step further along. The stored
 
 ## In this suite
 
-The catalog primitives are `bool`, `int32`, `int64`, `float64`, `utf8_string`, and a datetime stored as an `int64` count of milliseconds since the epoch. The fixtures do not include a 12-bit sample, a 4-bit element, or a 17-bit identifier. Where a language registers Arrow IPC, Parquet, ORC, or SBE, those rows measure columns and fixed field offsets. They do not measure values narrower than a byte.
+The catalog primitives are `bool`, `int32`, `int64`, `float64`, `utf8_string`, and a datetime stored as an `int64` count of milliseconds since the epoch. The fixtures do not include a 12-bit sample, a 4-bit element, or a 17-bit identifier. Where a language registers Arrow IPC, Parquet, or ORC, those rows measure columns. Where it registers SBE (Simple Binary Encoding), those rows measure fixed field offsets inside one record. The stride is the bytes from the start of one record to the start of the next. Variable-length fields change that distance. SBE is schema-driven. It is not a columnar file format like Parquet. None of these rows measure values narrower than a byte.
 
-On the Dashboard, `mean_fidelity` is the average of the per-trial fidelity scores. It is 1.0 when every round trip reproduces the fixture. That check is the right one for these codecs. Quantization stores an approximation on purpose, so exact equality should not be the only score for it. The [Dashboard](../../dashboard/) does not answer questions about bit width. A missing row means the suite did not measure that case. It is not a ranking. Family labels are in [Serialization categories](../../analysis/serialization_categories.md).
+On the Dashboard, `mean_fidelity` is the average of the per-trial fidelity scores. It is 1.0 when every round trip reproduces the fixture. That check writes a fixture and reads it back. It is not a specification-compliance score. It is the right check for these codecs when the goal is an exact round trip. Quantization stores an approximation on purpose, so exact equality should not be the only score for it. The [Dashboard](../../dashboard/) does not answer questions about bit width. A missing row means the suite did not measure that case. It is not a ranking. Family labels are a teaching cut. They are listed in [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 

@@ -21,7 +21,7 @@ Even as a first-year student, you can use this page to see how format choice aff
 
 ## Four families (aligned with this suite)
 
-The benchmark suite groups serializers into families for orientation. The Dashboard compares within **one standard and one language**. Different families solve different problems. JSON and YAML can share the text family and still be different standards. Columnar formats such as Arrow IPC, Parquet, and ORC are the fifth family on [Serialization categories](../../analysis/serialization_categories.md). This lens is about services, so the table stays with the four families you meet on an API or an RPC hop.
+The benchmark suite groups serializers into families for orientation. A family is a teaching cut. The Dashboard comparison cell is **language, standard, data set, and data type**. Different families solve different problems. JSON and YAML can share the text family and still be different standards. Columnar formats such as Arrow IPC, Parquet, and ORC are the fifth family on [Serialization categories](../../analysis/serialization_categories.md). This lens is about services, so the table stays with the four families you meet on an API or an RPC hop.
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
@@ -107,7 +107,7 @@ In managed runtimes such as C#, Java, Python, JavaScript, and Go, **allocation r
 
 The traditional path is: bytes → parse → **new** language objects. That path is a copy.
 
-A **zero-copy** path arranges the wire layout so fields are readable **in place**. FlatBuffers, Cap’n Proto, and some buffer-oriented APIs work this way. Trade-offs include validation discipline. Skipping a parse can skip structural checks if you are careless. Partial mutation is less friendly. Operational tooling differs.
+A **zero-copy** path arranges the wire layout so fields are readable **in place**. FlatBuffers and Cap’n Proto are the usual examples that use a separate schema. FlexBuffers is the FlatBuffers layout that stores type tags in the buffer. rkyv (Rust), cista (C++), and Bebop are further single-record layouts a reader can use in place. Each stores one record. They are not columnar files such as Parquet. This suite times rkyv as a full materialize: decode builds an owned value, and that copy is included in the measured time. Trade-offs include validation discipline. Skipping a parse can skip structural checks if you are careless. Partial mutation is less friendly. Operational tooling differs.
 
 ### Text parsing cost
 
@@ -213,7 +213,7 @@ user2.ParseFromString(data)
 
 ## Key takeaways
 
-1. **Pick a family, then a standard, then a library.** [Serialization categories](../../analysis/serialization_categories.md) is the family map. The Dashboard **Standard** control is the comparison cell.  
+1. **Pick a family, then a standard, then a library.** A family is a teaching cut. [Serialization categories](../../analysis/serialization_categories.md) is that map. A library is one implementation of a standard. The Dashboard comparison cell is language, standard, data set, and data type.  
 2. **Public edge is not the same as the internal code that runs on every request under load.** JSON at the boundary and binary inside is a normal, historical pattern.  
 
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  

@@ -10,9 +10,11 @@ Some formats are described as **zero-copy**, or are said **not to deserialize**.
 
 ## Short answer
 
-In a **zero-copy** design, encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. FlatBuffers, Cap’n Proto, and related systems work this way. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of building the full set of language objects in memory.
+In a **zero-copy** design, encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of building the full set of language objects in memory.
 
-Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary. Omitting validation is a serious risk. Partial mutation is often awkward. Operational tooling differs from text-oriented formats. Zero-copy is a layout and application-programming-interface philosophy. It is not a costless substitute for a schema or a trust model.
+In this suite the row zero-copy layouts are FlatBuffers, Cap’n Proto, FlexBuffers, rkyv, cista, and Bebop. FlatBuffers and Cap’n Proto read fields through a separate schema. FlexBuffers is the FlatBuffers layout that stores type tags in the buffer. rkyv is a Rust archive, cista is a C++ layout of offsets, and Bebop is a schema-driven format whose reader can use a view of the buffer. Each stores one record. They are not columnar files such as Parquet. rkyv can be read in place, but this suite times it as a full materialize: decode builds an owned value, and that copy is included in the Dashboard time.
+
+Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary. Omitting validation is a serious risk. Partial mutation is often awkward. Operational tooling differs from text-oriented formats. Zero-copy is a layout and a way of reading that layout. It still needs a schema or an equivalent contract, and it still needs a trust model.
 
 This matters because marketing language can hide real costs. In-place reads can be very efficient. Construction, verification, and buffer lifetime still need careful design.
 
@@ -112,7 +114,7 @@ The approach fits poorly for small, frequently mutated documents when builder co
 
 ## In this suite
 
-Where FlatBuffers or similar codecs are **registered** for a language, treat them as **schema-driven / specialized layout** entries. Compare them carefully with other schema-driven libraries on the **same-language Dashboard** slice. Absence from a language benchmark runner means “not measured here.” It does not mean “irrelevant in industry.” Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
+Where FlatBuffers or a similar row zero-copy codec is registered for a language, compare it with other libraries on the same language, standard, data set, and data type. rkyv’s timed decode materializes an owned value, so do not read that row as an in-place access time. See [rkyv versus Speedy](../401/rust-rkyv-vs-speedy.md). Absence from a language benchmark runner means the suite did not measure that library here. Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 

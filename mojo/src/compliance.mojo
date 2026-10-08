@@ -1,6 +1,6 @@
 """Mojo compliance runner — same catalog as the other languages."""
 
-from std.collections import List
+from std.collections import List, Span
 from std.sys import argv
 from emberjson import parse, to_string
 from ehsanmok_json import loads as ehsan_loads
@@ -32,6 +32,8 @@ from fb_flex.kind import (
 )
 from fb_flex.reader import FlexTree, flex_loads
 from fb_wire.verify import verify_file_identifier, verify_root
+from arrow_wire.ipc import decode_ipc_stream
+from parquet_wire.decode import decode_table
 
 
 
@@ -180,6 +182,17 @@ def _try_bson(buf: List[Byte]) raises:
 
 def _try_smile(buf: List[Byte]) raises:
     _ = smile_decode(Span(buf))
+
+
+def _try_arrow(buf: List[Byte]) raises:
+    var decoded = decode_ipc_stream(Span(buf))
+    # An empty buffer has no schema message. A real stream starts with one.
+    if len(decoded.fields) == 0:
+        raise Error("arrow ipc: missing schema")
+
+
+def _try_parquet(buf: List[Byte]) raises:
+    _ = decode_table(Span(buf))
 
 
 def _try_ion(buf: List[Byte]) raises:
@@ -517,6 +530,10 @@ def _run_one(
             _try_ion(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "smile":
             _try_smile(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "arrow":
+            _try_arrow(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "parquet":
+            _try_parquet(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "flatbuffers":
             _try_flatbuffers(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
@@ -721,6 +738,14 @@ def main() raises:
             elif fmt == "smile":
                 sers.append("mojo-smile")
                 vers.append("0.2.0")
+            elif fmt == "arrow":
+                sers.append("arrow-ipc")
+                vers.append("0.2.0")
+            elif fmt == "parquet":
+                sers.append("parquet")
+                vers.append("0.2.0")
+                sers.append("parquet-uncompressed")
+                vers.append("0.2.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False
@@ -877,7 +902,7 @@ def main() raises:
         errs += "]"
         var rows = open(rows_path, "r").read()
         var head = (
-            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\",\"bson\"]},\"passed\":"
+            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\",\"bson\",\"ion\",\"smile\",\"arrow\",\"parquet\"]},\"passed\":"
             + String(passed)
             + ",\"failed\":"
             + String(failed)

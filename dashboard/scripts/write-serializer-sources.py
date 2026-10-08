@@ -1545,6 +1545,32 @@ SPECIFICS: dict[str, str] = {
         "`encode_doc` and `decode_bytes` on a document built from the "
         "suite value."
     ),
+    "gld-arrow": (
+        "Apache Arrow was created so analytic engines could share columnar "
+        "batches without copying each one into a private layout. The problem "
+        "was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a "
+        "from-scratch Arrow library for Mojo. This row times "
+        "`encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not "
+        "the Arrow file. The record batch is built inside serialize. "
+        "gld-arrow has no included-fields reader, so table_project decodes "
+        "the stream and then materializes f_float_0 only. Suite columns are "
+        "required because these rows have no nulls."
+    ),
+    "gld-parquet": (
+        "Apache Parquet was created as a columnar file for scans that touch "
+        "a few fields of many rows. The problem was row files that made "
+        "every reader parse every column. gld-parquet (leo-gan) is a "
+        "from-scratch Parquet library for Mojo. The library default is "
+        "uncompressed, so this row sets Snappy, the suite page codec. "
+        "table_project decodes the file and then reads f_float_0 only, "
+        "because decode_table has no column projection. Lists use the "
+        "standard three-level group."
+    ),
+    "gld-parquet-raw": (
+        "This is the same gld-parquet writer as parquet, with the page "
+        "codec left uncompressed. Encodings stay at the library default. "
+        "The name is the override."
+    ),
     "arrow-ipc-go": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -2139,6 +2165,9 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-bson"): "gld-bson",
     ("mojo", "mojo-ion"): "gld-ion",
     ("mojo", "mojo-smile"): "gld-smile",
+    ("mojo", "arrow-ipc"): "gld-arrow",
+    ("mojo", "parquet"): "gld-parquet",
+    ("mojo", "parquet-uncompressed"): "gld-parquet-raw",
 }
 
 # Extra sentence for a specific row (path / format variant).

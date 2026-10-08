@@ -155,7 +155,7 @@ The label “JSON” covers both pedagogical recursive parsers and highly optimi
 
 ## In this suite
 
-The [Dashboard](../../dashboard/) reports measured encode and decode behaviour for registered libraries. Those libraries cover the JSON family, schemaless binary, schema-driven, and language-native codecs where present. Prefer comparisons **within one language and one standard**. A family is the first cut. Cross-language results are a different question.
+The [Dashboard](../../dashboard/) reports measured encode and decode behaviour for registered libraries. Those libraries cover text, schemaless binary, schema-driven, language-native, and columnar codecs where a language registers them. Prefer comparisons within one language, one standard, one data set, and one data type. A family is a teaching cut. Cross-language results are a different question.
 
 Methodology and metric definitions appear in [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) and [Metrics](../../analysis/METRICS.md). Quantitative statements in prose are illustrative. Suite measurements are authoritative for this benchmark runner.
 

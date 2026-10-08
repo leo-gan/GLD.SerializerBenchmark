@@ -136,7 +136,7 @@ This benchmark runner does **not** run adversarial fuzz campaigns. It does not c
 | Parser error rate on fuzz inputs | Robustness signal |
 | CVE and advisory state of the library | Eligibility filter |
 | Suite speed and size | Secondary after the safety pass |
-| `mean_fidelity` | Still required for correctness |
+| `mean_fidelity` | Fixture round trip is still required. Not a security proof or specification compliance. |
 
 **Conclusion style:** “The edge enforces 1 MB and depth 32; we use JSON library X; native deserialize is banned.”
 

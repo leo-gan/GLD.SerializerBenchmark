@@ -109,7 +109,7 @@ You do not need to read every article in order. Pick a track that matches the pr
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Using this suite without fooling yourself](using-this-suite.md) | Read Dashboard numbers within one standard and one language |
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Dashboard numbers within one language, one standard, one data set, and one data type |
 | [Implementation variance within a standard](implementation-variance.md) | Choose a library after the standard is fixed |
 | [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge 99th-percentile latency (*p99*: 99% of requests are faster than this) and allocation pressure. |
 | [Compression as a system choice](compression-as-system-choice.md) | Place gzip or zstd in the stack without treating compression as a format |
@@ -149,7 +149,7 @@ The same program rules apply as in 101 and 201:
 1. There are no universal winners. Every recommendation is under stated constraints.
 2. How well a library is written often matters more than the name of the format. Two libraries can share a format label and still differ sharply.
 3. Payload shape matters. Dense records and deep graphs are different jobs.
-4. Compare within one standard and one language before making a broader claim. A family is the first cut.
+4. Compare within one language, one standard, one data set, and one data type before making a broader claim. A family is a teaching cut.
 5. Security and trust are first-class concerns. They are not afterthoughts.
 6. Numbers in prose are illustrative. The **Dashboard** owns measured numbers for this benchmark runner.
 

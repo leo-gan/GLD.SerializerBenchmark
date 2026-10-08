@@ -411,6 +411,7 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
             -I vendor/msgpack_src -I vendor/fb_src -I vendor/avro_src \
             -I vendor/emberjson_src -I vendor/bson_src \
             -I vendor/ion_src -I vendor/smile_src -I vendor/gldtoml_src \
+            -I vendor/arrow_src -I vendor/parquet_src \
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then

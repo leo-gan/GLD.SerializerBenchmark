@@ -19,6 +19,9 @@ from bench.msgpack_ser import MsgpackSer
 from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
+from bench.arrow_ser import ArrowIpcSer
+from bench.parquet_ser import ParquetSer
+from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -126,6 +129,22 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
                 cfg.attr_count = Int(tc["attr_count"].int())
             except:
                 pass
+            try:
+                cfg.group_count = Int(tc["group_count"].int())
+            except:
+                pass
+            try:
+                var sl = tc["string_len"].object().copy()
+                cfg.string_min = Int(sl["min"].int())
+                cfg.string_max = Int(sl["max"].int())
+            except:
+                pass
+            try:
+                var ir = tc["int_range"].object().copy()
+                cfg.int_min = Int(ir["min"].int())
+                cfg.int_max = Int(ir["max"].int())
+            except:
+                pass
         except:
             pass
         cells.append(Cell(type_id, n, hash, cfg))
@@ -144,6 +163,19 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
     if len(modes) == 0:
         modes.append("bytes")
     return (seed, cells^, modes^)
+
+
+def _columnar_id(type_id: String) -> Bool:
+    return (
+        type_id == "table"
+        or type_id == "table_project"
+        or type_id == "nested_table"
+        or type_id == "signal"
+    )
+
+
+def _columnar_name(name: String) -> Bool:
+    return name == "arrow-ipc" or name == "parquet" or name == "parquet-uncompressed"
 
 
 def run() raises:
@@ -200,6 +232,9 @@ def run() raises:
     var bson = BsonSer()
     var ion = IonSer()
     var smile = SmileSer()
+    var arrow = ArrowIpcSer()
+    var parquet = ParquetSer("parquet", CODEC_SNAPPY)
+    var parquet_raw = ParquetSer("parquet-uncompressed", CODEC_NONE)
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -215,6 +250,9 @@ def run() raises:
     names.append(ion.name())
     names.append(smile.name())
     names.append(msgp.name())
+    names.append(arrow.name())
+    names.append(parquet.name())
+    names.append(parquet_raw.name())
     if ser_filter.byte_length() > 0:
         var filtered = List[String]()
         var ni = 0
@@ -254,6 +292,9 @@ def run() raises:
         var ri = 0
         while ri < len(names):
             var nm = names[ri]
+            if _columnar_id(fx.type_id) != _columnar_name(nm):
+                ri += 1
+                continue
             try:
                 if nm == ember.name():
                     _ = ember.serialize_bytes(fx)
@@ -279,6 +320,12 @@ def run() raises:
                     _ = ion.serialize_bytes(fx)
                 elif nm == smile.name():
                     _ = smile.serialize_bytes(fx)
+                elif nm == arrow.name():
+                    _ = arrow.serialize_bytes(fx)
+                elif nm == parquet.name():
+                    _ = parquet.serialize_bytes(fx)
+                elif nm == parquet_raw.name():
+                    _ = parquet_raw.serialize_bytes(fx)
                 elif nm == gldtoml.name():
                     _ = gldtoml.serialize_bytes(fx)
                 else:
@@ -454,6 +501,42 @@ def run() raises:
                             size = len(buf)
                             if not fidelity(fx, back):
                                 ok = 0.0
+                        elif nm == arrow.name():
+                            ver = arrow.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = arrow.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = arrow.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == parquet.name():
+                            ver = parquet.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = parquet.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = parquet.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == parquet_raw.name():
+                            ver = parquet_raw.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = parquet_raw.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = parquet_raw.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
                         elif nm == gldtoml.name():
                             ver = gldtoml.version
                             var t0 = Int(perf_counter_ns())
@@ -485,6 +568,11 @@ def run() raises:
                         var ro = ""
                         if record_ro:
                             ro = String(run_order)
+                        var native_kind = "message"
+                        var stream_mode = ""
+                        if _columnar_name(nm):
+                            native_kind = "table"
+                            stream_mode = "adapted"
                         lines += (
                             "mojo,"
                             + mode
@@ -514,7 +602,11 @@ def run() raises:
                             + _ops(tot)
                             + ",0,"
                             + String(ok)
-                            + ",message,,"
+                            + ","
+                            + native_kind
+                            + ","
+                            + stream_mode
+                            + ","
                             + String(fx.n)
                             + ","
                             + fx.hash

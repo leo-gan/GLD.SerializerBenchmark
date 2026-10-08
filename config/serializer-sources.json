@@ -1118,6 +1118,11 @@
         "version": "0.3.4",
         "specifics": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API."
       },
+      "arrow-ipc": {
+        "source_url": "https://github.com/leo-gan/gld-arrow",
+        "version": "0.2.0",
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a from-scratch Arrow library for Mojo. This row times `encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not the Arrow file. The record batch is built inside serialize. gld-arrow has no included-fields reader, so table_project decodes the stream and then materializes f_float_0 only. Suite columns are required because these rows have no nulls."
+      },
       "ehsanmok-json": {
         "source_url": "https://github.com/ehsanmok/json",
         "version": "0.4.0",
@@ -1182,6 +1187,16 @@
         "source_url": "https://github.com/DataBooth/mojo-toml",
         "version": "0.9.1",
         "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is a different library and is the gld-toml row."
+      },
+      "parquet": {
+        "source_url": "https://github.com/leo-gan/gld-parquet",
+        "version": "0.2.0",
+        "specifics": "Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. gld-parquet (leo-gan) is a from-scratch Parquet library for Mojo. The library default is uncompressed, so this row sets Snappy, the suite page codec. table_project decodes the file and then reads f_float_0 only, because decode_table has no column projection. Lists use the standard three-level group."
+      },
+      "parquet-uncompressed": {
+        "source_url": "https://github.com/leo-gan/gld-parquet",
+        "version": "0.2.0",
+        "specifics": "This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override."
       }
     },
     "php": {

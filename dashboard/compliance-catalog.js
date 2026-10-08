@@ -343,6 +343,9 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-ion", formats: ["ion"], docs: "https://github.com/leo-gan/gld-ion", evidence: "gld-ion 0.2.0: Amazon Ion text and binary decode." },
   { language: "mojo", name: "mojo-smile", formats: ["smile"], docs: "https://github.com/leo-gan/gld-smile", evidence: "gld-smile 0.2.0: Smile decode_bytes." },
   { language: "mojo", name: "gld-yaml", formats: ["yaml"], docs: "https://github.com/leo-gan/gld-yaml", evidence: "gld-yaml: YAML value encode/decode." },
+  { language: "mojo", name: "arrow-ipc", formats: ["arrow"], docs: "https://github.com/leo-gan/gld-arrow", evidence: "gld-arrow 0.2.0: Arrow IPC stream encode_ipc_stream / decode_ipc_stream." },
+  { language: "mojo", name: "parquet", formats: ["parquet"], docs: "https://github.com/leo-gan/gld-parquet", evidence: "gld-parquet 0.2.0: Parquet file encode_table / decode_table with Snappy." },
+  { language: "mojo", name: "parquet-uncompressed", formats: ["parquet"], docs: "https://github.com/leo-gan/gld-parquet", evidence: "gld-parquet 0.2.0: same writer with page compression off." },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

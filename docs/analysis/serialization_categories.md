@@ -20,7 +20,7 @@ By the end of this page you should be able to:
 2. Decide which family fits a simple product question (public API, schema contract, same-process cache, columnar scan, …).
 3. State the comparison rule: **same language + same standard + same data set + same data type** before crowning a winner. The families on this page are orientation. The benchmark dimension is the compliance standard id.
 
-**Rule of thumb:** compare serializers within one language, one standard, one data set, and one data type. A family is the first cut. It is coarser than the standard id (`yaml` is its own standard). Columnar numbers on `table` are a different question from JSON numbers on `message`.
+**Rule of thumb:** compare serializers within one language, one standard, one data set, and one data type. A family is a teaching cut. It is coarser than the standard id (`yaml` is its own standard). Columnar numbers on `table` are a different question from JSON numbers on `message`.
 
 Registered counts live on each language Overview page. This page does not repeat them.
 
@@ -124,7 +124,7 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
 
 - **Prefer when:** the unit of work is many rows and a few columns. Arrow IPC is the in-memory interchange. Parquet and ORC are the on-disk columnar files.
 - **Trade-offs:** a one-row batch pays header and alignment cost. A full materialization back into row objects hides the scan benefit. Compare `table_project` deserialize when the question is “read one column.”
-- **Suite types:** `table`, `table_project`, `nested_table`. Run config: `config/library/columnar.yaml`. The allow-list is the new rows plus a few existing peers. Other serializers stay on the five publication types.
+- **Suite types:** `table`, `table_project`, `nested_table`, and `signal`. Run config: `config/library/columnar.yaml`. The allow-list is the new rows plus a few existing peers. Other serializers stay on the five publication types.
 - **Examples in suite:**
   - **Python:** `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` (`pyarrow`). `parquet` uses pyarrow's default page compression (Snappy). `parquet-uncompressed` sets `compression="NONE"`. `orc` calls `pyarrow.orc.write_table` with no compression argument, which is uncompressed on pyarrow 25. `orc-uncompressed` passes that same uncompressed codec so the name still exists.
   - **Go:** `arrow-ipc`, `parquet`, `parquet-uncompressed` (`arrow-go` 18.8.0). arrow-go's writer default is uncompressed, so `parquet` sets Snappy and `parquet-uncompressed` leaves compression off. IPC `table_project` reads the `f_float_0` value buffer; that reader has no included-fields option. No ORC.
@@ -134,6 +134,7 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
   - **C#:** `arrow-ipc` (Apache.Arrow 23.0.0; the net10.0 project consumes the net8.0 asset), `parquet`, `parquet-uncompressed` (Parquet.Net 6.1.0, Snappy vs `CompressionMethod.None`). The timed path is the existing string path (Base64). No ORC. No SBE.
   - **Java:** `arrow-ipc` (arrow-vector 19.0.0), `parquet`, `parquet-uncompressed` (parquet-avro 1.18.1). parquet-java defaults to UNCOMPRESSED, so `parquet` sets Snappy. `orc` is orc-core 2.3.1 `nohive`, whose default is ZSTD; `orc-uncompressed` sets `CompressionKind.NONE`. Both ORC rows set `blockPadding(false)`.
   - **Kotlin:** the same jars as Java: `arrow-ipc` (arrow-vector 19.0.0), `parquet`, `parquet-uncompressed` (parquet-avro 1.18.1, Snappy versus UNCOMPRESSED), `orc`, `orc-uncompressed` (orc-core 2.3.1 `nohive` plus orc-format 1.1.1 `nohive`, ZSTD versus `CompressionKind.NONE`, `blockPadding(false)`).
+  - **Mojo:** `arrow-ipc` (gld-arrow 0.2.0), `parquet`, `parquet-uncompressed` (gld-parquet 0.2.0). The library default is uncompressed, so `parquet` sets Snappy. Neither reader can project a column, so `table_project` decodes the whole payload and then materializes `f_float_0` only. No ORC and no SBE.
 
 ### Language-native
 

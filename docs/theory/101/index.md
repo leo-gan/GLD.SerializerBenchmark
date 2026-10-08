@@ -46,7 +46,7 @@ The same formats appear under three perspectives on purpose. Each document answe
 1. Skim the **shared trade-offs** below. This takes about ten minutes.
 2. Read the **[historical perspective](historical_perspective.md)** once for the big picture.
 3. Deep-dive the lens that matches your work. Choose either **[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**.
-4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use. On the Dashboard, set **Language** and **Standard** before you read a ranking.
+4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use. On the Dashboard, set **Language**, **Standard**, **Data set**, and **Data type** before you read a ranking. That combination is the comparison cell.
 5. When you need *mechanisms* (how formats work under the hood), work through the **[Serialization 201](../201/index.md)** track:
     1. [Memory layout](../201/memory-layout.md). If a value is narrower than a byte, or someone argues that a wide bus should change the format, continue with the optional page [Bit width is not bus width](../201/bit-width-and-bus-width.md).
     2. [Encode/decode cost](../201/encode-decode-cost.md)
@@ -109,11 +109,13 @@ A **trust boundary** is any place where data leaves a fully controlled environme
 
 The five axes above describe the job. The Dashboard filters by the standard’s name.
 
-A **family** is a way of thinking about the job: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map.
+A **family** is a teaching cut. It groups formats by the job: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map. A family is not a Dashboard filter.
 
 A **standard** is a named contract, such as JSON, Avro, or Arrow IPC. Several libraries can implement one standard. The Dashboard **Standard** control is that name. The [compliance catalog](../../compliance/) is where each name is defined.
 
 A **library** is one implementation of a standard in one language. `orjson` and Python’s `json` module are both the JSON standard. The speed gap between them is the library.
+
+The comparison cell is language, standard, data set, and data type. Data set is Suite or Columnar. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only the column `f_float_0`.
 
 | Pair | Family | Standards |
 |------|--------|-----------|
@@ -121,7 +123,7 @@ A **library** is one implementation of a standard in one language. `orjson` and 
 | Protocol Buffers and Avro | Schema-driven | Protocol Buffers and Avro |
 | Arrow IPC, Parquet, and ORC | Columnar | Arrow IPC, Parquet, and ORC |
 
-**SBE** (Simple Binary Encoding) keeps the three labels separate. It sits in the schema-driven family. Its data set is Columnar. Its standard is SBE.
+**SBE** (Simple Binary Encoding) keeps the three labels separate. It sits in the schema-driven family. Its data set is Columnar. Its standard is SBE. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet.
 
 Libraries with no public spec, such as `pickle`, `bincode`, and the in-tree custom binaries, use the Dashboard standard **Custom**. On the Compliance view those same libraries are **\* No public spec**, and that view does not score them.
 

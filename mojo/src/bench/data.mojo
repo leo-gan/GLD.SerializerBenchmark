@@ -1127,6 +1127,8 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
     var int_min: Int
     var int_max: Int
 
+    var group_count: Int
+
     def __init__(out self):
         self.children = 8
         self.points = 32
@@ -1136,6 +1138,54 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
         self.string_max = 16
         self.int_min = 0
         self.int_max = 1_000_000
+        self.group_count = 4
+
+
+@fieldwise_init
+struct TableRow(Copyable, Movable):
+    var floats: List[Float64]
+    var ints: List[Int64]
+    var strs: List[String]
+
+
+@fieldwise_init
+struct NestedMeta(Copyable, Movable):
+    var region: String
+    var version: Int32
+
+
+@fieldwise_init
+struct NestedItem(Copyable, Movable):
+    var sku: String
+    var qty: Int32
+    var price_minor: Int64
+
+
+@fieldwise_init
+struct NestedRow(Copyable, Movable):
+    var id: String
+    var status: Int32
+    var meta: NestedMeta
+    var items: List[NestedItem]
+
+
+@fieldwise_init
+struct SignalLeg(Copyable, Movable):
+    var leg_id: Int64
+    var leg_qty: Int32
+    var leg_pad: Int32
+
+
+@fieldwise_init
+struct SignalRow(Copyable, Movable):
+    var seq: Int64
+    var ts: Int64
+    var price_mantissa: Int64
+    var qty: Int32
+    var flags: Int32
+    var symbol: String
+    var venue: String
+    var legs: List[SignalLeg]
 
 
 @fieldwise_init
@@ -1156,6 +1206,34 @@ struct Fixture(Copyable, Movable):
     var telemetries: List[Telemetry]
     var strings: List[Strings]
     var events: List[Event]
+    var tables: List[TableRow]
+    var nested_rows: List[NestedRow]
+    var signals: List[SignalRow]
+    var projected: List[Float64]
+
+    def __init__(
+        out self,
+        type_id: String,
+        n: Int,
+        hash: String,
+        messages: List[Message],
+        documents: List[Document],
+        telemetries: List[Telemetry],
+        strings: List[Strings],
+        events: List[Event],
+    ):
+        self.type_id = type_id
+        self.n = n
+        self.hash = hash
+        self.messages = messages.copy()
+        self.documents = documents.copy()
+        self.telemetries = telemetries.copy()
+        self.strings = strings.copy()
+        self.events = events.copy()
+        self.tables = List[TableRow]()
+        self.nested_rows = List[NestedRow]()
+        self.signals = List[SignalRow]()
+        self.projected = List[Float64]()
 
 
 def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises -> Fixture:
@@ -1250,6 +1328,65 @@ def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises ->
                 attrs^,
             )
         )
+    elif type_id == "table" or type_id == "table_project":
+        var floats = List[Float64]()
+        var i = 0
+        while i < 16:
+            floats.append(rng.next_f64() * 1000.0)
+            i += 1
+        var ints = List[Int64]()
+        i = 0
+        while i < 4:
+            ints.append(Int64(rng.next_int(cfg.int_min, cfg.int_max)))
+            i += 1
+        var strs = List[String]()
+        strs.append(rng.word(cfg.string_min, cfg.string_max))
+        strs.append(rng.word(cfg.string_min, cfg.string_max))
+        fx.tables.append(TableRow(floats^, ints^, strs^))
+    elif type_id == "nested_table":
+        var items = List[NestedItem]()
+        var i = 0
+        while i < cfg.children:
+            items.append(
+                NestedItem(
+                    rng.word(cfg.string_min, cfg.string_max),
+                    Int32(rng.next_int(1, 100)),
+                    Int64(rng.next_int(0, 100_000)),
+                )
+            )
+            i += 1
+        fx.nested_rows.append(
+            NestedRow(
+                rng.word(8, 12),
+                Int32(rng.next_int(0, 5)),
+                NestedMeta(rng.word(2, 4), Int32(rng.next_int(1, 10))),
+                items^,
+            )
+        )
+    elif type_id == "signal":
+        var legs = List[SignalLeg]()
+        var i = 0
+        while i < cfg.group_count:
+            legs.append(
+                SignalLeg(
+                    Int64(rng.next_int(0, 1_000_000)),
+                    Int32(rng.next_int(0, 10_000)),
+                    Int32(0),
+                )
+            )
+            i += 1
+        fx.signals.append(
+            SignalRow(
+                Int64(rng.next_int(0, 1_000_000_000)),
+                BASE_TS_MS + Int64(rng.next_int(0, 86_400_000)),
+                Int64(rng.next_int(0, 1_000_000_000)),
+                Int32(rng.next_int(0, 10_000)),
+                Int32(rng.next_int(0, 65_535)),
+                rng.word(cfg.string_min, cfg.string_max),
+                rng.word(cfg.string_min, cfg.string_max),
+                legs^,
+            )
+        )
     else:
         raise Error("unknown type_id: " + type_id)
     return fx^
@@ -1277,8 +1414,16 @@ def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: Stri
             fx.telemetries.append(one.telemetries[0].copy())
         elif type_id == "strings":
             fx.strings.append(one.strings[0].copy())
-        else:
+        elif type_id == "event":
             fx.events.append(one.events[0].copy())
+        elif type_id == "table" or type_id == "table_project":
+            fx.tables.append(one.tables[0].copy())
+        elif type_id == "nested_table":
+            fx.nested_rows.append(one.nested_rows[0].copy())
+        elif type_id == "signal":
+            fx.signals.append(one.signals[0].copy())
+        else:
+            raise Error("unknown type_id: " + type_id)
         i += 1
     return fx^
 
@@ -1365,9 +1510,100 @@ def fidelity_event(a: Event, b: Event) -> Bool:
     return True
 
 
+def fidelity_table(a: TableRow, b: TableRow) -> Bool:
+    if len(a.floats) != len(b.floats) or len(a.ints) != len(b.ints) or len(a.strs) != len(b.strs):
+        return False
+    var i = 0
+    while i < len(a.floats):
+        if not _close(a.floats[i], b.floats[i]):
+            return False
+        i += 1
+    i = 0
+    while i < len(a.ints):
+        if a.ints[i] != b.ints[i]:
+            return False
+        i += 1
+    i = 0
+    while i < len(a.strs):
+        if a.strs[i] != b.strs[i]:
+            return False
+        i += 1
+    return True
+
+
+def fidelity_nested(a: NestedRow, b: NestedRow) -> Bool:
+    if a.id != b.id or a.status != b.status:
+        return False
+    if a.meta.region != b.meta.region or a.meta.version != b.meta.version:
+        return False
+    if len(a.items) != len(b.items):
+        return False
+    var i = 0
+    while i < len(a.items):
+        if a.items[i].sku != b.items[i].sku or a.items[i].qty != b.items[i].qty:
+            return False
+        if a.items[i].price_minor != b.items[i].price_minor:
+            return False
+        i += 1
+    return True
+
+
+def fidelity_signal(a: SignalRow, b: SignalRow) -> Bool:
+    if a.seq != b.seq or a.ts != b.ts or a.price_mantissa != b.price_mantissa:
+        return False
+    if a.qty != b.qty or a.flags != b.flags:
+        return False
+    if a.symbol != b.symbol or a.venue != b.venue or len(a.legs) != len(b.legs):
+        return False
+    var i = 0
+    while i < len(a.legs):
+        if a.legs[i].leg_id != b.legs[i].leg_id or a.legs[i].leg_qty != b.legs[i].leg_qty:
+            return False
+        if a.legs[i].leg_pad != b.legs[i].leg_pad:
+            return False
+        i += 1
+    return True
+
+
 def fidelity(a: Fixture, b: Fixture) -> Bool:
     if a.type_id != b.type_id or a.n != b.n:
         return False
+    if a.type_id == "table" or a.type_id == "table_project":
+        if a.type_id == "table_project" and len(b.projected) > 0:
+            if len(b.projected) != len(a.tables):
+                return False
+            var i = 0
+            while i < len(a.tables):
+                if not _close(a.tables[i].floats[0], b.projected[i]):
+                    return False
+                i += 1
+            return True
+        if len(a.tables) != len(b.tables):
+            return False
+        var i = 0
+        while i < len(a.tables):
+            if not fidelity_table(a.tables[i], b.tables[i]):
+                return False
+            i += 1
+        return True
+    if a.type_id == "nested_table":
+        if len(a.nested_rows) != len(b.nested_rows):
+            return False
+        var i = 0
+        while i < len(a.nested_rows):
+            if not fidelity_nested(a.nested_rows[i], b.nested_rows[i]):
+                return False
+            i += 1
+        return True
+    if a.type_id == "signal":
+        if len(a.signals) != len(b.signals):
+            return False
+        var i = 0
+        while i < len(a.signals):
+            if not fidelity_signal(a.signals[i], b.signals[i]):
+                return False
+            i += 1
+        return True
     if a.type_id == "message":
         if len(a.messages) != len(b.messages):
             return False

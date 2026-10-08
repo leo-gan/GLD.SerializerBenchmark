@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, and Smile. The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, Smile, Arrow IPC, and Parquet. The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
 
 ## Runtime
 
@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
+There is no native XML library in this wave. Columnar rows are separate from the five suite types. `arrow-ipc` is gld-arrow 0.2.0 (IPC stream). `parquet` and `parquet-uncompressed` are gld-parquet 0.2.0 (Snappy, and the same writer with compression off). TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
 
 These times cannot be ranked against another language.
 
@@ -66,6 +66,9 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 | [mojo-ion](https://github.com/leo-gan/gld-ion) | Binary | leo-gan/gld-ion 0.2.0 | bytes only | Ion 1.0 binary document encode / decode |
 | [mojo-smile](https://github.com/leo-gan/gld-smile) | Binary | leo-gan/gld-smile 0.2.0 | bytes only | Smile document encode / decode |
+| [arrow-ipc](https://github.com/leo-gan/gld-arrow) | Columnar | leo-gan/gld-arrow 0.2.0 | bytes only | IPC stream on `table`, `table_project`, `nested_table`, and `signal` |
+| [parquet](https://github.com/leo-gan/gld-parquet) | Columnar | leo-gan/gld-parquet 0.2.0 | bytes only | Parquet file, Snappy pages |
+| [parquet-uncompressed](https://github.com/leo-gan/gld-parquet) | Columnar | leo-gan/gld-parquet 0.2.0 | bytes only | Same writer with page compression off |
 
 ### Specifics
 
@@ -101,11 +104,11 @@ gld-avro (leo-gan) implements Apache Avro for Mojo via `AvroDatum`. Avro exists 
 
 #### [mojo-toml](https://github.com/DataBooth/mojo-toml) · `0.9.1`
 
-DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is the next row; the two do not share a serializer id or a Mojo package name.
+DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is a different library and is the gld-toml row.
 
 #### [gld-toml](https://github.com/leo-gan/gld-toml) · `0.1.0`
 
-gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as `gldtoml` so `from toml` still means DataBooth and `from gldtoml` means this library.
+gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml so its package name does not collide with DataBooth's toml package.
 
 #### [gld-yaml](https://github.com/leo-gan/gld-yaml) · `0.6.0`
 
@@ -127,6 +130,18 @@ gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a t
 
 gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value.
 
+#### [arrow-ipc](https://github.com/leo-gan/gld-arrow) · `0.2.0`
+
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a from-scratch Arrow library for Mojo. This row times `encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not the Arrow file. The record batch is built inside serialize. gld-arrow has no included-fields reader, so table_project decodes the stream and then materializes f_float_0 only. Suite columns are required because these rows have no nulls.
+
+#### [parquet](https://github.com/leo-gan/gld-parquet) · `0.2.0`
+
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. gld-parquet (leo-gan) is a from-scratch Parquet library for Mojo. The library default is uncompressed, so this row sets Snappy, the suite page codec. table_project decodes the file and then reads f_float_0 only, because decode_table has no column projection. Lists use the standard three-level group.
+
+#### [parquet-uncompressed](https://github.com/leo-gan/gld-parquet) · `0.2.0`
+
+This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override.
+
 ### Call-path contract
 
 ```text
@@ -141,7 +156,7 @@ fidelity                         # untimed, float-tolerant
 - Stream mode is not claimed (`stream_policy: bytes_only`).
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
 - ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with the other JSON packages. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
-- Apache Arrow (marrow) and Parquet are columnar file/table APIs, not object codecs for these fixtures.
+- `arrow-ipc`, `parquet`, and `parquet-uncompressed` run only on `table`, `table_project`, `nested_table`, and `signal`. Invoke them with `BENCHMARK_RUN_CONFIG=config/library/columnar.yaml`.
 - `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.1.
 - `forfudan/decimojo` is a decimal-math library. Its old tomlmojo parser is not a standalone serializer.
 

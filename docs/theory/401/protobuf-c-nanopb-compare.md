@@ -49,7 +49,7 @@ Picture two libraries that encode and decode the same Protocol Buffers bytes but
 | **Submessages** | Pointers plus recursive unpack | Nested structs or callbacks, depending on options |
 | **Unknown fields** | Often retained for round-trip | Policy and options; not “always keep” the way desktop stacks often do |
 | **Typical failure** | Out of memory, or a leak if free is skipped | Encode/decode fails if data exceeds a static max |
-| **Suite registration** | `protobuf-c` | `nanopb` (a separate log name—compare within C and the schema-driven family) |
+| **Suite registration** | `protobuf-c` | `nanopb` (a separate log name—compare within C, on the Protocol Buffers standard) |
 
 **Ownership contrast.** Ownership means who allocates memory and who must free it. protobuf-c leans on the heap for unpack. nanopb prefers pre-sized static storage. In the common case, nothing needs to be freed at all.
 
