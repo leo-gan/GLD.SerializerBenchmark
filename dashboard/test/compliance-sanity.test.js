@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { heatmapFromMatrix, parseRowIdentity } from '../compliance-matrix.js';
 import { CATALOG } from '../compliance-catalog.js';
-import { catalogMissing, classifyByName, classifySerializer } from '../compliance-classify.js';
+import { catalogMissing, classifyByName, classifySerializer, registeredEntries } from '../compliance-classify.js';
 import {
   EMPTY_STANDARDS_SEP,
   EMPTY_STANDARDS_SEP_ID,
@@ -17,6 +17,7 @@ import {
   auditComplianceGroups,
   benchMapFromGroups,
   canonicalSerializer,
+  entriesFromRegistered,
   formatLabel,
   formatSubset,
   formatsBySerializer,
@@ -70,12 +71,13 @@ function benchMapFromStats(doc) {
   return benchMapFromGroups(doc.groups);
 }
 
-test('No public spec is marked with * and sits after populated Standards', () => {
+test('No public spec uses one label and sits after populated Standards', () => {
   const ids = standardOptionIds();
   assert.ok(ids.includes(NO_SPEC));
   assert.equal(ids.filter((id) => id === NO_SPEC).length, 1);
+  assert.equal(NO_SPEC_LABEL, 'No public spec');
   assert.equal(formatLabel(NO_SPEC), NO_SPEC_LABEL);
-  assert.ok(NO_SPEC_LABEL.startsWith('*'));
+  assert.equal(formatLabel('custom'), NO_SPEC_LABEL);
   assert.ok(ids.includes('json'));
   assert.ok(ids.indexOf('json') < ids.indexOf(NO_SPEC));
 });
@@ -434,6 +436,104 @@ test('live payload allows overlapping Standard subsets', () => {
   // Today most languages register one bench name per family (jackson vs jackson-yaml).
   // Overlap must stay legal even when the live count is zero.
   assert.ok(multi >= 0);
+});
+
+const DAGR_NAMES = ['dagr-frozen', 'dagr-frozen-packed', 'dagr-packed', 'dagr-regular'];
+
+test('registered catalog names join the roster when the bench has no row', () => {
+  const bench = { cpp: { bitsery: '5', nlohmann_json: '3.12' }, rust: { serde_json: '1' } };
+  const cppNoSpec = noSpecEntries({
+    language: 'cpp',
+    benchVersions: bench,
+    matrix: [],
+    registered: CATALOG,
+  }).map((e) => e.serializer);
+  for (const name of DAGR_NAMES) {
+    assert.ok(cppNoSpec.includes(name), `C++ No public spec missing ${name}`);
+  }
+  assert.equal(cppNoSpec.includes('nlohmann_json'), false);
+  assert.equal(cppNoSpec.includes('glaze'), false);
+  const json = formatSubset([], 'json', 'cpp', bench, CATALOG).map((e) => e.serializer);
+  assert.ok(json.includes('glaze'), 'catalog-only JSON library stays on JSON');
+  assert.ok(json.includes('nlohmann_json'));
+  for (const name of DAGR_NAMES) assert.equal(json.includes(name), false, name);
+
+  const allNoSpec = noSpecEntries({ language: '', benchVersions: bench, matrix: [], registered: CATALOG });
+  for (const lang of ['cpp', 'rust']) {
+    const got = allNoSpec
+      .filter((e) => e.language === lang && DAGR_NAMES.includes(e.serializer))
+      .map((e) => e.serializer)
+      .sort();
+    assert.deepEqual(got, [...DAGR_NAMES].sort(), lang);
+  }
+
+  const fromName = entriesFromRegistered(
+    [{ language: 'cpp', name: 'dagr-packed' }],
+    'cpp',
+  );
+  assert.equal(fromName.length, 1);
+  assert.equal(fromName[0].serializer, 'dagr-packed');
+
+  const audit = auditComplianceGroups({
+    language: 'cpp',
+    benchVersions: bench,
+    matrix: [],
+    registered: CATALOG,
+  });
+  assert.deepEqual(audit.issues, []);
+});
+
+test('live C++ and All rosters list Dagr under No public spec', () => {
+  const compliance = loadJsonGz('compliance.json.gz');
+  const langs = ['cpp', 'rust', 'go', 'python', 'javascript', 'swift', 'mojo'];
+  const benchVersions = {};
+  for (const lang of langs) {
+    benchVersions[lang] = benchMapFromStats(loadJsonGz(`stats_${lang}_latest.json.gz`));
+    for (const name of DAGR_NAMES) {
+      assert.equal(benchVersions[lang][name], '2026.10.1', `${lang} ${name}`);
+    }
+  }
+  const cppNoSpec = noSpecEntries({
+    language: 'cpp',
+    benchVersions,
+    matrix: compliance.matrix,
+    registered: CATALOG,
+  }).map((e) => e.serializer);
+  for (const name of DAGR_NAMES) assert.ok(cppNoSpec.includes(name), name);
+  const cppJson = formatSubset(compliance.matrix, 'json', 'cpp', benchVersions, CATALOG).map((e) => e.serializer);
+  for (const name of DAGR_NAMES) assert.equal(cppJson.includes(name), false, name);
+
+  const allNoSpec = noSpecEntries({
+    language: '',
+    benchVersions,
+    matrix: compliance.matrix,
+    registered: CATALOG,
+  });
+  for (const lang of ['cpp', 'rust']) {
+    for (const name of DAGR_NAMES) {
+      assert.ok(
+        allNoSpec.some((e) => e.language === lang && e.serializer === name),
+        `All No public spec missing ${lang}/${name}`,
+      );
+    }
+  }
+  for (const lang of ['', 'cpp']) {
+    const report = auditComplianceGroups({
+      language: lang,
+      benchVersions,
+      matrix: compliance.matrix,
+      registered: CATALOG,
+    });
+    assert.deepEqual(report.issues, [], lang || 'all');
+  }
+});
+
+test('registeredEntries lists Dagr with an empty format list', () => {
+  for (const lang of ['cpp', 'rust', 'go', 'python', 'javascript', 'swift', 'mojo']) {
+    const rows = registeredEntries(lang).filter((row) => row.serializer.startsWith('dagr-'));
+    assert.deepEqual(rows.map((row) => row.serializer).sort(), [...DAGR_NAMES].sort(), lang);
+    for (const row of rows) assert.deepEqual(row.formats, [], `${lang}/${row.serializer}`);
+  }
 });
 
 test('alias table only remaps known split names', () => {

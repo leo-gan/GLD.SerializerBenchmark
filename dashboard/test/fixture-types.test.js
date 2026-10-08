@@ -123,6 +123,77 @@ test('All keeps the current data type and its data set', () => {
   assert.equal(resolved.dataSet, 'columnar');
 });
 
+test('a standard measured on both sets keeps a columnar type until the standard changes', () => {
+  const groups = [...rows('avro', SUITE), ...rows('avro', COLUMNAR)];
+  const kept = resolveStandardDataSet({
+    groups,
+    standard: 'avro',
+    testData: 'table@n=1',
+  });
+  assert.deepEqual(kept.sets, ['suite', 'columnar']);
+  assert.equal(kept.dataSet, 'columnar');
+  assert.equal(kept.testData, 'table@n=1');
+  assert.equal(kept.keys.includes('message@n=1'), true);
+});
+
+test('changing to Avro, JSON, Protocol Buffers, or FlatBuffers opens Suite', () => {
+  for (const standard of ['avro', 'json', 'protobuf', 'flatbuffers']) {
+    const resolved = resolveStandardDataSet({
+      groups: [...rows(standard, SUITE), ...rows(standard, COLUMNAR)],
+      standard,
+      testData: 'table@n=100',
+      preferPrimary: true,
+    });
+    assert.equal(resolved.dataSet, 'suite', standard);
+    assert.equal(resolved.testData, 'message@n=1', standard);
+    assert.equal(resolved.keys.includes('table@n=1'), true, standard);
+    assert.equal(resolved.keys.includes('nested_table@n=1'), true, standard);
+  }
+});
+
+test('a standard change keeps the current Suite type', () => {
+  const resolved = resolveStandardDataSet({
+    groups: [...rows('avro', SUITE), ...rows('avro', COLUMNAR)],
+    standard: 'avro',
+    testData: 'event@n=100',
+    preferPrimary: true,
+  });
+  assert.equal(resolved.dataSet, 'suite');
+  assert.equal(resolved.testData, 'event@n=100');
+});
+
+test('changing to a columnar-only standard still opens Columnar', () => {
+  for (const standard of ['arrow', 'parquet', 'orc']) {
+    const resolved = resolveStandardDataSet({
+      groups: rows(standard, COLUMNAR),
+      standard,
+      testData: 'message@n=1',
+      preferPrimary: true,
+    });
+    assert.equal(resolved.dataSet, 'columnar', standard);
+    assert.equal(resolved.testData, 'table@n=1', standard);
+  }
+  const sbe = resolveStandardDataSet({
+    groups: rows('sbe', SBE),
+    standard: 'sbe',
+    testData: 'nested_table@n=1',
+    preferPrimary: true,
+  });
+  assert.equal(sbe.dataSet, 'columnar');
+  assert.equal(sbe.testData, 'table@n=1');
+});
+
+test('All keeps the current columnar type when the standard changes to All', () => {
+  const resolved = resolveStandardDataSet({
+    groups: [...rows('json', SUITE), ...rows('avro', SUITE), ...rows('avro', COLUMNAR), ...rows('arrow', COLUMNAR)],
+    standard: 'all',
+    testData: 'signal@n=100',
+    preferPrimary: true,
+  });
+  assert.equal(resolved.dataSet, 'columnar');
+  assert.equal(resolved.testData, 'signal@n=100');
+});
+
 test('a standard with no rows does not change the data type', () => {
   const resolved = resolveStandardDataSet({
     groups: rows('arrow', COLUMNAR),

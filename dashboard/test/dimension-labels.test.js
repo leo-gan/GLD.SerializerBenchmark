@@ -1,9 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   applyDimensionLabels,
   dataSetForTypeId,
   matchesStandard,
+  missingRegisteredRows,
   standardForSerializer,
   benchmarkStandardMenu,
   NO_SERIALIZERS_SEP,
@@ -63,22 +67,85 @@ test('Standard menu is All, populated standards, then standards with no serializ
     language: 'csharp',
     labels,
     allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
-    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'Custom' }[id] || id),
+    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'No public spec' }[id] || id),
   });
   const ids = items.map((item) => item.id);
   assert.equal(ids[0], 'all');
+  assert.equal(items[0].label, 'All');
   const sep = ids.indexOf(NO_SERIALIZERS_SEP_ID);
+  const customAt = ids.indexOf('custom');
   assert.ok(sep > 1);
+  assert.equal(customAt, sep - 1);
+  assert.equal(items[customAt].label, 'No public spec');
+  assert.equal(items[customAt].disabled, false);
   assert.equal(items[sep].disabled, true);
   assert.equal(items[sep].label, NO_SERIALIZERS_SEP);
-  const populated = ids.slice(1, sep);
+  assert.equal(NO_SERIALIZERS_SEP, '── no serializers ──');
+  const populated = ids.slice(1, customAt);
   const empty = ids.slice(sep + 1);
   assert.deepEqual(populated, ['json']);
+  assert.equal(empty.includes('custom'), false);
   assert.ok(empty.includes('arrow'));
   assert.ok(empty.includes('toml'));
   assert.ok(empty.includes('parquet'));
   assert.ok(empty.includes('avro'));
-  assert.ok(empty.includes('custom'));
   const emptyLabels = items.slice(sep + 1).map((item) => item.label);
   assert.deepEqual(emptyLabels, [...emptyLabels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+});
+
+test('No public spec stays pinned when this language has custom rows', () => {
+  const items = benchmarkStandardMenu({
+    language: 'c',
+    labels,
+    allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
+    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'No public spec' }[id] || id),
+  });
+  const ids = items.map((item) => item.id);
+  const customAt = ids.indexOf('custom');
+  const sep = ids.indexOf(NO_SERIALIZERS_SEP_ID);
+  assert.deepEqual(ids.slice(1, customAt), ['json']);
+  assert.equal(customAt, sep - 1);
+  assert.equal(ids.filter((id) => id === 'custom').length, 1);
+});
+
+const DAGR = ['dagr-frozen', 'dagr-frozen-packed', 'dagr-packed', 'dagr-regular'];
+
+test('missing registered rows keep the standard filter and skip measured names', () => {
+  const registrations = [
+    { language: 'cpp', serializer: 'bitsery', standard: 'custom' },
+    { language: 'cpp', serializer: 'nlohmann_json', standard: 'json' },
+    { language: 'cpp', serializer: 'dagr-packed', standard: 'custom' },
+    { language: 'cpp', serializer: 'dagr-regular', standard: 'custom' },
+    { language: 'rust', serializer: 'dagr-packed', standard: 'custom' },
+  ];
+  const custom = missingRegisteredRows({
+    language: 'cpp',
+    selectedStandard: 'custom',
+    measuredNames: ['bitsery', 'nlohmann_json'],
+    registrations,
+    testData: 'message@n=1',
+  });
+  assert.deepEqual(custom.map((row) => row.serializer), ['dagr-packed', 'dagr-regular']);
+  assert.equal(custom[0].unmeasured, true);
+  assert.equal(custom[0].test_data, 'message@n=1');
+  assert.equal(custom[0].standard, 'custom');
+
+  const jsonOnly = missingRegisteredRows({
+    language: 'cpp',
+    selectedStandard: 'json',
+    measuredNames: ['bitsery'],
+    registrations,
+  });
+  assert.deepEqual(jsonOnly.map((row) => row.serializer), ['nlohmann_json']);
+  assert.equal(jsonOnly.some((row) => row.serializer.startsWith('dagr-')), false);
+});
+
+test('dimension labels map every Dagr row to custom', () => {
+  const path = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'dimension-labels.json');
+  const labels = JSON.parse(readFileSync(path, 'utf8'));
+  for (const lang of ['python', 'javascript', 'go', 'rust', 'cpp', 'swift', 'mojo']) {
+    for (const name of DAGR) {
+      assert.equal(labels.standards[lang][name], 'custom', `${lang}/${name}`);
+    }
+  }
 });

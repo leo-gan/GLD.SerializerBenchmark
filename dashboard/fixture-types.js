@@ -133,10 +133,19 @@ function isNaturalFixtureKey(key) {
  * No rows: keep the current type (`keepType`) and leave the menu alone.
  * One data set: use it, and replace the type when it is outside that set.
  * Both: keep the current type when it is still present. The label follows the type.
+ * preferPrimary is a Standard change. A standard that has Suite rows opens on
+ * Suite, even when that library was also measured on Columnar types. Columnar-only
+ * standards (no Suite rows) stay Columnar. All keeps the current type.
+ * The returned keys still list every type, so Columnar stays in the data-type menu.
  *
- * @param {{ groups?: object[], standard?: string, testData?: string }} args
+ * @param {{ groups?: object[], standard?: string, testData?: string, preferPrimary?: boolean }} args
  */
-export function resolveStandardDataSet({ groups = [], standard = 'all', testData = '' } = {}) {
+export function resolveStandardDataSet({
+  groups = [],
+  standard = 'all',
+  testData = '',
+  preferPrimary = false,
+} = {}) {
   const selected = standard || 'all';
   const matching = selected === 'all'
     ? (groups || [])
@@ -157,11 +166,15 @@ export function resolveStandardDataSet({ groups = [], standard = 'all', testData
     };
   }
   const keys = discoverFixtureOptions(matching).all;
+  const primary = sets.includes('suite') ? 'suite' : sets[0];
+  const snapToPrimary = !!preferPrimary && selected !== 'all' && sets.length > 1;
   let next = testData || '';
+  if (snapToPrimary && dataSetForFixture(next) !== primary) next = '';
   if (!keys.includes(next)) {
-    const natural = keys.filter(isNaturalFixtureKey);
-    next = pickPreferredFixture(natural) || keys[0] || '';
+    const pool = snapToPrimary ? keys.filter((key) => dataSetForFixture(key) === primary) : keys;
+    const natural = pool.filter(isNaturalFixtureKey);
+    next = pickPreferredFixture(natural) || pool[0] || keys[0] || '';
   }
-  const dataSet = sets.length === 1 ? sets[0] : (dataSetForFixture(next) || sets[0]);
+  const dataSet = sets.length === 1 ? sets[0] : (dataSetForFixture(next) || primary);
   return { keepType: false, dataSet, testData: next, keys, sets };
 }

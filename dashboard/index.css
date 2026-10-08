@@ -427,6 +427,30 @@ body.dash-view-compare .toolbar > .tabs {
   background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
 }
 
+/* Standards menus only. All is a meta choice, not a named standard like JSON.
+   No public spec is the unscored bucket (Overview id custom, Compliance id no-spec). */
+.filter-group-primary .select-wrapper select.std-select-all,
+.cmp-filter select.std-select-all,
+option.std-opt-all {
+  font-style: italic;
+  font-weight: 700;
+  color: var(--color-brand-indigo);
+}
+
+.filter-group-primary .select-wrapper select.std-select-nospec,
+.cmp-filter select.std-select-nospec,
+option.std-opt-nospec {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+option.std-opt-sep {
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 600;
+}
+
 /* Data set follows the standard. Same box as a primary select, no chevron. */
 .filter-group-primary .dataset-value {
   display: inline-flex;
@@ -1409,6 +1433,11 @@ footer {
 .badge-slate {
   background: #e8eaed;
   color: #5f6368;
+}
+
+.badge-nospec {
+  font-style: italic;
+  font-weight: 500;
 }
 
 .section-help {

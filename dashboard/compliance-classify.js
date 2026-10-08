@@ -48,3 +48,26 @@ export function catalogMissing(language, name) {
   const slice = languageSlice(language);
   return !slice || !Object.prototype.hasOwnProperty.call(slice, name);
 }
+
+/**
+ * Every registered serializer in one language, or in every language when
+ * `language` is empty. `formats` is empty when the row has no public spec.
+ */
+export function registeredEntries(language = '') {
+  const langs = mapping?.languages || {};
+  const names = !language || language === 'all' ? Object.keys(langs) : [language];
+  const out = [];
+  for (const lang of names) {
+    const slice = langs[lang];
+    if (!slice || typeof slice !== 'object') continue;
+    for (const serializer of Object.keys(slice)) {
+      const fmts = slice[serializer];
+      out.push({
+        language: lang,
+        serializer,
+        formats: Array.isArray(fmts) ? [...fmts] : [],
+      });
+    }
+  }
+  return out;
+}
