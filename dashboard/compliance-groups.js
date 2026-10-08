@@ -12,10 +12,10 @@
  *                  runners use), plus any that have live matrix cells for S.
  *                  Subsets may overlap; a multi-standard name is in each.
  *                  A registered name is classified the same way.
- * * No public spec = All − ∪(every Standard). Classification, not “has a
+ * No public spec = All − ∪(every Standard). Classification, not “has a
  *                  live catalog run”, decides membership — mpack is
- *                  MessagePack even with empty cells. A registered name
- *                  whose list is empty stays here when no run measured it.
+ *                  MessagePack even with empty cells. A name whose list is
+ *                  empty stays here, measured or not.
  */
 import {
   heatmapFromMatrix,
@@ -29,7 +29,7 @@ import { classifySerializer } from './compliance-classify.js';
 
 export const ALL_FORMAT = '';
 export const NO_SPEC = 'no-spec';
-export const NO_SPEC_LABEL = '* No public spec';
+export const NO_SPEC_LABEL = 'No public spec';
 /** Disabled <option> between populated Standards and those with no serializers. */
 export const EMPTY_STANDARDS_SEP = '── no serializers ──';
 export const EMPTY_STANDARDS_SEP_ID = '__no-serializers__';
@@ -74,8 +74,14 @@ export const FORMAT_LABELS = {
 };
 
 export function formatLabel(id) {
-  if (id === NO_SPEC) return NO_SPEC_LABEL;
+  if (id === NO_SPEC || id === 'custom') return NO_SPEC_LABEL;
   return FORMAT_LABELS[id] || id;
+}
+
+/** Shared Standards menu text. Overview id `custom` and Compliance id `no-spec` are one bucket. */
+export function standardMenuLabel(id) {
+  if (id == null || id === '' || id === 'all') return 'All';
+  return formatLabel(id);
 }
 
 /**
@@ -216,7 +222,7 @@ export function standardHasSerializers(format, { language = '', benchVersions = 
 
 /**
  * Standard dropdown items after All:
- *   populated families (sorted) → * No public spec → disabled separator → empty families (sorted).
+ *   populated families (sorted) → No public spec → disabled separator → empty families (sorted).
  */
 export function standardMenuOptions({ language = '', benchVersions = {}, matrix = [], registered = [] } = {}) {
   const populated = [];
@@ -479,7 +485,7 @@ export function auditComplianceGroups({ language = '', benchVersions = {}, matri
   if (sepAt >= 0 && !menu[sepAt].disabled) {
     issues.push('empty-standards separator must be disabled');
   }
-  if (formatLabel(NO_SPEC) !== NO_SPEC_LABEL || !NO_SPEC_LABEL.startsWith('*')) {
+  if (formatLabel(NO_SPEC) !== NO_SPEC_LABEL || formatLabel('custom') !== NO_SPEC_LABEL) {
     issues.push(`No public spec label should be ${JSON.stringify(NO_SPEC_LABEL)}`);
   }
 

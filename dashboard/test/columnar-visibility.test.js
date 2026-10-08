@@ -41,16 +41,18 @@ function rowCounts(groups) {
   return counts;
 }
 
-/** Five-type group counts from the snapshots before the columnar append. */
-// One parent row per serializer after I/O fold (bytes+stream are no longer two groups).
+/** Five-type group counts in the published snapshots.
+ *  Dagr languages include 8 extra groups per type (4 layouts × n=1 and n=100).
+ *  One parent row per serializer after I/O fold (bytes+stream are no longer two groups).
+ */
 const ROW_COUNTS = {
-  python: { message: 36, document: 36, telemetry: 36, strings: 36, event: 36 },
-  cpp: { message: 58, document: 58, telemetry: 58, strings: 58, event: 58 },
+  python: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
+  cpp: { message: 66, document: 66, telemetry: 66, strings: 66, event: 66 },
   csharp: { message: 94, document: 92, telemetry: 92, strings: 92, event: 94 },
-  go: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
+  go: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
   java: { message: 42, document: 42, telemetry: 42, strings: 42, event: 42 },
-  rust: { message: 35, document: 35, telemetry: 35, strings: 36, event: 35 },
-  javascript: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
+  rust: { message: 43, document: 43, telemetry: 43, strings: 44, event: 43 },
+  javascript: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
   kotlin: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
 };
 

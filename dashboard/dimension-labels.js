@@ -38,7 +38,7 @@ export function applyDimensionLabels(group, labels) {
   return group;
 }
 
-export const NO_SERIALIZERS_SEP = '--no serializers--';
+export const NO_SERIALIZERS_SEP = '── no serializers ──';
 export const NO_SERIALIZERS_SEP_ID = '__no-serializers__';
 
 function compareStandardLabels(a, b, labelOf) {
@@ -47,8 +47,9 @@ function compareStandardLabels(a, b, labelOf) {
 
 /**
  * Standard dropdown for one language.
- * All, then standards that have a serializer here (sorted), then a disabled
- * separator, then standards that have none here (sorted).
+ * All, then standards that have a serializer here (sorted), then No public spec
+ * (`custom`), then a disabled separator, then standards that have none here (sorted).
+ * No public spec stays in that slot even when this language has no such rows.
  *
  * @param {object} args
  * @param {object[]} [args.groups] rows for this language (any data type)
@@ -88,7 +89,7 @@ export function benchmarkStandardMenu({
   const populated = [];
   const empty = [];
   for (const id of universe) {
-    if (id === 'all' || id === NO_SERIALIZERS_SEP_ID) continue;
+    if (id === 'all' || id === NO_SERIALIZERS_SEP_ID || id === 'custom') continue;
     (present.has(id) ? populated : empty).push(id);
   }
   populated.sort((a, b) => compareStandardLabels(a, b, labelOf));
@@ -96,6 +97,7 @@ export function benchmarkStandardMenu({
 
   const items = [{ id: 'all', label: 'All', disabled: false }];
   for (const id of populated) items.push({ id, label: labelOf(id), disabled: false });
+  items.push({ id: 'custom', label: labelOf('custom'), disabled: false });
   if (empty.length) {
     items.push({ id: NO_SERIALIZERS_SEP_ID, label: NO_SERIALIZERS_SEP, disabled: true });
     for (const id of empty) items.push({ id, label: labelOf(id), disabled: false });

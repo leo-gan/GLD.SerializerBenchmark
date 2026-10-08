@@ -263,6 +263,8 @@ body.dash-view-compliance #experiments {
 .cmp-filter-nospec select,
 .cmp-opt-nospec {
   font-style: italic;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .cmp-opt-sep {

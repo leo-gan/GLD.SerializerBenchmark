@@ -67,24 +67,45 @@ test('Standard menu is All, populated standards, then standards with no serializ
     language: 'csharp',
     labels,
     allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
-    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'Custom' }[id] || id),
+    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'No public spec' }[id] || id),
   });
   const ids = items.map((item) => item.id);
   assert.equal(ids[0], 'all');
+  assert.equal(items[0].label, 'All');
   const sep = ids.indexOf(NO_SERIALIZERS_SEP_ID);
+  const customAt = ids.indexOf('custom');
   assert.ok(sep > 1);
+  assert.equal(customAt, sep - 1);
+  assert.equal(items[customAt].label, 'No public spec');
+  assert.equal(items[customAt].disabled, false);
   assert.equal(items[sep].disabled, true);
   assert.equal(items[sep].label, NO_SERIALIZERS_SEP);
-  const populated = ids.slice(1, sep);
+  assert.equal(NO_SERIALIZERS_SEP, '── no serializers ──');
+  const populated = ids.slice(1, customAt);
   const empty = ids.slice(sep + 1);
   assert.deepEqual(populated, ['json']);
+  assert.equal(empty.includes('custom'), false);
   assert.ok(empty.includes('arrow'));
   assert.ok(empty.includes('toml'));
   assert.ok(empty.includes('parquet'));
   assert.ok(empty.includes('avro'));
-  assert.ok(empty.includes('custom'));
   const emptyLabels = items.slice(sep + 1).map((item) => item.label);
   assert.deepEqual(emptyLabels, [...emptyLabels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+});
+
+test('No public spec stays pinned when this language has custom rows', () => {
+  const items = benchmarkStandardMenu({
+    language: 'c',
+    labels,
+    allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
+    labelOf: (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'No public spec' }[id] || id),
+  });
+  const ids = items.map((item) => item.id);
+  const customAt = ids.indexOf('custom');
+  const sep = ids.indexOf(NO_SERIALIZERS_SEP_ID);
+  assert.deepEqual(ids.slice(1, customAt), ['json']);
+  assert.equal(customAt, sep - 1);
+  assert.equal(ids.filter((id) => id === 'custom').length, 1);
 });
 
 const DAGR = ['dagr-frozen', 'dagr-frozen-packed', 'dagr-packed', 'dagr-regular'];

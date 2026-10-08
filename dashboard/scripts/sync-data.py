@@ -9,9 +9,17 @@ import re
 # Timestamped benchmark logs: YYYY-MM-DD-HHMMSS.csv
 # Columnar publication CSVs use names like 2026-10-02-py-columnar-full.csv so
 # they are NOT selected here. dashboard/scripts/splice-columnar-stats.py appends
-# those groups onto the five-type snapshot. Do not let this script drop them.
+# those groups onto the five-type snapshot. Dagr publication CSVs use names like
+# 2026-10-08-cpp-dagr-full.csv. dashboard/scripts/splice-dagr-stats.py appends
+# those groups. Do not let this script drop either splice.
 _RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 _COLUMNAR_TYPES = {"table", "table_project", "nested_table", "signal"}
+_DAGR_SERIALIZERS = {
+    "dagr-frozen",
+    "dagr-frozen-packed",
+    "dagr-packed",
+    "dagr-regular",
+}
 
 
 def _base_types(stats):
@@ -20,6 +28,15 @@ def _base_types(stats):
         base = str(group.get("test_data") or "").split("@n=")[0]
         if base:
             found.add(base)
+    return found
+
+
+def _serializer_names(stats):
+    found = set()
+    for group in (stats or {}).get("groups") or []:
+        name = str(group.get("serializer") or "")
+        if name:
+            found.add(name)
     return found
 
 
@@ -34,6 +51,23 @@ def _refuse_columnar_loss(lang, existing_stats, new_stats):
     print(f"ERROR: {lang} snapshot has columnar types {sorted(lost)} that this sync would drop.")
     print("That snapshot was built by splice-columnar-stats.py. Refusing to overwrite.")
     print("Set DASHBOARD_REPLACE_COLUMNAR=1 to replace the snapshot anyway.")
+    sys.exit(1)
+
+
+def _refuse_dagr_loss(lang, existing_stats, new_stats):
+    """Abort when a sync would erase spliced Dagr serializers.
+
+    A later full-matrix stats file that still contains the dagr-* names passes.
+    """
+    lost = (_serializer_names(existing_stats) & _DAGR_SERIALIZERS) - _serializer_names(new_stats)
+    if not lost:
+        return
+    if os.environ.get("DASHBOARD_REPLACE_DAGR", "").strip().lower() in ("1", "true", "yes"):
+        print(f"WARNING: {lang} replacing snapshot and dropping Dagr serializers {sorted(lost)}")
+        return
+    print(f"ERROR: {lang} snapshot has Dagr serializers {sorted(lost)} that this sync would drop.")
+    print("That snapshot was built by splice-dagr-stats.py. Refusing to overwrite.")
+    print("Set DASHBOARD_REPLACE_DAGR=1 to replace the snapshot anyway.")
     sys.exit(1)
 
 def find_latest_run(lang_logs_dir):
@@ -156,6 +190,7 @@ def main():
             except Exception as e:
                 print(f"Warning: could not read existing stats for {lang}: {e}")
         _refuse_columnar_loss(lang, existing_stats, stats_data)
+        _refuse_dagr_loss(lang, existing_stats, stats_data)
         if stats_data:
             stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
                 "utf-8"

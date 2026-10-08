@@ -71,12 +71,13 @@ function benchMapFromStats(doc) {
   return benchMapFromGroups(doc.groups);
 }
 
-test('No public spec is marked with * and sits after populated Standards', () => {
+test('No public spec uses one label and sits after populated Standards', () => {
   const ids = standardOptionIds();
   assert.ok(ids.includes(NO_SPEC));
   assert.equal(ids.filter((id) => id === NO_SPEC).length, 1);
+  assert.equal(NO_SPEC_LABEL, 'No public spec');
   assert.equal(formatLabel(NO_SPEC), NO_SPEC_LABEL);
-  assert.ok(NO_SPEC_LABEL.startsWith('*'));
+  assert.equal(formatLabel('custom'), NO_SPEC_LABEL);
   assert.ok(ids.includes('json'));
   assert.ok(ids.indexOf('json') < ids.indexOf(NO_SPEC));
 });
@@ -489,7 +490,7 @@ test('live C++ and All rosters list Dagr under No public spec', () => {
   for (const lang of langs) {
     benchVersions[lang] = benchMapFromStats(loadJsonGz(`stats_${lang}_latest.json.gz`));
     for (const name of DAGR_NAMES) {
-      assert.equal(benchVersions[lang][name], undefined, `${lang} snapshot must not invent a ${name} row`);
+      assert.equal(benchVersions[lang][name], '2026.10.1', `${lang} ${name}`);
     }
   }
   const cppNoSpec = noSpecEntries({

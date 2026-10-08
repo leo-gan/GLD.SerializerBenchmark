@@ -296,7 +296,12 @@ function matrixForLang() {
 }
 
 function selectHtml(id, label, values, current, labelFn) {
-  const opts = ['<option value="">All</option>'];
+  const standardMenu = id === 'cmp-filter-standard';
+  const opts = [
+    standardMenu
+      ? '<option value="" class="std-opt-all">All</option>'
+      : '<option value="">All</option>',
+  ];
   for (const v of values) {
     const item = v && typeof v === 'object' ? v : { id: v };
     const value = item.id ?? '';
@@ -304,16 +309,21 @@ function selectHtml(id, label, values, current, labelFn) {
     const sel = !item.disabled && value === current ? ' selected' : '';
     const disabled = item.disabled ? ' disabled' : '';
     const cls = [];
-    if (value === NO_SPEC) cls.push('cmp-opt-nospec');
+    if (standardMenu && value === NO_SPEC) cls.push('std-opt-nospec', 'cmp-opt-nospec');
     if (item.disabled) cls.push('cmp-opt-sep');
+    if (standardMenu && item.disabled) cls.push('std-opt-sep');
     const extra = cls.length ? ` class="${cls.join(' ')}"` : '';
     opts.push(
       `<option value="${escapeHtml(value)}"${sel}${disabled}${extra}>${escapeHtml(text)}</option>`,
     );
   }
+  const selectCls = [];
+  if (standardMenu && !current) selectCls.push('std-select-all');
+  if (standardMenu && current === NO_SPEC) selectCls.push('std-select-nospec');
   const filterClass = current === NO_SPEC ? 'cmp-filter cmp-filter-nospec' : 'cmp-filter';
+  const selectClass = selectCls.length ? ` class="${selectCls.join(' ')}"` : '';
   return `<label class="${filterClass}">${escapeHtml(label)}
-    <select id="${id}">${opts.join('')}</select></label>`;
+    <select id="${id}"${selectClass}>${opts.join('')}</select></label>`;
 }
 
 function renderEmpty(root, message) {
@@ -591,7 +601,7 @@ function renderMain(root) {
       plus cases written from the spec text. XML is not scored. Standard → All
       lists every registered serializer once. A library that speaks more than
       one family appears under each of those Standards and still only once
-      in All. * No public spec is All minus the union of those families.
+      in All. No public spec is All minus the union of those families.
     </p>
     ${renderLangTabs(tabIds)}
     <p class="cmp-meta">

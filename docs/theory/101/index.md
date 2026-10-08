@@ -125,7 +125,7 @@ The comparison cell is language, standard, data set, and data type. Data set is 
 
 **SBE** (Simple Binary Encoding) keeps the three labels separate. It sits in the schema-driven family. Its data set is Columnar. Its standard is SBE. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet.
 
-Libraries with no public spec, such as `pickle`, `bincode`, and the in-tree custom binaries, use the Dashboard standard **Custom**. On the Compliance view those same libraries are **\* No public spec**, and that view does not score them.
+Libraries with no public spec, such as `pickle`, `bincode`, and the in-tree custom binaries, use the Dashboard standard **No public spec** on Overview, Compare, and Compliance. Compliance does not score them.
 
 ---
 

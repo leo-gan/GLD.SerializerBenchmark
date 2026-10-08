@@ -53,7 +53,7 @@ import {
   missingRegisteredRows,
 } from './dimension-labels.js';
 import { registeredEntries } from './compliance-classify.js';
-import { formatLabel, scoredFormatIds } from './compliance-groups.js';
+import { NO_SPEC_LABEL, scoredFormatIds, standardMenuLabel } from './compliance-groups.js';
 import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
@@ -728,7 +728,7 @@ function setupEventListeners() {
 
   document.getElementById('standard-select')?.addEventListener('change', (e) => {
     state.currentStandard = e.target.value || 'all';
-    applyFilterPolicyToAllGroups({ refreshSelectors: true });
+    applyFilterPolicyToAllGroups({ refreshSelectors: true, preferPrimaryDataSet: true });
     syncDatasetSelect();
     syncFixtureModeSelects();
     saveSettings();
@@ -1673,7 +1673,7 @@ function processStatsData(statsObj) {
 }
 
 /** Bind state.allGroups from the active filter policy. */
-function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
+function applyFilterPolicyToAllGroups({ refreshSelectors = false, preferPrimaryDataSet = false } = {}) {
   const pid = state.filterPolicy;
   const groups =
     state.groupsByPolicy[pid] ||
@@ -1688,6 +1688,7 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
       groups: state.allGroups,
       standard: state.currentStandard,
       testData: state.currentTestData,
+      preferPrimary: preferPrimaryDataSet,
     });
     if (resolved.keepType) {
       state.currentDataSet = dataSetForFixture(state.currentTestData) || state.currentDataSet || 'suite';
@@ -1900,7 +1901,7 @@ function populateStandardSelect() {
     labels: dimensionLabels,
     language: state.currentLanguage,
     allStandardIds: scoredFormatIds(),
-    labelOf: (id) => (id === 'custom' ? 'Custom' : formatLabel(id)),
+    labelOf: standardMenuLabel,
   });
   const selectable = items.filter((item) => !item.disabled).map((item) => item.id);
   const prev = state.currentStandard || 'all';
@@ -1910,10 +1911,15 @@ function populateStandardSelect() {
     opt.value = item.id;
     opt.textContent = item.label;
     opt.disabled = !!item.disabled;
+    if (item.id === 'all') opt.classList.add('std-opt-all');
+    else if (item.id === 'custom') opt.classList.add('std-opt-nospec');
+    else if (item.disabled) opt.classList.add('std-opt-sep');
     sel.appendChild(opt);
   }
   state.currentStandard = selectable.includes(prev) ? prev : 'all';
   sel.value = state.currentStandard;
+  sel.classList.toggle('std-select-all', sel.value === 'all');
+  sel.classList.toggle('std-select-nospec', sel.value === 'custom');
 }
 
 function populateFixtureSelect(options, cfg = {}) {
@@ -3504,7 +3510,10 @@ function renderTable() {
     const lang = r.language || state.currentLanguage || '';
     let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
     if (r.standard) {
-      nameHtml += ` <span class="badge badge-slate">${escapeHtml(r.standard)}</span>`;
+      const nospec = r.standard === 'custom';
+      const standardText = nospec ? NO_SPEC_LABEL : r.standard;
+      const standardClass = nospec ? 'badge badge-slate badge-nospec' : 'badge badge-slate';
+      nameHtml += ` <span class="${standardClass}">${escapeHtml(standardText)}</span>`;
     }
     if (r.unmeasured) {
       nameHtml += ' <span class="badge badge-slate">not measured</span>';

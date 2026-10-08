@@ -68,7 +68,7 @@ The table below lists every article in this course. For each article, it states 
 
 These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/). Both call sites in a pair must follow the same [timing contract](../../analysis/TIMING_HONESTY.md).
 
-The **Standard** column is the contract each side implements. When both sides share a standard, the gap is the library. When the column names two standards, the gap mixes the encoding and the library. **Custom** is the Dashboard bucket for a library with no public spec. A same-standard “Open this slice” link sets that Standard. A link that names two standards opens on **All**, so both columns stay on the chart.
+The **Standard** column is the contract each side implements. When both sides share a standard, the gap is the library. When the column names two standards, the gap mixes the encoding and the library. **No public spec** is the Dashboard bucket for a library with no public spec. A same-standard “Open this slice” link sets that Standard. A link that names two standards opens on **All**, so both columns stay on the chart.
 
 The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, a Dashboard row that times a different library than the row name, and the Kotlin pairs that keep JSON or keep a schema format while changing the library.
 
@@ -77,16 +77,16 @@ The first ten pages take the speed or size leader in each language and ask why i
 | [Python: msgspec-msgpack vs orjson](python-msgspec-vs-orjson.md) | MessagePack and JSON | Show why a positional MessagePack Struct decodes faster than Rust JSON over dictionaries |
 | [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | JSON and MessagePack | Hold the library still and isolate JSON tokens from MessagePack type codes |
 | [Python: orjson vs json](python-orjson-vs-json.md) | JSON | Show why the same 448-byte JSON can differ by a factor of five |
-| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Custom | Show why generated `write_to` plus fixed-width integers is faster than Serde plus variable-length integers |
-| [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | Custom | Show compactness as a width choice that can stay on Serde |
-| [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Custom | Show that in-place access only helps if the timed path uses it |
-| [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Custom and UBJSON | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
-| [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Custom | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
+| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | No public spec | Show why generated `write_to` plus fixed-width integers is faster than Serde plus variable-length integers |
+| [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | No public spec | Show compactness as a width choice that can stay on Serde |
+| [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | No public spec | Show that in-place access only helps if the timed path uses it |
+| [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | No public spec and UBJSON | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
+| [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | No public spec | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
 | [C++: the simdjson row](cpp-simdjson-wrapper.md) | JSON | Read a Dashboard row whose encode is nlohmann `dump` and whose decode is simdjson parse plus a DOM walk |
-| [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Custom and Bond | Show positional IL stores versus a type-and-identifier prefix on every field |
-| [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Custom and Avro | Show two cached positional plans, and why the Avro schema walk costs a little more |
-| [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Custom and Protocol Buffers | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
-| [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | Custom and Protocol Buffers | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
+| [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | No public spec and Bond | Show positional IL stores versus a type-and-identifier prefix on every field |
+| [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | No public spec and Avro | Show two cached positional plans, and why the Avro schema walk costs a little more |
+| [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | No public spec and Protocol Buffers | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
+| [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | No public spec and Protocol Buffers | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
 | [Kotlin: kotlinx-json vs Moshi](kotlin-kotlinx-json-vs-moshi.md) | JSON | Show why the same 440-byte JSON can differ between kotlinx.serialization and a generated Moshi adapter |
 | [Kotlin: FlatBuffers vs protobuf](kotlin-flatbuffers-vs-protobuf.md) | FlatBuffers and Protocol Buffers | Show why vtable loads can beat a smaller Protocol Buffers stream on the Kotlin harness |
 | [PHP: JSON vs protobuf](php-json-vs-protobuf.md) | JSON and Protocol Buffers | Show that PHP’s native JSON engine is faster than official userland protobuf, even though JSON is larger |
