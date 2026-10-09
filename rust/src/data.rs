@@ -1,9 +1,10 @@
 //! Data Model v2 domain types for the Rust harness.
 //!
 //! Suite types: message, document, telemetry, strings, event, plus the columnar
-//! ids table, table_project, nested_table, and signal.
+//! ids table, table_project, nested_table, and signal, plus `graph`.
 //! Multiple derive stacks co-exist on the original five so each serializer can
 //! use its native path. The columnar structs are serde-only.
+//! `graph` is shared nodes and one reference cycle. It is not a serde tree.
 
 
 use minicbor::{Decode, Encode};
@@ -11,6 +12,9 @@ use nanoserde::{DeBin, SerBin};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use serde::{Deserialize, Serialize};
 use speedy::{Readable, Writable};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Epoch-ms base for generated timestamps (matches other language harnesses).
 pub const BASE_TS_MS: i64 = 1_704_067_200_000;
@@ -307,6 +311,156 @@ pub struct Signal {
     pub legs: Vec<SignalLeg>,
 }
 
+/// Shared node. Several orders hold this same `Rc`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Region {
+    pub code: String,
+    /// Exactly 64 characters at the catalog default.
+    pub note: String,
+    pub version: i32,
+}
+
+/// One order. `region` is a shared handle, not an owned copy.
+#[derive(Clone, Debug)]
+pub struct Order {
+    pub sku: String,
+    pub qty: i32,
+    pub region: Rc<Region>,
+}
+
+/// Ring node. `next` is filled after every person in the ring exists.
+#[derive(Clone)]
+pub struct Person {
+    pub name: String,
+    pub next: RefCell<Option<Rc<Person>>>,
+}
+
+impl std::fmt::Debug for Person {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let next = self.next.borrow().as_ref().map(|p| p.name.clone());
+        f.debug_struct("Person")
+            .field("name", &self.name)
+            .field("next", &next)
+            .finish()
+    }
+}
+
+/// One graph instance: shared regions and a person ring.
+#[derive(Clone, Debug)]
+pub struct Book {
+    pub orders: Vec<Order>,
+    pub people: Vec<Rc<Person>>,
+}
+
+fn ptr_key<T>(r: &T) -> usize {
+    std::ptr::from_ref::<T>(r) as *const () as usize
+}
+
+struct IdMemo {
+    a: HashMap<usize, usize>,
+    b: HashMap<usize, usize>,
+}
+
+impl IdMemo {
+    fn new() -> Self {
+        Self {
+            a: HashMap::new(),
+            b: HashMap::new(),
+        }
+    }
+
+    /// `Some(eq)` when either side was already visited. `None` means compare fields.
+    fn enter(&mut self, ka: usize, kb: usize) -> Option<bool> {
+        let seen_a = self.a.get(&ka).copied();
+        let seen_b = self.b.get(&kb).copied();
+        if seen_a.is_some() || seen_b.is_some() {
+            return Some(seen_a.is_some() && seen_b.is_some() && seen_a == seen_b);
+        }
+        let token = self.a.len();
+        self.a.insert(ka, token);
+        self.b.insert(kb, token);
+        None
+    }
+}
+
+/// Identity correspondence for one graph.
+///
+/// The second visit of a node must land on the same token on the other side.
+/// A duplicated region or an unrolled ring compares unequal. The back-edge stops the walk.
+fn graphs_match(left: &Book, right: &Book) -> bool {
+    fn book(a: &Book, b: &Book, m: &mut IdMemo) -> bool {
+        if let Some(done) = m.enter(ptr_key(a), ptr_key(b)) {
+            return done;
+        }
+        a.orders.len() == b.orders.len()
+            && a.people.len() == b.people.len()
+            && a.orders
+                .iter()
+                .zip(b.orders.iter())
+                .all(|(x, y)| order(x, y, m))
+            && a.people
+                .iter()
+                .zip(b.people.iter())
+                .all(|(x, y)| person(x, y, m))
+    }
+    fn order(a: &Order, b: &Order, m: &mut IdMemo) -> bool {
+        if let Some(done) = m.enter(ptr_key(a), ptr_key(b)) {
+            return done;
+        }
+        a.sku == b.sku && a.qty == b.qty && region(&a.region, &b.region, m)
+    }
+    fn region(a: &Rc<Region>, b: &Rc<Region>, m: &mut IdMemo) -> bool {
+        if let Some(done) = m.enter(ptr_key(a.as_ref()), ptr_key(b.as_ref())) {
+            return done;
+        }
+        a.code == b.code && a.note == b.note && a.version == b.version
+    }
+    fn person(a: &Rc<Person>, b: &Rc<Person>, m: &mut IdMemo) -> bool {
+        if let Some(done) = m.enter(ptr_key(a.as_ref()), ptr_key(b.as_ref())) {
+            return done;
+        }
+        if a.name != b.name {
+            return false;
+        }
+        let next_a = a.next.borrow().clone();
+        let next_b = b.next.borrow().clone();
+        match (next_a, next_b) {
+            (None, None) => true,
+            (Some(x), Some(y)) => person(&x, &y, m),
+            _ => false,
+        }
+    }
+    book(left, right, &mut IdMemo::new())
+}
+
+impl PartialEq for Book {
+    fn eq(&self, other: &Self) -> bool {
+        graphs_match(self, other)
+    }
+}
+
+// SAFETY: `BenchSerializer: Send` stores fixtures in serializer state, but the harness
+// never shares one fixture across threads. `Rc`'s refcount and `RefCell`'s flag stay on
+// the owning thread, same contract as the Dagr arena's `unsafe impl Send`.
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for Book {}
+
+impl Serialize for Book {
+    fn serialize<S: serde::Serializer>(&self, _serializer: S) -> Result<S::Ok, S::Error> {
+        Err(<S::Error as serde::ser::Error>::custom(
+            "graph is a reference cycle and is not a serde tree",
+        ))
+    }
+}
+
+impl<'de> Deserialize<'de> for Book {
+    fn deserialize<D: serde::Deserializer<'de>>(_deserializer: D) -> Result<Self, D::Error> {
+        Err(<D::Error as serde::de::Error>::custom(
+            "graph is a reference cycle and is not a serde tree",
+        ))
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Generators
 // ---------------------------------------------------------------------------
@@ -542,10 +696,60 @@ fn make_signal(rng: &mut Rng, cfg: &TypeConfig) -> Signal {
     }
 }
 
+/// One graph. Call order is the cross-language contract.
+///
+/// Regions (code, 64-char note, version), then orders (sku, qty, shared region
+/// `i % region_count`), then person names, then the ring of references.
+fn make_graph(rng: &mut Rng, cfg: &TypeConfig) -> anyhow::Result<Book> {
+    let (smin, smax) = cfg.range("string_len", 8, 16);
+    let n_orders = cfg.i32("order_count", 32).max(0) as usize;
+    let n_regions = cfg.i32("region_count", 4);
+    let ring = cfg.i32("ring_size", 8);
+    if n_regions < 1 {
+        anyhow::bail!("region_count must be >= 1");
+    }
+    if ring < 1 {
+        anyhow::bail!("ring_size must be >= 1");
+    }
+    let n_regions = n_regions as usize;
+    let ring = ring as usize;
+    let smin = smin as usize;
+    let smax = smax as usize;
+    let regions: Vec<Rc<Region>> = (0..n_regions)
+        .map(|_| {
+            Rc::new(Region {
+                code: rng.word(smin, smax),
+                note: rng.word(64, 64),
+                version: rng.next_int(1, 10),
+            })
+        })
+        .collect();
+    let orders = (0..n_orders)
+        .map(|i| Order {
+            sku: rng.word(smin, smax),
+            qty: rng.next_int(1, 100),
+            region: Rc::clone(&regions[i % n_regions]),
+        })
+        .collect();
+    let people: Vec<Rc<Person>> = (0..ring)
+        .map(|_| {
+            Rc::new(Person {
+                name: rng.word(smin, smax),
+                next: RefCell::new(None),
+            })
+        })
+        .collect();
+    for (i, person) in people.iter().enumerate() {
+        *person.next.borrow_mut() = Some(Rc::clone(&people[(i + 1) % ring]));
+    }
+    Ok(Book { orders, people })
+}
+
 /// Build one V2 fixture. `cfg` is the resolved type_config (empty object = catalog defaults).
 ///
 /// Old type ids keep the historical draw sequence when catalog defaults are in effect.
 /// `strings` still ignores `duplication` so those cells do not change.
+/// `graph` draws regions, then orders, then person names, then closes the ring.
 pub fn make_one(
     type_id: &str,
     seed: u64,
@@ -647,6 +851,7 @@ pub fn make_one(
         }
         "nested_table" => Ok(Fixture::NestedTable(make_nested(&mut r, cfg))),
         "signal" => Ok(Fixture::Signal(make_signal(&mut r, cfg))),
+        "graph" => Ok(Fixture::Graph(make_graph(&mut r, cfg)?)),
         other => anyhow::bail!("unknown v2 type_id {other}"),
     }
 }
@@ -688,6 +893,8 @@ pub enum Fixture {
     Rows(Vec<Fixture>),
     /// `f_float_0` for every row of a `table_project` cell, including N=1.
     Projected(Vec<f64>),
+    /// Shared regions and one person ring. `==` is the identity walker, not derived equality.
+    Graph(Book),
 }
 
 impl Fixture {
@@ -703,6 +910,7 @@ impl Fixture {
             Fixture::TableProject(_) | Fixture::Projected(_) => "table_project",
             Fixture::NestedTable(_) => "nested_table",
             Fixture::Signal(_) => "signal",
+            Fixture::Graph(_) => "graph",
             Fixture::Rows(rows) => rows.first().map(|r| r.name()).unwrap_or("rows"),
         }
     }
@@ -743,6 +951,7 @@ pub fn fidelity(a: &Fixture, b: &Fixture) -> bool {
         | (Fixture::TableProject(x), Fixture::TableProject(y)) => table_eq(x, y),
         (Fixture::NestedTable(x), Fixture::NestedTable(y)) => x == y,
         (Fixture::Signal(x), Fixture::Signal(y)) => x == y,
+        (Fixture::Graph(x), Fixture::Graph(y)) => x == y,
         (Fixture::Rows(x), Fixture::Rows(y)) => {
             x.len() == y.len() && x.iter().zip(y.iter()).all(|(p, q)| fidelity(p, q))
         }
@@ -854,6 +1063,9 @@ pub fn all_fixtures(seed: u64) -> Vec<Fixture> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    use std::rc::Rc;
 
     #[test]
     fn all_fixtures_are_v2_type_ids() {
@@ -1010,5 +1222,137 @@ mod tests {
         ];
         let seq = vec![Fixture::Projected(vec![row.f_float_0, row.f_float_0])];
         check_cell_fidelity("table_project", &n2, &seq).unwrap();
+    }
+
+    fn alias_book(book: &Book) -> Book {
+        let mut regions: Vec<(usize, Rc<Region>)> = Vec::new();
+        let mut orders = Vec::with_capacity(book.orders.len());
+        for order in &book.orders {
+            let key = Rc::as_ptr(&order.region) as usize;
+            let region = if let Some(pos) = regions.iter().position(|(k, _)| *k == key) {
+                Rc::clone(&regions[pos].1)
+            } else {
+                let region = Rc::new(Region {
+                    code: order.region.code.clone(),
+                    note: order.region.note.clone(),
+                    version: order.region.version,
+                });
+                regions.push((key, Rc::clone(&region)));
+                region
+            };
+            orders.push(Order {
+                sku: order.sku.clone(),
+                qty: order.qty,
+                region,
+            });
+        }
+        let people: Vec<Rc<Person>> = book
+            .people
+            .iter()
+            .map(|p| {
+                Rc::new(Person {
+                    name: p.name.clone(),
+                    next: RefCell::new(None),
+                })
+            })
+            .collect();
+        let n = people.len();
+        for (i, person) in people.iter().enumerate() {
+            *person.next.borrow_mut() = Some(Rc::clone(&people[(i + 1) % n]));
+        }
+        Book { orders, people }
+    }
+
+    #[test]
+    fn make_one_graph_is_deterministic_and_shared() {
+        let cfg = TypeConfig::default();
+        let a = make_one("graph", 42, 0, &cfg).unwrap();
+        let b = make_one("graph", 42, 0, &cfg).unwrap();
+        assert_eq!(a.name(), "graph");
+        assert_eq!(a, b);
+        assert!(fidelity(&a, &b));
+        let c = make_one("graph", 42, 1, &cfg).unwrap();
+        assert_ne!(a, c);
+
+        let Fixture::Graph(book) = &a else {
+            panic!("expected graph");
+        };
+        assert_eq!(book.orders.len(), 32);
+        assert_eq!(book.people.len(), 8);
+        assert!(book.orders.iter().all(|o| o.region.note.len() == 64));
+        assert!(book.orders.iter().all(|o| {
+            (8..=16).contains(&o.sku.len())
+                && (8..=16).contains(&o.region.code.len())
+                && (1..=100).contains(&o.qty)
+                && (1..=10).contains(&o.region.version)
+        }));
+        assert!(book.people.iter().all(|p| (8..=16).contains(&p.name.len())));
+
+        let mut ids = Vec::new();
+        let mut counts = HashMap::new();
+        for (i, order) in book.orders.iter().enumerate() {
+            let p = Rc::as_ptr(&order.region) as usize;
+            if !ids.contains(&p) {
+                ids.push(p);
+            }
+            *counts.entry(p).or_insert(0) += 1;
+            assert!(Rc::ptr_eq(&order.region, &book.orders[i % 4].region));
+        }
+        assert_eq!(ids.len(), 4, "regions were cloned per order");
+        assert!(counts.values().all(|&n| n == 8));
+
+        let mut node = Rc::clone(&book.people[0]);
+        for i in 0..book.people.len() {
+            let next = node.next.borrow().as_ref().cloned().expect("ring");
+            assert!(
+                Rc::ptr_eq(&next, &book.people[(i + 1) % book.people.len()]),
+                "people[{i}].next is not people[{}]",
+                (i + 1) % book.people.len()
+            );
+            node = next;
+        }
+        assert!(Rc::ptr_eq(&node, &book.people[0]));
+
+        let alias = Fixture::Graph(alias_book(book));
+        assert_eq!(a, alias);
+        assert!(fidelity(&a, &alias));
+
+        let mut duplicated = alias_book(book);
+        duplicated.orders = book
+            .orders
+            .iter()
+            .map(|order| Order {
+                sku: order.sku.clone(),
+                qty: order.qty,
+                region: Rc::new(order.region.as_ref().clone()),
+            })
+            .collect();
+        let duplicated = Fixture::Graph(duplicated);
+        assert_ne!(a, duplicated);
+        assert!(!fidelity(&a, &duplicated));
+
+        let Book { orders, .. } = alias_book(book);
+        let people: Vec<Rc<Person>> = book
+            .people
+            .iter()
+            .map(|p| {
+                Rc::new(Person {
+                    name: p.name.clone(),
+                    next: RefCell::new(None),
+                })
+            })
+            .collect();
+        for (i, person) in people.iter().enumerate() {
+            let nxt = &book.people[(i + 1) % people.len()];
+            *person.next.borrow_mut() = Some(Rc::new(Person {
+                name: nxt.name.clone(),
+                next: RefCell::new(None),
+            }));
+        }
+        let unrolled = Fixture::Graph(Book { orders, people });
+        assert_ne!(a, unrolled);
+        assert!(!fidelity(&a, &unrolled));
+
+        assert!(serde_json::to_vec(&a).is_err());
     }
 }

@@ -1116,6 +1116,36 @@ struct BatchEvent(Copyable, Movable, Defaultable, CborDatum, AvroDatum):
                 j += 1
 
 
+# Index-based: Mojo structs are values, so a Region cannot be aliased by several
+# Orders. Sharing is `region_index` into `Book.regions`. The person ring is
+# `next_index` into `Book.people` (it wraps).
+@fieldwise_init
+struct Region(Copyable, Movable):
+    var code: String
+    var note: String
+    var version: Int32
+
+
+@fieldwise_init
+struct Order(Copyable, Movable):
+    var sku: String
+    var qty: Int32
+    var region_index: Int
+
+
+@fieldwise_init
+struct Person(Copyable, Movable):
+    var name: String
+    var next_index: Int
+
+
+@fieldwise_init
+struct Book(Copyable, Movable):
+    var regions: List[Region]
+    var orders: List[Order]
+    var people: List[Person]
+
+
 @fieldwise_init
 struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
     var children: Int
@@ -1128,6 +1158,9 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
     var int_max: Int
 
     var group_count: Int
+    var order_count: Int
+    var region_count: Int
+    var ring_size: Int
 
     def __init__(out self):
         self.children = 8
@@ -1139,6 +1172,9 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
         self.int_min = 0
         self.int_max = 1_000_000
         self.group_count = 4
+        self.order_count = 32
+        self.region_count = 4
+        self.ring_size = 8
 
 
 @fieldwise_init
@@ -1210,6 +1246,7 @@ struct Fixture(Copyable, Movable):
     var nested_rows: List[NestedRow]
     var signals: List[SignalRow]
     var projected: List[Float64]
+    var books: List[Book]
 
     def __init__(
         out self,
@@ -1234,6 +1271,7 @@ struct Fixture(Copyable, Movable):
         self.nested_rows = List[NestedRow]()
         self.signals = List[SignalRow]()
         self.projected = List[Float64]()
+        self.books = List[Book]()
 
 
 def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises -> Fixture:
@@ -1387,9 +1425,61 @@ def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises ->
                 legs^,
             )
         )
+    elif type_id == "graph":
+        fx.books.append(_make_graph(rng, cfg))
     else:
         raise Error("unknown type_id: " + type_id)
     return fx^
+
+
+def _make_graph(mut rng: Rng, cfg: TypeConfig) raises -> Book:
+    """One graph. Call order is the cross-language contract.
+
+    Regions first (code, 64-char note, version), then orders (sku, qty, shared
+    region by index), then person names, then the ring of next indexes.
+    """
+    var n_orders = cfg.order_count
+    var n_regions = cfg.region_count
+    var ring = cfg.ring_size
+    if n_regions < 1:
+        raise Error("region_count must be >= 1")
+    if ring < 1:
+        raise Error("ring_size must be >= 1")
+    var smin = cfg.string_min
+    var smax = cfg.string_max
+    var regions = List[Region]()
+    var i = 0
+    while i < n_regions:
+        regions.append(
+            Region(
+                rng.word(smin, smax),
+                rng.word(64, 64),
+                Int32(rng.next_int(1, 10)),
+            )
+        )
+        i += 1
+    var orders = List[Order]()
+    i = 0
+    while i < n_orders:
+        orders.append(
+            Order(
+                rng.word(smin, smax),
+                Int32(rng.next_int(1, 100)),
+                i % n_regions,
+            )
+        )
+        i += 1
+    var names = List[String]()
+    i = 0
+    while i < ring:
+        names.append(rng.word(smin, smax))
+        i += 1
+    var people = List[Person]()
+    i = 0
+    while i < ring:
+        people.append(Person(names[i].copy(), (i + 1) % ring))
+        i += 1
+    return Book(regions^, orders^, people^)
 
 
 def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: String) raises -> Fixture:
@@ -1422,6 +1512,8 @@ def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: Stri
             fx.nested_rows.append(one.nested_rows[0].copy())
         elif type_id == "signal":
             fx.signals.append(one.signals[0].copy())
+        elif type_id == "graph":
+            fx.books.append(one.books[0].copy())
         else:
             raise Error("unknown type_id: " + type_id)
         i += 1
@@ -1548,6 +1640,37 @@ def fidelity_nested(a: NestedRow, b: NestedRow) -> Bool:
     return True
 
 
+def fidelity_book(a: Book, b: Book) -> Bool:
+    if len(a.regions) != len(b.regions) or len(a.orders) != len(b.orders) or len(a.people) != len(b.people):
+        return False
+    var i = 0
+    while i < len(a.regions):
+        if a.regions[i].code != b.regions[i].code or a.regions[i].note != b.regions[i].note:
+            return False
+        if a.regions[i].version != b.regions[i].version:
+            return False
+        i += 1
+    i = 0
+    while i < len(a.orders):
+        if a.orders[i].sku != b.orders[i].sku or a.orders[i].qty != b.orders[i].qty:
+            return False
+        # Same region index: shared nodes stay one slot, not a per-order copy.
+        var ri = a.orders[i].region_index
+        if ri != b.orders[i].region_index or ri < 0 or ri >= len(a.regions):
+            return False
+        i += 1
+    i = 0
+    while i < len(a.people):
+        if a.people[i].name != b.people[i].name:
+            return False
+        # The ring is indexes, and next wraps to the following person.
+        var nxt = (i + 1) % len(a.people)
+        if a.people[i].next_index != nxt or b.people[i].next_index != nxt:
+            return False
+        i += 1
+    return True
+
+
 def fidelity_signal(a: SignalRow, b: SignalRow) -> Bool:
     if a.seq != b.seq or a.ts != b.ts or a.price_mantissa != b.price_mantissa:
         return False
@@ -1637,6 +1760,15 @@ def fidelity(a: Fixture, b: Fixture) -> Bool:
         var i = 0
         while i < len(a.strings):
             if not fidelity_strings(a.strings[i], b.strings[i]):
+                return False
+            i += 1
+        return True
+    if a.type_id == "graph":
+        if len(a.books) != len(b.books):
+            return False
+        var i = 0
+        while i < len(a.books):
+            if not fidelity_book(a.books[i], b.books[i]):
                 return False
             i += 1
         return True

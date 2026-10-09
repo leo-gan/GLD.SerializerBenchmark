@@ -23,6 +23,7 @@ _CATALOG = _REPO / "schemas" / "data_catalog_v2.yaml"
 
 SUITE = {"message", "document", "telemetry", "strings", "event"}
 COLUMNAR = {"table", "table_project", "nested_table", "signal"}
+GRAPH = {"graph"}
 
 
 def test_each_type_has_one_data_set():
@@ -32,10 +33,11 @@ def test_each_type_has_one_data_set():
     found = {}
     for type_id in catalog["types"]:
         found[type_id] = data_set_for_type(type_id, catalog)
-    assert set(found) == SUITE | COLUMNAR
+    assert set(found) == SUITE | COLUMNAR | GRAPH
     assert set(found.values()) <= allowed
     assert {k for k, v in found.items() if v == "suite"} == SUITE
     assert {k for k, v in found.items() if v == "columnar"} == COLUMNAR
+    assert {k for k, v in found.items() if v == "graph"} == GRAPH
 
 
 def test_data_set_is_not_part_of_the_type_config_hash():

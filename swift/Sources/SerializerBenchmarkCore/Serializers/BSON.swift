@@ -29,7 +29,7 @@ public final class SwiftBSONSerializer: BenchSerializer {
         self.version = PackageVersions.version(for: "swift-bson", fallback: "3.x")
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

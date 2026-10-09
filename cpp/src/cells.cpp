@@ -91,6 +91,9 @@ ResolvedRun load_resolved(const std::string& run_config_path, uint64_t seed) {
       if (tc.contains("attr_count")) c.type_config.attr_count = j_int(tc, "attr_count", 4);
       if (tc.contains("tag_count")) c.type_config.tag_count = j_int(tc, "tag_count", 2);
       if (tc.contains("group_count")) c.type_config.group_count = j_int(tc, "group_count", -1);
+      if (tc.contains("order_count")) c.type_config.order_count = j_int(tc, "order_count", -1);
+      if (tc.contains("region_count")) c.type_config.region_count = j_int(tc, "region_count", -1);
+      if (tc.contains("ring_size")) c.type_config.ring_size = j_int(tc, "ring_size", -1);
       if (tc.contains("string_len") && tc["string_len"].is_object()) {
         c.type_config.string_len_min = j_int(tc["string_len"], "min", 3);
         c.type_config.string_len_max = j_int(tc["string_len"], "max", 16);

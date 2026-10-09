@@ -19,7 +19,7 @@ N > 1 framing (same as `dagr-packed`): `u32 LE count`, then per instance `u32 LE
 Dagr buffer.
 """
 
-from std.collections import List
+from std.collections import Dict, List
 from dagr_writer import Builder
 from message_frozen_graph_arena import MessageFrozenGraphArena
 from message_frozen_graph_serde import write_message_graph, _VT_MAX as _VT_MESSAGE
@@ -34,6 +34,14 @@ from telemetry_frozen_graph_arena import TelemetryFrozenGraphArena
 from telemetry_frozen_graph_serde import write_telemetry_graph, _VT_MAX as _VT_TELEMETRY
 from event_frozen_graph_arena import EventFrozenGraphArena, EventAttr as ArenaEventAttr
 from event_frozen_graph_serde import write_event_graph, _VT_MAX as _VT_EVENT
+from graph_frozen_graph_arena import (
+    GraphFrozenGraphArena,
+    Order as OrderNode,
+    Person as PersonNode,
+    Region as RegionNode,
+)
+from graph_frozen_graph_serde import write_book_graph, _VT_MAX as _VT_GRAPH
+from graph_frozen_graph_reader import read_book_root
 from message_frozen_graph_reader import read_message_root
 from strings_frozen_graph_reader import read_strings_root
 from document_frozen_graph_reader import read_document_root
@@ -41,6 +49,7 @@ from telemetry_frozen_graph_reader import read_telemetry_root
 from event_frozen_graph_reader import read_event_root
 from bench.dagr_ser import _get_u32, _put_u32, _s
 from bench.data import (
+    Book,
     Document,
     DocumentItem,
     DocumentMeta,
@@ -48,6 +57,9 @@ from bench.data import (
     EventAttr,
     Fixture,
     Message,
+    Order,
+    Person,
+    Region,
     Strings,
     Telemetry,
     fidelity,
@@ -143,6 +155,40 @@ def _enc_events(mut b: Builder[_VT_EVENT], es: List[Event], mut out: List[UInt8]
         _emit(b, out, framed)
 
 
+def _enc_books(mut b: Builder[_VT_GRAPH], books: List[Book], mut out: List[UInt8], framed: Bool) raises:
+    for k in range(len(books)):
+        ref g = books[k]
+        var a = GraphFrozenGraphArena()
+        # One region node per index; each order reuses that handle, not a copy.
+        var regions = List[RegionNode[origin_of(a)]](capacity=len(g.regions))
+        for i in range(len(g.regions)):
+            ref r = g.regions[i]
+            regions.append(a.new_region(r.code, r.note, r.version))
+        var orders = List[OrderNode[origin_of(a)]](capacity=len(g.orders))
+        for i in range(len(g.orders)):
+            ref o = g.orders[i]
+            if o.region_index < 0 or o.region_index >= len(regions):
+                raise Error("dagr-frozen: region index out of range")
+            var h = a.new_order(o.sku, o.qty)
+            h.set_region(regions[o.region_index])
+            orders.append(h^)
+        var people = List[PersonNode[origin_of(a)]](capacity=len(g.people))
+        for i in range(len(g.people)):
+            people.append(a.new_person(g.people[i].name))
+        for i in range(len(people)):
+            var nxt = g.people[i].next_index
+            if nxt < 0 or nxt >= len(people):
+                raise Error("dagr-frozen: person next index out of range")
+            people[i].set_next(people[nxt])
+        var root = a.new_book()
+        root.set_orders(orders^)
+        root.set_people(people^)
+        a.set_root(root)
+        b.reset()
+        _ = write_book_graph(b, a)
+        _emit(b, out, framed)
+
+
 # ── decode (lazy reader -> owned suite value) ──────────────────────────────
 
 
@@ -222,6 +268,55 @@ def _dec_event[o: ImmOrigin](buf: Span[UInt8, o]) raises -> Event:
     return Event(_s(e.event_id()), _s(e.event_type()), e.occurred_at().or_else(0), _s(e.producer()), attrs^)
 
 
+def _dec_book[o: ImmOrigin](buf: Span[UInt8, o]) raises -> Book:
+    var root = read_book_root(buf)
+    var regions = List[Region]()
+    var orders = List[Order]()
+    var region_at = Dict[Int, Int]()
+    var oo = root.orders()
+    if not oo:
+        raise Error("dagr-frozen: book missing orders")
+    var oarr = oo.value()
+    for i in range(len(oarr)):
+        var od = oarr.get(i)
+        var reg = od.region()
+        if not reg:
+            raise Error("dagr-frozen: order missing region")
+        var acc = reg.value()
+        var rp = acc.pos
+        var ri = len(regions)
+        if rp in region_at:
+            ri = region_at[rp]
+        else:
+            region_at[rp] = ri
+            regions.append(Region(_s(acc.code()), _s(acc.note()), acc.version().or_else(0)))
+        orders.append(Order(_s(od.sku()), od.qty().or_else(0), ri))
+    var names = List[String]()
+    var nexts = List[Int]()
+    var person_at = Dict[Int, Int]()
+    var op = root.people()
+    if not op:
+        raise Error("dagr-frozen: book missing people")
+    var parr = op.value()
+    for i in range(len(parr)):
+        var p = parr.get(i)
+        person_at[p.pos] = i
+        names.append(_s(p.name()))
+    for i in range(len(parr)):
+        var p = parr.get(i)
+        var nxt = p.next()
+        if not nxt:
+            raise Error("dagr-frozen: person missing next")
+        var np = nxt.value().pos
+        if np not in person_at:
+            raise Error("dagr-frozen: person next is outside the ring")
+        nexts.append(person_at[np])
+    var people = List[Person]()
+    for i in range(len(names)):
+        people.append(Person(names[i].copy(), nexts[i]))
+    return Book(regions^, orders^, people^)
+
+
 struct DagrFrozenSer(Movable):
     var version: String
     var _bm: Builder[_VT_MESSAGE]
@@ -229,6 +324,7 @@ struct DagrFrozenSer(Movable):
     var _bd: Builder[_VT_DOCUMENT]
     var _bt: Builder[_VT_TELEMETRY]
     var _be: Builder[_VT_EVENT]
+    var _bg: Builder[_VT_GRAPH]
     var _hint: Int   # last output size: pre-reserves the batch output buffer
 
     def __init__(out self):
@@ -239,6 +335,7 @@ struct DagrFrozenSer(Movable):
         self._bd = Builder[_VT_DOCUMENT](hint=64)
         self._bt = Builder[_VT_TELEMETRY](hint=64)
         self._be = Builder[_VT_EVENT](hint=64)
+        self._bg = Builder[_VT_GRAPH](hint=256)
         self._hint = 0
 
     def name(self) -> String:
@@ -251,6 +348,7 @@ struct DagrFrozenSer(Movable):
             or type_id == "telemetry"
             or type_id == "strings"
             or type_id == "event"
+            or type_id == "graph"
         )
 
     def serialize_bytes(mut self, fx: Fixture) raises -> List[Byte]:
@@ -268,6 +366,8 @@ struct DagrFrozenSer(Movable):
             _enc_strings(self._bs, fx.strings, out, framed)
         elif fx.type_id == "event":
             _enc_events(self._be, fx.events, out, framed)
+        elif fx.type_id == "graph":
+            _enc_books(self._bg, fx.books, out, framed)
         else:
             raise Error("dagr-frozen: unsupported type " + fx.type_id)
         self._hint = len(out)
@@ -282,6 +382,8 @@ struct DagrFrozenSer(Movable):
             out.telemetries.append(_dec_telemetry(buf))
         elif fx.type_id == "strings":
             out.strings.append(_dec_strings(buf))
+        elif fx.type_id == "graph":
+            out.books.append(_dec_book(buf))
         else:
             out.events.append(_dec_event(buf))
 

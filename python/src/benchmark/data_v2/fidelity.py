@@ -127,6 +127,70 @@ def fidelity_v2(expected: Any, actual: Any) -> float:
     return 1.0 if _eq(expected, actual) else 0.0
 
 
+def _is_node(obj: Any) -> bool:
+    return is_dataclass(obj) and not isinstance(obj, type)
+
+
+def _graph_pair(a: Any, b: Any, memo_a: dict[int, int], memo_b: dict[int, int]) -> bool:
+    """Structural compare that treats shared nodes and cycles as identity.
+
+    Two visits of the same object must land on the same token on the other side.
+    Scalars compare by value. Lists compare in order and do not become nodes.
+    """
+    if a is None or b is None:
+        return a is None and b is None
+    if _is_node(a) or _is_node(b):
+        if not (_is_node(a) and _is_node(b)):
+            return False
+        id_a, id_b = id(a), id(b)
+        seen_a = id_a in memo_a
+        seen_b = id_b in memo_b
+        if seen_a or seen_b:
+            return seen_a and seen_b and memo_a[id_a] == memo_b[id_b]
+        token = len(memo_a)
+        memo_a[id_a] = token
+        memo_b[id_b] = token
+        fields_a = [f.name for f in fields(a)]
+        fields_b = [f.name for f in fields(b)]
+        if fields_a != fields_b:
+            return False
+        for name in fields_a:
+            if not _graph_pair(getattr(a, name), getattr(b, name), memo_a, memo_b):
+                return False
+        return True
+    if isinstance(a, (list, tuple)) or isinstance(b, (list, tuple)):
+        if not isinstance(a, (list, tuple)) or not isinstance(b, (list, tuple)):
+            return False
+        if len(a) != len(b):
+            return False
+        return all(_graph_pair(x, y, memo_a, memo_b) for x, y in zip(a, b))
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a is b
+    if isinstance(a, float) or isinstance(b, float):
+        try:
+            return math.isclose(float(a), float(b), rel_tol=1e-9, abs_tol=1e-9)
+        except (TypeError, ValueError):
+            return False
+    return a == b
+
+
+def fidelity_graph(expected: Any, actual: Any) -> float:
+    """Identity fidelity for one graph or a batch of independent graphs."""
+    if isinstance(expected, list):
+        if not isinstance(actual, list) or len(expected) != len(actual):
+            return 0.0
+        ok = all(_graph_pair(a, b, {}, {}) for a, b in zip(expected, actual))
+        return 1.0 if ok else 0.0
+    return 1.0 if _graph_pair(expected, actual, {}, {}) else 0.0
+
+
+def fidelity_for(type_id: str, expected: Any, actual: Any) -> float:
+    """Dispatch fidelity. ``graph`` must not use the structural walk."""
+    if type_id == "graph":
+        return fidelity_graph(expected, actual)
+    return fidelity_v2(expected, actual)
+
+
 def project_f_float_0(decoded: Any) -> list[float]:
     """Pull ``f_float_0`` from a full table row, a batch, or a batch protobuf message."""
     if hasattr(decoded, "DESCRIPTOR") and getattr(decoded, "DESCRIPTOR", None) is not None:

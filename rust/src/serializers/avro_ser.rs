@@ -178,6 +178,9 @@ fn write_datum<W: Write>(
                 "serde_avro_fast: encode rows with serialize_fixtures"
             ));
         }
+        Fixture::Graph(_) => {
+            return Err(anyhow!("serde_avro_fast: graph is not a tree"));
+        }
     };
     written.context("serde_avro_fast to_datum")
 }
@@ -221,6 +224,9 @@ impl BenchSerializer for AvroFastSer {
     }
 
     fn supports(&self, test_data_name: &str) -> bool {
+        if test_data_name == "graph" {
+            return false;
+        }
         !is_columnar_id(test_data_name)
             || matches!(
                 test_data_name,

@@ -133,3 +133,18 @@ types:
       string_len:
         min: 3
         max: 12
+
+  # One graph: shared region nodes and a person ring. Not in default.yaml or
+  # smoke.yaml. Run it from config/library/graph.yaml with an explicit allow-list.
+  # Tree codecs do not support this type.
+  graph:
+    description: "One graph: shared region nodes and a reference cycle"
+    category: graph
+    data_set: graph
+    default_type_config:
+      order_count: 32
+      region_count: 4
+      ring_size: 8
+      string_len:
+        min: 8
+        max: 16

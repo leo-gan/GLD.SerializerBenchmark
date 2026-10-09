@@ -206,6 +206,35 @@ export function makeOne(typeId, typeConfig = {}, seed = 42, instanceIndex = 0) {
       return makeNestedTable(r, typeConfig);
     case 'signal':
       return makeSignal(r, typeConfig);
+    case 'graph': {
+      // Call order is the cross-language contract: regions, orders, names, then the ring.
+      const [smin, smax] = slen(typeConfig, 8, 16);
+      const nOrders = typeConfig.order_count ?? 32;
+      const nRegions = typeConfig.region_count ?? 4;
+      const ring = typeConfig.ring_size ?? 8;
+      if (nRegions < 1) throw new Error('region_count must be >= 1');
+      if (ring < 1) throw new Error('ring_size must be >= 1');
+      const regions = [];
+      for (let i = 0; i < nRegions; i++) {
+        regions.push({
+          code: r.word(smin, smax),
+          note: r.word(64, 64),
+          version: r.nextInt(1, 10),
+        });
+      }
+      const orders = [];
+      for (let i = 0; i < nOrders; i++) {
+        orders.push({
+          sku: r.word(smin, smax),
+          qty: r.nextInt(1, 100),
+          region: regions[i % nRegions],
+        });
+      }
+      const people = [];
+      for (let i = 0; i < ring; i++) people.push({ name: r.word(smin, smax), next: null });
+      for (let i = 0; i < ring; i++) people[i].next = people[(i + 1) % ring];
+      return { orders, people };
+    }
     default:
       throw new Error(`unknown type_id: ${typeId}`);
   }

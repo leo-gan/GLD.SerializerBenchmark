@@ -125,7 +125,7 @@ class GlazeJson final : public ISerializer {
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
     std::visit([&](const auto& v) {
       using T = std::decay_t<decltype(v)>;
-      if constexpr (is_columnar_alt_v<T>) {
+      if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
         throw std::runtime_error("glaze: columnar type unsupported");
       } else {
         write_json_into(v, buf_);

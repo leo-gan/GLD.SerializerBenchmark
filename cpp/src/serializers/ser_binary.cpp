@@ -298,7 +298,7 @@ class MsgpackSer final : public ISerializer {
     // Adaptor pack; std::vector<T> goes through the library's vector adaptor.
     std::visit([&](const auto& v) {
       using T = std::decay_t<decltype(v)>;
-      if constexpr (is_columnar_alt_v<T>) {
+      if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
         throw std::runtime_error("msgpack: columnar type unsupported");
       } else {
         pk.pack(v);

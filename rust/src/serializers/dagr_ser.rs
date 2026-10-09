@@ -22,9 +22,13 @@
 //! the fidelity check (decode + domain build both timed, like prost's `decode` + `from_pb`).
 //! The layouts' lazy getters differ in shape (`Option<T>`, `Result<T>`, `Result<Option<T>>`),
 //! so one decoder body per suite type is shared through three tiny per-layout adapters.
+//!
+//! `graph` (shared regions and a person ring) is only the regular and frozen arenas. Packed
+//! layouts inline a reference, so `dagr-packed` and `dagr-frozen-packed` do not support it.
 
 use crate::data::{
-    Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, Message, Strings, Telemetry,
+    Book, Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, Message, Order, Person,
+    Region, Strings, Telemetry,
 };
 use anyhow::{anyhow, Result};
 use dagr_benchmark_v2::dagr_runtime::{DagrBuilder, DagrError, PackedSink};
@@ -222,19 +226,22 @@ macro_rules! arena_cell {
     ($m:ident:
      $msg:ident($MA:ident, $MG:ident), $doc:ident($DA:ident, $DG:ident),
      $tel:ident($TA:ident, $TG:ident), $str:ident($SA:ident, $SG:ident),
-     $ev:ident($EA:ident, $EG:ident)) => {
+     $ev:ident($EA:ident, $EG:ident),
+     $gra:ident($GA:ident, $GG:ident)) => {
         mod $m {
             use super::*;
             use dagr_benchmark_v2::dagr_runtime::NodeStoreRef;
-            use dagr_benchmark_v2::{$doc as doc, $ev as ev, $msg as msg, $str as strs, $tel as tel};
+            use dagr_benchmark_v2::{$doc as doc, $ev as ev, $gra as graph, $msg as msg, $str as strs, $tel as tel};
             // The graph traits carry the `new_<node>` constructors.
-            use dagr_benchmark_v2::{$doc::$DG as _, $ev::$EG as _, $msg::$MG as _, $str::$SG as _, $tel::$TG as _};
+            use dagr_benchmark_v2::{$doc::$DG as _, $ev::$EG as _, $gra::$GG as _, $msg::$MG as _, $str::$SG as _, $tel::$TG as _};
+            use std::rc::Rc;
 
             type MsgArena = msg::$MA<0>;
             type DocArena = doc::$DA<0>;
             type TelArena = tel::$TA<0>;
             type StrArena = strs::$SA<0>;
             type EvArena = ev::$EA<0>;
+            type GraphArena = graph::$GA<0>;
 
             /// Root handles (Copy, no Drop) into the boxed arena, one per instance of the cell.
             enum Roots {
@@ -244,6 +251,7 @@ macro_rules! arena_cell {
                 Telemetry(Vec<tel::Telemetry<'static, TelArena>>),
                 Strings(Vec<strs::Strings<'static, StrArena>>),
                 Event(Vec<ev::Event<'static, EvArena>>),
+                Graph(Vec<graph::Book<'static, GraphArena>>),
             }
 
             enum Arena {
@@ -253,6 +261,7 @@ macro_rules! arena_cell {
                 Telemetry(Box<TelArena>),
                 Strings(Box<StrArena>),
                 Event(Box<EvArena>),
+                Graph(Box<GraphArena>),
             }
 
             pub struct Prepared {
@@ -342,6 +351,58 @@ macro_rules! arena_cell {
                                 _ => Err(kind_err()),
                             }).collect::<Result<_>>()?)
                         }
+                        Some(Fixture::Graph(_)) => {
+                            let a = new_arena!(p, Graph, GraphArena);
+                            Roots::Graph(fixtures.iter().map(|f| {
+                                let Fixture::Graph(book) = f else { return Err(kind_err()) };
+                                // One arena region per shared Rc. Do not new_region per order.
+                                let mut region_of: Vec<(usize, graph::Region<'static, GraphArena>)> = Vec::new();
+                                let mut orders = Vec::with_capacity(book.orders.len());
+                                for order in &book.orders {
+                                    let key = Rc::as_ptr(&order.region) as usize;
+                                    let region = if let Some(pos) = region_of.iter().position(|(k, _)| *k == key) {
+                                        region_of[pos].1
+                                    } else {
+                                        let h = a.new_region(
+                                            Some(order.region.code.as_str()),
+                                            Some(order.region.note.as_str()),
+                                            Some(order.region.version),
+                                        );
+                                        region_of.push((key, h));
+                                        h
+                                    };
+                                    orders.push(a.new_order(Some(order.sku.as_str()), Some(order.qty), Some(region)));
+                                }
+                                let mut person_of: Vec<(usize, graph::Person<'static, GraphArena>)> = Vec::new();
+                                let mut people = Vec::with_capacity(book.people.len());
+                                for person in &book.people {
+                                    let key = Rc::as_ptr(person) as usize;
+                                    let h = if let Some(pos) = person_of.iter().position(|(k, _)| *k == key) {
+                                        person_of[pos].1
+                                    } else {
+                                        let h = a.new_person(Some(person.name.as_str()), None);
+                                        person_of.push((key, h));
+                                        h
+                                    };
+                                    people.push(h);
+                                }
+                                for person in &book.people {
+                                    let key = Rc::as_ptr(person) as usize;
+                                    let h = person_of.iter().find(|(k, _)| *k == key).map(|(_, h)| *h)
+                                        .ok_or_else(|| anyhow::anyhow!("dagr: missing person"))?;
+                                    let next_key = person.next.borrow().as_ref().map(|n| Rc::as_ptr(n) as usize);
+                                    let next = match next_key {
+                                        None => None,
+                                        Some(nk) => Some(
+                                            person_of.iter().find(|(k, _)| *k == nk).map(|(_, h)| *h)
+                                                .ok_or_else(|| anyhow::anyhow!("dagr: person.next leaves the book"))?,
+                                        ),
+                                    };
+                                    h.set_next(next);
+                                }
+                                Ok(a.new_book(&orders, &people))
+                            }).collect::<Result<_>>()?)
+                        }
                         Some(_) => return Err(unsupported_kind()),
                     };
                     Ok(p)
@@ -357,6 +418,7 @@ macro_rules! arena_cell {
                         Roots::Telemetry(v) => v.get(i).ok_or(missing)?.store(b)?,
                         Roots::Strings(v) => v.get(i).ok_or(missing)?.store(b)?,
                         Roots::Event(v) => v.get(i).ok_or(missing)?.store(b)?,
+                        Roots::Graph(v) => v.get(i).ok_or(missing)?.store(b)?,
                         Roots::None => return Err(missing),
                     };
                     frame(r, b);
@@ -373,6 +435,7 @@ macro_rules! arena_cell {
                     (Arena::Telemetry(a), Roots::Telemetry(v)) => { a.set_root(Some(v[i])); a.to_bytes() }
                     (Arena::Strings(a), Roots::Strings(v)) => { a.set_root(Some(v[i])); a.to_bytes() }
                     (Arena::Event(a), Roots::Event(v)) => { a.set_root(Some(v[i])); a.to_bytes() }
+                    (Arena::Graph(a), Roots::Graph(v)) => { a.set_root(Some(v[i])); a.to_bytes() }
                     _ => Err(DagrError::InvalidData),
                 }
             }
@@ -385,13 +448,15 @@ arena_cell!(regular_cell:
     document_regular_graph(DocumentRegularGraphArena, DocumentRegularGraphGraph),
     telemetry_regular_graph(TelemetryRegularGraphArena, TelemetryRegularGraphGraph),
     strings_regular_graph(StringsRegularGraphArena, StringsRegularGraphGraph),
-    event_regular_graph(EventRegularGraphArena, EventRegularGraphGraph));
+    event_regular_graph(EventRegularGraphArena, EventRegularGraphGraph),
+    graph_regular_graph(GraphRegularGraphArena, GraphRegularGraphGraph));
 arena_cell!(frozen_cell:
     message_frozen_graph(MessageFrozenGraphArena, MessageFrozenGraphGraph),
     document_frozen_graph(DocumentFrozenGraphArena, DocumentFrozenGraphGraph),
     telemetry_frozen_graph(TelemetryFrozenGraphArena, TelemetryFrozenGraphGraph),
     strings_frozen_graph(StringsFrozenGraphArena, StringsFrozenGraphGraph),
-    event_frozen_graph(EventFrozenGraphArena, EventFrozenGraphGraph));
+    event_frozen_graph(EventFrozenGraphArena, EventFrozenGraphGraph),
+    graph_frozen_graph(GraphFrozenGraphArena, GraphFrozenGraphGraph));
 
 // ── decode (lazy reader → owned domain value) ───────────────────────────────
 //
@@ -462,7 +527,7 @@ node_arr_len!(
 );
 
 macro_rules! lazy_decoders {
-    ($m:ident($adapt:ident): $msg:ident, $doc:ident, $tel:ident, $str:ident, $ev:ident) => {
+    ($m:ident($adapt:ident): $msg:ident, $doc:ident, $tel:ident, $str:ident, $ev:ident $(, graph: $graph:ident)?) => {
         mod $m {
             use super::adapt::$adapt::{nd, sc, st};
             use super::*;
@@ -553,6 +618,101 @@ macro_rules! lazy_decoders {
                 }))
             }
 
+            $(
+            fn decode_graph(data: &[u8]) -> Result<Fixture, DagrError> {
+                use dagr_benchmark_v2::$graph as graph_lazy;
+                use std::cell::RefCell;
+                use std::rc::Rc;
+
+                struct Seen {
+                    start: usize,
+                    name: String,
+                    next: Option<usize>,
+                }
+
+                let root = graph_lazy::read_root(data)?;
+                let orders_acc = root.orders()?;
+                let mut regions: Vec<(usize, Rc<Region>)> = Vec::new();
+                let mut orders = Vec::with_capacity(orders_acc.count);
+                for it in orders_acc.iter() {
+                    let it = it?;
+                    let reg = nd(it.region())?.ok_or(DagrError::InvalidData)?;
+                    let key = reg._start();
+                    let region = if let Some(pos) = regions.iter().position(|(k, _)| *k == key) {
+                        Rc::clone(&regions[pos].1)
+                    } else {
+                        let region = Rc::new(Region {
+                            code: st(reg.code())?,
+                            note: st(reg.note())?,
+                            version: sc(reg.version())?,
+                        });
+                        regions.push((key, Rc::clone(&region)));
+                        region
+                    };
+                    orders.push(Order {
+                        sku: st(it.sku())?,
+                        qty: sc(it.qty())?,
+                        region,
+                    });
+                }
+
+                let people_acc = root.people()?;
+                let mut seen = Vec::with_capacity(people_acc.count);
+                for it in people_acc.iter() {
+                    let acc = it?;
+                    let next = match nd(acc.next())? {
+                        Some(n) => Some(n._start()),
+                        None => None,
+                    };
+                    seen.push(Seen { start: acc._start(), name: st(acc.name())?, next });
+                }
+                let mut shells: Vec<(usize, Rc<Person>)> = Vec::with_capacity(seen.len());
+                for row in &seen {
+                    if shells.iter().any(|(k, _)| *k == row.start) {
+                        continue;
+                    }
+                    shells.push((
+                        row.start,
+                        Rc::new(Person {
+                            name: row.name.clone(),
+                            next: RefCell::new(None),
+                        }),
+                    ));
+                }
+                for row in &seen {
+                    let Some(next_key) = row.next else { continue };
+                    let person = match shells.iter().find(|(k, _)| *k == row.start) {
+                        Some((_, p)) => Rc::clone(p),
+                        None => return Err(DagrError::InvalidData),
+                    };
+                    let next = match shells.iter().find(|(k, _)| *k == next_key) {
+                        Some((_, p)) => Rc::clone(p),
+                        None => return Err(DagrError::InvalidData),
+                    };
+                    *person.next.borrow_mut() = Some(next);
+                }
+                let mut people = Vec::with_capacity(seen.len());
+                for row in &seen {
+                    let person = match shells.iter().find(|(k, _)| *k == row.start) {
+                        Some((_, p)) => Rc::clone(p),
+                        None => return Err(DagrError::InvalidData),
+                    };
+                    people.push(person);
+                }
+                Ok(Fixture::Graph(Book { orders, people }))
+            }
+            )?
+
+            fn graph_decoder() -> DecodeFn {
+                // `stringify!($graph)` keeps this repetition tied to the optional graph module.
+                $(
+                if !stringify!($graph).is_empty() {
+                    return decode_graph;
+                }
+                )?
+                decode_unsupported
+            }
+
             /// Bind the monomorphic decoder for the cell's fixture kind (untimed).
             pub fn decoder(first: &Fixture) -> DecodeFn {
                 match first {
@@ -561,6 +721,7 @@ macro_rules! lazy_decoders {
                     Fixture::Telemetry(_) => decode_telemetry,
                     Fixture::Strings(_) => decode_strings,
                     Fixture::Event(_) => decode_event,
+                    Fixture::Graph(_) => graph_decoder(),
                     _ => decode_unsupported,
                 }
             }
@@ -571,9 +732,11 @@ macro_rules! lazy_decoders {
 lazy_decoders!(packed_dec(packed): message_graph_lazy, document_graph_lazy,
                telemetry_graph_lazy, strings_graph_lazy, event_graph_lazy);
 lazy_decoders!(regular_dec(regular): message_regular_graph_lazy, document_regular_graph_lazy,
-               telemetry_regular_graph_lazy, strings_regular_graph_lazy, event_regular_graph_lazy);
+               telemetry_regular_graph_lazy, strings_regular_graph_lazy, event_regular_graph_lazy,
+               graph: graph_regular_graph_lazy);
 lazy_decoders!(frozen_dec(frozen): message_frozen_graph_lazy, document_frozen_graph_lazy,
-               telemetry_frozen_graph_lazy, strings_frozen_graph_lazy, event_frozen_graph_lazy);
+               telemetry_frozen_graph_lazy, strings_frozen_graph_lazy, event_frozen_graph_lazy,
+               graph: graph_frozen_graph_lazy);
 lazy_decoders!(frozen_packed_dec(frozen_packed): message_frozen_packed_graph_lazy,
                document_frozen_packed_graph_lazy, telemetry_frozen_packed_graph_lazy,
                strings_frozen_packed_graph_lazy, event_frozen_packed_graph_lazy);
@@ -584,17 +747,19 @@ lazy_decoders!(frozen_packed_dec(frozen_packed): message_frozen_packed_graph_laz
 pub trait Layout: Send {
     const NAME: &'static str;
     const KIND: NativeKind;
+    const GRAPH: bool;
     #[allow(private_bounds)]
     type Prepared: Cell;
     fn decoder(first: &Fixture) -> DecodeFn;
 }
 
 macro_rules! layout {
-    ($ty:ident, $name:literal, $kind:ident, $cell:ident, $dec:ident) => {
+    ($ty:ident, $name:literal, $kind:ident, $cell:ident, $dec:ident, $graph:expr) => {
         pub struct $ty;
         impl Layout for $ty {
             const NAME: &'static str = $name;
             const KIND: NativeKind = NativeKind::$kind;
+            const GRAPH: bool = $graph;
             type Prepared = $cell::Prepared;
             fn decoder(first: &Fixture) -> DecodeFn {
                 $dec::decoder(first)
@@ -603,10 +768,10 @@ macro_rules! layout {
     };
 }
 
-layout!(Packed, "dagr-packed", Direct, packed_cell, packed_dec);
-layout!(Regular, "dagr-regular", Message, regular_cell, regular_dec);
-layout!(Frozen, "dagr-frozen", Message, frozen_cell, frozen_dec);
-layout!(FrozenPacked, "dagr-frozen-packed", Direct, frozen_packed_cell, frozen_packed_dec);
+layout!(Packed, "dagr-packed", Direct, packed_cell, packed_dec, false);
+layout!(Regular, "dagr-regular", Message, regular_cell, regular_dec, true);
+layout!(Frozen, "dagr-frozen", Message, frozen_cell, frozen_dec, true);
+layout!(FrozenPacked, "dagr-frozen-packed", Direct, frozen_packed_cell, frozen_packed_dec, false);
 
 // ── BenchSerializer ─────────────────────────────────────────────────────────
 
@@ -654,7 +819,7 @@ impl<L: Layout> BenchSerializer for DagrLayoutSer<L> {
         matches!(
             test_data_name,
             "message" | "document" | "telemetry" | "strings" | "event"
-        )
+        ) || (L::GRAPH && test_data_name == "graph")
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
         self.prepare_many(std::slice::from_ref(fixture))
@@ -686,12 +851,68 @@ impl<L: Layout> BenchSerializer for DagrLayoutSer<L> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::make_one;
+    use crate::data::{check_cell_fidelity, make_one, TypeConfig};
+    use std::collections::HashMap;
+    use std::rc::Rc;
+
+    fn assert_decoded_identity(book: &crate::data::Book) {
+        assert_eq!(book.orders.len(), 32);
+        assert_eq!(book.people.len(), 8);
+        let mut ids = Vec::new();
+        let mut counts = HashMap::new();
+        for (i, order) in book.orders.iter().enumerate() {
+            let p = Rc::as_ptr(&order.region) as usize;
+            if !ids.contains(&p) {
+                ids.push(p);
+            }
+            *counts.entry(p).or_insert(0) += 1;
+            assert!(Rc::ptr_eq(&order.region, &book.orders[i % 4].region));
+            assert_eq!(order.region.note.len(), 64);
+        }
+        assert_eq!(ids.len(), 4, "decoded regions were duplicated");
+        assert!(counts.values().all(|&n| n == 8));
+        let mut node = Rc::clone(&book.people[0]);
+        for i in 0..book.people.len() {
+            let next = node.next.borrow().as_ref().cloned().expect("ring");
+            assert!(Rc::ptr_eq(&next, &book.people[(i + 1) % book.people.len()]));
+            node = next;
+        }
+        assert!(Rc::ptr_eq(&node, &book.people[0]));
+    }
+
+    fn roundtrip_graph<L: Layout>() {
+        let fx = make_one("graph", 42, 0, &TypeConfig::default()).unwrap();
+        let mut ser = DagrLayoutSer::<L>::default();
+        assert!(ser.supports("graph"), "{}", ser.name());
+        ser.prepare_many(std::slice::from_ref(&fx)).unwrap();
+        let mut buf = Vec::new();
+        ser.begin_cell_encode();
+        ser.serialize_into(&fx, &mut buf).unwrap();
+        assert!(!buf.is_empty());
+        let got = ser.deserialize_bytes(&buf).unwrap();
+        check_cell_fidelity("graph", std::slice::from_ref(&fx), std::slice::from_ref(&got)).unwrap();
+        let Fixture::Graph(book) = &got else {
+            panic!("expected graph");
+        };
+        assert_decoded_identity(book);
+    }
+
+    #[test]
+    fn graph_roundtrip_preserves_identity() {
+        assert!(!DagrSer::default().supports("graph"));
+        assert!(!DagrFrozenPackedSer::default().supports("graph"));
+        roundtrip_graph::<Regular>();
+        roundtrip_graph::<Frozen>();
+        for ser in crate::serializers::all_serializers() {
+            let want = matches!(ser.name(), "dagr-regular" | "dagr-frozen");
+            assert_eq!(ser.supports("graph"), want, "{}", ser.name());
+        }
+    }
 
     /// The reused-builder arena encode must be byte-identical to the arena's own `to_bytes`.
     #[test]
     fn arena_encode_matches_to_bytes() {
-        for kind in ["message", "document", "telemetry", "strings", "event"] {
+        for kind in ["message", "document", "telemetry", "strings", "event", "graph"] {
             let fxs: Vec<Fixture> =
                 (0..3).map(|i| make_one(kind, 42, i, &crate::data::TypeConfig::default()).unwrap()).collect();
             let mut b = DagrBuilder::with_capacity(16);

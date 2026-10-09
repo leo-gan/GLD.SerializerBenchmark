@@ -49,7 +49,7 @@ _PY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "
 _GEN_DIR = os.path.join(_PY_ROOT, "generated", "dagr")
 _LOCK = os.path.join(_PY_ROOT, "..", "schemas", "v2", "dagr", "dagr.lock.json")
 
-_TYPES = ("message", "document", "telemetry", "strings", "event")
+_TYPES = ("message", "document", "telemetry", "strings", "event", "graph")
 
 # Row name -> generated module suffix (``<type>_<suffix>graph``).
 _FLAVOURS = {
@@ -128,12 +128,30 @@ def _to_event(g: Any, o: m.Event) -> Any:
     )
 
 
+def _to_graph(g: Any, o: m.Book) -> Any:
+    """Rebuild the graph with Dagr nodes, keeping region aliases and the ring."""
+    regions: dict[int, Any] = {}
+    orders = []
+    for order in o.orders:
+        key = id(order.region)
+        region = regions.get(key)
+        if region is None:
+            region = g.Region(code=order.region.code, note=order.region.note, version=order.region.version)
+            regions[key] = region
+        orders.append(g.Order(sku=order.sku, qty=order.qty, region=region))
+    people = [g.Person(name=person.name) for person in o.people]
+    for i, person in enumerate(people):
+        person.next = people[(i + 1) % len(people)]
+    return g.Book(orders=orders, people=people)
+
+
 _CONVERT = {
     "message": _to_message,
     "document": _to_document,
     "telemetry": _to_telemetry,
     "strings": _to_strings,
     "event": _to_event,
+    "graph": _to_graph,
 }
 
 

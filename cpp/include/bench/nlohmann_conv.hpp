@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <type_traits>
 
 namespace bench {
 
@@ -155,7 +156,16 @@ inline void from_json(const nlohmann::json& j, Signal& m) {
 }
 
 inline nlohmann::json value_to_json(const Value& v) {
-  return std::visit([](const auto& x) -> nlohmann::json { return x; }, v);
+  return std::visit(
+      [](const auto& x) -> nlohmann::json {
+        using T = std::decay_t<decltype(x)>;
+        if constexpr (is_graph_alt_v<T>) {
+          throw std::runtime_error("json: graph type unsupported");
+        } else {
+          return x;
+        }
+      },
+      v);
 }
 
 inline Value json_to_value(const nlohmann::json& j, const std::string& type_id, int n) {

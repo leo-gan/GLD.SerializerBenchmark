@@ -12,8 +12,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from benchmark.data_v2.fidelity import fidelity_v2
+from benchmark.data_v2.fidelity import fidelity_graph, fidelity_v2
 from benchmark.data_v2.generator import instances_for_cell
+from benchmark.serializers.base import Serializer
+from benchmark.serializers.native_pickle import PickleSerializer
 from benchmark.serializers.schema_dagr import DagrSerializer
 
 V2_TYPES = ("message", "document", "telemetry", "strings", "event")
@@ -79,3 +81,48 @@ def test_dagr_roundtrip(flavour: str, type_id: str, n: int):
     ser.serialize_stream(native, buf)
     assert buf.tell() == len(data)
     assert fidelity_v2(payload, ser.deserialize_stream(buf)) == 1.0
+
+
+@pytest.mark.parametrize("flavour", ("dagr-regular", "dagr-frozen"))
+@pytest.mark.parametrize("n", (1, 3))
+def test_dagr_graph_roundtrip_preserves_aliases(flavour: str, n: int):
+    ser = DagrSerializer(flavour)
+    assert ser.supports("graph")
+    instances = instances_for_cell("graph", {}, 42, n)
+    payload = instances[0] if n == 1 else instances
+    ser.prepare("graph", type(instances[0]))
+    native = ser.prepare_data(payload, "graph", type(instances[0]))
+    data = ser.serialize_bytes(native)
+    assert fidelity_graph(payload, ser.deserialize_bytes(data)) == 1.0
+
+
+@pytest.mark.parametrize("flavour", ("dagr-packed", "dagr-frozen-packed"))
+def test_dagr_packed_layouts_skip_graph(flavour: str):
+    assert DagrSerializer(flavour).supports("graph") is False
+
+
+def test_pickle_graph_roundtrip_and_tree_codecs_skip():
+    book = instances_for_cell("graph", {}, 7, 1)[0]
+    ser = PickleSerializer()
+    assert ser.supports("graph")
+    blob = ser.serialize_bytes(book)
+    assert fidelity_graph(book, ser.deserialize_bytes(blob)) == 1.0
+
+    class _Tree(Serializer):
+        @property
+        def name(self) -> str:
+            return "tree"
+
+        def serialize_bytes(self, obj):
+            return b""
+
+        def deserialize_bytes(self, data):
+            return None
+
+        def serialize_stream(self, obj, stream):
+            return None
+
+        def deserialize_stream(self, stream):
+            return None
+
+    assert _Tree().supports("graph") is False

@@ -20,7 +20,7 @@ public final class SwiftProtobufSerializer: BenchSerializer, DomainConverter {
         self.version = PackageVersions.version(for: "swift-protobuf", fallback: "1.x")
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

@@ -23,7 +23,7 @@ public final class FlatBuffersSerializer: BenchSerializer {
         self.version = PackageVersions.version(for: "flatbuffers", fallback: "24.3.25")
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

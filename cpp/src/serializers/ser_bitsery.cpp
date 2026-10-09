@@ -60,7 +60,7 @@ class BitserySer final : public ISerializer {
     bitsery::Serializer<OutputAdapter> ser{OutputAdapter{buf_}};
     std::visit([&](auto& v) {
       using T = std::decay_t<decltype(v)>;
-      if constexpr (is_columnar_alt_v<T>) {
+      if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
         throw std::runtime_error("bitsery: columnar type unsupported");
       } else if constexpr (std::is_same_v<T, std::vector<Message>> || std::is_same_v<T, std::vector<Document>> ||
                     std::is_same_v<T, std::vector<Telemetry>> || std::is_same_v<T, std::vector<Strings>> ||

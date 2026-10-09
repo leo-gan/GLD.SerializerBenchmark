@@ -12,9 +12,9 @@ Think of it as the **shared homework assignment**. Each language implements the 
 | Default matrix | [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) |
 | Smoke matrix | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
 
-**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal`
+**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal` · `graph`
 
-The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The last four run only from `columnar.yaml` / `columnar-smoke.yaml`, and only for an explicit serializer allow-list: the columnar and SBE rows registered in that language, plus one JSON peer, the primary Protobuf row, one FlatBuffers or Cap’n Proto row when the tree already has one, and the Avro row when the tree already has one.
+The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The next four run only from `columnar.yaml` / `columnar-smoke.yaml`, and only for an explicit serializer allow-list: the columnar and SBE rows registered in that language, plus one JSON peer, the primary Protobuf row, one FlatBuffers or Cap’n Proto row when the tree already has one, and the Avro row when the tree already has one. `graph` runs only from `graph.yaml`, and only for serializers whose official API round-trips shared nodes and a reference cycle.
 
 How times are cleaned and summarized is separate: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
@@ -25,7 +25,7 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 By the end of this page you should be able to:
 
 1. Define **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Sketch the five publication data types, and the four columnar / aligned types, and what each stresses.
+2. Sketch the five publication data types, the four columnar / aligned types, and the graph type, and what each stresses.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
 ---
@@ -36,8 +36,8 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as �
 
 | Term | Meaning | Examples |
 |------|---------|----------|
-| **data set** | Parent of the data type. A serializer is measured on the sets it supports | `suite`, `columnar` |
-| **data type** (also **type id**) | Which *kind* of sample object we serialize. It belongs to one data set | `message` (suite), `table` (columnar), `signal` (columnar) |
+| **data set** | Parent of the data type. A serializer is measured on the sets it supports | `suite`, `columnar`, `graph` |
+| **data type** (also **type id**) | Which *kind* of sample object we serialize. It belongs to one data set | `message` (suite), `table` (columnar), `graph` (graph) |
 | **type config** | Size and shape knobs for **one** instance of that type | `field_count: 8`, `points: 32` |
 | **instance** | One concrete object of a data type | one `message` record |
 | **batch size** (`data_type_instance_count`) | How many instances go into **one** serialize/deserialize call | `1` or `100` |
@@ -229,6 +229,31 @@ Signal {
 ```
 
 `leg_pad` is 0. It keeps each group body a fixed 16-byte block. Default: `group_count: 4`. Wire schemas are `schemas/v2/protobuf/benchmark_v2.proto`, `schemas/v2/avro/signal.avsc`, and `schemas/v2/sbe/signal.xml`. Protobuf and Avro keep the strings before `legs`. The SBE message puts the `legs` group before `symbol` and `venue`, because sbe-tool rejects a repeating group after variable-length data. Field ids are unchanged.
+
+### graph
+
+One instance is one graph. It belongs to the `graph` data set. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression), with an explicit serializer allow-list.
+
+```text
+Region { code: utf8, note: utf8, version: int32 }   // note is 64 characters
+Order  { sku: utf8, qty: int32, region: Region }    // reference, not a copy
+Person { name: utf8, next: Person }                 // reference
+Book   { orders: Order[], people: Person[] }
+```
+
+Default: `order_count: 32`, `region_count: 4`, `ring_size: 8`, `string_len: {min:8,max:16}`.
+
+Generator order, after the usual `(seed, type_id, instance_index)` mix:
+
+1. For each region: `code` from `string_len`, then `note` of length 64, then `version` in 1…10.
+2. For each order: `sku` from `string_len`, then `qty` in 1…100. Order `i` references region `i % region_count` (the same object, eight times when the defaults divide evenly).
+3. For each person: `name` from `string_len`. Then `people[i].next` is `people[(i+1) % ring_size]`.
+
+`region` and `next` are references. An inlined copy is a different graph. Tree codecs (JSON, Protocol Buffers, MessagePack, and the rest of the suite types) return unsupported and are skipped. They are not fidelity failures.
+
+Fidelity is identity inside the restored graph, not `asdict` and not a walk that copies each child. The eight orders that name one region must point at one region object. Walking `next` eight times returns to the start, and `people[i].next` is the same object as `people[(i+1) % 8]`. A duplicated region or an unrolled ring scores 0. Field values still have to match. N>1 compares each graph on its own; nodes are not shared across the batch.
+
+Dagr emits this shape as `Book` from `schemas/v2/dagr/schema.py` for the regular and frozen layouts only. Packed and frozen+packed inline a node reference, so a `Person.next` cycle is not a legal packed graph. `dagr-packed` and `dagr-frozen-packed` do not support this data type. The timed path is still full materialize (`to_bytes` / `restore`).
 
 ---
 

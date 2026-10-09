@@ -1,4 +1,19 @@
-from bench.data import TypeConfig, make_cell, make_one
+from std.collections import List
+from bench.data import (
+    Book,
+    Document,
+    Event,
+    Fixture,
+    Message,
+    Order,
+    Person,
+    Strings,
+    Telemetry,
+    TypeConfig,
+    fidelity,
+    make_cell,
+    make_one,
+)
 from bench.emberjson_ser import EmberJsonSer
 from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
@@ -136,6 +151,182 @@ def _dagr_batch(type_id: String) raises:
             raise Error("dagr-frozen fidelity n=100 " + type_id)
         if not dagr_fp.check(fx, dagr_fp.serialize_bytes(fx)):
             raise Error("dagr-frozen-packed fidelity n=100 " + type_id)
+
+
+def _graph_cfg() -> TypeConfig:
+    var cfg = TypeConfig()
+    cfg.string_min = 8
+    cfg.string_max = 16
+    return cfg^
+
+
+def _graph_shape() raises:
+    var fresh = TypeConfig()
+    if fresh.order_count != 32 or fresh.region_count != 4 or fresh.ring_size != 8:
+        raise Error("graph count defaults")
+    var cfg = _graph_cfg()
+    var fx = make_one("graph", cfg, UInt64(42), 0)
+    if len(fx.books) != 1:
+        raise Error("graph: expected one book")
+    var book = fx.books[0].copy()
+    if len(book.regions) != 4 or len(book.orders) != 32 or len(book.people) != 8:
+        raise Error("graph shape")
+    var i = 0
+    while i < len(book.regions):
+        var n = book.regions[i].note.byte_length()
+        var c = book.regions[i].code.byte_length()
+        if n != 64 or c < 8 or c > 16:
+            raise Error("graph string lengths")
+        var v = Int(book.regions[i].version)
+        if v < 1 or v > 10:
+            raise Error("graph region version")
+        i += 1
+    i = 0
+    while i < 4:
+        var hits = 0
+        var j = 0
+        while j < len(book.orders):
+            if book.orders[j].region_index != j % 4:
+                raise Error("graph region index")
+            if book.orders[j].region_index == i:
+                hits += 1
+            var q = Int(book.orders[j].qty)
+            if q < 1 or q > 100:
+                raise Error("graph qty")
+            j += 1
+        if hits != 8:
+            raise Error("graph region was copied")
+        i += 1
+    i = 0
+    while i < len(book.people):
+        if book.people[i].next_index != (i + 1) % 8:
+            raise Error("graph ring")
+        var n = book.people[i].name.byte_length()
+        if n < 8 or n > 16:
+            raise Error("graph person name")
+        i += 1
+    var again = make_one("graph", cfg, UInt64(42), 0)
+    if not fidelity(fx, again):
+        raise Error("graph generator is not stable")
+    var other = make_one("graph", cfg, UInt64(42), 1)
+    if fidelity(fx, other):
+        raise Error("graph seed mix did not change the book")
+    var bad_people = List[Person]()
+    i = 0
+    while i < len(book.people):
+        var nxt = book.people[i].next_index
+        if i == 0:
+            nxt = 0
+        bad_people.append(Person(book.people[i].name.copy(), nxt))
+        i += 1
+    var bad = Book(book.regions.copy(), book.orders.copy(), bad_people^)
+    var badfx = Fixture(
+        "graph",
+        1,
+        "",
+        List[Message](),
+        List[Document](),
+        List[Telemetry](),
+        List[Strings](),
+        List[Event](),
+    )
+    badfx.books.append(bad^)
+    if fidelity(fx, badfx):
+        raise Error("graph fidelity ignored the ring")
+    var dup_orders = List[Order]()
+    i = 0
+    while i < len(book.orders):
+        var ri = book.orders[i].region_index
+        if i == 4:
+            ri = 1
+        dup_orders.append(Order(book.orders[i].sku.copy(), book.orders[i].qty, ri))
+        i += 1
+    var dup = Book(book.regions.copy(), dup_orders^, book.people.copy())
+    var dupfx = Fixture(
+        "graph",
+        1,
+        "",
+        List[Message](),
+        List[Document](),
+        List[Telemetry](),
+        List[Strings](),
+        List[Event](),
+    )
+    dupfx.books.append(dup^)
+    if fidelity(fx, dupfx):
+        raise Error("graph fidelity ignored the region index")
+
+
+def _graph_dagr() raises:
+    var cfg = _graph_cfg()
+    var fx = make_one("graph", cfg, UInt64(42), 0)
+    var packed = DagrSer()
+    var fp = DagrFrozenPackedSer()
+    if packed.supports("graph") or fp.supports("graph"):
+        raise Error("packed layouts must not support graph")
+    if not packed.supports("message") or not fp.supports("event"):
+        raise Error("packed suite support changed")
+    var reg = DagrRegularSer()
+    var frz = DagrFrozenSer()
+    if not reg.supports("graph") or not frz.supports("graph"):
+        raise Error("regular and frozen must support graph")
+    if not reg.supports("message") or not frz.supports("document"):
+        raise Error("arena suite support changed")
+    var reg_buf = reg.serialize_bytes(fx)
+    var reg_back = reg.deserialize_bytes(fx, reg_buf)
+    if not fidelity(fx, reg_back):
+        raise Error("dagr-regular graph fidelity")
+    if len(reg_back.books) != 1 or len(reg_back.books[0].regions) != 4:
+        raise Error("dagr-regular duplicated regions")
+    if reg_back.books[0].orders[0].region_index != reg_back.books[0].orders[4].region_index:
+        raise Error("dagr-regular did not keep the shared region")
+    if reg_back.books[0].people[7].next_index != 0:
+        raise Error("dagr-regular ring did not wrap")
+    var frz_buf = frz.serialize_bytes(fx)
+    var frz_back = frz.deserialize_bytes(fx, frz_buf)
+    if not fidelity(fx, frz_back):
+        raise Error("dagr-frozen graph fidelity")
+    if len(frz_back.books[0].regions) != 4:
+        raise Error("dagr-frozen duplicated regions")
+    if frz_back.books[0].orders[0].region_index != 0 or frz_back.books[0].orders[1].region_index != 1:
+        raise Error("dagr-frozen region index")
+    if frz_back.books[0].people[0].next_index != 1:
+        raise Error("dagr-frozen ring")
+    # Distinct bytes: the two layouts are not the same encoding.
+    if len(reg_buf) == len(frz_buf):
+        var same = True
+        var i = 0
+        while i < len(reg_buf):
+            if reg_buf[i] != frz_buf[i]:
+                same = False
+                break
+            i += 1
+        if same:
+            raise Error("regular and frozen graph encodings matched")
+    var batch = make_cell("graph", cfg, UInt64(42), 3, "g")
+    if not reg.check(batch, reg.serialize_bytes(batch)):
+        raise Error("dagr-regular graph batch")
+    if not reg.check(batch, reg.serialize_bytes(batch)):
+        raise Error("dagr-regular graph reuse")
+    if not frz.check(batch, frz.serialize_bytes(batch)):
+        raise Error("dagr-frozen graph batch")
+    if not frz.check(batch, frz.serialize_bytes(batch)):
+        raise Error("dagr-frozen graph reuse")
+    var tiny = TypeConfig()
+    tiny.order_count = 4
+    tiny.region_count = 2
+    tiny.ring_size = 1
+    tiny.string_min = 8
+    tiny.string_max = 8
+    var one = make_one("graph", tiny, UInt64(7), 0)
+    if one.books[0].people[0].next_index != 0:
+        raise Error("graph self ring")
+    if not reg.check(one, reg.serialize_bytes(one)):
+        raise Error("dagr-regular self ring")
+    if not frz.check(one, frz.serialize_bytes(one)):
+        raise Error("dagr-frozen self ring")
+
+
 def _columnar(type_id: String, n: Int) raises -> Int:
     var cfg = TypeConfig()
     if type_id == "nested_table":
@@ -216,5 +407,7 @@ def main() raises:
     _yaml_batch("telemetry")
     _yaml_batch("strings")
     _yaml_batch("event")
+    _graph_shape()
+    _graph_dagr()
     _columnar_scale()
     print("ok")

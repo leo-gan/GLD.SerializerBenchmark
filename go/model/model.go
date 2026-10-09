@@ -10,8 +10,13 @@ type Fixture struct {
 	Value any
 }
 
-// Fidelity checks semantic equality (structural DeepEqual for v2 types).
+// Fidelity checks semantic equality.
+// graph is identity-aware: shared nodes must be the same pointer, and the person
+// ring must not be walked with reflect.DeepEqual (that recursion does not stop).
 func Fidelity(expected, actual any) bool {
+	if equal, matched := graphFidelity(expected, actual); matched {
+		return equal
+	}
 	return reflect.DeepEqual(expected, actual)
 }
 

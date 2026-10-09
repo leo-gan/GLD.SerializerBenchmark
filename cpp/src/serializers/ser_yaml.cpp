@@ -147,7 +147,7 @@ class YamlCppSer final : public ISerializer {
     type_id_ = fx.type_id;
     prepared_ = std::visit([](const auto& v) -> YAML::Node {
       using T = std::decay_t<decltype(v)>;
-      if constexpr (is_columnar_alt_v<T>) {
+      if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
         throw std::runtime_error("yaml-cpp: columnar type unsupported");
       } else if constexpr (std::is_same_v<T, Message> || std::is_same_v<T, Document> ||
                     std::is_same_v<T, Telemetry> || std::is_same_v<T, Strings> ||

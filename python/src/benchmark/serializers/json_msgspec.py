@@ -30,8 +30,14 @@ from .base import Serializer
 from ..data_v2 import models as models_v2
 
 
-# Flat document/GraphNodeData are non-recursive and included in Struct generation.
-_UNSUPPORTED_STRUCT_TYPES: set[type[Any]] = set()
+# The graph type is a reference cycle. msgspec Struct generation rejects it,
+# and the row does not support `graph`.
+_UNSUPPORTED_STRUCT_TYPES: set[type[Any]] = {
+    models_v2.Book,
+    models_v2.Order,
+    models_v2.Person,
+    models_v2.Region,
+}
 _STRUCT_TYPES: dict[type[Any], type[msgspec.Struct]] = {}
 
 

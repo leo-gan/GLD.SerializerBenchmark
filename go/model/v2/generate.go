@@ -3,8 +3,6 @@
 // Cross-language payload identity is not required.
 package v2
 
-
-
 // Message is a single-level mixed-primitive record.
 type Message struct {
 	FBool    bool    `json:"f_bool" avro:"f_bool" msgpack:"f_bool"`
@@ -52,11 +50,11 @@ type EventAttr struct {
 }
 
 type Event struct {
-	EventID     string      `json:"event_id" avro:"event_id" msgpack:"event_id"`
-	EventType   string      `json:"event_type" avro:"event_type" msgpack:"event_type"`
-	OccurredAt  int64       `json:"occurred_at" avro:"occurred_at" msgpack:"occurred_at"`
-	Producer    string      `json:"producer" avro:"producer" msgpack:"producer"`
-	Attrs       []EventAttr `json:"attrs" avro:"attrs" msgpack:"attrs"`
+	EventID    string      `json:"event_id" avro:"event_id" msgpack:"event_id"`
+	EventType  string      `json:"event_type" avro:"event_type" msgpack:"event_type"`
+	OccurredAt int64       `json:"occurred_at" avro:"occurred_at" msgpack:"occurred_at"`
+	Producer   string      `json:"producer" avro:"producer" msgpack:"producer"`
+	Attrs      []EventAttr `json:"attrs" avro:"attrs" msgpack:"attrs"`
 }
 
 // TableRow is one wide flat row. Proto, Avro, and SBE name the record Table.
@@ -113,14 +111,40 @@ type SignalLeg struct {
 // Signal domain order is fixed fields, then strings, then legs.
 // The SBE body puts the legs group before the strings.
 type Signal struct {
-	Seq            int64       `json:"seq" avro:"seq" msgpack:"seq"`
-	TS             int64       `json:"ts" avro:"ts" msgpack:"ts"`
+	Seq           int64       `json:"seq" avro:"seq" msgpack:"seq"`
+	TS            int64       `json:"ts" avro:"ts" msgpack:"ts"`
 	PriceMantissa int64       `json:"price_mantissa" avro:"price_mantissa" msgpack:"price_mantissa"`
-	Qty            int32       `json:"qty" avro:"qty" msgpack:"qty"`
-	Flags          int32       `json:"flags" avro:"flags" msgpack:"flags"`
-	Symbol         string      `json:"symbol" avro:"symbol" msgpack:"symbol"`
-	Venue          string      `json:"venue" avro:"venue" msgpack:"venue"`
-	Legs           []SignalLeg `json:"legs" avro:"legs" msgpack:"legs"`
+	Qty           int32       `json:"qty" avro:"qty" msgpack:"qty"`
+	Flags         int32       `json:"flags" avro:"flags" msgpack:"flags"`
+	Symbol        string      `json:"symbol" avro:"symbol" msgpack:"symbol"`
+	Venue         string      `json:"venue" avro:"venue" msgpack:"venue"`
+	Legs          []SignalLeg `json:"legs" avro:"legs" msgpack:"legs"`
+}
+
+// Region is a shared node. Several orders in one Book hold this same pointer.
+type Region struct {
+	Code    string `json:"code" avro:"code" msgpack:"code"`
+	Note    string `json:"note" avro:"note" msgpack:"note"`
+	Version int32  `json:"version" avro:"version" msgpack:"version"`
+}
+
+// Order points at a Region. The pointer is shared; the order itself is not.
+type Order struct {
+	SKU    string  `json:"sku" avro:"sku" msgpack:"sku"`
+	Qty    int32   `json:"qty" avro:"qty" msgpack:"qty"`
+	Region *Region `json:"region" avro:"region" msgpack:"region"`
+}
+
+// Person is one node of a ring. Next may point at this same person when the ring size is 1.
+type Person struct {
+	Name string  `json:"name" avro:"name" msgpack:"name"`
+	Next *Person `json:"next" avro:"next" msgpack:"next"`
+}
+
+// Book is one graph: shared region nodes and a person ring. Graphs do not share nodes.
+type Book struct {
+	Orders []Order   `json:"orders" avro:"orders" msgpack:"orders"`
+	People []*Person `json:"people" avro:"people" msgpack:"people"`
 }
 
 const baseTSMS int64 = 1704067200000
@@ -202,6 +226,8 @@ func MakeOne(typeID string, typeConfig map[string]any, seed uint64, instanceInde
 		return makeNestedTable(r, typeConfig)
 	case "signal":
 		return makeSignal(r, typeConfig)
+	case "graph":
+		return makeGraph(r, typeConfig)
 	default:
 		return nil
 	}
@@ -326,7 +352,7 @@ func makeEvent(r *rng, cfg map[string]any) Event {
 	return Event{
 		EventID: r.word(8, 12), EventType: r.word(3, 12),
 		OccurredAt: baseTSMS + int64(r.nextInt(0, 86400000)),
-		Producer: r.word(3, 12), Attrs: attrs,
+		Producer:   r.word(3, 12), Attrs: attrs,
 	}
 }
 
@@ -395,13 +421,13 @@ func makeSignal(r *rng, cfg map[string]any) Signal {
 	smin, smax := slen(cfg, 3, 12)
 	n := cfgInt(cfg, "group_count", 4)
 	sig := Signal{
-		Seq:            int64(r.nextInt(0, 1_000_000_000)),
-		TS:             baseTSMS + int64(r.nextInt(0, 86_400_000)),
+		Seq:           int64(r.nextInt(0, 1_000_000_000)),
+		TS:            baseTSMS + int64(r.nextInt(0, 86_400_000)),
 		PriceMantissa: int64(r.nextInt(0, 1_000_000_000)),
-		Qty:            int32(r.nextInt(0, 10_000)),
-		Flags:          int32(r.nextInt(0, 65_535)),
-		Symbol:         r.word(smin, smax),
-		Venue:          r.word(smin, smax),
+		Qty:           int32(r.nextInt(0, 10_000)),
+		Flags:         int32(r.nextInt(0, 65_535)),
+		Symbol:        r.word(smin, smax),
+		Venue:         r.word(smin, smax),
 	}
 	sig.Legs = make([]SignalLeg, n)
 	for i := range sig.Legs {
@@ -412,6 +438,43 @@ func makeSignal(r *rng, cfg map[string]any) Signal {
 		}
 	}
 	return sig
+}
+
+// makeGraph builds one graph. Call order is the generator contract: every region
+// (code, 64-char note, version), then every order (sku, qty; region i%region_count
+// is the same pointer), then person names, then the ring. The ring draws no RNG.
+func makeGraph(r *rng, cfg map[string]any) Book {
+	smin, smax := slen(cfg, 8, 16)
+	nOrders := cfgInt(cfg, "order_count", 32)
+	nRegions := cfgInt(cfg, "region_count", 4)
+	ring := cfgInt(cfg, "ring_size", 8)
+	if nRegions < 1 || ring < 1 {
+		panic("graph: region_count and ring_size must be >= 1")
+	}
+	regions := make([]*Region, nRegions)
+	for i := range regions {
+		regions[i] = &Region{
+			Code:    r.word(smin, smax),
+			Note:    r.word(64, 64),
+			Version: int32(r.nextInt(1, 10)),
+		}
+	}
+	orders := make([]Order, nOrders)
+	for i := range orders {
+		orders[i] = Order{
+			SKU:    r.word(smin, smax),
+			Qty:    int32(r.nextInt(1, 100)),
+			Region: regions[i%nRegions],
+		}
+	}
+	people := make([]*Person, ring)
+	for i := range people {
+		people[i] = &Person{Name: r.word(smin, smax)}
+	}
+	for i := range people {
+		people[i].Next = people[(i+1)%ring]
+	}
+	return Book{Orders: orders, People: people}
 }
 
 // ProjectFFloat0 returns f_float_0 for one row or a batch.

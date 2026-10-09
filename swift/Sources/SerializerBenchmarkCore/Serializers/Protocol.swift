@@ -39,7 +39,9 @@ public protocol DomainConverter: AnyObject {
 public extension BenchSerializer {
     var streamMode: StreamMode { .adapted }
     var nativeKind: NativeKind { .codable }
-    func supports(testDataName: String) -> Bool { true }
+    /// `graph` is shared nodes plus a cycle. Tree codecs skip it.
+    /// Only dagr-regular and dagr-frozen opt in.
+    func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     /// Adapted stream: full bytes encode, then write through Foundation OutputStream
     /// (not a free alias of the bytes path — includes stream sink work).
@@ -108,7 +110,7 @@ open class CodableBenchSerializer: BenchSerializer {
         self.decoder = decoder
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

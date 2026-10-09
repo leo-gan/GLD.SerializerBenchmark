@@ -14,6 +14,10 @@ from .models import (
     NestedItem,
     NestedMeta,
     NestedRow,
+    Book,
+    Order,
+    Person,
+    Region,
     Signal,
     SignalLeg,
     Strings,
@@ -52,6 +56,8 @@ def make_one(
         return _make_nested_table(rng, type_config)
     if type_id == "signal":
         return _make_signal(rng, type_config)
+    if type_id == "graph":
+        return _make_graph(rng, type_config)
     raise ValueError(f"unknown type_id: {type_id!r}")
 
 
@@ -253,3 +259,39 @@ def _make_event(rng: XorShift64, cfg: dict[str, Any]) -> Event:
         producer=rng.word(smin, smax),
         attrs=attrs,
     )
+
+
+def _make_graph(rng: XorShift64, cfg: dict[str, Any]) -> Book:
+    """One graph. Call order is the cross-language contract.
+
+    Regions first (code, 64-char note, version), then orders (sku, qty, shared
+    region by index), then person names, then the ring of references.
+    """
+    smin, smax = _slen(cfg)
+    n_orders = int(cfg.get("order_count", 32))
+    n_regions = int(cfg.get("region_count", 4))
+    ring = int(cfg.get("ring_size", 8))
+    if n_regions < 1:
+        raise ValueError("region_count must be >= 1")
+    if ring < 1:
+        raise ValueError("ring_size must be >= 1")
+    regions = [
+        Region(
+            code=rng.word(smin, smax),
+            note=rng.word(64, 64),
+            version=rng.next_int(1, 10),
+        )
+        for _ in range(n_regions)
+    ]
+    orders = [
+        Order(
+            sku=rng.word(smin, smax),
+            qty=rng.next_int(1, 100),
+            region=regions[i % n_regions],
+        )
+        for i in range(n_orders)
+    ]
+    people = [Person(name=rng.word(smin, smax), next=None) for _ in range(ring)]
+    for i, person in enumerate(people):
+        person.next = people[(i + 1) % ring]
+    return Book(orders=orders, people=people)

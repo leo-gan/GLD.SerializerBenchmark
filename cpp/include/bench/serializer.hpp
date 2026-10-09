@@ -26,7 +26,9 @@ class ISerializer {
   virtual const char* stream_mode() const { return "adapted"; }
   /** "struct" | "dom" | "message" | "schema" | "archive" */
   virtual const char* native_kind() const { return "struct"; }
-  virtual bool supports(const std::string& /*type_id*/) const { return true; }
+  // `graph` is shared nodes plus a reference cycle. Tree codecs must skip it.
+  // Override and return true only when the API keeps aliases.
+  virtual bool supports(const std::string& type_id) const { return type_id != "graph"; }
 
   virtual void prepare(const Fixture& fx) = 0;
   virtual std::vector<uint8_t> serialize_bytes(const Fixture& fx) = 0;

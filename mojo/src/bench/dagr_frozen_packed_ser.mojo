@@ -222,6 +222,7 @@ struct DagrFrozenPackedSer(Movable):
         return "dagr-frozen-packed"
 
     def supports(self, type_id: String) -> Bool:
+        # Packed inlines refs, so the person ring cannot be represented.
         return (
             type_id == "message"
             or type_id == "document"

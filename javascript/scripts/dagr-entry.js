@@ -3,6 +3,7 @@
 // names are <Type><Flavour><Kind> with Flavour '' (packed), Regular, Frozen, FrozenPacked.
 // Lazy readers for all four; direct builders for the packed-rooted graphs (packed,
 // frozen+packed); arena + arena serializer for regular and frozen (no direct builder).
+// `graph` is regular and frozen only: packed inlines refs and cannot store the cycle.
 // src/serializers/dagr.js looks the modules up by these names.
 export * as MessageLazy from '../src/generated/dagr/MessageGraph';
 export * as MessageDirect from '../src/generated/dagr/MessageGraph_direct';
@@ -54,4 +55,10 @@ export * as EventFrozenArena from '../src/generated/dagr/EventFrozenGraph_arena'
 export * as EventFrozenSerde from '../src/generated/dagr/EventFrozenGraph_serde';
 export * as EventFrozenPackedLazy from '../src/generated/dagr/EventFrozenPackedGraph';
 export * as EventFrozenPackedDirect from '../src/generated/dagr/EventFrozenPackedGraph_direct';
+export * as GraphRegularLazy from '../src/generated/dagr/GraphRegularGraph';
+export * as GraphRegularArena from '../src/generated/dagr/GraphRegularGraph_arena';
+export * as GraphRegularSerde from '../src/generated/dagr/GraphRegularGraph_serde';
+export * as GraphFrozenLazy from '../src/generated/dagr/GraphFrozenGraph';
+export * as GraphFrozenArena from '../src/generated/dagr/GraphFrozenGraph_arena';
+export * as GraphFrozenSerde from '../src/generated/dagr/GraphFrozenGraph_serde';
 export { Builder } from '../src/generated/dagr/dagr_writer';

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   dataSetForFixture,
+  discoverFixtureOptions,
   fixturesForDataSet,
   pickPreferredFixture,
   resolveStandardDataSet,
@@ -19,6 +20,24 @@ test('data set is columnar for table types', () => {
   assert.equal(dataSetForFixture('table@n=1'), 'columnar');
   assert.equal(dataSetForFixture('signal@n=100'), 'columnar');
   assert.equal(dataSetForFixture('table@n=1+100'), 'columnar');
+});
+
+test('data set is graph for the graph type and all@ stays suite', () => {
+  assert.equal(dataSetForFixture('graph@n=1'), 'graph');
+  assert.equal(dataSetForFixture('graph@n=100'), 'graph');
+  assert.equal(dataSetForFixture('all@all'), 'suite');
+  const keys = ['message@n=1', 'graph@n=1', 'table@n=1', 'all@all'];
+  assert.deepEqual(fixturesForDataSet(keys, 'graph'), ['graph@n=1']);
+  assert.deepEqual(fixturesForDataSet(keys, 'suite'), ['message@n=1', 'all@all']);
+  const discovered = discoverFixtureOptions([
+    { test_data: 'message@n=1', data_type_instance_count: 1 },
+    { test_data: 'graph@n=1', data_type_instance_count: 1 },
+    { test_data: 'event@n=100', data_type_instance_count: 100 },
+  ]);
+  assert.ok(discovered.all.includes('graph@n=1'));
+  assert.ok(discovered.all.includes('all@all'));
+  assert.equal(discovered.allTypes.includes('all@1'), true);
+  assert.equal(discovered.all.filter((key) => key.startsWith('graph')).length, 1);
 });
 
 test('data type menu keeps only the selected data set', () => {

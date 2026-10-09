@@ -162,3 +162,38 @@ class Signal:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(eq=False, repr=False)
+class Region:
+    """Shared node. Several orders hold this same object."""
+
+    code: str
+    note: str
+    version: int
+
+
+@dataclass(eq=False, repr=False)
+class Order:
+    sku: str
+    qty: int
+    region: Region
+
+
+@dataclass(eq=False, repr=False)
+class Person:
+    """Ring node. ``next`` is a reference, including back to an earlier person."""
+
+    name: str
+    next: Person | None = None
+
+
+@dataclass(eq=False, repr=False)
+class Book:
+    """One graph instance: shared regions and a person ring."""
+
+    orders: list[Order]
+    people: list[Person]
+
+    def __repr__(self) -> str:
+        return f"Book(orders={len(self.orders)}, people={len(self.people)})"

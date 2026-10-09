@@ -6,6 +6,7 @@
 #include <string>
 
 int run_columnar_checks();
+int run_graph_checks();
 
 int main() {
   using namespace bench;
@@ -16,7 +17,7 @@ int main() {
   std::cout << "OK schedule golden (A,B,C → C,B,A)\n";
   TypeConfig cfg;
   auto sers = all_serializers();
-  const char* types[] = {"message", "document", "telemetry", "strings", "event"};
+  const char* types[] = {"message", "document", "telemetry", "strings", "event", "graph"};
   int failures = 0;
   for (auto& ser : sers) {
     for (const char* tid : types) {
@@ -76,5 +77,6 @@ int main() {
   }
   std::cout << "All roundtrips OK (" << sers.size() << " serializers)\n";
   if (int crc = run_columnar_checks(); crc != 0) return crc;
+  if (int grc = run_graph_checks(); grc != 0) return grc;
   return 0;
 }

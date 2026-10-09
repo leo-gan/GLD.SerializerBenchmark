@@ -42,6 +42,7 @@ import {
   instanceCount,
   compoundFixtureKey,
   dataSetForFixture,
+  dataSetLabel,
   discoverFixtureOptions,
   pickPreferredFixture,
   resolveStandardDataSet,
@@ -282,7 +283,7 @@ function syncLanguageSelects() {
 function syncDatasetSelect() {
   const el = document.getElementById('dataset-value');
   if (!el) return;
-  el.textContent = state.currentDataSet === 'columnar' ? 'Columnar' : 'Suite';
+  el.textContent = dataSetLabel(state.currentDataSet);
 }
 
 function refreshCrossLangForSharedFilters() {
@@ -408,7 +409,7 @@ function applySavedSettings(saved) {
   if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
     state.currentLanguage = saved.currentLanguage;
   }
-  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar')) {
+  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar' || saved.currentDataSet === 'graph')) {
     state.currentDataSet = saved.currentDataSet;
   }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
@@ -475,7 +476,7 @@ function applySavedSettings(saved) {
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
-  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar')) {
+  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar' || p.get('dataset') === 'graph')) {
     state.currentDataSet = p.get('dataset');
   }
   if (p.has('data')) state.currentTestData = p.get('data');
@@ -1971,6 +1972,7 @@ function populateFixtureSelect(options, cfg = {}) {
     };
     addGroup('Suite', options.filter((key) => dataSetForFixture(key) === 'suite'));
     addGroup('Columnar', options.filter((key) => dataSetForFixture(key) === 'columnar'));
+    addGroup('Graph', options.filter((key) => dataSetForFixture(key) === 'graph'));
   } else {
     appendFixtureOptions(sel, options);
   }

@@ -10,6 +10,11 @@
 //   dagr-frozen          MessageFrozenGraph, …          the generated arena (frozen nodes)
 //   dagr-frozen-packed   MessageFrozenPackedGraph, …    direct-builder value structs
 //
+// graph (root Book) is regular and frozen only. Packed inlines a reference, so
+// Person.next cannot be a cycle; dagr-packed and dagr-frozen-packed do not support it.
+// The arena reuses one Region node per shared region and closes the Person ring.
+// Timed decode still materializes a domain Book (lazy reader; node identity is buffer_pos).
+//
 // Serialize (timed): like libprotobuf's prepared messages, the native model is built from
 // the suite values in prepare (untimed). The timed call encodes it — the packed layouts
 // with the DIRECT BUILDER (value structs → bytes: `direct::build` into one reused
@@ -37,6 +42,8 @@
 #include "benchmark_v2/event_frozen_packed_graph_direct.hpp"
 #include "benchmark_v2/event_graph_direct.hpp"
 #include "benchmark_v2/event_regular_graph_arena.hpp"
+#include "benchmark_v2/graph_frozen_graph_arena.hpp"
+#include "benchmark_v2/graph_regular_graph_arena.hpp"
 #include "benchmark_v2/message_frozen_graph_arena.hpp"
 #include "benchmark_v2/message_frozen_packed_graph_direct.hpp"
 #include "benchmark_v2/message_graph_direct.hpp"
@@ -59,6 +66,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #ifndef DAGR_TOOL_VERSION
@@ -201,12 +209,67 @@ Event read_event(const A& a) {
   return e;
 }
 
+// Shared orders keep one Region. Person.next is interned by buffer_pos so the ring
+// closes on the same node instead of being unrolled.
+template <class A>
+Book read_book(const A& a) {
+  Book book;
+  std::unordered_map<size_t, Region*> regions;
+  if (const auto orders = a.orders()) {
+    book.orders.reserve(orders->size());
+    for (const auto& ord : *orders) {
+      Order o;
+      o.sku = str(ord.sku());
+      o.qty = ord.qty().value_or(0);
+      if (const auto reg = ord.region()) {
+        const size_t pos = reg->buffer_pos();
+        const auto it = regions.find(pos);
+        if (it == regions.end()) {
+          auto node = std::make_unique<Region>();
+          node->code = str(reg->code());
+          node->note = str(reg->note());
+          node->version = reg->version().value_or(0);
+          o.region = node.get();
+          regions.emplace(pos, o.region);
+          book.regions.push_back(std::move(node));
+        } else {
+          o.region = it->second;
+        }
+      }
+      book.orders.push_back(std::move(o));
+    }
+  }
+  if (const auto plist = a.people()) {
+    using PersonAcc = std::decay_t<decltype((*plist)[0])>;
+    std::vector<PersonAcc> accs;
+    accs.reserve(plist->size());
+    for (const auto& person : *plist) accs.push_back(person);
+    std::unordered_map<size_t, Person*> people;
+    book.people.reserve(accs.size());
+    for (const PersonAcc& person : accs) {
+      auto node = std::make_unique<Person>();
+      node->name = str(person.name());
+      people.emplace(person.buffer_pos(), node.get());
+      book.people.push_back(std::move(node));
+    }
+    for (size_t i = 0; i < accs.size(); ++i) {
+      if (const auto nxt = accs[i].next()) {
+        const auto it = people.find(nxt->buffer_pos());
+        if (it == people.end()) throw std::runtime_error("dagr: person.next left the ring");
+        book.people[i]->next = it->second;
+      }
+    }
+  }
+  return book;
+}
+
 template <class T, class A>
 T read_value(const A& a) {
   if constexpr (std::is_same_v<T, Message>) return read_message(a);
   else if constexpr (std::is_same_v<T, Document>) return read_document(a);
   else if constexpr (std::is_same_v<T, Telemetry>) return read_telemetry(a);
   else if constexpr (std::is_same_v<T, Strings>) return read_strings(a);
+  else if constexpr (std::is_same_v<T, Book>) return read_book(a);
   else return read_event(a);
 }
 
@@ -391,6 +454,55 @@ auto arena_event(A& a, const Event& e) {
   return n;
 }
 
+// One Region node per domain region. Person handles are created first, then next
+// is wired, so the ring is a cycle of the same nodes.
+template <class A>
+auto arena_book(A& a, const Book& src) {
+  using RegionH = decltype(a.new_region());
+  using OrderH = decltype(a.new_order());
+  using PersonH = decltype(a.new_person());
+  std::unordered_map<const Region*, RegionH> regions;
+  std::vector<OrderH> orders;
+  orders.reserve(src.orders.size());
+  for (const Order& o : src.orders) {
+    OrderH node = a.new_order();
+    node.set_sku(o.sku);
+    node.set_qty(o.qty);
+    if (o.region != nullptr) {
+      auto it = regions.find(o.region);
+      if (it == regions.end()) {
+        RegionH region = a.new_region();
+        region.set_code(o.region->code);
+        region.set_note(o.region->note);
+        region.set_version(o.region->version);
+        it = regions.emplace(o.region, region).first;
+      }
+      node.set_region(it->second);
+    }
+    orders.push_back(node);
+  }
+  std::unordered_map<const Person*, size_t> index;
+  std::vector<PersonH> people;
+  people.reserve(src.people.size());
+  for (size_t i = 0; i < src.people.size(); ++i) {
+    PersonH person = a.new_person();
+    person.set_name(src.people[i]->name);
+    index.emplace(src.people[i].get(), i);
+    people.push_back(person);
+  }
+  for (size_t i = 0; i < src.people.size(); ++i) {
+    const Person* nxt = src.people[i]->next;
+    if (nxt == nullptr) continue;
+    const auto it = index.find(nxt);
+    if (it == index.end()) throw std::runtime_error("dagr: person.next is outside the ring");
+    people[i].set_next(people[it->second]);
+  }
+  auto book = a.new_book();
+  book.set_orders(dagr::Span<const OrderH>(orders));
+  book.set_people(dagr::Span<const PersonH>(people));
+  return book;
+}
+
 // ── The rows ───────────────────────────────────────────────────────────────────
 
 /// What prepare binds for one cell: the timed encode (appends the cell's bytes after the
@@ -402,11 +514,15 @@ struct Codec {
 
 class DagrSer : public ISerializer {
  public:
-  explicit DagrSer(const char* name) : name_(name) {}
+  explicit DagrSer(const char* name, bool graphs = false) : name_(name), graphs_(graphs) {}
   const char* name() const override { return name_; }
   const char* version() const override { return DAGR_TOOL_VERSION; }
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "schema"; }
+  bool supports(const std::string& type_id) const override {
+    if (type_id == "graph") return graphs_;
+    return true;
+  }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
     if (!codec_.encode) throw std::runtime_error("dagr: prepare required");
@@ -423,6 +539,7 @@ class DagrSer : public ISerializer {
 
  protected:
   const char* name_;
+  bool graphs_ = false;
   int n_ = 1;
   Codec codec_;
   std::vector<uint8_t> out_;
@@ -484,6 +601,7 @@ class ArenaSer final : public DagrSer {
     else if (t == "telemetry") bind<Telemetry, typename NS::TelemetryArena>(fx, [](auto& a, const Telemetry& v) { return arena_telemetry(a, v); }, &NS::open_telemetry);
     else if (t == "strings") bind<Strings, typename NS::StringsArena>(fx, [](auto& a, const Strings& v) { return arena_strings(a, v); }, &NS::open_strings);
     else if (t == "event") bind<Event, typename NS::EventArena>(fx, [](auto& a, const Event& v) { return arena_event(a, v); }, &NS::open_event);
+    else if (t == "graph") bind<Book, typename NS::GraphArena>(fx, [](auto& a, const Book& v) { return arena_book(a, v); }, &NS::open_graph);
     else throw std::runtime_error("dagr: unsupported type " + t);
   }
 
@@ -543,6 +661,8 @@ class ArenaSer final : public DagrSer {
     using TelemetryArena = bv::telemetry##L##_graph::arena::Arena;     \
     using StringsArena = bv::strings##L##_graph::arena::Arena;         \
     using EventArena = bv::event##L##_graph::arena::Arena;             \
+    using GraphArena = bv::graph##L##_graph::arena::Arena;             \
+    static auto open_graph(dagr::Bytes x) { return bv::graph##L##_graph::open_graph##L##_graph(x); } \
     DAGR_OPENERS(L)                                                    \
   };
 
@@ -554,8 +674,8 @@ DAGR_ARENA_LAYOUT(FrozenLayout, _frozen)
 }  // namespace
 
 SerializerPtr make_dagr_packed() { return std::make_unique<DirectSer<PackedLayout>>("dagr-packed"); }
-SerializerPtr make_dagr_regular() { return std::make_unique<ArenaSer<RegularLayout>>("dagr-regular"); }
-SerializerPtr make_dagr_frozen() { return std::make_unique<ArenaSer<FrozenLayout>>("dagr-frozen"); }
+SerializerPtr make_dagr_regular() { return std::make_unique<ArenaSer<RegularLayout>>("dagr-regular", true); }
+SerializerPtr make_dagr_frozen() { return std::make_unique<ArenaSer<FrozenLayout>>("dagr-frozen", true); }
 SerializerPtr make_dagr_frozen_packed() { return std::make_unique<DirectSer<FrozenPackedLayout>>("dagr-frozen-packed"); }
 
 }  // namespace bench

@@ -52,7 +52,12 @@ public final class DagrSerializer: BenchSerializer {
     }
 
     public func supports(testDataName: String) -> Bool {
-        ["message", "document", "telemetry", "strings", "event"].contains(testDataName)
+        // Packed inlines a node reference, so Person.next cannot be a ring.
+        // Do not add `graph` to the shared type list: packed rows use that list.
+        if testDataName == "graph" {
+            return layout == .regular || layout == .frozen
+        }
+        return ["message", "document", "telemetry", "strings", "event"].contains(testDataName)
     }
 
     public func prepare(_ fixture: Fixture) throws {
@@ -76,6 +81,8 @@ public final class DagrSerializer: BenchSerializer {
             bind(fixture, DagrBridge.encodeStrings, DagrBridge.decodeStrings)
         case "event":
             bind(fixture, DagrBridge.encodeEvent, DagrBridge.decodeEvent)
+        case "graph":
+            throw BenchError.unsupported("dagr-packed cannot represent graph")
         default:
             throw BenchError.unknownType(fixture.name)
         }

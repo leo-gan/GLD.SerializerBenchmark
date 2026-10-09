@@ -1,9 +1,10 @@
 #pragma once
-// Data Model v2 domain types (message, document, telemetry, strings, event).
+// Data Model v2 domain types (message, document, telemetry, strings, event, graph).
 // Within-language deterministic generators; cross-language payload identity not required.
 
 #include <cmath>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -169,6 +170,38 @@ struct Signal {
     return seq == o.seq && ts == o.ts && price_mantissa == o.price_mantissa && qty == o.qty &&
            flags == o.flags && symbol == o.symbol && venue == o.venue && legs == o.legs;
   }
+};
+
+// One graph. `regions` and `people` own the nodes; Order::region and Person::next do not.
+// A copy keeps sharing inside the copy and does not alias the source. No operator==:
+// Person::next is a ring, so fidelity() compares identity with a visited set.
+struct Region {
+  std::string code;
+  std::string note;
+  int32_t version = 0;
+};
+
+struct Order {
+  std::string sku;
+  int32_t qty = 0;
+  Region* region = nullptr;
+};
+
+struct Person {
+  std::string name;
+  Person* next = nullptr;
+};
+
+struct Book {
+  std::vector<std::unique_ptr<Region>> regions;
+  std::vector<Order> orders;
+  std::vector<std::unique_ptr<Person>> people;
+
+  Book() = default;
+  Book(const Book& other);
+  Book& operator=(const Book& other);
+  Book(Book&&) noexcept = default;
+  Book& operator=(Book&&) noexcept = default;
 };
 
 // Deterministic xorshift64* (within-language only). Zero-seed / avalanche uses

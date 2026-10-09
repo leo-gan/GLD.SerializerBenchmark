@@ -17,6 +17,7 @@ import (
 	"dagrv2/dagr"
 	"dagrv2/documentfrozengraph"
 	"dagrv2/eventfrozengraph"
+	"dagrv2/graphfrozengraph"
 	"dagrv2/messagefrozengraph"
 	"dagrv2/stringsfrozengraph"
 	"dagrv2/telemetryfrozengraph"
@@ -41,6 +42,8 @@ func bindDagrFrozen(v any) (dagrCodec, error) {
 		return bindDagrArena(v, arenaStringsFrozen, stringsfrozengraph.AppendToStringsFrozenGraph, getStringsFrozen), nil
 	case modelv2.Event, []modelv2.Event:
 		return bindDagrArena(v, arenaEventFrozen, eventfrozengraph.AppendToEventFrozenGraph, getEventFrozen), nil
+	case modelv2.Book, []modelv2.Book:
+		return bindDagrArena(v, arenaBookFrozen, graphfrozengraph.AppendToGraphFrozenGraph, getBookFrozen), nil
 	}
 	return dagrCodec{}, fmt.Errorf("unsupported type %T", v)
 }
@@ -217,4 +220,103 @@ func getEventFrozen(buf []byte) (modelv2.Event, error) {
 		e.Attrs[i].Value, _ = x.Value()
 	}
 	return e, nil
+}
+
+func arenaBookFrozen(b modelv2.Book) graphfrozengraph.Book {
+	a := graphfrozengraph.NewArena()
+	regs := make(map[*modelv2.Region]graphfrozengraph.Region)
+	orders := make([]graphfrozengraph.Order, len(b.Orders))
+	for i, o := range b.Orders {
+		orders[i] = a.NewOrder()
+		orders[i].SetSku(o.SKU)
+		orders[i].SetQty(o.Qty)
+		if o.Region == nil {
+			continue
+		}
+		reg, ok := regs[o.Region]
+		if !ok {
+			reg = a.NewRegion()
+			reg.SetCode(o.Region.Code)
+			reg.SetNote(o.Region.Note)
+			reg.SetVersion(o.Region.Version)
+			regs[o.Region] = reg
+		}
+		orders[i].SetRegion(reg)
+	}
+	people := make([]graphfrozengraph.Person, len(b.People))
+	index := make(map[*modelv2.Person]graphfrozengraph.Person, len(b.People))
+	for i, p := range b.People {
+		people[i] = a.NewPerson()
+		if p == nil {
+			continue
+		}
+		people[i].SetName(p.Name)
+		index[p] = people[i]
+	}
+	for i, p := range b.People {
+		if p == nil || p.Next == nil {
+			continue
+		}
+		if nxt, ok := index[p.Next]; ok {
+			people[i].SetNext(nxt)
+		}
+	}
+	n := a.NewBook()
+	n.SetOrders(orders)
+	n.SetPeople(people)
+	a.SetRoot(n)
+	return n
+}
+
+func getBookFrozen(buf []byte) (modelv2.Book, error) {
+	pos, err := dagr.RootOffset(buf)
+	if err != nil {
+		return modelv2.Book{}, err
+	}
+	a := graphfrozengraph.NewBookAccessor(buf, pos)
+	var b modelv2.Book
+	oit := a.OrdersIter()
+	b.Orders = make([]modelv2.Order, oit.Len())
+	regs := make(map[int]*modelv2.Region)
+	for i := range b.Orders {
+		e, _ := oit.Next()
+		b.Orders[i].SKU, _ = e.Sku()
+		b.Orders[i].Qty, _ = e.Qty()
+		if reg, ok := e.Region(); ok {
+			b.Orders[i].Region = regionFrozen(reg, regs)
+		}
+	}
+	pit := a.PeopleIter()
+	b.People = make([]*modelv2.Person, pit.Len())
+	seen := make(map[int]*modelv2.Person, pit.Len())
+	for i := range b.People {
+		e, _ := pit.Next()
+		b.People[i] = personFrozen(e, seen)
+	}
+	return b, nil
+}
+
+func regionFrozen(e graphfrozengraph.RegionAccessor, seen map[int]*modelv2.Region) *modelv2.Region {
+	if r, ok := seen[e.BufferPos()]; ok {
+		return r
+	}
+	r := &modelv2.Region{}
+	seen[e.BufferPos()] = r
+	r.Code, _ = e.Code()
+	r.Note, _ = e.Note()
+	r.Version, _ = e.Version()
+	return r
+}
+
+func personFrozen(e graphfrozengraph.PersonAccessor, seen map[int]*modelv2.Person) *modelv2.Person {
+	if p, ok := seen[e.BufferPos()]; ok {
+		return p
+	}
+	p := &modelv2.Person{}
+	seen[e.BufferPos()] = p
+	p.Name, _ = e.Name()
+	if nxt, ok := e.Next(); ok {
+		p.Next = personFrozen(nxt, seen)
+	}
+	return p
 }

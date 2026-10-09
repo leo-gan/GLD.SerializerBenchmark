@@ -36,8 +36,9 @@ impl BenchSerializer for SerdeJson {
     fn stream_mode(&self) -> StreamMode {
         StreamMode::Native
     }
-    fn supports(&self, _test_data_name: &str) -> bool {
-        true
+    fn supports(&self, test_data_name: &str) -> bool {
+        // Every tree type, including columnar. `graph` is a reference cycle.
+        test_data_name != "graph"
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
         self.kind = fixture.name();

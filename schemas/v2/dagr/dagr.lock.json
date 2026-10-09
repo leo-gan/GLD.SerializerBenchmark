@@ -1073,6 +1073,360 @@
           "ref": "Event"
         }
       },
+      "GraphFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "GraphFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "code",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "note",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Region",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "Region"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Order",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "name",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "next",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "Person"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Person",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "orders",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "Order"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "people",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "Person"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Book",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Book"
+        }
+      },
+      "GraphRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "GraphRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "code",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "note",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Region",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "Region"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Order",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "name",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "next",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "Person"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Person",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "orders",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "Order"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "people",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "Person"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Book",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Book"
+        }
+      },
       "MessageFrozenGraph": {
         "header": null,
         "imports": [],
@@ -2019,6 +2373,10 @@
       },
       {
         "kind": "graph",
+        "name": "GraphRegularGraph"
+      },
+      {
+        "kind": "graph",
         "name": "MessageFrozenGraph"
       },
       {
@@ -2036,6 +2394,10 @@
       {
         "kind": "graph",
         "name": "EventFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "GraphFrozenGraph"
       },
       {
         "kind": "graph",
@@ -2062,7 +2424,7 @@
     "sinks": {},
     "wire_format_version": 1
   },
-  "library_hash": "sha256:139752644e9191bb1ebc0fec34add862b3ac33fec2a5013112b9dade9986c8e7",
+  "library_hash": "sha256:3d668313745899dfb8a112106839460db1b36cc86b79955ba816ab7925ad7f80",
   "outputs": {
     "../../../cpp/dagr_gen/CMakeLists.txt": "sha256:3ca44f97d0861ce72b30e35371d3e1b6fe4064a2bc9ac8c611d1785230998646",
     "../../../cpp/dagr_gen/include/benchmark_v2/document_frozen_graph.hpp": "sha256:565d546e0fa7a45f6390b5185071266d2333f614c7b3818f127a3b13353afa4f",
@@ -2085,6 +2447,10 @@
     "../../../cpp/dagr_gen/include/benchmark_v2/event_graph_direct.hpp": "sha256:90097773286e4c5dd58455f95dde24b4ce4e68ef27b14eb61bae39ada8176316",
     "../../../cpp/dagr_gen/include/benchmark_v2/event_regular_graph.hpp": "sha256:d4940225d1f351f0c683a11f76486833e70779dd2533c203f820a804e7954341",
     "../../../cpp/dagr_gen/include/benchmark_v2/event_regular_graph_arena.hpp": "sha256:365f2db6d5854f95c5aaee4a9769931fb63f7f4fe85643f6589f61ab7542ba93",
+    "../../../cpp/dagr_gen/include/benchmark_v2/graph_frozen_graph.hpp": "sha256:a534b345f33711e20193b95502c13dde0701e7ce75905b4b5d7e725d6e511cec",
+    "../../../cpp/dagr_gen/include/benchmark_v2/graph_frozen_graph_arena.hpp": "sha256:62e39118a712b60807b0c11bf62ca0e85b4db04543ab4f4b14b3f88a8de475e1",
+    "../../../cpp/dagr_gen/include/benchmark_v2/graph_regular_graph.hpp": "sha256:c7458c6fea2d555b4e96ba1876bebcafc4a38117e5bbbe868111de53c6a86f8a",
+    "../../../cpp/dagr_gen/include/benchmark_v2/graph_regular_graph_arena.hpp": "sha256:3232ca95c613c84573c247f685855ec48149b2265b76ade4e47e3e756d080363",
     "../../../cpp/dagr_gen/include/benchmark_v2/message_frozen_graph.hpp": "sha256:3883eaa341d6ebecc0c109a12d92bd7f8fbd1fe332b066cc4b5ae1695e285952",
     "../../../cpp/dagr_gen/include/benchmark_v2/message_frozen_graph_arena.hpp": "sha256:7f00e2fb2d3f60785e7e843017fd1f10c7d45d7c9c6280954386f6136f23a362",
     "../../../cpp/dagr_gen/include/benchmark_v2/message_frozen_packed_graph.hpp": "sha256:bf25943c8afeb8324503f637a240050dfd1489cfcf7ef69bcf15d5c72ac837fe",
@@ -2158,6 +2524,12 @@
     "../../../go/gen/dagrv2/eventregulargraph/event_regular_graph_arena.go": "sha256:b231275252c7f951c8b1258492976183b028786892190fe47a5715904a7a03b3",
     "../../../go/gen/dagrv2/eventregulargraph/event_regular_graph_serde.go": "sha256:6518843fb3caffa3d3f7b511d6e4da3e90dfa56f524491a37d61a0d58988e325",
     "../../../go/gen/dagrv2/go.mod": "sha256:983eb08a969488bafc3d839ea81c0eb3e79b561fbcb3618f0feec38eca606f6c",
+    "../../../go/gen/dagrv2/graphfrozengraph/graph_frozen_graph.go": "sha256:3f916850a577b1acb61b267b112c236e5ced07b66e96974b78de26aa5600196d",
+    "../../../go/gen/dagrv2/graphfrozengraph/graph_frozen_graph_arena.go": "sha256:f9e1e96d2c4fc62ef0cfa56076310df93f7706846d76a475714c50687eb0a846",
+    "../../../go/gen/dagrv2/graphfrozengraph/graph_frozen_graph_serde.go": "sha256:9f2320768004505476dd5add195d0dc630daa0c25fb9a5619ec2570a4529aa16",
+    "../../../go/gen/dagrv2/graphregulargraph/graph_regular_graph.go": "sha256:e890cd5ed6d6f860855e3b01dc29a98e471b81d2ef0de4b3543a9e8cb4607620",
+    "../../../go/gen/dagrv2/graphregulargraph/graph_regular_graph_arena.go": "sha256:6dcbf30c1ea1abd21a6c461897969db7e1728c2c5939bdbd9d56ea4cf4e9e314",
+    "../../../go/gen/dagrv2/graphregulargraph/graph_regular_graph_serde.go": "sha256:00851cb2b30ad052b21a610ac5c509540e43d4bdb90bba902d9a1912c47dadf9",
     "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph.go": "sha256:21af267345ad3633c7935e025ae9f5d68144a390e92edc4eb5b1eb1af0077078",
     "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph_arena.go": "sha256:57af9066ab7b430484c9f80f8a7288e00cb1f09ecea78670991c6be3dff87018",
     "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph_serde.go": "sha256:f95ed43403355a08fc3fb845e1997b02ad4804d7b456b7762461c4e54e1c4cbf",
@@ -2228,6 +2600,12 @@
     "../../../javascript/src/generated/dagr/EventRegularGraph.ts": "sha256:f6cf0811bb64918a16c28f4b55c49c8f9e2899252bf650b70179949ce85578c7",
     "../../../javascript/src/generated/dagr/EventRegularGraph_arena.ts": "sha256:541ee670c406fb65604619d9c12d471795cf59e45c62655048b9fc94b89e0b62",
     "../../../javascript/src/generated/dagr/EventRegularGraph_serde.ts": "sha256:cef899b13ddf69c0eee90fa7713c2b41449f4ada4f51d33f21384a92690f1988",
+    "../../../javascript/src/generated/dagr/GraphFrozenGraph.ts": "sha256:2e15326f596e5551ec4fa29692cb430d04c794e8f19d955a70a8bffdac100dc0",
+    "../../../javascript/src/generated/dagr/GraphFrozenGraph_arena.ts": "sha256:6917adb9767ebb44295ad6635353bb2b425813f60a8c4448e967364dd1c871a8",
+    "../../../javascript/src/generated/dagr/GraphFrozenGraph_serde.ts": "sha256:7f78ab0eab9fe373209c05d5f28d07f01e7da2de23de44c03663bfa2dc5c59b8",
+    "../../../javascript/src/generated/dagr/GraphRegularGraph.ts": "sha256:dbd1337f95b9813ad4f57eff2785351d598905578346c5a50e8e70c05f1f9d43",
+    "../../../javascript/src/generated/dagr/GraphRegularGraph_arena.ts": "sha256:6142575f3e014084a76c2ac5620d72bda31313744cf297d6ef86213af3c7d031",
+    "../../../javascript/src/generated/dagr/GraphRegularGraph_serde.ts": "sha256:8c666941590e536edd71a619db1094ca588593bd4b406e8a3cf93a52d4e0950f",
     "../../../javascript/src/generated/dagr/MessageFrozenGraph.ts": "sha256:930aa6d844f8c03c05d13fdaaf56dc061c1f1a02829b67df46fd97649db8ebf4",
     "../../../javascript/src/generated/dagr/MessageFrozenGraph_arena.ts": "sha256:8793cf185b0c88443368d42add38a4c9c5d4e23e424ae727944c6f4e020a3b3f",
     "../../../javascript/src/generated/dagr/MessageFrozenGraph_serde.ts": "sha256:6f6b2a271703436c70d005942928284da472d9d2d5794fa5451efef8e6d82bc6",
@@ -2310,6 +2688,14 @@
     "../../../mojo/src/gen/dagr/event_regular_graph_reader.mojo": "sha256:84692e69a0641ae3c01d6d348367c7ebb65691346841f1756e2b42d4977f7d1e",
     "../../../mojo/src/gen/dagr/event_regular_graph_restore.mojo": "sha256:6522d02bed941e4a96904a453ac8ec92b2c40f93333bb30e8a09ef152c3a9a8a",
     "../../../mojo/src/gen/dagr/event_regular_graph_serde.mojo": "sha256:fb01ea38bc7ea52a0cb79cde6c3b8f97c7fad2560c6c3f3e7c96ddd5a7e034b0",
+    "../../../mojo/src/gen/dagr/graph_frozen_graph_arena.mojo": "sha256:161ae7fb366ae3291c083a00c8f7b995c33dd0544399939f786341c55c2683cd",
+    "../../../mojo/src/gen/dagr/graph_frozen_graph_reader.mojo": "sha256:ea9c62453264850e0f152487cb9412fd11ad3aec3e5b21dc44fe83353b945593",
+    "../../../mojo/src/gen/dagr/graph_frozen_graph_restore.mojo": "sha256:1fd31ccebeae1af3a4a96ea2ce5b26e676ffebb0013a42d688d3c4eb3c6af096",
+    "../../../mojo/src/gen/dagr/graph_frozen_graph_serde.mojo": "sha256:185ac7c2f72f81c514cdbc5b5b97259d6016e56ba2db03939f872d1d4f70a0b8",
+    "../../../mojo/src/gen/dagr/graph_regular_graph_arena.mojo": "sha256:486e99a6d6763ce62932d150a8336da404f877ed07bd194a6b5834fe24902932",
+    "../../../mojo/src/gen/dagr/graph_regular_graph_reader.mojo": "sha256:95cd4c96ea78903d115ac2ec9fd25017eb0f04e8238366cf9380d9012d5640b1",
+    "../../../mojo/src/gen/dagr/graph_regular_graph_restore.mojo": "sha256:00506a822966d394e275b466cb9a1a7c080f307f96b493c8ec7eee7eb33ef6e8",
+    "../../../mojo/src/gen/dagr/graph_regular_graph_serde.mojo": "sha256:f64160b7e6528f81ae49110e726db21e3759eb1a9b5a95f03b12b66b0c1d8bc5",
     "../../../mojo/src/gen/dagr/message_frozen_graph_arena.mojo": "sha256:bc36b1e40fb3d70db8edf83d335fd348652e37bf455ca9d4c093fcc764f7a4f7",
     "../../../mojo/src/gen/dagr/message_frozen_graph_reader.mojo": "sha256:a661d8b89d343f7f03b9b9bcac44045196d976c705cf15307b67cb2a7b5ddcbe",
     "../../../mojo/src/gen/dagr/message_frozen_graph_restore.mojo": "sha256:eaecf4ad08ab70e6b0c2f4d9c88ca182108d8b92498526da5f3ff5041c016f70",
@@ -2380,7 +2766,7 @@
     "../../../python/generated/dagr/dagr/runtime/dagr_serialize.py": "sha256:61648e844ab754ed56823e44df9ad25283c9b4aa643fbbc7be85719b5231fc65",
     "../../../python/generated/dagr/dagr/runtime/dagr_typed.py": "sha256:911c336680f995768632e45c8a54fa9d5d92d7afb784251b58bd11d9a309b5a7",
     "../../../python/generated/dagr/dagr/runtime/dagr_writer.py": "sha256:1ee29e6ea8bf8f196796bbacae5e530a4f962dd22d2282523c7a3244fb5a687f",
-    "../../../python/generated/dagr/dagr_schema.py": "sha256:9dfc58fb87439aed30b9713d824cd63329d82adacb69c1e818d9ad0fa61d6bba",
+    "../../../python/generated/dagr/dagr_schema.py": "sha256:6040ae08d4f91e6f5d89f9f649454aa24582d441dfcff072e6b1393a250ca4d1",
     "../../../python/generated/dagr/document_frozen_graph.py": "sha256:4ea0199d1c55927fda9e47f9effe5f624620087066cbac54c767b264bc00a830",
     "../../../python/generated/dagr/document_frozen_packed_graph.py": "sha256:299ce86133045fadbd5b69b6859b7d6e9311e51ae8fba7369a9938d54ade18c7",
     "../../../python/generated/dagr/document_graph.py": "sha256:5be9497251d07218e9e9a8e31289df2fbef0fb14e6312fb7fb84477de7c5f7ec",
@@ -2389,6 +2775,8 @@
     "../../../python/generated/dagr/event_frozen_packed_graph.py": "sha256:2e09719be375729b825bb6db7f22f299647b21c2619482b06740d3dcef169178",
     "../../../python/generated/dagr/event_graph.py": "sha256:72524ccaeb8efce7a16917e2f51afd3c70c40be59de4a5a05763edabb7940288",
     "../../../python/generated/dagr/event_regular_graph.py": "sha256:5719b12d0ac3b90e11bfc7205a325a990a0d938373c3a0c163e4cb896c71d259",
+    "../../../python/generated/dagr/graph_frozen_graph.py": "sha256:2b9338cff3f7eb7049fabd295677c94f3574a5a588465cc1b671f67f82c47279",
+    "../../../python/generated/dagr/graph_regular_graph.py": "sha256:ef05ebfe647da39f8bb64848a73a9373a0d25973fee80aa12699361a97243744",
     "../../../python/generated/dagr/message_frozen_graph.py": "sha256:df7825dc9e3abc7d2038ac268bff7792e29f4be0b424bed783be7b719dc223cf",
     "../../../python/generated/dagr/message_frozen_packed_graph.py": "sha256:a795d099c0ae79ca8aa835d56dff1a389781bd31e2238095bb382e26ac04c537",
     "../../../python/generated/dagr/message_graph.py": "sha256:c4185d2f46725a2ff704c3d776bfdb518eac9abef6ea986e9f1fc62f21874f75",
@@ -2424,7 +2812,11 @@
     "../../../rust/dagr_gen/src/event_graph_lazy.rs": "sha256:4c66b25126ca51f942b1605f82ef0607453323fd3848d0d19bdd3dbe75ec5cd3",
     "../../../rust/dagr_gen/src/event_regular_graph.rs": "sha256:8e50294d4a48a46d860948579ba478e5c04dbf31ec654381946415952b216264",
     "../../../rust/dagr_gen/src/event_regular_graph_lazy.rs": "sha256:e519d8c840c4165e097ba983d0b57efd5240e2b98f2d3ba161be7478881a6b1a",
-    "../../../rust/dagr_gen/src/lib.rs": "sha256:db4415e750f59242b901738c0ac13b0aaadffacff5e0fa0e513f4ea52ea6226b",
+    "../../../rust/dagr_gen/src/graph_frozen_graph.rs": "sha256:a652f2bbe4e9a146f446dd078c8c454b7370aaf17f2204bcf3c7159b138dd898",
+    "../../../rust/dagr_gen/src/graph_frozen_graph_lazy.rs": "sha256:2f59832bfa1bea4acfd570b361a4c2ceb525a30bf49de25f4c2d7de0bdc23771",
+    "../../../rust/dagr_gen/src/graph_regular_graph.rs": "sha256:384bfee412a5715782cf08ac437d9b96d8d0a85bb5faed6961f7ebd00da1bef0",
+    "../../../rust/dagr_gen/src/graph_regular_graph_lazy.rs": "sha256:892e195c73527e89a757a32f63b7fd363fc53ae0754a9e1a1cec915fb574b094",
+    "../../../rust/dagr_gen/src/lib.rs": "sha256:dce6d8f46c8dab98f892eb1aadca1a29b182387ec26d6abbd2d6650dba99c9f2",
     "../../../rust/dagr_gen/src/message_frozen_graph.rs": "sha256:b2a0b7d1c38de2cc45e7ec6989713ea10dddc2d7b36a514bc8d11dc7fcdd76f4",
     "../../../rust/dagr_gen/src/message_frozen_graph_lazy.rs": "sha256:01ec6fa578c0a31d312806b4ef864145decdcc7c7ce5b49ce23177264b364ad1",
     "../../../rust/dagr_gen/src/message_frozen_packed_graph.rs": "sha256:7a51c5778b1e9901dcbc1ca3a6bcd13cf64d659c4216441607b881834cf12c93",
@@ -2473,6 +2865,10 @@
     "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraphLazy.swift": "sha256:3d7ed6cf50b9961f87ca112de0640040efdbccf5ec38936b4770ac747c12a494",
     "../../../swift/DagrGen/Sources/BenchmarkV2/EventRegularGraph.swift": "sha256:d8df241b0c93d1af57a0874311e6bb3e2d889206ffffeecf6cba6e8014d2470f",
     "../../../swift/DagrGen/Sources/BenchmarkV2/EventRegularGraphLazy.swift": "sha256:7cdc474e090a061177317429f93a4a7991d71f7b8b3785b881089d00e0d732d3",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/GraphFrozenGraph.swift": "sha256:ba6efe932df153199a7913d1ac5eee5e31ce8afddf7c0e971e437de9e7d1f0be",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/GraphFrozenGraphLazy.swift": "sha256:965dfea0a88c1238341f11c512f0113a74f56d0566a1ed805d31ded82f4d9353",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/GraphRegularGraph.swift": "sha256:d3ce46667d492ff68db98a4f1cee332fa142bf4ecce6e10e6952292bd127234e",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/GraphRegularGraphLazy.swift": "sha256:a72f99ebc519a4dccc6c69133d817ca93449ae31e09e1b7b41e01ddaf8b4d678",
     "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenGraph.swift": "sha256:d2ceebe8b4b7b32a3dda59f555b91fe98acb737719e7302a33c927fa302c57f6",
     "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenGraphLazy.swift": "sha256:985e777971a5f5aec4f4cdbf9d5bcef7f418efa8fc3bf23a6fd24ed3e178938a",
     "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenPackedGraph.swift": "sha256:2a40bc5d41444f3eb592dce5d0b789e523ad343870e1a7694325840b92fd51b6",
@@ -2500,7 +2896,7 @@
   },
   "provenance": {
     "command": "dagr build",
-    "generated_at": "2026-10-08T17:17:05.014682+00:00",
+    "generated_at": "2026-10-09T19:31:27.616617+00:00",
     "host": null,
     "tool_version": "dagr 2026.10.1"
   },

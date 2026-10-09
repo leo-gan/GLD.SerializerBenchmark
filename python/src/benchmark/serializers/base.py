@@ -87,8 +87,13 @@ class Serializer(ABC):
     def supports(self, test_data_name: str) -> bool:
         """
         Return False if this serializer is known to fail on a given test data type.
-        Default is True (optimistic).
+        Default is True (optimistic), except ``graph``.
+
+        ``graph`` is shared nodes plus a reference cycle. A tree codec must skip
+        it. Override and return True only when the official API keeps aliases.
         """
+        if test_data_name == "graph":
+            return False
         return True
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
