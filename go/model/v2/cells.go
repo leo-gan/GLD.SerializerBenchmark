@@ -158,9 +158,11 @@ func IsOriginalV2TypeName(name string) bool {
 	}
 }
 
-// IsV2TypeName reports whether name is a Data Model v2 type_id.
-// graph is omitted on purpose: dagr-packed and dagr-frozen-packed use this as
-// Supports, and a packed layout inlines refs so it cannot store the person ring.
+// IsV2TypeName reports whether name is a Data Model v2 type_id other than graph.
+// graph is omitted so a caller that means "suite or columnar" does not treat the
+// cycle as an ordinary tree. Dagr Supports uses IsOriginalV2TypeName instead:
+// packed layouts cannot store the person ring, and none of the four layouts
+// have a columnar schema.
 func IsV2TypeName(name string) bool {
 	switch name {
 	case "message", "document", "telemetry", "strings", "event",

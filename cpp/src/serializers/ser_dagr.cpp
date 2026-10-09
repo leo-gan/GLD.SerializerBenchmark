@@ -520,8 +520,12 @@ class DagrSer : public ISerializer {
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "schema"; }
   bool supports(const std::string& type_id) const override {
+    // Packed inlines a reference, so the person ring is not a legal graph.
     if (type_id == "graph") return graphs_;
-    return true;
+    // Columnar ids are not these graphs. Returning true made an unfiltered
+    // columnar run prepare-fail instead of skip.
+    return type_id == "message" || type_id == "document" || type_id == "telemetry" ||
+           type_id == "strings" || type_id == "event";
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {

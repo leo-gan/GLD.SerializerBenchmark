@@ -44,6 +44,7 @@ Work through these questions in order:
    - **No** → continue.  
 3. **Is this a single language and runtime, with complex graphs and fully trusted data?**  
    - **Yes** → language-native formats only inside a hard trust boundary.  
+   - **Shared nodes that another language must read** → the graph data set (`dagr-regular` or `dagr-frozen`). Packed Dagr cannot store the cycle.  
    - **No** → schemaless binary such as MessagePack or CBOR, **and** validation at the edges.
 
 ---

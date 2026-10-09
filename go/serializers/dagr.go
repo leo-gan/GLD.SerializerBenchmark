@@ -77,7 +77,9 @@ func (s *dagrSer) Supports(n string) bool {
 	if n == "graph" {
 		return s.name == "dagr-regular" || s.name == "dagr-frozen"
 	}
-	return modelv2.IsV2TypeName(n)
+	// Suite types only. IsV2TypeName also matches columnar ids, and a packed
+	// or arena graph has no table/signal schema; those runs must skip.
+	return modelv2.IsOriginalV2TypeName(n)
 }
 
 // ── version ────────────────────────────────────────────────────────────────

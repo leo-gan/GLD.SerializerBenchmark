@@ -82,7 +82,8 @@ export function updateCharts(groups, paretoNames, metric) {
       `Single diverging chart, <strong>${sortLabel}</strong>: ` +
       `<span class="rank-legend-size">◀ size</span> left · ` +
       `<span class="rank-legend-speed">${primaryRight} ▶</span> right. ` +
-      `Each side is normalized to the chart max (100); hover for absolute values.`;
+      `Each side is normalized to the chart max (100); hover for absolute values. ` +
+      `Solid bars are the Pareto front: no other row in this filter is both faster and smaller.`;
   }
 }
 

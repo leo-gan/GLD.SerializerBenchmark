@@ -72,6 +72,8 @@ We drop the first trial (the computer is still warming up). We may set aside rar
 
 We never overwrite the published website tables when we run an experiment.
 
+The notebooks below were not re-run for Dagr or for the graph data set. Those rows are on the main Dashboard only. Dagr’s four layouts cover the five suite types in C++, Go, JavaScript, Mojo, Python, Rust, and Swift. `dagr-frozen-packed` is the fast small row on a flat `message`; it does not support `graph`. The `graph` data set is one book with shared region nodes and one person ring. `all@` does not include it. Only `dagr-regular`, `dagr-frozen`, and Python `pickle` / `cloudpickle` are timed on it.
+
 ---
 
 ## The samples (this is the data we measure)
