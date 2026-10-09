@@ -41,7 +41,7 @@ template <typename Encode>
 void encode_value(const Value& value, Encode&& encode) {
   std::visit([&](const auto& v) {
     using T = std::decay_t<decltype(v)>;
-    if constexpr (is_columnar_alt_v<T>) {
+    if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
       throw std::runtime_error("jsoncons: columnar type unsupported");
     } else {
       encode(v);
@@ -234,7 +234,7 @@ class JsonconsBson final : public ISerializer {
       jsoncons::json obj(jsoncons::json_object_arg);
       std::visit([&](const auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr (is_columnar_alt_v<T>) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
           throw std::runtime_error("jsoncons: columnar type unsupported");
         } else {
           obj["items"] = v;
@@ -250,7 +250,7 @@ class JsonconsBson final : public ISerializer {
       jsoncons::json obj(jsoncons::json_object_arg);
       std::visit([&](const auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr (is_columnar_alt_v<T>) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
           throw std::runtime_error("jsoncons: columnar type unsupported");
         } else {
           obj["items"] = v;

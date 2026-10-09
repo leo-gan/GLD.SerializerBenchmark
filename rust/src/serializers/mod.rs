@@ -110,8 +110,9 @@ pub trait BenchSerializer: Send {
         NativeKind::Serde
     }
     fn supports(&self, test_data_name: &str) -> bool {
-        // Columnar ids are opt-in. Peers and the new codecs override this.
-        !crate::data::is_columnar_id(test_data_name)
+        // Columnar ids and `graph` are opt-in. `graph` is shared nodes plus a
+        // reference cycle; only a codec that keeps aliases should override this.
+        test_data_name != "graph" && !crate::data::is_columnar_id(test_data_name)
     }
 
     /// Untimed: build reusable codec state / bind kind-specific encode fns.

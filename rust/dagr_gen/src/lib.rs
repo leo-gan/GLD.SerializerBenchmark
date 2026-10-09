@@ -49,6 +49,10 @@ pub mod event_regular_graph;
 #[cfg(not(dagr_no_std))]
 pub mod event_regular_graph_lazy;
 #[cfg(not(dagr_no_std))]
+pub mod graph_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod graph_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
 pub mod message_frozen_graph;
 #[cfg(not(dagr_no_std))]
 pub mod message_frozen_graph_lazy;
@@ -68,6 +72,10 @@ pub mod strings_frozen_graph_lazy;
 pub mod event_frozen_graph;
 #[cfg(not(dagr_no_std))]
 pub mod event_frozen_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod graph_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod graph_frozen_graph_lazy;
 pub mod message_frozen_packed_graph_core;
 #[cfg(not(dagr_no_std))]
 pub mod message_frozen_packed_graph;

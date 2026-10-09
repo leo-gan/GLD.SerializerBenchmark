@@ -72,7 +72,13 @@ func (s *dagrSer) Name() string           { return s.name }
 func (s *dagrSer) Version() string        { return dagrToolVersion() }
 func (s *dagrSer) StreamMode() StreamMode { return StreamAdapted }
 func (s *dagrSer) NativeKind() NativeKind { return NativeSchema }
-func (s *dagrSer) Supports(n string) bool { return modelv2.IsV2TypeName(n) }
+func (s *dagrSer) Supports(n string) bool {
+	// Packed layouts inline a node reference, so the person ring is not representable.
+	if n == "graph" {
+		return s.name == "dagr-regular" || s.name == "dagr-frozen"
+	}
+	return modelv2.IsV2TypeName(n)
+}
 
 // ── version ────────────────────────────────────────────────────────────────
 

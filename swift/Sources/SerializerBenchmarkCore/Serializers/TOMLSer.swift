@@ -27,7 +27,7 @@ public final class TOMLSerializer: BenchSerializer {
         self.version = PackageVersions.version(for: "swift-toml", fallback: "2.x")
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

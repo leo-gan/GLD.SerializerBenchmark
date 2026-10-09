@@ -64,3 +64,39 @@ export function deepEqual(a, b) {
   }
   return true;
 }
+
+function graphPair(a, b, memoA, memoB) {
+  if (a === null || a === undefined || b === null || b === undefined) return a === b;
+  if (typeof a !== 'object' || typeof b !== 'object') return Object.is(a, b);
+  // Lists are ordered values, not nodes. A cycle lives on objects (the person ring).
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!graphPair(a[i], b[i], memoA, memoB)) return false;
+    }
+    return true;
+  }
+  const seenA = memoA.has(a);
+  const seenB = memoB.has(b);
+  if (seenA || seenB) return seenA && seenB && memoA.get(a) === memoB.get(b);
+  const token = memoA.size;
+  memoA.set(a, token);
+  memoB.set(b, token);
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+    if (!graphPair(a[k], b[k], memoA, memoB)) return false;
+  }
+  return true;
+}
+
+/**
+ * Identity compare for `graph` (shared nodes and one cycle).
+ * A second visit must hit the same object on the other side; a duplicated
+ * region fails. JSON.stringify throws on the person ring — do not use it.
+ */
+export function graphEqual(a, b) {
+  return graphPair(a, b, new Map(), new Map());
+}

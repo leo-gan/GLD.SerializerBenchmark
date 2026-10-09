@@ -34,6 +34,7 @@ def test_catalog_loads_suite_types():
         "table_project",
         "nested_table",
         "signal",
+        "graph",
     }
 
 
@@ -117,6 +118,21 @@ def test_columnar_run_configs_cell_counts():
     assert hashes["table"] == hashes["table_project"]
     assert full["compression"]["mode"] == "none"
     assert full["execution"]["io_modes"] == ["bytes"]
+
+
+def test_graph_run_config_cell_counts():
+    resolved = resolve_run_config(_LIBRARY / "graph.yaml", catalog_path=_CATALOG, seed=42)
+    assert resolved["cell_count"] == 2
+    assert {(c["type_id"], c["data_type_instance_count"]) for c in resolved["cells"]} == {
+        ("graph", 1),
+        ("graph", 100),
+    }
+    assert resolved["compression"]["mode"] == "none"
+    assert resolved["execution"]["io_modes"] == ["bytes"]
+    cfg = resolved["cells"][0]["type_config"]
+    assert cfg["order_count"] == 32
+    assert cfg["region_count"] == 4
+    assert cfg["ring_size"] == 8
 
 
 def test_signal_schema_field_order():

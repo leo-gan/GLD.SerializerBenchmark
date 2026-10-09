@@ -63,9 +63,10 @@ type DomainConverter interface {
 	ToDomain(decoded any) (any, error)
 }
 
-// DefaultSupports: Data Model v2 payloads are portable — every codec can encode them.
+// DefaultSupports is true for tree-shaped payloads.
+// graph shares nodes and has a cycle, so reflect codecs skip it instead of erroring.
 func DefaultSupports(testDataName string) bool {
-	return true
+	return testDataName != "graph"
 }
 
 func AdaptedSerializeStream(s BenchSerializer, fx model.Fixture, w io.Writer) (int, error) {

@@ -5,6 +5,9 @@ import BenchmarkV2
 // Same harness as `dagr-packed` (Dagr.swift: framing, builder reuse, timing policy); only the
 // per-type bridges differ. schemas/v2/dagr/schema.py emits every suite type in each layout
 // (`deletable=False`): `<T>RegularGraph`, `<T>FrozenGraph`, `<T>FrozenPackedGraph`.
+// `graph` is regular and frozen only. Packed inlines a reference, so Person.next cannot
+// be a ring. The arena reuses one region node per shared Region and wires the person ring.
+// Decode fully materializes suite classes (same timed path as the other suite types).
 //
 // Serialize (timed, conversion inside the timer like SwiftProtobuf's toProtobuf):
 //   - frozen-packed: generated `<Graph>.Direct.*` value structs → reused DataArenaBuilder.
@@ -32,6 +35,8 @@ extension DagrSerializer {
             bind(fixture, DagrLayoutBridge.encodeStringsRegular, DagrLayoutBridge.decodeStringsRegular)
         case "event":
             bind(fixture, DagrLayoutBridge.encodeEventRegular, DagrLayoutBridge.decodeEventRegular)
+        case "graph":
+            bind(fixture, DagrLayoutBridge.encodeBookRegular, DagrLayoutBridge.decodeBookRegular)
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -49,6 +54,8 @@ extension DagrSerializer {
             bind(fixture, DagrLayoutBridge.encodeStringsFrozen, DagrLayoutBridge.decodeStringsFrozen)
         case "event":
             bind(fixture, DagrLayoutBridge.encodeEventFrozen, DagrLayoutBridge.decodeEventFrozen)
+        case "graph":
+            bind(fixture, DagrLayoutBridge.encodeBookFrozen, DagrLayoutBridge.decodeBookFrozen)
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -66,6 +73,8 @@ extension DagrSerializer {
             bind(fixture, DagrLayoutBridge.encodeStringsFrozenPacked, DagrLayoutBridge.decodeStringsFrozenPacked)
         case "event":
             bind(fixture, DagrLayoutBridge.encodeEventFrozenPacked, DagrLayoutBridge.decodeEventFrozenPacked)
+        case "graph":
+            throw BenchError.unsupported("dagr-frozen-packed cannot represent graph")
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -340,4 +349,227 @@ enum DagrLayoutBridge {
             attrs: try e.attrs.throwingMap { EventAttr(key: $0.key ?? "", value: $0.value ?? "") }
         )
     }
+
+    // ── Graph (regular / frozen arenas only) ───────────────────────────────────
+
+    static func encodeBookRegular(_ b: DataArenaBuilder, _ book: Book) throws {
+        let a = GraphRegularGraph.Arena<DagrArenaBrand>()
+        typealias G = GraphRegularGraph.Arena<DagrArenaBrand>
+        let root: GraphRegularGraph.Book<G> = arenaGraph(
+            book,
+            newRegion: { (code: String, note: String, version: Int32) -> GraphRegularGraph.Region<G> in
+                a.newRegion(code: code, note: note, version: version)
+            },
+            newOrder: { (sku: String, qty: Int32, region: GraphRegularGraph.Region<G>) -> GraphRegularGraph.Order<G> in
+                a.newOrder(sku: sku, qty: qty, region: region)
+            },
+            newPerson: { (name: String) -> GraphRegularGraph.Person<G> in
+                a.newPerson(name: name)
+            },
+            setNext: { (person: GraphRegularGraph.Person<G>, next: GraphRegularGraph.Person<G>) in
+                person.next = next
+            },
+            newBook: { (orders: [GraphRegularGraph.Order<G>], people: [GraphRegularGraph.Person<G>]) -> GraphRegularGraph.Book<G> in
+                a.newBook(orders: orders, people: people)
+            }
+        )
+        try withExtendedLifetime(a) { try DagrBridge.storeRoot(b, root) }
+    }
+
+    static func decodeBookRegular(_ data: Data, _ start: Int) throws -> Book {
+        let root = try GraphRegularGraph.lazyRoot(from: data, at: start)
+        let orders = try root.orders
+        let people = try root.people
+        return try suiteBook(
+            orderCount: orders.count,
+            orderAt: { try orders[$0] },
+            sku: { try $0.sku },
+            qty: { try $0.qty },
+            regionOf: { try $0.region },
+            code: { try $0.code },
+            note: { try $0.note },
+            version: { try $0.version },
+            personCount: people.count,
+            personAt: { try people[$0] },
+            name: { try $0.name },
+            nextOf: { try $0.next }
+        )
+    }
+
+    static func encodeBookFrozen(_ b: DataArenaBuilder, _ book: Book) throws {
+        let a = GraphFrozenGraph.Arena<DagrArenaBrand>()
+        typealias G = GraphFrozenGraph.Arena<DagrArenaBrand>
+        let root: GraphFrozenGraph.Book<G> = arenaGraph(
+            book,
+            newRegion: { (code: String, note: String, version: Int32) -> GraphFrozenGraph.Region<G> in
+                a.newRegion(code: code, note: note, version: version)
+            },
+            newOrder: { (sku: String, qty: Int32, region: GraphFrozenGraph.Region<G>) -> GraphFrozenGraph.Order<G> in
+                a.newOrder(sku: sku, qty: qty, region: region)
+            },
+            newPerson: { (name: String) -> GraphFrozenGraph.Person<G> in
+                a.newPerson(name: name)
+            },
+            setNext: { (person: GraphFrozenGraph.Person<G>, next: GraphFrozenGraph.Person<G>) in
+                person.next = next
+            },
+            newBook: { (orders: [GraphFrozenGraph.Order<G>], people: [GraphFrozenGraph.Person<G>]) -> GraphFrozenGraph.Book<G> in
+                a.newBook(orders: orders, people: people)
+            }
+        )
+        try withExtendedLifetime(a) { try DagrBridge.storeRoot(b, root) }
+    }
+
+    static func decodeBookFrozen(_ data: Data, _ start: Int) throws -> Book {
+        let root = try GraphFrozenGraph.lazyRoot(from: data, at: start)
+        let orders = try root.orders
+        let people = try root.people
+        return try suiteBook(
+            orderCount: orders.count,
+            orderAt: { try orders[$0] },
+            sku: { try $0.sku },
+            qty: { try $0.qty },
+            regionOf: { try $0.region },
+            code: { try $0.code },
+            note: { try $0.note },
+            version: { try $0.version },
+            personCount: people.count,
+            personAt: { try people[$0] },
+            name: { try $0.name },
+            nextOf: { try $0.next }
+        )
+    }
+}
+
+/// One arena node per distinct Region. One person node per list slot, then Person.next.
+private func arenaGraph<RegionNode, OrderNode, PersonNode, BookNode>(
+    _ book: Book,
+    newRegion: (String, String, Int32) -> RegionNode,
+    newOrder: (String, Int32, RegionNode) -> OrderNode,
+    newPerson: (String) -> PersonNode,
+    setNext: (PersonNode, PersonNode) -> Void,
+    newBook: ([OrderNode], [PersonNode]) -> BookNode
+) -> BookNode {
+    var regs: [ObjectIdentifier: RegionNode] = [:]
+    var orders: [OrderNode] = []
+    orders.reserveCapacity(book.orders.count)
+    for order in book.orders {
+        let id = ObjectIdentifier(order.region)
+        let region: RegionNode
+        if let found = regs[id] {
+            region = found
+        } else {
+            let created = newRegion(order.region.code, order.region.note, order.region.version)
+            regs[id] = created
+            region = created
+        }
+        orders.append(newOrder(order.sku, order.qty, region))
+    }
+    var people: [PersonNode] = []
+    people.reserveCapacity(book.people.count)
+    var index: [ObjectIdentifier: PersonNode] = [:]
+    for person in book.people {
+        let node = newPerson(person.name)
+        people.append(node)
+        index[ObjectIdentifier(person)] = node
+    }
+    for (slot, person) in book.people.enumerated() {
+        if let nxt = person.next, let target = index[ObjectIdentifier(nxt)] {
+            setNext(people[slot], target)
+        }
+    }
+    return newBook(orders, people)
+}
+
+/// Generated accessors keep the node byte offset in internal `_nodeStart`, the field
+/// after `Data`. That offset is the identity key (Go's BufferPos).
+private struct DagrAccessorPrefix {
+    let data: Data
+    let nodeStart: Int
+}
+
+private let dagrNodeStartOffset = MemoryLayout<DagrAccessorPrefix>.offset(of: \.nodeStart)!
+
+private func dagrNodeStart<T>(_ accessor: T) -> Int {
+    let start = withUnsafeBytes(of: accessor) { raw -> Int in
+        precondition(
+            raw.count >= dagrNodeStartOffset + MemoryLayout<Int>.size,
+            "dagr graph: accessor shorter than node start"
+        )
+        return raw.loadUnaligned(fromByteOffset: dagrNodeStartOffset, as: Int.self)
+    }
+    #if DEBUG
+    if let mirrored = dagrMirrorNodeStart(accessor), mirrored != start {
+        preconditionFailure("dagr graph: _nodeStart \(mirrored) != offset read \(start)")
+    }
+    #endif
+    return start
+}
+
+#if DEBUG
+private func dagrMirrorNodeStart<T>(_ accessor: T) -> Int? {
+    for child in Mirror(reflecting: accessor).children where child.label == "_nodeStart" {
+        if let start = child.value as? Int { return start }
+    }
+    return nil
+}
+#endif
+
+/// Full materialize. Regions and people are interned by buffer offset so shared
+/// regions stay one object and the person ring is the same objects as the list.
+private func suiteBook<OA, RA, PA>(
+    orderCount: Int,
+    orderAt: (Int) throws -> OA,
+    sku: (OA) throws -> String?,
+    qty: (OA) throws -> Int32?,
+    regionOf: (OA) throws -> RA?,
+    code: (RA) throws -> String?,
+    note: (RA) throws -> String?,
+    version: (RA) throws -> Int32?,
+    personCount: Int,
+    personAt: (Int) throws -> PA,
+    name: (PA) throws -> String?,
+    nextOf: (PA) throws -> PA?
+) throws -> Book {
+    var regs: [Int: Region] = [:]
+    var peopleSeen: [Int: Person] = [:]
+
+    func region(_ acc: RA) throws -> Region {
+        let key = dagrNodeStart(acc)
+        if let hit = regs[key] { return hit }
+        let made = Region(
+            code: try code(acc) ?? "",
+            note: try note(acc) ?? "",
+            version: try version(acc) ?? 0
+        )
+        regs[key] = made
+        return made
+    }
+
+    func person(_ acc: PA) throws -> Person {
+        let key = dagrNodeStart(acc)
+        if let hit = peopleSeen[key] { return hit }
+        let made = Person(name: try name(acc) ?? "")
+        peopleSeen[key] = made
+        if let nxt = try nextOf(acc) {
+            made.next = try person(nxt)
+        }
+        return made
+    }
+
+    var orders: [Order] = []
+    orders.reserveCapacity(orderCount)
+    for i in 0..<orderCount {
+        let entry = try orderAt(i)
+        guard let reg = try regionOf(entry) else {
+            throw BenchError.unsupported("dagr graph: order missing region")
+        }
+        orders.append(Order(sku: try sku(entry) ?? "", qty: try qty(entry) ?? 0, region: try region(reg)))
+    }
+    var people: [Person] = []
+    people.reserveCapacity(personCount)
+    for i in 0..<personCount {
+        people.append(try person(try personAt(i)))
+    }
+    return Book(orders: orders, people: people)
 }

@@ -16,8 +16,13 @@
  * regular / frozen: the generator emits no direct builder for a non-packed root, so the
  * native model is the generated **arena** (`<Graph>_arena`, one arena per record, built in
  * `prepare()`); the timed path is only the arena serializer `<Graph>_serde.writeInto` into
- * the same reused `Builder`. Deserialize is
+ * the same reused `Builder` (`toBytes` is that write plus a fresh Builder). Deserialize is
  * the same lazy-reader → domain code for all four layouts (the accessor API is identical).
+ *
+ * `graph` is regular and frozen only (packed inlines refs and cannot store the person
+ * ring). Its timed path is the same `writeInto` plus arena `restore`. `restore` dedups
+ * by buffer offset; plain objects are then built so shared regions and the ring stay
+ * one object each — arena getters allocate a new wrapper on every read.
  *
  * Batch N>1: [u32 count][u32 len][record]… (same framing as the Rust harness).
  * Version: generator version from the committed receipt schemas/v2/dagr/dagr.lock.json.
@@ -124,23 +129,90 @@ function arenaBuilders(flavour) {
       const attrs = e.attrs.map((x) => a.newEventAttr(x.key, x.value));
       return a.newEvent(e.event_id, e.event_type, big(e.occurred_at), e.producer, attrs);
     },
+    // One arena node per distinct region object. Person.next is set after the
+    // nodes exist so the ring is an alias, including a one-node self-cycle.
+    graph: (book) => {
+      const a = new (A('Graph'))();
+      const regionOf = new Map();
+      const orders = new Array(book.orders.length);
+      for (let i = 0; i < book.orders.length; i++) {
+        const src = book.orders[i];
+        let region = regionOf.get(src.region);
+        if (!region) {
+          region = a.newRegion(src.region.code, src.region.note, src.region.version);
+          regionOf.set(src.region, region);
+        }
+        orders[i] = a.newOrder(src.sku, src.qty, region);
+      }
+      const people = new Array(book.people.length);
+      const personOf = new Map();
+      for (let i = 0; i < book.people.length; i++) {
+        const node = a.newPerson(book.people[i].name);
+        people[i] = node;
+        personOf.set(book.people[i], node);
+      }
+      for (let i = 0; i < book.people.length; i++) {
+        const nxt = book.people[i].next;
+        people[i].next = nxt == null ? null : (personOf.get(nxt) ?? null);
+      }
+      return a.newBook(orders, people);
+    },
   };
 }
 
 // Timed: the generated arena serializer's writeInto (into the shared `B`).
-const serdeWriters = (flavour) =>
-  Object.fromEntries(
-    Object.entries(TYPES).map(([id, T]) => {
-      const Serde = G[`${T}${flavour}Serde`];
-      return [id, (root) => Serde.writeInto(root, B)];
-    }),
-  );
+const serdeWriters = (flavour) => {
+  const entries = Object.entries(TYPES).map(([id, T]) => {
+    const Serde = G[`${T}${flavour}Serde`];
+    return [id, (root) => Serde.writeInto(root, B)];
+  });
+  // Absent for packed / frozen-packed: those layouts have no Graph* module.
+  const GraphSerde = G[`Graph${flavour}Serde`];
+  if (GraphSerde) entries.push(['graph', (root) => GraphSerde.writeInto(root, B)]);
+  return Object.fromEntries(entries);
+};
 
 /* ---------- decode: lazy reader → domain ---------- */
 
+// Arena getters return a new wrapper every read. Keying on `_values` (the
+// identity `beginStoring` / `restore` already share) rebuilds real aliases.
+function plainGraph(root) {
+  if (root == null) throw new Error('dagr graph: restore returned no root');
+  const seen = new Map();
+  const regionOf = (node) => {
+    if (node == null) return null;
+    const key = node._values;
+    let obj = seen.get(key);
+    if (obj) return obj;
+    obj = { code: node.code, note: node.note, version: node.version };
+    seen.set(key, obj);
+    return obj;
+  };
+  const orderSrc = root.orders ?? [];
+  const orders = new Array(orderSrc.length);
+  for (let i = 0; i < orderSrc.length; i++) {
+    const node = orderSrc[i];
+    orders[i] = { sku: node.sku, qty: node.qty, region: regionOf(node.region) };
+  }
+  const peopleSrc = root.people ?? [];
+  const people = new Array(peopleSrc.length);
+  const personByValues = new Map();
+  for (let i = 0; i < peopleSrc.length; i++) {
+    const node = peopleSrc[i];
+    const obj = { name: node.name, next: null };
+    people[i] = obj;
+    personByValues.set(node._values, obj);
+  }
+  for (let i = 0; i < peopleSrc.length; i++) {
+    const nxt = peopleSrc[i].next;
+    people[i].next = nxt == null ? null : (personByValues.get(nxt._values) ?? null);
+  }
+  return { orders, people };
+}
+
 const makeDecoders = (flavour) => {
   const L = (T) => G[`${T}${flavour}Lazy`];
-  return {
+  const decoders = {
     message: (u8) => {
       const m = L('Message').MessageAccessor.lazyRoot(u8);
       return {
@@ -191,6 +263,9 @@ const makeDecoders = (flavour) => {
       };
     },
   };
+  const GraphArena = G[`Graph${flavour}Arena`];
+  if (GraphArena) decoders.graph = (u8) => plainGraph(GraphArena.restore(u8).root);
+  return decoders;
 };
 
 /* ---------- batch framing ---------- */

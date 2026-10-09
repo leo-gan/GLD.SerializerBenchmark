@@ -115,6 +115,10 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
         except:
             hash = ""
         var cfg = TypeConfig()
+        # Graph catalog default. A resolved cell's string_len overwrites this.
+        if type_id == "graph":
+            cfg.string_min = 8
+            cfg.string_max = 16
         try:
             var tc = o["type_config"].object().copy()
             try:
@@ -135,6 +139,18 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
                 pass
             try:
                 cfg.group_count = Int(tc["group_count"].int())
+            except:
+                pass
+            try:
+                cfg.order_count = Int(tc["order_count"].int())
+            except:
+                pass
+            try:
+                cfg.region_count = Int(tc["region_count"].int())
+            except:
+                pass
+            try:
+                cfg.ring_size = Int(tc["ring_size"].int())
             except:
                 pass
             try:
@@ -305,6 +321,10 @@ def run() raises:
         while ri < len(names):
             var nm = names[ri]
             if _columnar_id(fx.type_id) != _columnar_name(nm):
+                ri += 1
+                continue
+            # Shared regions and the person ring. Only regular and frozen Dagr.
+            if fx.type_id == "graph" and nm != dagr_reg.name() and nm != dagr_frz.name():
                 ri += 1
                 continue
             try:

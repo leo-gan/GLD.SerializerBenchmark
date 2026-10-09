@@ -11,9 +11,12 @@ import re
 # they are NOT selected here. dashboard/scripts/splice-columnar-stats.py appends
 # those groups onto the five-type snapshot. Dagr publication CSVs use names like
 # 2026-10-08-cpp-dagr-full.csv. dashboard/scripts/splice-dagr-stats.py appends
-# those groups. Do not let this script drop either splice.
+# those groups. Graph publication CSVs use names like 2026-10-09-<lang>-graph-full.csv.
+# dashboard/scripts/splice-graph-stats.py appends those groups. Do not let this
+# script drop any of those splices.
 _RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 _COLUMNAR_TYPES = {"table", "table_project", "nested_table", "signal"}
+_GRAPH_TYPES = {"graph"}
 _DAGR_SERIALIZERS = {
     "dagr-frozen",
     "dagr-frozen-packed",
@@ -68,6 +71,20 @@ def _refuse_dagr_loss(lang, existing_stats, new_stats):
     print(f"ERROR: {lang} snapshot has Dagr serializers {sorted(lost)} that this sync would drop.")
     print("That snapshot was built by splice-dagr-stats.py. Refusing to overwrite.")
     print("Set DASHBOARD_REPLACE_DAGR=1 to replace the snapshot anyway.")
+    sys.exit(1)
+
+
+def _refuse_graph_loss(lang, existing_stats, new_stats):
+    """Abort when a sync would erase spliced graph groups."""
+    lost = (_base_types(existing_stats) & _GRAPH_TYPES) - _base_types(new_stats)
+    if not lost:
+        return
+    if os.environ.get("DASHBOARD_REPLACE_GRAPH", "").strip().lower() in ("1", "true", "yes"):
+        print(f"WARNING: {lang} replacing snapshot and dropping graph types {sorted(lost)}")
+        return
+    print(f"ERROR: {lang} snapshot has graph types {sorted(lost)} that this sync would drop.")
+    print("That snapshot was built by splice-graph-stats.py. Refusing to overwrite.")
+    print("Set DASHBOARD_REPLACE_GRAPH=1 to replace the snapshot anyway.")
     sys.exit(1)
 
 def find_latest_run(lang_logs_dir):
@@ -191,6 +208,7 @@ def main():
                 print(f"Warning: could not read existing stats for {lang}: {e}")
         _refuse_columnar_loss(lang, existing_stats, stats_data)
         _refuse_dagr_loss(lang, existing_stats, stats_data)
+        _refuse_graph_loss(lang, existing_stats, stats_data)
         if stats_data:
             stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
                 "utf-8"

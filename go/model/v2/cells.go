@@ -12,16 +12,16 @@ import (
 
 // Cell is one expanded workload from resolve_run_config.
 type Cell struct {
-	TypeID                 string         `json:"type_id"`
-	TypeConfig             map[string]any `json:"type_config"`
-	TypeConfigHash         string         `json:"type_config_hash"`
-	DataTypeInstanceCount  int            `json:"data_type_instance_count"`
+	TypeID                string         `json:"type_id"`
+	TypeConfig            map[string]any `json:"type_config"`
+	TypeConfigHash        string         `json:"type_config_hash"`
+	DataTypeInstanceCount int            `json:"data_type_instance_count"`
 }
 
 // ResolvedRun is the resolver JSON document.
 type ResolvedRun struct {
-	Cells []Cell `json:"cells"`
-	Seed  *int   `json:"seed"`
+	Cells     []Cell `json:"cells"`
+	Seed      *int   `json:"seed"`
 	RunConfig struct {
 		Path          string `json:"path"`
 		ContentSHA256 string `json:"content_sha256"`
@@ -119,6 +119,12 @@ func FixtureFromCell(c Cell, seed uint64) (name string, value any) {
 			s[i] = insts[i].(Event)
 		}
 		return name, s
+	case "graph":
+		s := make([]Book, n)
+		for i := range insts {
+			s[i] = insts[i].(Book)
+		}
+		return name, s
 	case "table", "table_project":
 		s := make([]TableRow, n)
 		for i := range insts {
@@ -153,6 +159,8 @@ func IsOriginalV2TypeName(name string) bool {
 }
 
 // IsV2TypeName reports whether name is a Data Model v2 type_id.
+// graph is omitted on purpose: dagr-packed and dagr-frozen-packed use this as
+// Supports, and a packed layout inlines refs so it cannot store the person ring.
 func IsV2TypeName(name string) bool {
 	switch name {
 	case "message", "document", "telemetry", "strings", "event",

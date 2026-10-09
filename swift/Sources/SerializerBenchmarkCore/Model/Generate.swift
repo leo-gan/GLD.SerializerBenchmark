@@ -104,9 +104,54 @@ public func makeOne(
             producer: r.word(minL: 3, maxL: 12),
             attrs: attrs
         )
+    case "graph":
+        return try makeGraph(r, typeConfig)
     default:
         throw BenchError.unknownType(typeId)
     }
+}
+
+/// Call order is the generator contract: every region (code, 64-char note, version),
+/// then every order (sku, qty; region i % region_count is the same object), then person
+/// names, then the ring. The ring draws no RNG.
+func makeGraph(_ r: Rng, _ cfg: [String: Any]) throws -> Book {
+    let (smin, smax) = cfgStringLen(cfg, min: 8, max: 16)
+    let nOrders = cfgInt(cfg, "order_count", 32)
+    let nRegions = cfgInt(cfg, "region_count", 4)
+    let ring = cfgInt(cfg, "ring_size", 8)
+    if nRegions < 1 || ring < 1 {
+        throw BenchError.unsupported("graph: region_count and ring_size must be >= 1")
+    }
+    if nOrders < 0 {
+        throw BenchError.unsupported("graph: order_count must be >= 0")
+    }
+    var regions: [Region] = []
+    regions.reserveCapacity(nRegions)
+    for _ in 0..<nRegions {
+        regions.append(Region(
+            code: r.word(minL: smin, maxL: smax),
+            note: r.word(minL: 64, maxL: 64),
+            version: Int32(r.nextInt(1, 10))
+        ))
+    }
+    var orders: [Order] = []
+    orders.reserveCapacity(nOrders)
+    for i in 0..<nOrders {
+        orders.append(Order(
+            sku: r.word(minL: smin, maxL: smax),
+            qty: Int32(r.nextInt(1, 100)),
+            region: regions[i % nRegions]
+        ))
+    }
+    var people: [Person] = []
+    people.reserveCapacity(ring)
+    for _ in 0..<ring {
+        people.append(Person(name: r.word(minL: smin, maxL: smax)))
+    }
+    for i in people.indices {
+        people[i].next = people[(i + 1) % ring]
+    }
+    return Book(orders: orders, people: people)
 }
 
 func cfgInt(_ m: [String: Any], _ key: String, _ def: Int) -> Int {
@@ -116,6 +161,24 @@ func cfgInt(_ m: [String: Any], _ key: String, _ def: Int) -> Int {
     if let d = v as? Double { return Int(d) }
     if let n = v as? NSNumber { return n.intValue }
     return def
+}
+
+func cfgStringLen(_ m: [String: Any], min defMin: Int, max defMax: Int) -> (Int, Int) {
+    guard let raw = m["string_len"] else { return (defMin, defMax) }
+    if let d = raw as? [String: Any] {
+        return (cfgInt(d, "min", defMin), cfgInt(d, "max", defMax))
+    }
+    if let d = raw as? [String: Int] {
+        return (d["min"] ?? defMin, d["max"] ?? defMax)
+    }
+    if let d = raw as? NSDictionary {
+        var box: [String: Any] = [:]
+        for (k, v) in d {
+            if let key = k as? String { box[key] = v }
+        }
+        return (cfgInt(box, "min", defMin), cfgInt(box, "max", defMax))
+    }
+    return (defMin, defMax)
 }
 
 public enum BenchError: Error, CustomStringConvertible {
@@ -175,6 +238,11 @@ public func fixtureFromCell(
             try makeOne(typeId: typeId, typeConfig: typeConfig, seed: seed, instanceIndex: $0) as! Event
         }
         return Fixture(name: typeId, batch: items, typeConfigHash: typeConfigHash)
+    case "graph":
+        let items: [Book] = try (0..<n).map {
+            try makeOne(typeId: typeId, typeConfig: typeConfig, seed: seed, instanceIndex: $0) as! Book
+        }
+        return Fixture(name: typeId, batch: items, typeConfigHash: typeConfigHash)
     default:
         throw BenchError.unknownType(typeId)
     }
@@ -191,6 +259,8 @@ private func boxFixture(name: String, value: any Codable, instanceCount: Int, ha
     case let v as Strings:
         return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
     case let v as Event:
+        return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
+    case let v as Book:
         return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
     default:
         throw BenchError.unknownType(name)

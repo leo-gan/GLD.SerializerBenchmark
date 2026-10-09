@@ -3,7 +3,9 @@ Dagr schema for GLD.SerializerBenchmark Data Model v2.
 
 Mirrors schemas/v2/protobuf/benchmark_v2.proto: one DataGraph per suite type, rooted at
 that type (the harness frames N instances itself, so no Batch_* wrappers), in each of the
-four node layouts. The packed graphs (`MessageGraph`, …) back the `dagr-packed` rows — the layout
+four node layouts, plus `GraphRegularGraph` and `GraphFrozenGraph` for the `graph`
+data type (shared regions and a person ring). Packed layouts inline references, so
+they do not emit that cycle. The packed graphs (`MessageGraph`, …) back the `dagr-packed` rows — the layout
 Dagr recommends for evolving, schema-driven payloads; `dagr-regular`, `dagr-frozen` and
 `dagr-frozen-packed` use the other three.
 Regenerate with `dagr build` (emits the per-language code + dagr.lock.json).
@@ -25,12 +27,12 @@ FLAVOURS = {                  # graph-name suffix -> Node layout kwargs
 
 
 def graphs(suffix: str, **layout):
-    """The five suite graphs in one layout. Graphs are append-only here (nothing deletes
-    nodes), so `deletable=False` drops the arena's generation bookkeeping."""
+    """The five suite graphs plus `graph` in one layout. Graphs are append-only here
+    (nothing deletes nodes), so `deletable=False` drops the arena's generation bookkeeping."""
     def g(name, root, nodes):
         return DataGraph(f"{name}{suffix}Graph", root_type=t.ref(root), node_types=nodes, deletable=False)
 
-    return [
+    out = [
         g("Message", "Message", [
             Node("Message", fields=[
                 "f_bool" >> t.bool,
@@ -80,6 +82,30 @@ def graphs(suffix: str, **layout):
             ], **layout),
         ]),
     ]
+    # Packed layouts inline a node reference, so a Person.next cycle is not
+    # emitted for them. Regular and frozen store that edge as a pointer.
+    if not layout.get("packed"):
+        out.append(g("Graph", "Book", [
+            Node("Region", fields=[
+                "code" >> t.utf8,
+                "note" >> t.utf8,
+                "version" >> t.i32,
+            ], **layout),
+            Node("Order", fields=[
+                "sku" >> t.utf8,
+                "qty" >> t.i32,
+                "region" >> t.ref("Region"),
+            ], **layout),
+            Node("Person", fields=[
+                "name" >> t.utf8,
+                "next" >> t.ref("Person"),
+            ], **layout),
+            Node("Book", fields=[
+                "orders" >> t.ref("Order").array,
+                "people" >> t.ref("Person").array,
+            ], **layout),
+        ]))
+    return out
 
 
 ALL_GRAPHS = [gr for suffix, layout in FLAVOURS.items() for gr in graphs(suffix, **layout)]

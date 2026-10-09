@@ -188,3 +188,6 @@ mojo/vendor/gld-cbor/
 mojo/vendor/gld-protobuf/
 mojo/vendor/mojo-toml/
 mojo/vendor/bin/
+
+# dagr build archives the previous schema here. Not source.
+schemas/v2/dagr/.dagr/

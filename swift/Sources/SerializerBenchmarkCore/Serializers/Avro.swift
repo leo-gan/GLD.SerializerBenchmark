@@ -23,7 +23,7 @@ public final class SwiftAvroSerializer: BenchSerializer {
         self.version = PackageVersions.version(for: "swiftavrocore", fallback: "2.x")
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

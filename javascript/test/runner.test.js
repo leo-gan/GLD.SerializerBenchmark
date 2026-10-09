@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { allFixturesV2, deepEqual, expectedForFidelity, instances, makeOne, V2_TYPE_IDS } from '../src/data.js';
+import { allFixturesV2, deepEqual, expectedForFidelity, graphEqual, instances, makeOne, V2_TYPE_IDS } from '../src/data.js';
 import { ALL_SERIALIZERS } from '../src/serializers/index.js';
 import { asDomain } from '../src/serializers/common.js';
 import { readArrowIpc } from '../src/serializers/columnar.js';
@@ -313,6 +313,128 @@ test('parquet default codec is SNAPPY and UNCOMPRESSED changes bytes and metadat
     assert.equal(metaA.schema.find((el) => el.name === name).type, 'INT32', name);
   }
   assert.equal(metaA.schema.find((el) => el.name === 'price_minor').type, 'INT64');
+});
+
+function assertSharedRegions(orders, regionCount, label) {
+  assert.equal(new Set(orders.map((o) => o.region)).size, regionCount, label);
+  for (let i = 0; i < orders.length; i++) {
+    assert.equal(orders[i].region, orders[i % regionCount].region, `${label} order ${i}`);
+  }
+}
+
+function assertPersonRing(people, label) {
+  assert.ok(people.length > 0, label);
+  for (let i = 0; i < people.length; i++) {
+    assert.equal(people[i].next, people[(i + 1) % people.length], `${label} person ${i}`);
+  }
+}
+
+test('graph generator shares regions and closes the person ring', () => {
+  const book = makeOne('graph', {}, 42, 0);
+  assert.equal(book.orders.length, 32);
+  assert.equal(book.people.length, 8);
+  assert.deepEqual(Object.keys(book), ['orders', 'people']);
+  assert.deepEqual(Object.keys(book.orders[0]), ['sku', 'qty', 'region']);
+  assert.deepEqual(Object.keys(book.orders[0].region), ['code', 'note', 'version']);
+  assert.deepEqual(Object.keys(book.people[0]), ['name', 'next']);
+  assertSharedRegions(book.orders, 4, 'generated');
+  assertPersonRing(book.people, 'generated');
+  const counts = new Map();
+  for (const order of book.orders) counts.set(order.region, (counts.get(order.region) ?? 0) + 1);
+  assert.deepEqual([...counts.values()].sort((a, b) => a - b), [8, 8, 8, 8]);
+  let node = book.people[0];
+  for (let i = 0; i < book.people.length; i++) node = node.next;
+  assert.equal(node, book.people[0]);
+  for (const order of book.orders) {
+    assert.equal(order.region.note.length, 64);
+    assert.ok(order.region.code.length >= 8 && order.region.code.length <= 16);
+    assert.ok(order.sku.length >= 8 && order.sku.length <= 16);
+    assert.ok(order.qty >= 1 && order.qty <= 100);
+    assert.ok(order.region.version >= 1 && order.region.version <= 10);
+  }
+  for (const person of book.people) {
+    assert.ok(person.name.length >= 8 && person.name.length <= 16);
+  }
+  assert.throws(() => JSON.stringify(book), TypeError);
+  assert.equal(graphEqual(book, book), true);
+  assert.equal(graphEqual(book, makeOne('graph', {}, 42, 0)), true);
+  assert.equal(graphEqual(book, makeOne('graph', {}, 42, 1)), false);
+
+  const regions = new Map();
+  const alias = {
+    orders: book.orders.map((o) => {
+      let region = regions.get(o.region);
+      if (!region) {
+        region = { code: o.region.code, note: o.region.note, version: o.region.version };
+        regions.set(o.region, region);
+      }
+      return { sku: o.sku, qty: o.qty, region };
+    }),
+    people: book.people.map((p) => ({ name: p.name, next: null })),
+  };
+  for (let i = 0; i < alias.people.length; i++) {
+    alias.people[i].next = alias.people[(i + 1) % alias.people.length];
+  }
+  assert.equal(graphEqual(book, alias), true);
+
+  const duplicated = {
+    orders: book.orders.map((o) => ({
+      sku: o.sku,
+      qty: o.qty,
+      region: { code: o.region.code, note: o.region.note, version: o.region.version },
+    })),
+    people: alias.people,
+  };
+  assert.equal(graphEqual(book, duplicated), false);
+
+  const tiny = makeOne('graph', {
+    order_count: 2,
+    region_count: 1,
+    ring_size: 1,
+    string_len: { min: 8, max: 8 },
+  }, 9, 2);
+  assert.equal(tiny.orders.length, 2);
+  assert.equal(tiny.orders[0].sku.length, 8);
+  assert.equal(tiny.orders[0].region.note.length, 64);
+  assert.equal(tiny.orders[0].region, tiny.orders[1].region);
+  assert.equal(tiny.people.length, 1);
+  assert.equal(tiny.people[0].next, tiny.people[0]);
+  assert.throws(() => makeOne('graph', { region_count: 0 }, 1, 0), /region_count/);
+  assert.throws(() => makeOne('graph', { ring_size: 0 }, 1, 0), /ring_size/);
+});
+
+test('dagr regular and frozen round-trip graph identity; packed and other codecs skip', async () => {
+  for (const ser of ALL_SERIALIZERS) {
+    const want = ser.name === 'dagr-regular' || ser.name === 'dagr-frozen';
+    assert.equal(ser.supports('graph'), want, ser.name);
+  }
+  const book = makeOne('graph', {}, 42, 0);
+  const batch = instances('graph', {}, 42, 3);
+  const tiny = makeOne('graph', { order_count: 2, region_count: 1, ring_size: 1 }, 3, 0);
+  for (const name of ['dagr-regular', 'dagr-frozen']) {
+    const ser = ALL_SERIALIZERS.find((s) => s.name === name);
+    assert.ok(ser, name);
+    for (const value of [book, batch, tiny]) {
+      const { out } = await roundTrip(ser, 'graph', value);
+      if (!graphEqual(value, out)) assert.fail(`${name}/graph identity mismatch`);
+    }
+    const { out } = await roundTrip(ser, 'graph', book);
+    assertSharedRegions(out.orders, 4, name);
+    assertPersonRing(out.people, name);
+    assert.equal(out.orders[0].sku, book.orders[0].sku);
+    assert.equal(out.orders[0].qty, book.orders[0].qty);
+    assert.equal(out.orders[0].region.note, book.orders[0].region.note);
+    assert.equal(out.orders[0].region.version, book.orders[0].region.version);
+    assert.equal(out.people[0].name, book.people[0].name);
+    assert.throws(() => JSON.stringify(out), TypeError);
+    const batched = (await roundTrip(ser, 'graph', batch)).out;
+    assert.equal(batched.length, 3);
+    assert.notEqual(batched[0].orders[0].region, batched[1].orders[0].region);
+    assert.equal(batched[2].people[0].next, batched[2].people[1]);
+    const self = (await roundTrip(ser, 'graph', tiny)).out;
+    assert.equal(self.people[0].next, self.people[0]);
+    assert.equal(self.orders[0].region, self.orders[1].region);
+  }
 });
 
 test('dagr (all four node layouts) roundtrips all V2 types (single and batch) with a version', () => {

@@ -8,7 +8,14 @@
  */
 export const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
 export const COLUMNAR_TYPE_IDS = ['table', 'table_project', 'nested_table', 'signal'];
-export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS];
+export const GRAPH_TYPE_IDS = ['graph'];
+export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS, ...GRAPH_TYPE_IDS];
+export const DATA_SET_ORDER = ['suite', 'columnar', 'graph'];
+export const DATA_SET_LABELS = { suite: 'Suite', columnar: 'Columnar', graph: 'Graph' };
+
+export function dataSetLabel(id) {
+  return DATA_SET_LABELS[id] || 'Suite';
+}
 
 export function baseTypeId(key) {
   if (!key) return '';
@@ -81,11 +88,14 @@ export function discoverFixtureOptions(allGroups) {
   };
 }
 
-/** suite or columnar for a data-type menu key, including all@n compounds. */
+/** suite, columnar, or graph for a data-type menu key, including all@n compounds. */
 export function dataSetForFixture(key) {
   const s = String(key || '');
   if (!s || s === 'all@all' || /^all@/i.test(s)) return 'suite';
-  return COLUMNAR_TYPE_IDS.includes(baseTypeId(s)) ? 'columnar' : 'suite';
+  const base = baseTypeId(s);
+  if (COLUMNAR_TYPE_IDS.includes(base)) return 'columnar';
+  if (GRAPH_TYPE_IDS.includes(base)) return 'graph';
+  return 'suite';
 }
 
 /** Menu keys that belong to one data set. */
@@ -112,12 +122,17 @@ export function pickPreferredFixture(options) {
   for (const key of ['table@n=1', 'table', 'table@n=100']) {
     if (options.includes(key)) return key;
   }
+  for (const key of ['graph@n=1', 'graph', 'graph@n=100']) {
+    if (options.includes(key)) return key;
+  }
   return options[0] || '';
 }
 
 function groupDataSet(group) {
   if (!group) return '';
-  if (group.data_set === 'suite' || group.data_set === 'columnar') return group.data_set;
+  if (group.data_set === 'suite' || group.data_set === 'columnar' || group.data_set === 'graph') {
+    return group.data_set;
+  }
   if (!group.test_data) return '';
   return dataSetForFixture(group.test_data);
 }
@@ -155,7 +170,7 @@ export function resolveStandardDataSet({
     const dataSet = groupDataSet(group);
     if (dataSet) present.add(dataSet);
   }
-  const sets = ['suite', 'columnar'].filter((id) => present.has(id));
+  const sets = DATA_SET_ORDER.filter((id) => present.has(id));
   if (!sets.length) {
     return {
       keepType: true,

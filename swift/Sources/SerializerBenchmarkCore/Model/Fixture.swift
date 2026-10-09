@@ -121,6 +121,9 @@ public func semanticEqual(_ a: Any, _ b: Any) -> Bool {
             && x.attrs.count == y.attrs.count
             && zip(x.attrs, y.attrs).allSatisfy { $0.key == $1.key && $0.value == $1.value }
     }
+    if let x = a as? Book, let y = b as? Book {
+        return graphEqual(x, y)
+    }
     if let x = a as? [Message], let y = b as? [Message] {
         return x.count == y.count && zip(x, y).allSatisfy { semanticEqual($0, $1) }
     }
@@ -136,7 +139,77 @@ public func semanticEqual(_ a: Any, _ b: Any) -> Bool {
     if let x = a as? [Event], let y = b as? [Event] {
         return x.count == y.count && zip(x, y).allSatisfy { semanticEqual($0, $1) }
     }
+    if let x = a as? [Book], let y = b as? [Book] {
+        return x.count == y.count && zip(x, y).allSatisfy { graphEqual($0, $1) }
+    }
     return false
+}
+
+// Identity compare. One visited token per object so the person ring stops.
+// A later visit must land on the same object on the other side: a copied region fails.
+private func graphEqual(_ a: Any, _ b: Any) -> Bool {
+    var memoA: [ObjectIdentifier: Int] = [:]
+    var memoB: [ObjectIdentifier: Int] = [:]
+    return graphPair(a, b, &memoA, &memoB)
+}
+
+/// nil means first visit (caller compares fields). A Bool means the visit already happened.
+private func graphVisit(
+    _ a: AnyObject,
+    _ b: AnyObject,
+    _ memoA: inout [ObjectIdentifier: Int],
+    _ memoB: inout [ObjectIdentifier: Int]
+) -> Bool? {
+    let idA = ObjectIdentifier(a)
+    let idB = ObjectIdentifier(b)
+    let seenA = memoA[idA]
+    let seenB = memoB[idB]
+    if seenA != nil || seenB != nil {
+        return seenA != nil && seenA == seenB
+    }
+    let token = memoA.count
+    memoA[idA] = token
+    memoB[idB] = token
+    return nil
+}
+
+private func graphPair(
+    _ a: Any,
+    _ b: Any,
+    _ memoA: inout [ObjectIdentifier: Int],
+    _ memoB: inout [ObjectIdentifier: Int]
+) -> Bool {
+    switch (a, b) {
+    case let (x as Region, y as Region):
+        if let done = graphVisit(x, y, &memoA, &memoB) { return done }
+        return x.code == y.code && x.note == y.note && x.version == y.version
+    case let (x as Order, y as Order):
+        if let done = graphVisit(x, y, &memoA, &memoB) { return done }
+        return x.sku == y.sku && x.qty == y.qty && graphPair(x.region, y.region, &memoA, &memoB)
+    case let (x as Person, y as Person):
+        if let done = graphVisit(x, y, &memoA, &memoB) { return done }
+        if x.name != y.name { return false }
+        switch (x.next, y.next) {
+        case (nil, nil):
+            return true
+        case let (nx?, ny?):
+            return graphPair(nx, ny, &memoA, &memoB)
+        default:
+            return false
+        }
+    case let (x as Book, y as Book):
+        if let done = graphVisit(x, y, &memoA, &memoB) { return done }
+        if x.orders.count != y.orders.count || x.people.count != y.people.count { return false }
+        for i in x.orders.indices {
+            if !graphPair(x.orders[i], y.orders[i], &memoA, &memoB) { return false }
+        }
+        for i in x.people.indices {
+            if !graphPair(x.people[i], y.people[i], &memoA, &memoB) { return false }
+        }
+        return true
+    default:
+        return false
+    }
 }
 
 private func doubleClose(_ a: Double, _ b: Double) -> Bool {

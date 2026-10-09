@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -17,6 +19,11 @@ int32_t clamp_i32_hi(int32_t hi) {
 }
 
 void default_slen(const std::string& type_id, int& smin, int& smax) {
+  if (type_id == "graph") {
+    smin = 8;
+    smax = 16;
+    return;
+  }
   smin = 3;
   if (type_id == "telemetry") {
     smax = 10;
@@ -61,6 +68,47 @@ int resolve_children(const std::string& type_id, const TypeConfig& cfg) {
 }
 
 int resolve_group(const TypeConfig& cfg) { return cfg.group_count >= 0 ? cfg.group_count : 4; }
+
+int resolve_or(int v, int def) { return v >= 0 ? v : def; }
+
+// Call order is the cross-language contract: regions, orders, names, then the ring.
+Book make_book(Rng& r, int order_count, int region_count, int ring_size, int smin, int smax) {
+  if (region_count < 1) throw std::runtime_error("region_count must be >= 1");
+  if (ring_size < 1) throw std::runtime_error("ring_size must be >= 1");
+  Book b;
+  b.regions.reserve(static_cast<size_t>(region_count));
+  std::vector<Region*> regs;
+  regs.reserve(static_cast<size_t>(region_count));
+  for (int i = 0; i < region_count; ++i) {
+    auto reg = std::make_unique<Region>();
+    reg->code = r.word(smin, smax);
+    reg->note = r.word(64, 64);
+    reg->version = r.next_int(1, 10);
+    regs.push_back(reg.get());
+    b.regions.push_back(std::move(reg));
+  }
+  b.orders.reserve(static_cast<size_t>(order_count));
+  for (int i = 0; i < order_count; ++i) {
+    Order o;
+    o.sku = r.word(smin, smax);
+    o.qty = r.next_int(1, 100);
+    o.region = regs[static_cast<size_t>(i % region_count)];
+    b.orders.push_back(std::move(o));
+  }
+  std::vector<Person*> ring;
+  ring.reserve(static_cast<size_t>(ring_size));
+  b.people.reserve(static_cast<size_t>(ring_size));
+  for (int i = 0; i < ring_size; ++i) {
+    auto person = std::make_unique<Person>();
+    person->name = r.word(smin, smax);
+    ring.push_back(person.get());
+    b.people.push_back(std::move(person));
+  }
+  for (int i = 0; i < ring_size; ++i) {
+    b.people[static_cast<size_t>(i)]->next = ring[static_cast<size_t>((i + 1) % ring_size)];
+  }
+  return b;
+}
 
 std::vector<std::string> shared_vocab(uint64_t seed, const std::string& type_id, int smin, int smax) {
   Rng vocab(mix_seed(seed, type_id + "#vocab", 0));
@@ -148,6 +196,10 @@ Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed,
   }
   if (type_id == "nested_table") return make_nested(r, resolve_children(type_id, cfg), smin, smax);
   if (type_id == "signal") return make_signal(r, resolve_group(cfg), smin, smax);
+  if (type_id == "graph") {
+    return make_book(r, resolve_or(cfg.order_count, 32), resolve_or(cfg.region_count, 4),
+                     resolve_or(cfg.ring_size, 8), smin, smax);
+  }
   throw std::runtime_error("unknown type_id: " + type_id);
 }
 
@@ -247,10 +299,126 @@ Fixture make_fixture(const std::string& type_id, const TypeConfig& cfg, uint64_t
   else if (type_id == "nested_table")
     fx.value = many_of<NestedRow>(type_id, cfg, seed, fx.instance_count);
   else if (type_id == "signal") fx.value = many_of<Signal>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "graph") fx.value = many_of<Book>(type_id, cfg, seed, fx.instance_count);
   else
     throw std::runtime_error("unknown type_id: " + type_id);
   return fx;
 }
+
+Book::Book(const Book& other) { *this = other; }
+
+Book& Book::operator=(const Book& other) {
+  if (this == &other) return *this;
+  std::unordered_map<const Region*, Region*> rmap;
+  std::vector<std::unique_ptr<Region>> regs;
+  regs.reserve(other.regions.size());
+  auto region_for = [&](const Region* src) -> Region* {
+    if (src == nullptr) return nullptr;
+    const auto it = rmap.find(src);
+    if (it != rmap.end()) return it->second;
+    auto node = std::make_unique<Region>(*src);
+    Region* raw = node.get();
+    rmap.emplace(src, raw);
+    regs.push_back(std::move(node));
+    return raw;
+  };
+  for (const auto& region : other.regions) (void)region_for(region.get());
+
+  std::unordered_map<const Person*, Person*> pmap;
+  std::vector<std::unique_ptr<Person>> owned;
+  owned.reserve(other.people.size());
+  for (const auto& person : other.people) {
+    auto node = std::make_unique<Person>();
+    node->name = person->name;
+    pmap.emplace(person.get(), node.get());
+    owned.push_back(std::move(node));
+  }
+  auto person_for = [&](const Person* src) -> Person* {
+    if (src == nullptr) return nullptr;
+    const auto it = pmap.find(src);
+    if (it != pmap.end()) return it->second;
+    auto node = std::make_unique<Person>();
+    node->name = src->name;
+    Person* raw = node.get();
+    pmap.emplace(src, raw);
+    owned.push_back(std::move(node));
+    return raw;
+  };
+  for (size_t i = 0; i < other.people.size(); ++i) {
+    owned[i]->next = person_for(other.people[i]->next);
+  }
+
+  std::vector<Order> copied;
+  copied.reserve(other.orders.size());
+  for (const Order& order : other.orders) {
+    Order o;
+    o.sku = order.sku;
+    o.qty = order.qty;
+    o.region = region_for(order.region);
+    copied.push_back(std::move(o));
+  }
+  regions = std::move(regs);
+  people = std::move(owned);
+  orders = std::move(copied);
+  return *this;
+}
+
+namespace {
+
+struct IdMemo {
+  std::unordered_map<const void*, int> left;
+  std::unordered_map<const void*, int> right;
+  int n = 0;
+
+  // fresh means the pair is new and its fields still have to be compared.
+  bool bind(const void* a, const void* b, bool& fresh) {
+    const auto ia = left.find(a);
+    const auto ib = right.find(b);
+    if (ia != left.end() || ib != right.end()) {
+      fresh = false;
+      return ia != left.end() && ib != right.end() && ia->second == ib->second;
+    }
+    const int token = n++;
+    left.emplace(a, token);
+    right.emplace(b, token);
+    fresh = true;
+    return true;
+  }
+};
+
+bool pair_region(const Region* a, const Region* b, IdMemo& memo) {
+  if (a == nullptr || b == nullptr) return a == b;
+  bool fresh = false;
+  if (!memo.bind(a, b, fresh)) return false;
+  if (!fresh) return true;
+  return a->code == b->code && a->note == b->note && a->version == b->version;
+}
+
+bool pair_person(const Person* a, const Person* b, IdMemo& memo) {
+  if (a == nullptr || b == nullptr) return a == b;
+  bool fresh = false;
+  if (!memo.bind(a, b, fresh)) return false;
+  if (!fresh) return true;
+  return a->name == b->name && pair_person(a->next, b->next, memo);
+}
+
+bool pair_order(const Order& a, const Order& b, IdMemo& memo) {
+  return a.sku == b.sku && a.qty == b.qty && pair_region(a.region, b.region, memo);
+}
+
+bool books_equal(const Book& a, const Book& b) {
+  if (a.orders.size() != b.orders.size() || a.people.size() != b.people.size()) return false;
+  IdMemo memo;
+  for (size_t i = 0; i < a.orders.size(); ++i) {
+    if (!pair_order(a.orders[i], b.orders[i], memo)) return false;
+  }
+  for (size_t i = 0; i < a.people.size(); ++i) {
+    if (!pair_person(a.people[i].get(), b.people[i].get(), memo)) return false;
+  }
+  return true;
+}
+
+}  // namespace
 
 bool fidelity(const Value& a, const Value& b) {
   if (a.index() != b.index()) return false;
@@ -267,6 +435,15 @@ bool fidelity(const Value& a, const Value& b) {
         using T = std::decay_t<decltype(left)>;
         if constexpr (std::is_same_v<T, std::vector<double>>) {
           return false;
+        } else if constexpr (std::is_same_v<T, Book>) {
+          return books_equal(left, std::get<Book>(b));
+        } else if constexpr (std::is_same_v<T, std::vector<Book>>) {
+          const auto& right = std::get<std::vector<Book>>(b);
+          if (left.size() != right.size()) return false;
+          for (size_t i = 0; i < left.size(); ++i) {
+            if (!books_equal(left[i], right[i])) return false;
+          }
+          return true;
         } else {
           return left == std::get<T>(b);
         }

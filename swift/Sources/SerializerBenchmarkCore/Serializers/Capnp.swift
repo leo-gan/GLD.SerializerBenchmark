@@ -24,7 +24,7 @@ public final class CapnProtoSerializer: BenchSerializer {
         }
     }
 
-    public func supports(testDataName: String) -> Bool { true }
+    public func supports(testDataName: String) -> Bool { testDataName != "graph" }
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture

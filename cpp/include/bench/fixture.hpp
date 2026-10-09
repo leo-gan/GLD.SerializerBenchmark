@@ -18,13 +18,19 @@ using Value = std::variant<Message, Document, Telemetry, Strings, Event,
                            std::vector<Telemetry>, std::vector<Strings>,
                            std::vector<Event>, Table, NestedRow, Signal,
                            std::vector<Table>, std::vector<NestedRow>,
-                           std::vector<Signal>, std::vector<double>>;
+                           std::vector<Signal>, std::vector<double>, Book,
+                           std::vector<Book>>;
 
 template <typename T>
 inline constexpr bool is_columnar_alt_v =
     std::is_same_v<T, Table> || std::is_same_v<T, NestedRow> || std::is_same_v<T, Signal> ||
     std::is_same_v<T, std::vector<Table>> || std::is_same_v<T, std::vector<NestedRow>> ||
     std::is_same_v<T, std::vector<Signal>> || std::is_same_v<T, std::vector<double>>;
+
+// Book is one graph: shared Region nodes and a Person ring. Not a tree.
+template <typename T>
+inline constexpr bool is_graph_alt_v =
+    std::is_same_v<T, Book> || std::is_same_v<T, std::vector<Book>>;
 
 // Copy one row or the batch. Used inside timed serialize.
 template <typename T>
@@ -56,6 +62,9 @@ struct TypeConfig {
   bool has_int_range = false;
   double duplication = -1.0;
   int group_count = -1;
+  int order_count = -1;
+  int region_count = -1;
+  int ring_size = -1;
 };
 
 // table_project compares the f_float_0 column (length N), not the full row(s).

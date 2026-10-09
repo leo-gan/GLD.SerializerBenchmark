@@ -7130,6 +7130,1334 @@ function toBytes20(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
   writeInto20(root, b);
   return b.makeData();
 }
+
+// src/generated/dagr/GraphRegularGraph.ts
+var GraphRegularGraph_exports = {};
+__export(GraphRegularGraph_exports, {
+  BookAccessor: () => BookAccessor,
+  OrderAccessor: () => OrderAccessor,
+  PersonAccessor: () => PersonAccessor,
+  RegionAccessor: () => RegionAccessor
+});
+var RegionAccessor = class _RegionAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // code
+  _p1;
+  // note
+  _p2;
+  // version
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+  }
+  get code() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get note() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  get version() {
+    if (this._p2 === null) return null;
+    return readI32(this.buf, this._p2);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _RegionAccessor(buf, rootOffset(buf));
+  }
+};
+var OrderAccessor = class _OrderAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // sku
+  _p1;
+  // qty
+  _p2;
+  // region
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+  }
+  get sku() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get qty() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get region() {
+    if (this._p2 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p2);
+    return new RegionAccessor(this.buf, this._p2 + bdB + bd);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _OrderAccessor(buf, rootOffset(buf));
+  }
+};
+var PersonAccessor = class _PersonAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // name
+  _p1;
+  // next
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+  }
+  get name() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get next() {
+    if (this._p1 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p1);
+    return new _PersonAccessor(this.buf, this._p1 + bdB + bd);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _PersonAccessor(buf, rootOffset(buf));
+  }
+};
+var BookAccessor = class _BookAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // orders
+  _p1;
+  // people
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+  }
+  get orders() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    return readPtrTableArrayAt(this.buf, this._p0 + fwdB + fwd, (b, p) => new OrderAccessor(b, p), true);
+  }
+  get people() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    return readPtrTableArrayAt(this.buf, this._p1 + fwdB + fwd, (b, p) => new PersonAccessor(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _BookAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/GraphRegularGraph_arena.ts
+var GraphRegularGraph_arena_exports = {};
+__export(GraphRegularGraph_arena_exports, {
+  Arena: () => Arena11,
+  Book: () => Book,
+  Order: () => Order,
+  Person: () => Person,
+  Region: () => Region,
+  restore: () => restore11,
+  restoreWithMap: () => restoreWithMap11
+});
+function _pack11(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash11(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod11(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged11(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe11(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod11(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe11(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged11(v)) return String(v.type) + "(" + _dagrDescribe11(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash11(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod11(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash11(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged11(v)) return Math.imul(_strHash11(String(v.type)), 31) + _dagrHash11(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash11(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals11(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod11(a, "_eq")) return _hasMethod11(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals11(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged11(a)) return _isTagged11(b) && a.type === b.type && _dagrEquals11(a.value, b.value, seen);
+  return a === b;
+}
+var Region = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrRegion[this._index];
+  }
+  get code() {
+    return this._arena._arrRegion[this._index].code;
+  }
+  set code(value) {
+    this._arena._arrRegion[this._index].code = value;
+  }
+  get note() {
+    return this._arena._arrRegion[this._index].note;
+  }
+  set note(value) {
+    this._arena._arrRegion[this._index].note = value;
+  }
+  get version() {
+    return this._arena._arrRegion[this._index].version;
+  }
+  set version(value) {
+    this._arena._arrRegion[this._index].version = value;
+  }
+  _key() {
+    return `Region#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Region@${this._index}`;
+    _s.add(_k);
+    return `Region@${this._index} { code: ${_dagrDescribe11(this.code, _s)}, note: ${_dagrDescribe11(this.note, _s)}, version: ${_dagrDescribe11(this.version, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash11("Region");
+    _h = Math.imul(_h, 31) + _dagrHash11(this.code, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.note, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.version, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals11(this.code, other.code, _s)) return false;
+    if (!_dagrEquals11(this.note, other.note, _s)) return false;
+    if (!_dagrEquals11(this.version, other.version, _s)) return false;
+    return true;
+  }
+};
+var Order = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrOrder[this._index];
+  }
+  get sku() {
+    return this._arena._arrOrder[this._index].sku;
+  }
+  set sku(value) {
+    this._arena._arrOrder[this._index].sku = value;
+  }
+  get qty() {
+    return this._arena._arrOrder[this._index].qty;
+  }
+  set qty(value) {
+    this._arena._arrOrder[this._index].qty = value;
+  }
+  get region() {
+    const _v = this._arena._arrOrder[this._index].region;
+    if (_v === null) return null;
+    return new Region(_v, this._arena);
+  }
+  set region(value) {
+    this._arena._arrOrder[this._index].region = value === null ? null : value._packed;
+  }
+  _key() {
+    return `Order#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Order@${this._index}`;
+    _s.add(_k);
+    return `Order@${this._index} { sku: ${_dagrDescribe11(this.sku, _s)}, qty: ${_dagrDescribe11(this.qty, _s)}, region: ${_dagrDescribe11(this.region, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash11("Order");
+    _h = Math.imul(_h, 31) + _dagrHash11(this.sku, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.qty, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.region, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals11(this.sku, other.sku, _s)) return false;
+    if (!_dagrEquals11(this.qty, other.qty, _s)) return false;
+    if (!_dagrEquals11(this.region, other.region, _s)) return false;
+    return true;
+  }
+};
+var Person = class _Person {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrPerson[this._index];
+  }
+  get name() {
+    return this._arena._arrPerson[this._index].name;
+  }
+  set name(value) {
+    this._arena._arrPerson[this._index].name = value;
+  }
+  get next() {
+    const _v = this._arena._arrPerson[this._index].next;
+    if (_v === null) return null;
+    return new _Person(_v, this._arena);
+  }
+  set next(value) {
+    this._arena._arrPerson[this._index].next = value === null ? null : value._packed;
+  }
+  _key() {
+    return `Person#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Person@${this._index}`;
+    _s.add(_k);
+    return `Person@${this._index} { name: ${_dagrDescribe11(this.name, _s)}, next: ${_dagrDescribe11(this.next, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash11("Person");
+    _h = Math.imul(_h, 31) + _dagrHash11(this.name, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.next, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals11(this.name, other.name, _s)) return false;
+    if (!_dagrEquals11(this.next, other.next, _s)) return false;
+    return true;
+  }
+};
+var Book = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrBook[this._index];
+  }
+  get orders() {
+    const _s = this._arena._arrBook[this._index].orders;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new Order(_p, this._arena));
+  }
+  set orders(value) {
+    this._arena._arrBook[this._index].orders = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
+  }
+  get people() {
+    const _s = this._arena._arrBook[this._index].people;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new Person(_p, this._arena));
+  }
+  set people(value) {
+    this._arena._arrBook[this._index].people = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Book#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Book@${this._index}`;
+    _s.add(_k);
+    return `Book@${this._index} { orders: ${_dagrDescribe11(this.orders, _s)}, people: ${_dagrDescribe11(this.people, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash11("Book");
+    _h = Math.imul(_h, 31) + _dagrHash11(this.orders, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash11(this.people, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals11(this.orders, other.orders, _s)) return false;
+    if (!_dagrEquals11(this.people, other.people, _s)) return false;
+    return true;
+  }
+};
+var Arena11 = class {
+  _arrRegion = [];
+  _arrOrder = [];
+  _arrPerson = [];
+  _arrBook = [];
+  #root = null;
+  newRegion(code = "", note = "", version = 0) {
+    const _i = this._arrRegion.length;
+    this._arrRegion.push({ code, note, version });
+    return new Region(_pack11(0, _i), this);
+  }
+  newOrder(sku = "", qty = 0, region = null) {
+    const _i = this._arrOrder.length;
+    this._arrOrder.push({ sku, qty, region: region === null ? null : region._packed });
+    return new Order(_pack11(0, _i), this);
+  }
+  newPerson(name = "", next = null) {
+    const _i = this._arrPerson.length;
+    this._arrPerson.push({ name, next: next === null ? null : next._packed });
+    return new Person(_pack11(0, _i), this);
+  }
+  newBook(orders = null, people = null) {
+    const _i = this._arrBook.length;
+    this._arrBook.push({ orders: orders === null ? null : orders.map((_h) => _h === null ? null : _h._packed), people: people === null ? null : people.map((_h) => _h === null ? null : _h._packed) });
+    return new Book(_pack11(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Book(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromRegion(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newRegion();
+  seen.set(acc._start, _n);
+  _n.code = acc.code;
+  _n.note = acc.note;
+  _n.version = acc.version;
+  return _n;
+}
+function _fromOrder(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newOrder();
+  seen.set(acc._start, _n);
+  _n.sku = acc.sku;
+  _n.qty = acc.qty;
+  _n.region = acc.region === null ? null : _fromRegion(acc.region, a, seen);
+  return _n;
+}
+function _fromPerson(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newPerson();
+  seen.set(acc._start, _n);
+  _n.name = acc.name;
+  _n.next = acc.next === null ? null : _fromPerson(acc.next, a, seen);
+  return _n;
+}
+function _fromBook(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newBook();
+  seen.set(acc._start, _n);
+  _n.orders = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromOrder(_e, a, _s)))(acc.orders, seen);
+  _n.people = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromPerson(_e, a, _s)))(acc.people, seen);
+  return _n;
+}
+function restore11(bytes) {
+  const a = new Arena11();
+  a.root = _fromBook(BookAccessor.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap11(bytes) {
+  const a = new Arena11();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromBook(BookAccessor.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/GraphRegularGraph_serde.ts
+var GraphRegularGraph_serde_exports = {};
+__export(GraphRegularGraph_serde_exports, {
+  toBytes: () => toBytes21,
+  writeInto: () => writeInto21
+});
+function _storeRegion(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.note === null ? null : b.storeUtf8(n.note, true);
+  const _c0 = n.code === null ? null : b.storeUtf8(n.code, true);
+  const _off2 = n.version === null ? null : b.storeI32(n.version);
+  const _off1 = _c1 === null ? null : b.storeForwardPointer(_c1);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeOrder(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c2 = n.region === null ? null : _storeRegion(n.region, b);
+  const _c0 = n.sku === null ? null : b.storeUtf8(n.sku, true);
+  const _off2 = _c2 === null ? null : b.storeBidirectionalPointer(_c2);
+  const _off1 = n.qty === null ? null : b.storeI32(n.qty);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storePerson(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.next === null ? null : _storePerson(n.next, b);
+  const _c0 = n.name === null ? null : b.storeUtf8(n.name, true);
+  const _off1 = _c1 === null ? null : b.storeBidirectionalPointer(_c1);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeBook(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.people === null ? null : b.storeNodeRefArray(n.people, (b2, v) => _storePerson(v, b2));
+  const _c0 = n.orders === null ? null : b.storeNodeRefArray(n.orders, (b2, v) => _storeOrder(v, b2));
+  const _off1 = _c1 === null ? null : b.storeForwardPointer(_c1);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function writeInto21(root, b) {
+  const off = nodeOffset(_storeBook(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
+function toBytes21(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
+  const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
+  writeInto21(root, b);
+  return b.makeData();
+}
+
+// src/generated/dagr/GraphFrozenGraph.ts
+var GraphFrozenGraph_exports = {};
+__export(GraphFrozenGraph_exports, {
+  BookAccessor: () => BookAccessor2,
+  OrderAccessor: () => OrderAccessor2,
+  PersonAccessor: () => PersonAccessor2,
+  RegionAccessor: () => RegionAccessor2
+});
+var RegionAccessor2 = class _RegionAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // code
+  _p1;
+  // note
+  _p2;
+  // version
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+    } else {
+      this._p2 = null;
+    }
+  }
+  get code() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get note() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  get version() {
+    if (this._p2 === null) return null;
+    return readI32(this.buf, this._p2);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _RegionAccessor(buf, rootOffset(buf));
+  }
+};
+var OrderAccessor2 = class _OrderAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // sku
+  _p1;
+  // qty
+  _p2;
+  // region
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += 4;
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+    } else {
+      this._p2 = null;
+    }
+  }
+  get sku() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get qty() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get region() {
+    if (this._p2 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p2);
+    return new RegionAccessor2(this.buf, this._p2 + bdB + bd);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _OrderAccessor(buf, rootOffset(buf));
+  }
+};
+var PersonAccessor2 = class _PersonAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // name
+  _p1;
+  // next
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+    } else {
+      this._p1 = null;
+    }
+  }
+  get name() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get next() {
+    if (this._p1 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p1);
+    return new _PersonAccessor(this.buf, this._p1 + bdB + bd);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _PersonAccessor(buf, rootOffset(buf));
+  }
+};
+var BookAccessor2 = class _BookAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // orders
+  _p1;
+  // people
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+    } else {
+      this._p1 = null;
+    }
+  }
+  get orders() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    return readPtrTableArrayAt(this.buf, this._p0 + fwdB + fwd, (b, p) => new OrderAccessor2(b, p), true);
+  }
+  get people() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    return readPtrTableArrayAt(this.buf, this._p1 + fwdB + fwd, (b, p) => new PersonAccessor2(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _BookAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/GraphFrozenGraph_arena.ts
+var GraphFrozenGraph_arena_exports = {};
+__export(GraphFrozenGraph_arena_exports, {
+  Arena: () => Arena12,
+  Book: () => Book2,
+  Order: () => Order2,
+  Person: () => Person2,
+  Region: () => Region2,
+  restore: () => restore12,
+  restoreWithMap: () => restoreWithMap12
+});
+function _pack12(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash12(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod12(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged12(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe12(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod12(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe12(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged12(v)) return String(v.type) + "(" + _dagrDescribe12(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash12(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod12(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash12(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged12(v)) return Math.imul(_strHash12(String(v.type)), 31) + _dagrHash12(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash12(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals12(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod12(a, "_eq")) return _hasMethod12(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals12(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged12(a)) return _isTagged12(b) && a.type === b.type && _dagrEquals12(a.value, b.value, seen);
+  return a === b;
+}
+var Region2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrRegion[this._index];
+  }
+  get code() {
+    return this._arena._arrRegion[this._index].code;
+  }
+  set code(value) {
+    this._arena._arrRegion[this._index].code = value;
+  }
+  get note() {
+    return this._arena._arrRegion[this._index].note;
+  }
+  set note(value) {
+    this._arena._arrRegion[this._index].note = value;
+  }
+  get version() {
+    return this._arena._arrRegion[this._index].version;
+  }
+  set version(value) {
+    this._arena._arrRegion[this._index].version = value;
+  }
+  _key() {
+    return `Region#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Region@${this._index}`;
+    _s.add(_k);
+    return `Region@${this._index} { code: ${_dagrDescribe12(this.code, _s)}, note: ${_dagrDescribe12(this.note, _s)}, version: ${_dagrDescribe12(this.version, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash12("Region");
+    _h = Math.imul(_h, 31) + _dagrHash12(this.code, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.note, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.version, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals12(this.code, other.code, _s)) return false;
+    if (!_dagrEquals12(this.note, other.note, _s)) return false;
+    if (!_dagrEquals12(this.version, other.version, _s)) return false;
+    return true;
+  }
+};
+var Order2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrOrder[this._index];
+  }
+  get sku() {
+    return this._arena._arrOrder[this._index].sku;
+  }
+  set sku(value) {
+    this._arena._arrOrder[this._index].sku = value;
+  }
+  get qty() {
+    return this._arena._arrOrder[this._index].qty;
+  }
+  set qty(value) {
+    this._arena._arrOrder[this._index].qty = value;
+  }
+  get region() {
+    const _v = this._arena._arrOrder[this._index].region;
+    if (_v === null) return null;
+    return new Region2(_v, this._arena);
+  }
+  set region(value) {
+    this._arena._arrOrder[this._index].region = value === null ? null : value._packed;
+  }
+  _key() {
+    return `Order#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Order@${this._index}`;
+    _s.add(_k);
+    return `Order@${this._index} { sku: ${_dagrDescribe12(this.sku, _s)}, qty: ${_dagrDescribe12(this.qty, _s)}, region: ${_dagrDescribe12(this.region, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash12("Order");
+    _h = Math.imul(_h, 31) + _dagrHash12(this.sku, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.qty, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.region, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals12(this.sku, other.sku, _s)) return false;
+    if (!_dagrEquals12(this.qty, other.qty, _s)) return false;
+    if (!_dagrEquals12(this.region, other.region, _s)) return false;
+    return true;
+  }
+};
+var Person2 = class _Person {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrPerson[this._index];
+  }
+  get name() {
+    return this._arena._arrPerson[this._index].name;
+  }
+  set name(value) {
+    this._arena._arrPerson[this._index].name = value;
+  }
+  get next() {
+    const _v = this._arena._arrPerson[this._index].next;
+    if (_v === null) return null;
+    return new _Person(_v, this._arena);
+  }
+  set next(value) {
+    this._arena._arrPerson[this._index].next = value === null ? null : value._packed;
+  }
+  _key() {
+    return `Person#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Person@${this._index}`;
+    _s.add(_k);
+    return `Person@${this._index} { name: ${_dagrDescribe12(this.name, _s)}, next: ${_dagrDescribe12(this.next, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash12("Person");
+    _h = Math.imul(_h, 31) + _dagrHash12(this.name, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.next, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals12(this.name, other.name, _s)) return false;
+    if (!_dagrEquals12(this.next, other.next, _s)) return false;
+    return true;
+  }
+};
+var Book2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrBook[this._index];
+  }
+  get orders() {
+    const _s = this._arena._arrBook[this._index].orders;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new Order2(_p, this._arena));
+  }
+  set orders(value) {
+    this._arena._arrBook[this._index].orders = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
+  }
+  get people() {
+    const _s = this._arena._arrBook[this._index].people;
+    if (_s === null) return null;
+    return _s.filter((_p) => _p !== null).map((_p) => new Person2(_p, this._arena));
+  }
+  set people(value) {
+    this._arena._arrBook[this._index].people = value === null ? null : value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Book#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Book@${this._index}`;
+    _s.add(_k);
+    return `Book@${this._index} { orders: ${_dagrDescribe12(this.orders, _s)}, people: ${_dagrDescribe12(this.people, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash12("Book");
+    _h = Math.imul(_h, 31) + _dagrHash12(this.orders, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash12(this.people, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals12(this.orders, other.orders, _s)) return false;
+    if (!_dagrEquals12(this.people, other.people, _s)) return false;
+    return true;
+  }
+};
+var Arena12 = class {
+  _arrRegion = [];
+  _arrOrder = [];
+  _arrPerson = [];
+  _arrBook = [];
+  #root = null;
+  newRegion(code = "", note = "", version = 0) {
+    const _i = this._arrRegion.length;
+    this._arrRegion.push({ code, note, version });
+    return new Region2(_pack12(0, _i), this);
+  }
+  newOrder(sku = "", qty = 0, region = null) {
+    const _i = this._arrOrder.length;
+    this._arrOrder.push({ sku, qty, region: region === null ? null : region._packed });
+    return new Order2(_pack12(0, _i), this);
+  }
+  newPerson(name = "", next = null) {
+    const _i = this._arrPerson.length;
+    this._arrPerson.push({ name, next: next === null ? null : next._packed });
+    return new Person2(_pack12(0, _i), this);
+  }
+  newBook(orders = null, people = null) {
+    const _i = this._arrBook.length;
+    this._arrBook.push({ orders: orders === null ? null : orders.map((_h) => _h === null ? null : _h._packed), people: people === null ? null : people.map((_h) => _h === null ? null : _h._packed) });
+    return new Book2(_pack12(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Book2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromRegion2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newRegion();
+  seen.set(acc._start, _n);
+  _n.code = acc.code;
+  _n.note = acc.note;
+  _n.version = acc.version;
+  return _n;
+}
+function _fromOrder2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newOrder();
+  seen.set(acc._start, _n);
+  _n.sku = acc.sku;
+  _n.qty = acc.qty;
+  _n.region = acc.region === null ? null : _fromRegion2(acc.region, a, seen);
+  return _n;
+}
+function _fromPerson2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newPerson();
+  seen.set(acc._start, _n);
+  _n.name = acc.name;
+  _n.next = acc.next === null ? null : _fromPerson2(acc.next, a, seen);
+  return _n;
+}
+function _fromBook2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newBook();
+  seen.set(acc._start, _n);
+  _n.orders = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromOrder2(_e, a, _s)))(acc.orders, seen);
+  _n.people = ((_v, _s) => _v === null ? null : _v.map((_e) => _e === null ? null : _fromPerson2(_e, a, _s)))(acc.people, seen);
+  return _n;
+}
+function restore12(bytes) {
+  const a = new Arena12();
+  a.root = _fromBook2(BookAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap12(bytes) {
+  const a = new Arena12();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromBook2(BookAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/GraphFrozenGraph_serde.ts
+var GraphFrozenGraph_serde_exports = {};
+__export(GraphFrozenGraph_serde_exports, {
+  toBytes: () => toBytes22,
+  writeInto: () => writeInto22
+});
+function _storeRegion2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.note === null ? null : b.storeUtf8(n.note, true);
+  const _c0 = n.code === null ? null : b.storeUtf8(n.code, true);
+  if (n.version !== null) b.storeI32(n.version);
+  if (_c1 !== null) b.storeForwardPointer(_c1);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.code !== null) _bs |= 1 << 0;
+  if (n.note !== null) _bs |= 1 << 1;
+  if (n.version !== null) _bs |= 1 << 2;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeOrder2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c2 = n.region === null ? null : _storeRegion2(n.region, b);
+  const _c0 = n.sku === null ? null : b.storeUtf8(n.sku, true);
+  if (_c2 !== null) b.storeBidirectionalPointer(_c2);
+  if (n.qty !== null) b.storeI32(n.qty);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.sku !== null) _bs |= 1 << 0;
+  if (n.qty !== null) _bs |= 1 << 1;
+  if (n.region !== null) _bs |= 1 << 2;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storePerson2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.next === null ? null : _storePerson2(n.next, b);
+  const _c0 = n.name === null ? null : b.storeUtf8(n.name, true);
+  if (_c1 !== null) b.storeBidirectionalPointer(_c1);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.name !== null) _bs |= 1 << 0;
+  if (n.next !== null) _bs |= 1 << 1;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeBook2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.people === null ? null : b.storeNodeRefArray(n.people, (b2, v) => _storePerson2(v, b2));
+  const _c0 = n.orders === null ? null : b.storeNodeRefArray(n.orders, (b2, v) => _storeOrder2(v, b2));
+  if (_c1 !== null) b.storeForwardPointer(_c1);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.orders !== null) _bs |= 1 << 0;
+  if (n.people !== null) _bs |= 1 << 1;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function writeInto22(root, b) {
+  const off = nodeOffset(_storeBook2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
+function toBytes22(root, maxSize = 2 * 1024 * 1024, alignmentOffset = 0) {
+  const b = new Builder(maxSize);
+  b.alignmentOffset = alignmentOffset;
+  writeInto22(root, b);
+  return b.makeData();
+}
 export {
   Builder,
   DocumentGraph_direct_exports as DocumentDirect,
@@ -7152,6 +8480,12 @@ export {
   EventRegularGraph_arena_exports as EventRegularArena,
   EventRegularGraph_exports as EventRegularLazy,
   EventRegularGraph_serde_exports as EventRegularSerde,
+  GraphFrozenGraph_arena_exports as GraphFrozenArena,
+  GraphFrozenGraph_exports as GraphFrozenLazy,
+  GraphFrozenGraph_serde_exports as GraphFrozenSerde,
+  GraphRegularGraph_arena_exports as GraphRegularArena,
+  GraphRegularGraph_exports as GraphRegularLazy,
+  GraphRegularGraph_serde_exports as GraphRegularSerde,
   MessageGraph_direct_exports as MessageDirect,
   MessageFrozenGraph_arena_exports as MessageFrozenArena,
   MessageFrozenGraph_exports as MessageFrozenLazy,

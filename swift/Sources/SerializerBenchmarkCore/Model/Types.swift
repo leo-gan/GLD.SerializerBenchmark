@@ -111,4 +111,69 @@ public struct ItemsWrap<T: Codable>: Codable {
     public init(items: [T]) { self.items = items }
 }
 
+// One graph. Classes so several orders can hold one Region and Person.next can ring.
+// Not Equatable: a synthesized == would follow that ring forever.
+// Book is Codable only so Fixture can store it. encode/decode throw; tree codecs skip graph.
+
+public final class Region: @unchecked Sendable {
+    public let code: String
+    public let note: String
+    public let version: Int32
+    public init(code: String, note: String, version: Int32) {
+        self.code = code
+        self.note = note
+        self.version = version
+    }
+}
+
+public final class Order: @unchecked Sendable {
+    public let sku: String
+    public let qty: Int32
+    public let region: Region
+    public init(sku: String, qty: Int32, region: Region) {
+        self.sku = sku
+        self.qty = qty
+        self.region = region
+    }
+}
+
+public final class Person: @unchecked Sendable {
+    public let name: String
+    public var next: Person?
+    public init(name: String, next: Person? = nil) {
+        self.name = name
+        self.next = next
+    }
+}
+
+public final class Book: @unchecked Sendable, Codable {
+    public let orders: [Order]
+    public let people: [Person]
+    public init(orders: [Order], people: [Person]) {
+        self.orders = orders
+        self.people = people
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        throw EncodingError.invalidValue(
+            self,
+            EncodingError.Context(
+                codingPath: encoder.codingPath,
+                debugDescription: "graph is a reference cycle"
+            )
+        )
+    }
+
+    public init(from decoder: Decoder) throws {
+        self.orders = []
+        self.people = []
+        throw DecodingError.dataCorrupted(
+            DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "graph is a reference cycle"
+            )
+        )
+    }
+}
+
 public let baseTSMS: Int64 = 1_704_067_200_000

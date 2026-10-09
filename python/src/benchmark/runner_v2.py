@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .comparer import compare
-from .data_v2.fidelity import expected_for_fidelity, fidelity_v2
+from .data_v2.fidelity import expected_for_fidelity, fidelity_for
 from .data_v2.generator import instances_for_cell
 from .data_v2 import protobuf_bridge
 from .report import BenchmarkError, BenchmarkLog, LogStorage, aggregate_logs, print_report, save_errors
@@ -442,6 +442,7 @@ def run_v2(
                                 mode,
                                 log,
                                 measure_memory=measure_memory,
+                                type_id=type_id,
                             )
                             if measure_memory:
                                 mem_cache[ser_name] = log.memory_peak_bytes
@@ -568,6 +569,7 @@ def _run_reps_v2(
                 mode,
                 log,
                 measure_memory=measure_memory,
+                type_id=td_name,
             )
             if measure_memory:
                 cached_memory_peak = log.memory_peak_bytes
@@ -602,6 +604,7 @@ def _single_v2(
     log: BenchmarkLog,
     *,
     measure_memory: bool,
+    type_id: str = "",
 ) -> None:
     if mode == "bytes":
         t0 = time.perf_counter_ns()
@@ -642,13 +645,15 @@ def _single_v2(
     else:
         log.memory_peak_bytes = 0
 
-    score = fidelity_v2(expected, processed)
-    if score < 1.0:
+    score = fidelity_for(type_id, expected, processed)
+    if type_id != "graph" and score < 1.0:
         # fall back to generic comparer for dict-like
         ok, err = compare(expected, processed)
         score = 1.0 if ok else 0.0
         if not ok:
             raise RuntimeError(f"Roundtrip mismatch: {err}")
+    elif score < 1.0:
+        raise RuntimeError("Roundtrip mismatch: graph identity")
     log.fidelity_score = score
 
 

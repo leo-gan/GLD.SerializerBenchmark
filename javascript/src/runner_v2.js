@@ -14,7 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { compressSizes } from './compress.js';
 import { makeOne, instances } from './data_v2.js';
 import { ALL_SERIALIZERS, performance } from './serializers/index.js';
-import { deepEqual, expectedForFidelity } from './data.js';
+import { deepEqual, expectedForFidelity, graphEqual } from './data.js';
 import { serializerSelected } from './filter.js';
 import {
   resolveRecordRunOrder,
@@ -180,7 +180,9 @@ for (const cell of cells) {
           const total = serNs + deserNs;
           const size = buf.length ?? Buffer.byteLength(buf);
           const expected = expectedForFidelity(typeId, value);
-          if (!deepEqual(expected, out)) throw new Error('roundtrip fidelity mismatch');
+          // graph shares nodes and cycles. deepEqual recurses forever; JSON.stringify throws.
+          const ok = typeId === 'graph' ? graphEqual(expected, out) : deepEqual(expected, out);
+          if (!ok) throw new Error('roundtrip fidelity mismatch');
           const opsSer = serNs > 0 ? 1e9 / serNs : 0;
           const opsDeser = deserNs > 0 ? 1e9 / deserNs : 0;
           const opsTot = total > 0 ? 1e9 / total : 0;

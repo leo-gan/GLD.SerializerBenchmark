@@ -382,6 +382,7 @@ set(TEST_SOURCES
   src/serializers/ser_columnar.cpp
   src/serializers/ser_sbe.cpp
   tests/test_columnar.cpp
+  tests/test_graph.cpp
   src/serializers/ser_dagr.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
