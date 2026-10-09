@@ -65,6 +65,13 @@ The experiment still uses the same clock and the same record builder. We do not 
 
 If you only want to look around, use the main Dashboard. If you have to choose a library for a real service, start with the experiment that matches your constraint.
 
+### What these notebooks do not re-measure
+
+The notebooks were not re-run when Dagr and the graph data set were added to the warehouse. A winner on this page is still the libraries named in that experiment. Two later measurements live only on the main Dashboard:
+
+- **Dagr** has four layouts on the five suite types, in C++, Go, JavaScript, Mojo, Python, Rust, and Swift. On C++ `message`, `dagr-frozen-packed` is the latency front and near the size front (about 48 bytes, fidelity 1, and the same size in the other languages). The timed call writes every field of a value built in prepare. That layout cannot store a reference cycle, so it is absent from the graph data type.
+- **Graph** is its own data set. One instance shares four region nodes across 32 orders and closes one ring of eight people. `all@` averages do not include it. The timed rows are `dagr-regular`, `dagr-frozen`, and, in Python, `pickle` and `cloudpickle`.
+
 ---
 
 ## How to read the graphs

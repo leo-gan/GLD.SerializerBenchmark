@@ -1168,12 +1168,15 @@ SPECIFICS: dict[str, str] = {
         "named MessagePack maps."
     ),
     "dagr": (
-        "Dagr (\"Data Graph\") is a schema-driven binary format for data "
-        "graphs — shared and cyclic nodes included — built on an arena model. "
-        "One Python DSL schema generates the code for every target language "
-        "(`dagr build`), so there is no runtime library: the suite commits the "
-        "generated code from `schemas/v2/dagr/schema.py`. The schema emits "
-        "every suite type in all four node layouts, one row each."
+        "Dagr (\"Data Graph\") is a schema-driven binary format that can store "
+        "shared nodes and cycles, built on an arena model. One Python DSL schema "
+        "generates the code for every target language (`dagr build`), so there is "
+        "no runtime library: the suite commits the generated code from "
+        "`schemas/v2/dagr/schema.py`. The five suite types are emitted in all four "
+        "node layouts, one row each. The graph data type is emitted only for "
+        "regular and frozen, because a packed reference cannot store the person ring. "
+        "On suite types, prepare builds the native value and the timed call writes "
+        "every field (direct builder or arena serializer) and reads them back."
     ),
     "prost": (
         "prost is the de-facto Protocol Buffers implementation for Rust "
@@ -2295,11 +2298,21 @@ EXTRA: dict[tuple[str, str], str] = {
 
 # One row per Dagr node layout (all share the "dagr" SPECIFICS text above).
 _DAGR_ROW_TEXT = {
-    "dagr-packed": "This row uses the `packed` node layout (tagged, evolvable).",
-    "dagr-regular": "This row uses the `regular` node layout (vtable, evolvable).",
-    "dagr-frozen": "This row uses the `frozen` node layout (positional, no evolution).",
+    "dagr-packed": (
+        "This row uses the `packed` node layout (tagged, evolvable). "
+        "It does not support the graph data type."
+    ),
+    "dagr-regular": (
+        "This row uses the `regular` node layout (vtable, evolvable). "
+        "It also times the graph data type."
+    ),
+    "dagr-frozen": (
+        "This row uses the `frozen` node layout (positional, no evolution). "
+        "It also times the graph data type."
+    ),
     "dagr-frozen-packed": (
-        "This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+        "This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). "
+        "It does not support the graph data type."
     ),
 }
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):

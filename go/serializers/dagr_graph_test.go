@@ -18,6 +18,21 @@ func TestGraphSupportsOnlyDagrArena(t *testing.T) {
 	}
 }
 
+func TestDagrSupportsSuiteNotColumnar(t *testing.T) {
+	for _, ser := range []BenchSerializer{newDagr(), newDagrRegular(), newDagrFrozen(), newDagrFrozenPacked()} {
+		for _, id := range []string{"message", "document", "telemetry", "strings", "event"} {
+			if !ser.Supports(id) {
+				t.Errorf("%s should support %s", ser.Name(), id)
+			}
+		}
+		for _, id := range []string{"table", "table_project", "nested_table", "signal"} {
+			if ser.Supports(id) {
+				t.Errorf("%s should not support %s", ser.Name(), id)
+			}
+		}
+	}
+}
+
 func TestDagrGraphRoundTrip(t *testing.T) {
 	books := make([]modelv2.Book, 2)
 	for i := range books {

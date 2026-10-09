@@ -176,6 +176,10 @@ int run_graph_checks() {
     if (!ser) continue;
     const bool want = std::string(ser->name()) == "dagr-regular" || std::string(ser->name()) == "dagr-frozen";
     expect(ser->supports("graph") == want, std::string(ser->name()) + " supports(graph)");
+    if (std::string(ser->name()).rfind("dagr-", 0) == 0) {
+      expect(ser->supports("message"), std::string(ser->name()) + " supports(message)");
+      expect(!ser->supports("table"), std::string(ser->name()) + " skips columnar");
+    }
   }
 
   for (const char* name : {"dagr-regular", "dagr-frozen"}) {

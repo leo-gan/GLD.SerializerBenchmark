@@ -54,6 +54,7 @@ Work through these questions in order:
    - **No** → continue.
 3. **Single language / runtime, complex graphs, and fully trusted data?**
    - **Yes** → Language-native (only inside a hard trust boundary).
+   - **No, but the payload really is a shared graph** → the **graph** data set (`dagr-regular` / `dagr-frozen`, and Python `pickle` / `cloudpickle`). Packed Dagr cannot store the cycle.
    - **No** → Schemaless binary.
 4. **Which standard inside that family?** JSON, YAML, and TOML are different contracts. Protocol Buffers, Avro, and FlatBuffers are different contracts. Arrow IPC, Parquet, and ORC are different contracts. SBE sits in the schema-driven family, its data set is Columnar, and its standard is SBE. Open the [Dashboard](../dashboard/) on that standard.
 
@@ -115,8 +116,9 @@ Examples use **log `SerializerName` values** from language overviews (not always
   - **Go:** `protobuf`, `hamba/avro`, `linkedin/goavro`, `sbe`
   - **Java:** `protobuf`, `avro`, `sbe`
   - **Kotlin:** `protobuf`, `avro`, `sbe`
-  - **C++:** `protobuf` (libprotobuf), `protobuf-wire` (in-tree), `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`, `sbe`
+  - **C++:** `protobuf` (libprotobuf), `protobuf-wire` (in-tree), `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`, `sbe`, and the four Dagr layouts
   - **Zig:** `protobuf` (Arwalk/zig-protobuf from the shared `.proto`), `flatbuffers` (nDimensional/zig-flatbuffers from the shared `.fbs`), `capnproto` (official C++ runtime from the shared `.capnp`)
+  - **Dagr** (`dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`) in C++, Go, JavaScript, Mojo, Python, Rust, and Swift. There is no public spec, so the Dashboard standard is **No public spec**. One schema, four node layouts. On the five suite types, prepare builds the native value and the timed call writes every field. `dagr-frozen-packed` is often the latency front on `message` (C++ `message@n=1` is about 48 bytes and 200 ns, fidelity 1, and the same size in the other languages). That is a straight-line pack of a prepared value, not a skipped encode. It does not support the `graph` data type.
 
 SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codecs: the body is word-aligned, and variable-length data is only at the end of a message or repeating group. Go, C++, Rust, Java, and Kotlin register `sbe` (sbe-tool 1.40.2 flyweights) for `signal`, `table`, and `table_project`. The wide `table` row is a legal SBE body because its strings are variable data at the end. `nested_table` is not. The signal wire order is fixed fields, then the `legs` group, then `symbol` and `venue`. C# does not register `sbe`: the generated flyweights import `Org.SbeTool.Sbe.Dll`, and no NuGet package provides that assembly on the 1.40.2 line. The project was not retargeted and the runtime was not vendored. JavaScript has no SBE row.
 
@@ -135,6 +137,13 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
   - **Java:** `arrow-ipc` (arrow-vector 19.0.0), `parquet`, `parquet-uncompressed` (parquet-avro 1.18.1). parquet-java defaults to UNCOMPRESSED, so `parquet` sets Snappy. `orc` is orc-core 2.3.1 `nohive`, whose default is ZSTD; `orc-uncompressed` sets `CompressionKind.NONE`. Both ORC rows set `blockPadding(false)`.
   - **Kotlin:** the same jars as Java: `arrow-ipc` (arrow-vector 19.0.0), `parquet`, `parquet-uncompressed` (parquet-avro 1.18.1, Snappy versus UNCOMPRESSED), `orc`, `orc-uncompressed` (orc-core 2.3.1 `nohive` plus orc-format 1.1.1 `nohive`, ZSTD versus `CompressionKind.NONE`, `blockPadding(false)`).
   - **Mojo:** `arrow-ipc` (gld-arrow 0.2.0), `parquet`, `parquet-uncompressed` (gld-parquet 0.2.0). The library default is uncompressed, so `parquet` sets Snappy. Neither reader can project a column, so `table_project` decodes the whole payload and then materializes `f_float_0` only. No ORC and no SBE.
+
+### Graph
+
+- **Prefer when:** one payload shares nodes or contains a cycle, and more than one language may have to read it. A tree encoding would copy the shared node or refuse the value.
+- **Trade-offs:** only codecs that preserve aliases are timed. Packed Dagr inlines a reference, so a `Person.next` ring is not a legal packed graph. Fidelity is object identity inside one restored graph, not a structural walk (that walk never finishes on a cycle).
+- **Data type:** `graph` only. It is its own data set. `all@1`, `all@100`, and `all@all` do not include it. Run config: `config/library/graph.yaml` (N=1 and N=100, bytes, no compression).
+- **Examples in suite:** `dagr-regular` and `dagr-frozen` in C++, Go, JavaScript, Mojo, Python, Rust, and Swift. Python also times `pickle` and `cloudpickle`. Other rows skip the type.
 
 ### Language-native
 

@@ -115,7 +115,7 @@ A **standard** is a named contract, such as JSON, Avro, or Arrow IPC. Several li
 
 A **library** is one implementation of a standard in one language. `orjson` and Python’s `json` module are both the JSON standard. The speed gap between them is the library.
 
-The comparison cell is language, standard, data set, and data type. Data set is Suite or Columnar. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only the column `f_float_0`.
+The comparison cell is language, standard, data set, and data type. Data set is Suite, Columnar, or Graph. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only the column `f_float_0`. The Graph type is `graph` (shared nodes and one reference cycle). It is not part of `all@`.
 
 | Pair | Family | Standards |
 |------|--------|-----------|
