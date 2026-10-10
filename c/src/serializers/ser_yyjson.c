@@ -232,3 +232,14 @@ void bench_register_yyjson(serializer_t *o, int *c) {
     o[*c - 1].serialize_fp = ser_fp;
     o[*c - 1].deserialize_fp = de_fp;
 }
+
+/* gld-ffi-export */
+int bench_yyjson_prep(test_data_kind_t kind, const test_fixture_t *fx) {
+    return prep(kind, fx);
+}
+int bench_yyjson_ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    return ser(fx, buf, cap, ol);
+}
+int bench_yyjson_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
+    return de(buf, len, out, kind);
+}

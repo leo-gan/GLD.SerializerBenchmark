@@ -241,3 +241,14 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 void bench_register_yaml(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "libyaml", "0.2.5", "human", prep, ser, de, fidelity_fx);
 }
+
+/* gld-ffi-export */
+int bench_yaml_prep(test_data_kind_t kind, const test_fixture_t *fx) {
+    return prep(kind, fx);
+}
+int bench_yaml_ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    return ser(fx, buf, cap, ol);
+}
+int bench_yaml_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
+    return de(buf, len, out, kind);
+}
