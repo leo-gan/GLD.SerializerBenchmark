@@ -15,7 +15,7 @@
     "main_io": "memory",
     "require_named_fields": false
   },
-  "generated_at": "2026-09-30T01:41:51Z",
+  "generated_at": "2026-10-10T20:41:11Z",
   "languages": {
     "python": {
       "status": "ok",
@@ -2347,6 +2347,139 @@
           "runs": 85,
           "runs_raw": 100,
           "outliers_removed": 14,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
+          "on_time_size_front": false
+        }
+      ]
+    },
+    "fortran": {
+      "status": "ok",
+      "language": "fortran",
+      "csv": "experiments/03-one-language-store/fortran/logs/fortran/2026-10-10-134110.csv",
+      "error": null,
+      "top_groups": [
+        {
+          "method": "cliffs_delta_vs_fastest",
+          "n": 1,
+          "io": "memory",
+          "similar_max": 0.147,
+          "close_max": 0.33,
+          "reference": "custom-binary",
+          "similar": [
+            "custom-binary"
+          ],
+          "close": [],
+          "time_size_front": [
+            "custom-binary"
+          ]
+        }
+      ],
+      "top_group": {
+        "method": "cliffs_delta_vs_fastest",
+        "n": 1,
+        "io": "memory",
+        "similar_max": 0.147,
+        "close_max": 0.33,
+        "reference": "custom-binary",
+        "similar": [
+          "custom-binary"
+        ],
+        "close": [],
+        "time_size_front": [
+          "custom-binary"
+        ]
+      },
+      "rows": [
+        {
+          "library": "custom-binary",
+          "n": 1,
+          "version": "v2-1.0",
+          "role": "one language — length-prefixed binary",
+          "writes_named_fields": false,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 420,
+          "read_median_ns": 1320,
+          "total_median_ns": 1816,
+          "write_median_us": 0.42,
+          "read_median_us": 1.32,
+          "total_median_us": 1.8155,
+          "total_mean_ns": 1859,
+          "total_p95_ns": 2692,
+          "total_p99_ns": 2962,
+          "total_ci_low_ns": 1764,
+          "total_ci_high_ns": 1964,
+          "size_bytes": 44,
+          "size_gzip_bytes": 62,
+          "fidelity": 1.0,
+          "runs": 98,
+          "runs_raw": 100,
+          "outliers_removed": 1,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "json-fortran",
+          "n": 1,
+          "version": "9.3.1",
+          "role": "other languages can read — JSON",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 18040,
+          "read_median_ns": 19429,
+          "total_median_ns": 37649,
+          "write_median_us": 18.04,
+          "read_median_us": 19.429,
+          "total_median_us": 37.649,
+          "total_mean_ns": 38170,
+          "total_p95_ns": 46501,
+          "total_p99_ns": 48052,
+          "total_ci_low_ns": 37222,
+          "total_ci_high_ns": 39072,
+          "size_bytes": 172,
+          "size_gzip_bytes": 142,
+          "fidelity": 1.0,
+          "runs": 91,
+          "runs_raw": 100,
+          "outliers_removed": 8,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
+          "on_time_size_front": false
+        },
+        {
+          "library": "hdf5-fortran",
+          "n": 1,
+          "version": "1.10.7",
+          "role": "HDF5 core virtual file driver",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 182226,
+          "read_median_ns": 149186,
+          "total_median_ns": 334375,
+          "write_median_us": 182.226,
+          "read_median_us": 149.186,
+          "total_median_us": 334.375,
+          "total_mean_ns": 336758,
+          "total_p95_ns": 402070,
+          "total_p99_ns": 410251,
+          "total_ci_low_ns": 329895,
+          "total_ci_high_ns": 344085,
+          "size_bytes": 7704,
+          "size_gzip_bytes": 614,
+          "fidelity": 1.0,
+          "runs": 91,
+          "runs_raw": 100,
+          "outliers_removed": 8,
           "in_comparison": true,
           "tier": "slower",
           "cliffs_delta_vs_fastest": 1.0,

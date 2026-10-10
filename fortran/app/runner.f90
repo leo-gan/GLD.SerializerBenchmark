@@ -10,6 +10,9 @@ program serializer_benchmark_fortran
   use ser_rojff
   use ser_tomlf
   use ser_msgpack
+  use ser_hdf5
+  use ser_netcdf
+  use ser_adios2
   implicit none
 
   integer, parameter :: max_sers = 12
@@ -19,6 +22,9 @@ program serializer_benchmark_fortran
   integer, parameter :: ser_rojff = 4
   integer, parameter :: ser_toml = 5
   integer, parameter :: ser_mp = 6
+  integer, parameter :: ser_h5 = 7
+  integer, parameter :: ser_nc = 8
+  integer, parameter :: ser_ad = 9
   integer, parameter :: buf_cap = 8 * 1024 * 1024
   character(len=64) :: ser_names(max_sers)
   character(len=32) :: ser_versions(max_sers)
@@ -61,7 +67,7 @@ contains
 
   subroutine load_registry()
     integer :: prep
-    nser = 6
+    nser = 9
     ser_names(ser_custom) = cb_name
     ser_versions(ser_custom) = cb_version
     ser_names(ser_jf) = jf_name
@@ -74,6 +80,15 @@ contains
     ser_versions(ser_toml) = tomlf_version
     ser_names(ser_mp) = mp_name
     ser_versions(ser_mp) = mp_version
+    ser_names(ser_h5) = h5_name
+    call h5_prepare(prep)
+    ser_versions(ser_h5) = h5_version
+    ser_names(ser_nc) = nc_name
+    call nc_prepare(prep)
+    ser_versions(ser_nc) = nc_version
+    ser_names(ser_ad) = ad_name
+    call ad_prepare(prep)
+    ser_versions(ser_ad) = ad_version
   end subroutine
 
   function read_seed() result(v)
@@ -207,10 +222,15 @@ contains
     integer :: out_len, stat, ro, sp
     integer(int64), target :: mark
     integer(int64) :: size_col
+    character(len=256) :: nc_path, ad_path
     character(len=8) :: io_mode, sm_csv
     failed = .false.
     io_mode = "bytes"
     sm_csv = ""
+    if (ser_index == ser_nc .or. ser_index == ser_ad) then
+      io_mode = "stream"
+      sm_csv = "native"
+    end if
     out_len = 0
     stat = 0
     call system_clock(t0)
@@ -233,11 +253,24 @@ contains
     case (ser_mp)
       call mp_write(items, payload, stat)
       if (stat == 0) call touch_payload(payload)
+    case (ser_h5)
+      call h5_write(items, payload, stat)
+      if (stat == 0) call touch_payload(payload)
+    case (ser_nc)
+      write(nc_path, '("/tmp/gld-fortran-nc-",I0,".nc")') c_getpid()
+      call nc_write(items, trim(nc_path), mark, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ad)
+      write(ad_path, '("/tmp/gld-fortran-ad-",I0,".bp")') c_getpid()
+      call ad_write(items, trim(ad_path), mark, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
     case default
       stat = 1
     end select
     call system_clock(t1)
     if (stat /= 0) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "serialize failed")
       failed = .true.
       return
@@ -261,16 +294,29 @@ contains
     case (ser_mp)
       call mp_read(payload, size(items), got, stat)
       call touch_payload(payload)
+    case (ser_h5)
+      call h5_read(payload, size(items), got, stat)
+      call touch_payload(payload)
+    case (ser_nc)
+      call nc_read(trim(nc_path), size(items), got, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ad)
+      call ad_read(trim(ad_path), size(items), got, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
     case default
       stat = 1
     end select
     call system_clock(t2)
     if (stat /= 0 .or. .not. allocated(got)) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "deserialize failed")
       failed = .true.
       return
     end if
     if (.not. fixtures_equal(items, got)) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "fidelity failed")
       failed = .true.
       return
@@ -278,8 +324,14 @@ contains
     select case (ser_index)
     case (ser_jf, ser_jonquil, ser_rojff, ser_toml)
       call copy_text(text, out_len)
-    case (ser_mp)
+    case (ser_mp, ser_h5)
       call copy_payload(payload, out_len)
+    case (ser_nc)
+      call slurp_file(trim(nc_path), out_len)
+      call nc_remove(trim(nc_path))
+    case (ser_ad)
+      call ad_slurp(trim(ad_path), buf, out_len, buf_cap)
+      call ad_remove(trim(ad_path))
     end select
     gz_c = 0
     zs_c = 0
@@ -294,6 +346,7 @@ contains
       run_order = run_order + 1
     end if
     size_col = int(out_len, int64)
+    if (ser_index == ser_nc .or. ser_index == ser_ad) size_col = mark
     call csv_row(io_mode, type_id, reps, rep, trim(ser_names(ser_index)), trim(ser_versions(ser_index)), &
          elapsed_ns(t0, t1), elapsed_ns(t1, t2), size_col, size(items), type_hash, ro, sp, gz, zs, &
          stream_mode=sm_csv)

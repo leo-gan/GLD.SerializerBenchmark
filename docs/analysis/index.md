@@ -103,7 +103,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
 | C# | **50** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **39** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
-| Fortran | **6** | [Overview](../fortran/index.md) | [Dashboard](../dashboard/?lang=fortran) |
+| Fortran | **9** | [Overview](../fortran/index.md) | [Dashboard](../dashboard/?lang=fortran) |
 | Go | **30** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **27** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **29** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |

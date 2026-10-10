@@ -1,0 +1,5 @@
+# language<TAB>serializer
+# A row here has no in-memory bytes API. Its CSV stream row (StreamMode=native)
+# is the published parent. It must not also emit a bytes row.
+fortran	netcdf-fortran
+fortran	adios2

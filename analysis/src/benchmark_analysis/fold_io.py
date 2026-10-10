@@ -11,7 +11,27 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from pathlib import Path
+
 from benchmark_analysis.dimensions import load_dimensions, optional_io_index
+from benchmark_analysis.run_config_v2 import DEFAULT_CATALOG
+
+_FILE_ONLY = DEFAULT_CATALOG.parents[1] / "config" / "file-only.txt"
+
+
+def load_file_only(path: Path | None = None) -> set[tuple[str, str]]:
+    """Serializers whose only timed API is a file. One parent, no bytes row."""
+    src = path or _FILE_ONLY
+    out: set[tuple[str, str]] = set()
+    if not src.is_file():
+        return out
+    for raw in src.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        lang, name = line.split(None, 1)
+        out.add((lang, name))
+    return out
 
 _IN_MEMORY = {"bytes", "string", "buffer"}
 
@@ -135,10 +155,13 @@ def _average_group(levels: list[dict[str, Any]]) -> dict[str, Any]:
 def fold_io_groups(
     groups: list[dict[str, Any]],
     dimensions: dict[str, Any] | None = None,
+    file_only: set[tuple[str, str]] | None = None,
 ) -> list[dict[str, Any]]:
     """One parent group per serializer, data type, and instance count."""
     if dimensions is None:
         dimensions = load_dimensions()
+    if file_only is None:
+        file_only = load_file_only()
     opt_in = optional_io_index(dimensions)
     io = dimensions.get("optional_io") or {}
     ratio = float(io.get("base64_size_ratio") or 0.75)
@@ -163,6 +186,14 @@ def fold_io_groups(
     for key in order:
         levels = buckets[key]
         language, serializer = key[0], key[1]
+        modes = {_mode(group) for group in levels}
+        if modes == {"stream"}:
+            # A file API has no bytes parent. Keep that stream row only when
+            # the serializer is on the file-only list. Any other stream-only
+            # row is an unlisted second I/O path and is not published.
+            if (language, serializer) in file_only:
+                folded.append(_with_optional(levels[0], [], "file"))
+            continue
         if len(levels) == 1:
             folded.append(_with_optional(levels[0], [], "single"))
             continue

@@ -112,3 +112,4 @@ languages:
     libraries:
       - {name: custom-binary, writes_named_fields: false, role: one language — length-prefixed binary}
       - {name: json-fortran, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: hdf5-fortran, writes_named_fields: true, role: HDF5 core virtual file driver}

@@ -1,0 +1,58 @@
+{
+  "format": "netcdf",
+  "standard": "NetCDF",
+  "version": "classic-and-netcdf4",
+  "standard_url": "https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html",
+  "provenance": "original-work",
+  "notes": "Classic, 64-bit offset, and NetCDF-4 signatures only. Not a Unidata conformance suite.",
+  "cases": [
+    {
+      "id": "netcdf-classic",
+      "title": "Classic CDF version 1",
+      "section": "Classic format",
+      "section_title": "Header",
+      "section_url": "https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html",
+      "paragraph": "A classic NetCDF file starts with the ASCII bytes CDF and version 0x01.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "43444601",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "netcdf-64bit-offset",
+      "title": "64-bit offset CDF version 2",
+      "section": "64-bit offset format",
+      "section_title": "Header",
+      "section_url": "https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html",
+      "paragraph": "The 64-bit offset format uses the same CDF magic and version 0x02.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "43444602",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "netcdf4-hdf5-signature",
+      "title": "NetCDF-4 HDF5 signature",
+      "section": "NetCDF-4 format",
+      "section_title": "HDF5 signature",
+      "section_url": "https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html",
+      "paragraph": "A NetCDF-4 file is an HDF5 file and starts with the HDF5 signature.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "894844460d0a1a0a",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "netcdf-truncated",
+      "title": "Truncated classic header",
+      "section": "Classic format",
+      "section_title": "Header",
+      "section_url": "https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html",
+      "paragraph": "Two bytes is not the CDF magic plus a version. A reader must reject it.",
+      "requirement": "MUST",
+      "expect": "reject",
+      "input": "4344",
+      "input_encoding": "hex"
+    }
+  ]
+}

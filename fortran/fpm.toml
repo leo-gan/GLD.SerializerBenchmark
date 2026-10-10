@@ -8,7 +8,8 @@ description = "Fortran serializer benchmark runner"
 auto-executables = false
 auto-tests = false
 auto-examples = false
-link = ["z", "zstd"]
+link = ["z", "zstd", "hdf5_fortran", "hdf5", "netcdff", "netcdf", "adios2_fortran"]
+external-modules = ["hdf5", "netcdf", "adios2"]
 
 [library]
 source-dir = "src"

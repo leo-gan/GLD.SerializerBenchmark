@@ -723,6 +723,12 @@ add("fortran", "fortran-messagepack", ["msgpack"], "https://github.com/synthfi/f
     'README: "Library for MessagePack support in fortran."')
 add("fortran", "custom-binary", [], "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90",
     "Suite little-endian length-prefixed V2 baseline; no public interchange spec.")
+add("fortran", "hdf5-fortran", ["hdf5"], "https://github.com/HDFGroup/hdf5",
+    "Official HDF5 Fortran API. This row uses the core virtual file driver.")
+add("fortran", "netcdf-fortran", ["netcdf"], "https://github.com/Unidata/netcdf-fortran",
+    "Official NetCDF Fortran API. The timed row is a NetCDF-4 file, not a bytes buffer.")
+add("fortran", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
+    "Official ADIOS2 Fortran binding. Serial BP5 directory, no bytes buffer.")
 
 # --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo", "cpp"):

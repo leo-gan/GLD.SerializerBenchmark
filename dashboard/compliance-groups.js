@@ -70,6 +70,9 @@ export const FORMAT_LABELS = {
   parquet: 'Parquet',
   orc: 'ORC',
   sbe: 'SBE',
+  hdf5: 'HDF5',
+  netcdf: 'NetCDF',
+  adios2: 'ADIOS2',
   [NO_SPEC]: NO_SPEC_LABEL,
 };
 

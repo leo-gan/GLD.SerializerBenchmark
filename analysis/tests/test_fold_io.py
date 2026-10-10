@@ -98,3 +98,27 @@ def test_single_level_stays_one_row():
     assert parent["io_parent"] == "single"
     assert parent["optional"] == []
     assert parent["variants"]["iqr_1.5"]["total_median_ns"] == 5.0
+
+
+def test_file_only_stream_row_is_the_parent():
+    groups = [_group("fortran", "adios2", "stream", 30.0, 128, "native")]
+    folded = fold_io_groups(groups, DIMS, file_only={("fortran", "adios2")})
+    assert len(folded) == 1
+    parent = folded[0]
+    assert parent["io_parent"] == "file"
+    assert parent["mode"] == "published"
+    assert parent["optional"] == []
+    assert parent["variants"]["iqr_1.5"]["total_median_ns"] == 30.0
+    assert parent["variants"]["iqr_1.5"]["median_size_bytes"] == 128.0
+    assert parent["StreamMode"] == "native"
+
+
+def test_unlisted_stream_only_row_is_dropped():
+    groups = [
+        _group("python", "orjson", "bytes", 10.0, 20),
+        _group("fortran", "custom-binary", "stream", 4.0, 40, "native"),
+    ]
+    folded = fold_io_groups(groups, DIMS, file_only=set())
+    assert len(folded) == 1
+    assert folded[0]["serializer"] == "orjson"
+    assert folded[0]["io_parent"] == "single"
