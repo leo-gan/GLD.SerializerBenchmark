@@ -87,3 +87,14 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 void bench_register_avro_c(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "avro-c", "1.11.3", "schema", prep, ser, de, fidelity_fx);
 }
+
+/* gld-ffi-export */
+int bench_avro_c_prep(test_data_kind_t kind, const test_fixture_t *fx) {
+    return prep(kind, fx);
+}
+int bench_avro_c_ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    return ser(fx, buf, cap, ol);
+}
+int bench_avro_c_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
+    return de(buf, len, out, kind);
+}

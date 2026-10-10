@@ -1,0 +1,62 @@
+schema: gld.experiment.config/1
+id: 15-fortran-ffi-tax
+title: What does a Fortran call add?
+question: For one shop order, how much time does a Fortran call add over the C runner calling the same C library?
+story:
+  why: The Fortran leaderboard times pure Fortran libraries. This experiment is the other question, how much the language crossing costs when the library is C.
+  example: A Fortran program already has the order in a Fortran type. Inside the timer it copies that order into the C structure and calls the same C adapter the C runner times.
+  tradeoff: The Fortran row includes that copy. Moving the copy outside the timer would hide the cost a Fortran caller pays. The gap is the result.
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings:
+    children: 8
+  saved_as: sample.json
+run:
+  mode: full
+  io_modes: [bytes]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: true
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+paths:
+  results: results.json
+  summary: results.md
+languages:
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: C runner, same yyjson the Fortran row calls}
+      - {name: cJSON, writes_named_fields: true, role: C runner, same cJSON the Fortran row calls}
+      - {name: mpack, writes_named_fields: true, role: C runner, same mpack the Fortran row calls}
+      - {name: tinycbor, writes_named_fields: true, role: C runner, same tinycbor the Fortran row calls}
+      - {name: nanopb, writes_named_fields: true, role: C runner, same nanopb the Fortran row calls}
+      - {name: avro-c, writes_named_fields: true, role: C runner, same avro-c the Fortran row calls}
+      - {name: libyaml, writes_named_fields: true, role: C runner, same libyaml the Fortran row calls}
+      - {name: libbson, writes_named_fields: true, role: C runner, same libbson the Fortran row calls}
+      - {name: flatcc, writes_named_fields: true, role: C runner, same flatcc the Fortran row calls}
+      - {name: ion-c, writes_named_fields: true, role: C runner, same ion-c the Fortran row calls}
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: Fortran copy into the C fixture, then the C yyjson adapter}
+      - {name: cJSON, writes_named_fields: true, role: Fortran copy into the C fixture, then the C cJSON adapter}
+      - {name: mpack, writes_named_fields: true, role: Fortran copy into the C fixture, then the C mpack adapter}
+      - {name: tinycbor, writes_named_fields: true, role: Fortran copy into the C fixture, then the C tinycbor adapter}
+      - {name: nanopb, writes_named_fields: true, role: Fortran copy into the C fixture, then the C nanopb adapter}
+      - {name: avro-c, writes_named_fields: true, role: Fortran copy into the C fixture, then the C avro-c adapter}
+      - {name: libyaml, writes_named_fields: true, role: Fortran copy into the C fixture, then the C libyaml adapter}
+      - {name: libbson, writes_named_fields: true, role: Fortran copy into the C fixture, then the C libbson adapter}
+      - {name: flatcc, writes_named_fields: true, role: Fortran copy into the C fixture, then the C flatcc adapter}
+      - {name: ion-c, writes_named_fields: true, role: Fortran copy into the C fixture, then the C ion-c adapter}

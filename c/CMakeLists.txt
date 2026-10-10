@@ -298,6 +298,22 @@ add_executable(serializer_benchmark_c ${BENCH_SOURCES})
 target_include_directories(serializer_benchmark_c PRIVATE ${BENCH_INCLUDES})
 target_link_libraries(serializer_benchmark_c PRIVATE ${BENCH_LIBS})
 
+# Experiment 15. Not part of the default C bench link. Fortran calls this
+# static library after copying one document across the ABI.
+set(FFI_SOURCES src/ffi_bridge.c)
+foreach(src ${BENCH_SOURCES})
+  if(NOT src MATCHES "src/(main|run_v2|schedule|csv_log|compress|batch_cell|runner|optional_io|register_serializers)\\.c$")
+    list(APPEND FFI_SOURCES ${src})
+  endif()
+endforeach()
+add_library(gld_ffi STATIC ${FFI_SOURCES})
+target_include_directories(gld_ffi PUBLIC ${BENCH_INCLUDES})
+target_link_libraries(gld_ffi PUBLIC ${BENCH_LIBS})
+set_target_properties(gld_ffi PROPERTIES EXCLUDE_FROM_ALL TRUE)
+add_executable(gld_ffi_probe src/ffi_probe.c)
+target_link_libraries(gld_ffi_probe PRIVATE gld_ffi)
+set_target_properties(gld_ffi_probe PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 # Mapping-driven spec runner (same third-party graph as the bench).
 set(COMPLIANCE_SOURCES
   src/compliance.c

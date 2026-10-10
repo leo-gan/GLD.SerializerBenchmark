@@ -13,3 +13,14 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 void bench_register_nanopb(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "nanopb", "0.4.9.2", "schema", prep, ser, de, fidelity_fx);
 }
+
+/* gld-ffi-export */
+int bench_nanopb_prep(test_data_kind_t kind, const test_fixture_t *fx) {
+    return prep(kind, fx);
+}
+int bench_nanopb_ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    return ser(fx, buf, cap, ol);
+}
+int bench_nanopb_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
+    return de(buf, len, out, kind);
+}

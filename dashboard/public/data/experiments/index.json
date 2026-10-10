@@ -1,8 +1,8 @@
 {
   "schema": "gld.dashboard.experiments/1",
   "generated_at": "2026-10-10T20:43:43Z",
-  "count": 14,
-  "with_results": 14,
+  "count": 15,
+  "with_results": 15,
   "experiments": [
     {
       "id": "01-json-library-bakeoff",
@@ -3116,6 +3116,40 @@
         }
       ],
       "source_bytes": 102193
+    },
+    {
+      "id": "15-fortran-ffi-tax",
+      "folder": "15-fortran-ffi-tax",
+      "number": 15,
+      "slug": "fortran-ffi-tax",
+      "title": "What does a Fortran call add?",
+      "question": "For one shop order, how much time does a Fortran call add over the C runner calling the same C library?",
+      "story": {
+        "why": "The Fortran leaderboard times pure Fortran libraries. This experiment is the other question, how much the language crossing costs when the library is C.",
+        "example": "A Fortran program already has the order in a Fortran type. Inside the timer it copies that order into the C structure and calls the same C adapter the C runner times.",
+        "tradeoff": "The Fortran row includes that copy. Moving the copy outside the timer would hide the cost a Fortran caller pays. The gap is the result."
+      },
+      "sample_preview": [],
+      "has_results": true,
+      "payload": "experiments/15-fortran-ffi-tax.json.gz",
+      "generated_at": "2026-10-10T20:43:34Z",
+      "sample": {
+        "kind": "document",
+        "n": 1
+      },
+      "languages": [
+        {
+          "id": "c",
+          "status": "ok",
+          "rows": 12
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 10
+        }
+      ],
+      "source_bytes": 22480
     }
   ]
 }
