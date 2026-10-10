@@ -729,11 +729,10 @@ jobs:
       - name: Install Fortran compiler and compression libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran-13 zlib1g-dev libzstd-dev cmake pkg-config
-          # Scientific rows: HDF5 Fortran and NetCDF Fortran from apt (same
-          # compiler generation as gfortran-13 on ubuntu-latest). ADIOS2 is
-          # built from the pinned release, MPI off.
-          sudo apt-get install -y libhdf5-dev libhdf5-fortran-dev libnetcdf-dev libnetcdff-dev
+          sudo apt-get install -y gfortran-13 zlib1g-dev libzstd-dev cmake pkg-config \
+            libhdf5-dev libnetcdf-dev libnetcdff-dev
+          # HDF5 Fortran modules ship in libhdf5-dev. ADIOS2 is the pinned
+          # serial release, MPI off. ubuntu-latest has no libhdf5-fortran-dev.
           ./fortran/scripts/build-adios2.sh
           echo "FPM_FC=gfortran-13" >> "$GITHUB_ENV"
           echo "${HOME}/.local/lib" >> "$GITHUB_PATH"
