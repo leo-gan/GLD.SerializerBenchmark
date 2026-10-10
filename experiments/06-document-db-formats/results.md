@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -24,6 +24,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
 | zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-json` | — | `mojo-json`, `mojo-cbor` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `jonquil`, `json-fortran` | — | `jonquil`, `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -137,6 +138,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | EmberJson | 2.16 | 452 | JSON | slower |
 | mojo-cbor | 4.62 | 329 | CBOR | slower |
 | ehsanmok-json | 7.78 | 452 | JSON — ehsanmok/json | slower |
+
+### fortran
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| jonquil | 78.2 | 505 | JSON — jonquil | fastest |
+| json-fortran | 80.9 | 473 | JSON — json-fortran | similar |
+| rojff | 103 | 473 | JSON — rojff | slower |
 
 ## What we saw
 

@@ -247,6 +247,43 @@ check_zig() {
   fi
 }
 
+check_fortran() {
+  echo "fortran"
+  local fc="" major
+  if [[ -x "${HOME}/.local/gfortran13/bin/gfortran" ]]; then
+    fc="${HOME}/.local/gfortran13/bin/gfortran"
+  elif command -v gfortran-13 >/dev/null 2>&1; then
+    fc="gfortran-13"
+  elif command -v gfortran >/dev/null 2>&1; then
+    fc="gfortran"
+  fi
+  if [[ -z "$fc" ]]; then
+    miss "gfortran 13 — Ubuntu 24.04: sudo apt-get install gfortran-13. This host has no gfortran."
+  else
+    major="$("$fc" -dumpversion 2>/dev/null | cut -d. -f1)"
+    if [[ "${major:-0}" -ge 13 ]]; then
+      ok "gfortran ${major} ($("$fc" --version 2>/dev/null | head -1))"
+    else
+      miss "gfortran ${major} is too old for this runner. Install gfortran 13 (Ubuntu 24.04: sudo apt-get install gfortran-13; or a user-local GCC 13). /usr/bin/gfortran on Ubuntu 22.04 is 11 and does not satisfy the check."
+    fi
+  fi
+  if command -v fpm >/dev/null 2>&1; then
+    ok "fpm ($(fpm --version 2>/dev/null | head -1))"
+  else
+    miss "fpm — ./scripts/install-host-requirements.sh fortran"
+  fi
+  if [[ -f /usr/include/zlib.h ]] || [[ -f /usr/local/include/zlib.h ]]; then
+    ok "zlib headers"
+  else
+    miss "zlib headers — sudo apt-get install zlib1g-dev"
+  fi
+  if [[ -f /usr/include/zstd.h ]] || [[ -f /usr/local/include/zstd.h ]]; then
+    ok "libzstd headers"
+  else
+    miss "libzstd headers — sudo apt-get install libzstd-dev"
+  fi
+}
+
 check_mojo() {
   echo "mojo"
   if [[ -x "${HOME}/.pixi/bin/pixi" ]]; then
@@ -268,7 +305,7 @@ check_mojo() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo)
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo fortran)
 
 resolve_targets() {
   local args=("$@")
@@ -281,7 +318,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo fortran)
     fi
     return
   fi
@@ -313,6 +350,7 @@ for t in "${TARGETS[@]}"; do
     swift) check_swift ;;
     zig) check_zig ;;
     mojo) check_mojo ;;
+    fortran) check_fortran ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

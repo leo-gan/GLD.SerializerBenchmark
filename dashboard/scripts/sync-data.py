@@ -134,7 +134,7 @@ def main():
         shutil.copy2(sources_src, sources_dst)
         print(f"Copied serializer-sources.json → {sources_dst}")
 
-    languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift", "zig", "mojo"]
+    languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift", "zig", "mojo", "fortran"]
     available_runs = {}
 
     for lang in languages:

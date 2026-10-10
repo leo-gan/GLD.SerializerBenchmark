@@ -6,7 +6,7 @@ hide:
   - title
 ---
 
-Compare **200+** serialization libraries across **13 languages** with fair
+Compare **200+** serialization libraries across **14 languages** with fair
 within-language rankings—not marketing microbenchmarks.
 
 [Open live Dashboard](dashboard/){ .md-button .md-button--primary }
@@ -45,13 +45,14 @@ indexes list the roster and caveats.
 
 ## Languages
 
-Thirteen runners share the same fixtures and analysis rules.
+Fourteen runners share the same fixtures and analysis rules.
 
 | Language | Serializers |
 |----------|------------:|
 | [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
 | [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 50 |
 | [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
+| [Fortran](fortran/) · [Dashboard](dashboard/?lang=fortran) | 6 |
 | [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |
 | [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 25 |

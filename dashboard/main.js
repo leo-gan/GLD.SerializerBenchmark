@@ -120,6 +120,7 @@ const LANGUAGE_CATALOG = [
   { id: 'c', label: 'C' },
   { id: 'csharp', label: 'C#' },
   { id: 'cpp', label: 'C++' },
+  { id: 'fortran', label: 'Fortran' },
   { id: 'go', label: 'Go' },
   { id: 'java', label: 'Java' },
   { id: 'javascript', label: 'JavaScript' },

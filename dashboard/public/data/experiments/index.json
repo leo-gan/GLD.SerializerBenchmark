@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-09-30T02:01:33Z",
+  "generated_at": "2026-10-10T20:43:43Z",
   "count": 14,
   "with_results": 14,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-09-30T01:40:52Z",
+      "generated_at": "2026-10-10T20:41:54Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -117,9 +117,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 3
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 3
         }
       ],
-      "source_bytes": 123143
+      "source_bytes": 126588
     },
     {
       "id": "02-flat-record-formats",
@@ -165,7 +170,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-09-30T01:41:47Z",
+      "generated_at": "2026-10-10T20:41:59Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -238,9 +243,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 16
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 6
         }
       ],
-      "source_bytes": 218605
+      "source_bytes": 225935
     },
     {
       "id": "03-one-language-store",
@@ -272,7 +282,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-one-language-store.json.gz",
-      "generated_at": "2026-09-30T01:41:51Z",
+      "generated_at": "2026-10-10T20:41:11Z",
       "sample": {
         "kind": "message",
         "n": 1
@@ -312,9 +322,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 8
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 3
         }
       ],
-      "source_bytes": 72400
+      "source_bytes": 76358
     },
     {
       "id": "04-sensor-list-size",
@@ -1179,7 +1194,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-09-30T01:43:52Z",
+      "generated_at": "2026-10-10T20:42:07Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1252,9 +1267,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 16
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 6
         }
       ],
-      "source_bytes": 195846
+      "source_bytes": 203157
     },
     {
       "id": "06-document-db-formats",
@@ -1299,7 +1319,7 @@
       ],
       "has_results": true,
       "payload": "experiments/06-document-db-formats.json.gz",
-      "generated_at": "2026-09-30T01:43:58Z",
+      "generated_at": "2026-10-10T20:42:09Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1354,9 +1374,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 4
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 3
         }
       ],
-      "source_bytes": 51533
+      "source_bytes": 55534
     },
     {
       "id": "07-write-once-read-many",
@@ -1927,7 +1952,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-09-30T01:44:32Z",
+      "generated_at": "2026-10-10T20:41:14Z",
       "sample": {
         "kind": [
           "document",
@@ -1995,9 +2020,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 6
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 8
         }
       ],
-      "source_bytes": 101317
+      "source_bytes": 111002
     },
     {
       "id": "08-human-files",
@@ -2055,7 +2085,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-09-30T01:44:55Z",
+      "generated_at": "2026-10-10T20:42:11Z",
       "sample": {
         "kind": [
           "document",
@@ -2128,9 +2158,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 8
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 4
         }
       ],
-      "source_bytes": 99015
+      "source_bytes": 104523
     },
     {
       "id": "09-compression-size",
@@ -2317,7 +2352,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-09-30T01:45:26Z",
+      "generated_at": "2026-10-10T20:42:14Z",
       "sample": {
         "kind": [
           "strings",
@@ -2391,9 +2426,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 24
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 12
         }
       ],
-      "source_bytes": 219641
+      "source_bytes": 234022
     },
     {
       "id": "10-one-vs-hundred",
@@ -2495,7 +2535,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-09-30T01:47:36Z",
+      "generated_at": "2026-10-10T20:42:28Z",
       "sample": {
         "kind": [
           "message",
@@ -2571,9 +2611,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 32
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 12
         }
       ],
-      "source_bytes": 332507
+      "source_bytes": 346989
     },
     {
       "id": "11-memory-vs-stream",
@@ -2705,7 +2750,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-09-30T01:47:51Z",
+      "generated_at": "2026-10-10T20:42:30Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2755,9 +2800,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 8
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 3
         }
       ],
-      "source_bytes": 115162
+      "source_bytes": 119127
     },
     {
       "id": "13-ranking-accident",
@@ -2857,7 +2907,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-09-30T01:56:57Z",
+      "generated_at": "2026-10-10T20:43:17Z",
       "sample": {
         "kind": [
           "document",
@@ -2936,9 +2986,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 30
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 30
         }
       ],
-      "source_bytes": 878571
+      "source_bytes": 914141
     },
     {
       "id": "14-starter-kit",
@@ -2983,7 +3038,7 @@
       ],
       "has_results": true,
       "payload": "experiments/14-starter-kit.json.gz",
-      "generated_at": "2026-09-30T01:57:14Z",
+      "generated_at": "2026-10-10T20:43:19Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -3053,9 +3108,14 @@
           "id": "mojo",
           "status": "ok",
           "rows": 7
+        },
+        {
+          "id": "fortran",
+          "status": "ok",
+          "rows": 1
         }
       ],
-      "source_bytes": 100698
+      "source_bytes": 102193
     }
   ]
 }

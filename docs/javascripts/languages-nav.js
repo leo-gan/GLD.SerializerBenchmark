@@ -13,6 +13,7 @@
     "c-sharp": "csharp",
     c: "c",
     cpp: "cpp",
+    fortran: "fortran",
     go: "go",
     java: "java",
     javascript: "javascript",

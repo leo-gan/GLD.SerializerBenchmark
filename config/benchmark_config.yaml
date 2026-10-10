@@ -239,6 +239,7 @@ paths:
     swift: logs/swift
     zig: logs/zig
     mojo: logs/mojo
+    fortran: logs/fortran
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -1759,3 +1760,45 @@ languages:
         package: "generated Swift package swift/DagrGen (dagr build, schemas/v2/dagr)"
         rationale: "Dagr data-graph format; frozen+packed nodes; generated direct builder + lazy reader"
         optimal_api: "Direct.* value structs → store into a reused DataArenaBuilder / lazy <T>Accessor → domain"
+
+  fortran:
+    display_name: Fortran
+    enabled: true
+    runner_dir: fortran
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/fortran
+    time_unit: nanoseconds
+    docs_dir: docs/fortran
+    # Timed path is an in-memory string or buffer. There is no second I/O API.
+    stream_policy: bytes_only
+    serializers:
+      - name: json-fortran
+        category: json
+        package: jacobwilliams/json-fortran
+        rationale: "Modern Fortran JSON DOM (json_core). Built with -DINT64 -DREAL64 so epoch milliseconds stay JSON integers."
+        optimal_api: "json_core%serialize / json_core%deserialize"
+      - name: jonquil
+        category: json
+        package: toml-f/jonquil
+        rationale: "JSON reader and writer on the toml-f document model"
+        optimal_api: "json_dumps / json_loads"
+      - name: rojff
+        category: json
+        package: everythingfunctional/rojff
+        rationale: "Pure Fortran JSON value tree. Default integer kind is int32; wider integers are JSON numbers."
+        optimal_api: "to_compact_string / parse_json_from_string"
+      - name: toml-f
+        category: text
+        package: toml-f/toml-f
+        rationale: "TOML 1.0 reader and writer. N>1 uses a records table because TOML has no bare array root."
+        optimal_api: "toml_serialize / toml_loads"
+      - name: fortran-messagepack
+        category: binary
+        package: synthfi/fortran-messagepack
+        rationale: "Pure Fortran MessagePack pack and unpack, including int64"
+        optimal_api: "pack_alloc / unpack"
+      - name: custom-binary
+        category: binary
+        package: harness
+        rationale: "Little-endian length-prefixed V2 baseline (no public spec)"
+        optimal_api: "cb_serialize / cb_deserialize"

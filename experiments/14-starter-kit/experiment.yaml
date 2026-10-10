@@ -148,3 +148,8 @@ languages:
       - {name: mojo-protobuf, writes_named_fields: true, role: Protocol Buffers}
       - {name: mojo-avro, writes_named_fields: true, role: Avro}
       - {name: mojo-toml, writes_named_fields: true, role: TOML}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: json-fortran, writes_named_fields: true, role: public JSON — json-fortran}

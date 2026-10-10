@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | javascript | ok | `protobufjs` | — | `protobufjs` | [javascript/results.md](javascript/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro` | `mojo-json` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `json-fortran`, `jonquil` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -149,6 +150,16 @@ Every listed library (same library across formats, and same format across librar
 | mojo-cbor | 4.85 | 329 | CBOR | slower |
 | ehsanmok-json | 8.05 | 452 | JSON — ehsanmok/json | slower |
 | mojo-toml | 80.6 | 489 | TOML | slower |
+
+### fortran
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json-fortran | 85.7 | 473 | json-fortran — JSON | fastest |
+| jonquil | 86.1 | 505 | jonquil — JSON | similar |
+| rojff | 111 | 473 | rojff — JSON | slower |
 
 ## What we saw
 

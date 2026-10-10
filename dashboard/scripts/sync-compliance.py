@@ -92,6 +92,7 @@ def _pick_sources(log_dir: Path) -> list[Path]:
         "swift",
         "zig",
         "mojo",
+        "fortran",
     ):
         p = log_dir / f"latest-{lang}.json"
         if p.is_file() and p.stat().st_size > 0:

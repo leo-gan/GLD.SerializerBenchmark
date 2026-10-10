@@ -48,6 +48,7 @@ const LANG_LABELS = {
   cpp: 'C++',
   swift: 'Swift',
   zig: 'Zig',
+  fortran: 'Fortran',
 };
 const KIND_LABELS = {
   document: 'one order',

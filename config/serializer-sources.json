@@ -35,7 +35,7 @@
       "jansson": {
         "source_url": "https://github.com/akheron/jansson",
         "version": "2.15.1",
-        "specifics": "Jansson was created to give C a complete, documented JSON library with a stable API — encode, decode, and manipulate values — not just a minimal parser. The problem was that many C JSON snippets were incomplete or awkward to embed. Jansson solves it with a reference-counted value type and an API aimed at RFC 8259."
+        "specifics": "Jansson was created to give C a complete, documented JSON library with a stable API \u2014 encode, decode, and manipulate values \u2014 not just a minimal parser. The problem was that many C JSON snippets were incomplete or awkward to embed. Jansson solves it with a reference-counted value type and an API aimed at RFC 8259."
       },
       "json-c": {
         "source_url": "https://github.com/json-c/json-c",
@@ -156,7 +156,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "1.0.x",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "cereal": {
         "source_url": "https://github.com/USCiLab/cereal",
@@ -408,17 +408,17 @@
       "MS Bond Compact": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
       },
       "MS Bond Fast": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
       },
       "MS Bond Json": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
       },
       "MS DataContract": {
         "source_url": "https://github.com/dotnet/runtime",
@@ -572,6 +572,38 @@
         "source_url": "https://github.com/aloneguid/parquet-dotnet",
         "version": "6.1.0",
         "specifics": "This is the same Parquet.Net writer as parquet, with CompressionMethod.None. Encodings stay at the library default. The name is the override. No compliance decoder."
+      }
+    },
+    "fortran": {
+      "custom-binary": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90",
+        "version": "v2-1.0",
+        "specifics": "This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler."
+      },
+      "fortran-messagepack": {
+        "source_url": "https://github.com/synthfi/fortran-messagepack",
+        "version": "0.3.1",
+        "specifics": "fortran-messagepack is a pure Fortran MessagePack library. MessagePack exists as a compact binary form of JSON-like values. This row times pack_alloc and unpack. Integers are MessagePack integers, including int64 epoch milliseconds."
+      },
+      "jonquil": {
+        "source_url": "https://github.com/toml-f/jonquil",
+        "version": "0.3.2",
+        "specifics": "Jonquil is a JSON library for Fortran, built on TOML Fortran. It exists so a Fortran program can parse and serialize JSON with the same document model as toml-f. This row times json_dumps and json_loads."
+      },
+      "json-fortran": {
+        "source_url": "https://github.com/jacobwilliams/json-fortran",
+        "version": "9.3.1",
+        "specifics": "JSON-Fortran is a modern Fortran JSON API. It exists so Fortran programs can read and write JSON without calling a C library. This row times json_core serialize and deserialize. The runner builds it with -DINT64 and -DREAL64, so json_IK is int64 and json_RK is real64. Epoch milliseconds stay JSON integers."
+      },
+      "rojff": {
+        "source_url": "https://github.com/everythingfunctional/rojff",
+        "version": "9f68e5aa4c12",
+        "specifics": "rojff (Return of JSON for Fortran) is a pure Fortran JSON value tree. It was written to construct JSON faster than earlier Fortran JSON libraries, with functional constructors and a move API. This row times to_compact_string and parse_json_from_string. Its integer kind is the compiler's default integer, int32 here. Values outside that range are written as JSON numbers so the integer reader does not overflow, and are read back with nint."
+      },
+      "toml-f": {
+        "source_url": "https://github.com/toml-f/toml-f",
+        "version": "0.5.2",
+        "specifics": "TOML Fortran is a TOML 1.0 parser and serializer for Fortran. It exists so Fortran projects can load and save configuration as TOML. This row times toml_serialize and toml_loads. A batch of more than one record is a table with a records array, because TOML has no bare array at the root. The JSON rows use the same envelope so one reader serves both."
       }
     },
     "go": {
@@ -745,7 +777,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto-java",
         "version": "unknown",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "dsl-json": {
         "source_url": "https://github.com/ngs-doo/dsl-json",
@@ -932,7 +964,7 @@
       "devalue": {
         "source_url": "https://github.com/Rich-Harris/devalue",
         "version": "5.9.2",
-        "specifics": "devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows — dates, maps, cyclical graphs — without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format."
+        "specifics": "devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows \u2014 dates, maps, cyclical graphs \u2014 without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format."
       },
       "fast-json-stringify": {
         "source_url": "https://github.com/fastify/fast-json-stringify",
@@ -1029,7 +1061,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto-java",
         "version": "0.1.16",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "flatbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1379,7 +1411,7 @@
       "cloudpickle": {
         "source_url": "https://github.com/cloudpipe/cloudpickle",
         "version": "3.1.2",
-        "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats."
+        "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model \u2014 with the same security caveats."
       },
       "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
@@ -1616,7 +1648,7 @@
       "serde_avro_fast": {
         "source_url": "https://github.com/Ten0/serde_avro_fast",
         "version": "2.1.1",
-        "specifics": "serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-× slower on small records."
+        "specifics": "serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-\u00d7 slower on small records."
       },
       "serde_json": {
         "source_url": "https://github.com/serde-rs/json",
@@ -1648,12 +1680,12 @@
       "BinaryCodable": {
         "source_url": "https://github.com/christophhagen/BinaryCodable",
         "version": "4.0.0",
-        "specifics": "BinaryCodable is a pure-Swift binary Codable implementation. It was written so Swift types could have a simple binary encoding without an IDL — Swift-only, not a public standard."
+        "specifics": "BinaryCodable is a pure-Swift binary Codable implementation. It was written so Swift types could have a simple binary encoding without an IDL \u2014 Swift-only, not a public standard."
       },
       "CapnProto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "capnproto-1.0.2",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "FlatBuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1744,7 +1776,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "1.0.2",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "comptime-bin": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",

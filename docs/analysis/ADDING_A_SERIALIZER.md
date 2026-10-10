@@ -146,6 +146,7 @@ Add the library to the language package manifest and restore/build once:
 | PHP | `php/composer.json` → `composer install` |
 | Zig | `zig/build.zig.zon` → `zig build` |
 | Mojo | `mojo/pixi.toml` → `pixi install` |
+| Fortran | `fortran/fpm.toml` → `fpm build --profile release` |
 | C / C++ / Swift | language README (system or vendored deps) |
 
 Pin a sensible range (for example NuGet `1.*`, cargo compatible versions). Prefer the latest stable major the suite already uses for peers.
@@ -168,6 +169,7 @@ Typical locations:
 | PHP | `php/src/Serializers/` | suite interface |
 | Zig | `zig/src/` | suite vtable + registry |
 | Mojo | `mojo/src/bench/` | per-library wrapper + runner dispatch |
+| Fortran | `fortran/src/ser_*.f90` | one module per library; `app/runner.f90` dispatches |
 
 **Name property:** stable display string used as CSV `SerializerName` (for example `LightProto`, `ProtoBuf`). Do not change existing names without a docs migration.
 

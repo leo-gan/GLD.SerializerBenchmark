@@ -136,3 +136,10 @@ languages:
       - {name: mojo-flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: mojo-avro, writes_named_fields: true, role: Avro}
       - {name: mojo-toml, writes_named_fields: true, role: TOML}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: json-fortran, writes_named_fields: true, role: json-fortran — JSON}
+      - {name: jonquil, writes_named_fields: true, role: jonquil — JSON}
+      - {name: rojff, writes_named_fields: true, role: rojff — JSON}

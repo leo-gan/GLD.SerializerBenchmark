@@ -33,7 +33,7 @@ cited RFC/spec sections, no timings.
 OPTIONS:
     -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
-    -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c
+    -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c fortran
     -d, --detailed        Print every case, not only the summary and failures
     -o, --json-out PATH   Write the machine-readable report (default: logs/compliance/<ts>.json)
     -h, --help            Show this help message
@@ -388,6 +388,36 @@ print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializ
 PY
         if [[ -s "$ZIG_OUT" ]]; then
             cp -f "$ZIG_OUT" "$LOG_DIR/latest-zig.json"
+        fi
+    fi
+fi
+if want_lang fortran && [[ -f "$PROJECT_ROOT/fortran/app/compliance.f90" ]]; then
+    echo ""
+    echo -e "${BLUE}fortran compliance…${NC}"
+    FORTRAN_OUT="$LOG_DIR/${TS}-fortran.json"
+    set +e
+    (
+        cd "$PROJECT_ROOT/fortran"
+        # shellcheck disable=SC1091
+        source scripts/fpm-env.sh
+        export PATH="${HOME}/.local/bin:${PATH}"
+        fpm build --profile release
+    )
+    build_st=$?
+    set -e
+    if [[ "$build_st" -ne 0 ]]; then
+        echo -e "${YELLOW}⚠ fortran compliance failed to build${NC}"
+    else
+        FMT_ARGS=()
+        for f in "${FORMATS[@]+"${FORMATS[@]}"}"; do
+            FMT_ARGS+=(--format "$f")
+        done
+        for s in "${ADAPTERS[@]+"${ADAPTERS[@]}"}"; do
+            FMT_ARGS+=(--serializer "$s")
+        done
+        python3 "$PROJECT_ROOT/fortran/scripts/compliance_report.py" --out "$FORTRAN_OUT" "${FMT_ARGS[@]+"${FMT_ARGS[@]}"}" || true
+        if [[ -s "$FORTRAN_OUT" ]]; then
+            cp -f "$FORTRAN_OUT" "$LOG_DIR/latest-fortran.json"
         fi
     fi
 fi

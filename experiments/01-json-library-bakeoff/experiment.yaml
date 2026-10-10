@@ -164,3 +164,10 @@ languages:
       - {name: EmberJson, writes_named_fields: true, role: pure-Mojo JSON}
       - {name: mojo-json, writes_named_fields: true, role: typed Mojo JSON}
       - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: json-fortran, writes_named_fields: true, role: JSON — json-fortran}
+      - {name: jonquil, writes_named_fields: true, role: JSON — jonquil}
+      - {name: rojff, writes_named_fields: true, role: JSON — rojff}

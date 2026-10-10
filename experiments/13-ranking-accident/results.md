@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | yes | [swift/results.md](swift/results.md) |
 | zig | serde.json | serde.json | serde.json | serde.json | serde.json | yes | [zig/results.md](zig/results.md) |
 | mojo | mojo-json | mojo-json | mojo-json | EmberJson | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| fortran | jonquil | jonquil | jonquil | json-fortran | json-fortran | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -95,6 +96,11 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo | C (sensor) | mojo-json | mojo-json | yes |
 | mojo | D (event) | EmberJson | EmberJson | yes |
 | mojo | E (words) | EmberJson | EmberJson | yes |
+| fortran | A (order) | jonquil | json-fortran | no |
+| fortran | B (flat) | jonquil | json-fortran | no |
+| fortran | C (sensor) | jonquil | json-fortran | no |
+| fortran | D (event) | json-fortran | json-fortran | yes |
+| fortran | E (words) | json-fortran | json-fortran | yes |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -113,6 +119,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | ok | `IkigaJSON` | — |
 | zig | ok | `serde.json` | — |
 | mojo | ok | `mojo-json` | — |
+| fortran | ok | `jonquil`, `json-fortran` | — |
 
 ## In memory, by language and sample
 
@@ -1411,6 +1418,88 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo-json | 274 | 49656 | fastest |
 | EmberJson | 403 | 66898 | slower |
 | ehsanmok-json | 1289 | 66902 | slower |
+
+### fortran
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jonquil | 86.5 | 505 | fastest |
+| json-fortran | 89.5 | 473 | similar |
+| rojff | 116 | 473 | slower |
+
+**A (order), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 6609 | 46434 | fastest |
+| rojff | 10642 | 46434 | slower |
+| jonquil | 26629 | 49527 | slower |
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 40.8 | 258 | fastest |
+| jonquil | 48.9 | 273 | slower |
+| rojff | 64.5 | 260 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 2239 | 26647 | fastest |
+| rojff | 4825 | 26847 | slower |
+| jonquil | 8224 | 28040 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jonquil | 45.7 | 180 | fastest |
+| json-fortran | 46.5 | 172 | similar |
+| rojff | 50.8 | 168 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 1877 | 17806 | fastest |
+| rojff | 2727 | 17406 | slower |
+| jonquil | 3460 | 18509 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 44.8 | 430 | fastest |
+| jonquil | 63.6 | 433 | slower |
+| rojff | 64.2 | 430 | slower |
+
+**E (words), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 2776 | 42110 | fastest |
+| rojff | 6146 | 42110 | slower |
+| jonquil | 14630 | 42303 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jonquil | 106 | 722 | fastest |
+| json-fortran | 111 | 811 | slower |
+| rojff | 209 | 685 | slower |
+
+**C (sensor), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 10251 | 82130 | fastest |
+| rojff | 19895 | 69558 | slower |
+| jonquil | 27445 | 73072 | slower |
 
 ## What we saw
 

@@ -103,6 +103,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
 | C# | **50** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **39** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
+| Fortran | **6** | [Overview](../fortran/index.md) | [Dashboard](../dashboard/?lang=fortran) |
 | Go | **30** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **27** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **29** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
@@ -118,7 +119,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 
 ‡ C++ registers **39** on this machine when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers (**34** here; Boost.Serialization is not installed).
 
-**Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, and `mojo`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
+**Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`, and `fortran`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
 
 To refresh published numbers after a local run, pack Dashboard data with `python3 dashboard/scripts/sync-data.py`. Regeneration and claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).
 

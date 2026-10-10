@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | — | SwiftProtobuf | — | SwiftProtobuf | — | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | — | comptime-bin | — | no | [zig/results.md](zig/results.md) |
 | mojo | — | mojo-protobuf | — | EmberJson | — | no | [mojo/results.md](mojo/results.md) |
+| fortran | — | custom-binary | — | custom-binary | — | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -56,6 +57,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | zig | D (event) | comptime-bin | comptime-bin | yes |
 | mojo | B (flat) | mojo-protobuf | mojo-avro | no |
 | mojo | D (event) | EmberJson | EmberJson | yes |
+| fortran | B (flat) | custom-binary | custom-binary | yes |
+| fortran | D (event) | custom-binary | custom-binary | yes |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -74,6 +77,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | ok | — | — |
 | zig | ok | — | — |
 | mojo | ok | — | — |
+| fortran | ok | — | — |
 
 ## In memory, by language and sample
 
@@ -614,6 +618,40 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo-cbor | 135 | 12037 | slower |
 | ehsanmok-json | 312 | 16556 | slower |
 | mojo-toml | 1634 | 17554 | slower |
+
+### fortran
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 2.89 | 113 | fastest |
+| json-fortran | 44.7 | 258 | slower |
+| fortran-messagepack | 66.9 | 197 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 122 | 12029 | fastest |
+| json-fortran | 2284 | 26647 | slower |
+| fortran-messagepack | 4444 | 20443 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 2.16 | 44 | fastest |
+| fortran-messagepack | 45.4 | 120 | slower |
+| json-fortran | 46.3 | 172 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 81.1 | 4956 | fastest |
+| fortran-messagepack | 1546 | 12536 | slower |
+| json-fortran | 1962 | 17806 | slower |
 
 ## What we saw
 

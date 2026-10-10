@@ -935,6 +935,24 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": []
+    },
+    "fortran": {
+      "json-fortran": [
+        "json"
+      ],
+      "jonquil": [
+        "json"
+      ],
+      "rojff": [
+        "json"
+      ],
+      "toml-f": [
+        "toml"
+      ],
+      "fortran-messagepack": [
+        "msgpack"
+      ],
+      "custom-binary": []
     }
   }
 }

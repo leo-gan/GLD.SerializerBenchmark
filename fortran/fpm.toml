@@ -1,0 +1,36 @@
+name = "gld-fortran-bench"
+version = "0.0.0"
+license = "MIT"
+author = "GLD.SerializerBenchmark"
+description = "Fortran serializer benchmark runner"
+
+[build]
+auto-executables = false
+auto-tests = false
+auto-examples = false
+link = ["z", "zstd"]
+
+[library]
+source-dir = "src"
+
+[dependencies]
+json-fortran = { git = "https://github.com/jacobwilliams/json-fortran", tag = "9.3.1" }
+jonquil = { git = "https://github.com/toml-f/jonquil", tag = "v0.3.2" }
+toml-f = { git = "https://github.com/toml-f/toml-f", tag = "v0.5.2" }
+rojff = { git = "https://github.com/everythingfunctional/rojff", rev = "9f68e5aa4c12b32720d4224f1ac279bfd7d77b93" }
+fortran_messagepack = { git = "https://github.com/synthfi/fortran-messagepack", tag = "v0.3.1" }
+
+[[executable]]
+name = "serializer_benchmark_fortran"
+source-dir = "app"
+main = "runner.f90"
+
+[[executable]]
+name = "compliance_fortran"
+source-dir = "app"
+main = "compliance.f90"
+
+[[test]]
+name = "roundtrip"
+source-dir = "test"
+main = "test_roundtrip.f90"

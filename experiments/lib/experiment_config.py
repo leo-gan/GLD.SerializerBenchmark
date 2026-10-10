@@ -32,6 +32,7 @@ RUNNERS: dict[str, str] = {
     "php": "php/scripts/run-benchmarks.sh",
     "zig": "zig/scripts/run-benchmarks.sh",
     "mojo": "mojo/scripts/run-benchmarks.sh",
+    "fortran": "fortran/scripts/run-benchmarks.sh",
 }
 
 

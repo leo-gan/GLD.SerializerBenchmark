@@ -176,6 +176,11 @@ cpp/third_party/**
 swift/.build/
 swift/.swiftpm/
 
+# Fortran harness. fpm's build/ directory is already ignored by the global build/ rule.
+fortran/build-cmake/
+fortran/*.mod
+fortran/ffi/ffi_bench
+
 # Zig
 zig/.zig-cache/
 zig/zig-out/

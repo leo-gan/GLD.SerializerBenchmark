@@ -34,6 +34,7 @@ DOCS = {
     "swift": ROOT / "docs" / "swift" / "index.md",
     "zig": ROOT / "docs" / "zig" / "index.md",
     "mojo": ROOT / "docs" / "mojo" / "index.md",
+    "fortran": ROOT / "docs" / "fortran" / "index.md",
 }
 
 HEADING_RE = re.compile(r"^## Serializers(?:\s+\(.*\))?\s*$", re.M)
