@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -27,6 +27,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf` | [swift/results.md](swift/results.md) |
 | zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `json-fortran` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -149,6 +150,12 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 | mojo-cbor | 4.81 | 329 | CBOR | slower |
 | ehsanmok-json | 8.05 | 452 | JSON — ehsanmok/json | slower |
 | mojo-toml | 80.8 | 489 | TOML | slower |
+
+### fortran
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json-fortran | 84.8 | 473 | public JSON — json-fortran | fastest |
 
 ## What this page is not
 

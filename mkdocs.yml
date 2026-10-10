@@ -173,6 +173,7 @@ nav:
               - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - Other languages:
               - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
+              - "Fortran: json-fortran vs rojff": theory/401/fortran-json-fortran-vs-rojff.md
               - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
               - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
               - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
@@ -187,6 +188,8 @@ nav:
           - Overview: c-sharp/index.md
       - C++:
           - Overview: cpp/index.md
+      - Fortran:
+          - Overview: fortran/index.md
       - Go:
           - Overview: go/index.md
       - Java:

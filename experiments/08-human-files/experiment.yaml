@@ -127,3 +127,9 @@ languages:
       - {name: mojo-json, writes_named_fields: true, role: JSON — mojo-json}
       - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
       - {name: mojo-toml, writes_named_fields: true, role: TOML}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: json-fortran, writes_named_fields: true, role: JSON — json-fortran}
+      - {name: toml-f, writes_named_fields: true, role: TOML}

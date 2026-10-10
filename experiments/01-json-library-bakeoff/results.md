@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -27,6 +27,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | swift | ok | `IkigaJSON` | — | `IkigaJSON` | [swift/results.md](swift/results.md) |
 | zig | ok | `serde.json` | — | `serde.json` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-json` | — | `mojo-json` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `json-fortran`, `jonquil` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## Named JSON, in memory, by language
 
@@ -158,6 +159,14 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 | mojo-json | 1.93 | 452 | fastest |
 | EmberJson | 2.32 | 452 | slower |
 | ehsanmok-json | 8.40 | 452 | slower |
+
+### fortran
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 72.1 | 473 | fastest |
+| jonquil | 72.4 | 505 | similar |
+| rojff | 96.1 | 473 | slower |
 
 ## What this page is not
 

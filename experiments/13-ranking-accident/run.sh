@@ -26,6 +26,7 @@ declare -A RUNNER=(
   [swift]="$REPO/swift/scripts/run-benchmarks.sh"
   [zig]="$REPO/zig/scripts/run-benchmarks.sh"
   [mojo]="$REPO/mojo/scripts/run-benchmarks.sh"
+  [fortran]="$REPO/fortran/scripts/run-benchmarks.sh"
 )
 
 # experiment.yaml is the file to edit. run.yaml is written from it.

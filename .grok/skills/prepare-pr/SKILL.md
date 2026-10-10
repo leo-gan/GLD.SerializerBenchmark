@@ -137,7 +137,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | **Shared (force all enabled langs)** — only *real* contract inputs | |
 | `schemas/**` **except** prose (see below) | → **all** enabled languages |
 | `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `scripts/read-config.py`, `scripts/resolve_run_config.py` | → **all** |
-| `config/benchmark_config.yaml` | → **all** |
+| `config/benchmark_config.yaml` | newly added language ids only (`config_lang_delta.py`); any other edit in that file → **all** |
 | **Always ignored (never select langs, never force-all)** | |
 | `docs/**`, `dashboard/public/data/**`, `logs/**`, `reports/**`, `site/**`, `.grok/**`, `compliance/**` | meta / published artifacts / spec corpus (not a bench runner) |
 | `**/*.md`, `**/*.mdx`, `**/README*`, `LICENSE*` **anywhere** (including under `schemas/`, `scripts/`, or a language tree) | prose-only; e.g. terminology edits in `schemas/v2/README.md` must **not** re-bench the world |
@@ -269,7 +269,7 @@ else
 fi
 ```
 
-- Language ids match `run-compliance.sh --lang` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`).
+- Language ids match `run-compliance.sh --lang` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`, `fortran`). `--lang fortran` runs `fortran/app/compliance.f90` for json-fortran and toml-f and writes `latest-fortran.json`.
 - Writes `logs/compliance/latest-<lang>.json`. A `--lang` run still calls `dashboard/scripts/sync-compliance.py` and rebuilds `dashboard/public/data/compliance.json.gz` from **all** latest reports (unchanged langs keep their previous files).
 - Library misses are **report-only** (RFC/spec URLs, not a red build). Exit `2` only if the catalog cannot be loaded.
 - Hard fail if the runner exits non-zero **or** a selected language that has a compliance binary is missing `logs/compliance/latest-<lang>.json` after the run.

@@ -106,3 +106,9 @@ languages:
       - {name: mojo-flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: mojo-avro, writes_named_fields: true, role: Avro}
       - {name: mojo-toml, writes_named_fields: true, role: TOML}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: custom-binary, writes_named_fields: false, role: one language — length-prefixed binary}
+      - {name: json-fortran, writes_named_fields: true, role: other languages can read — JSON}

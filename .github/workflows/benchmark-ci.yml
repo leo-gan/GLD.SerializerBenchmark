@@ -85,6 +85,7 @@ jobs:
       swift: ${{ steps.filter.outputs.swift }}
       zig: ${{ steps.filter.outputs.zig }}
       mojo: ${{ steps.filter.outputs.mojo }}
+      fortran: ${{ steps.filter.outputs.fortran }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -149,6 +150,10 @@ jobs:
               - 'schemas/v2/**/*.proto'
             mojo:
               - 'mojo/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
+            fortran:
+              - 'fortran/**'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             analysis:
@@ -712,6 +717,46 @@ jobs:
           export PATH="${HOME}/.pixi/bin:${PATH}"
           ./mojo/scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  fortran-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.fortran == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Fortran compiler and compression libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran-13 zlib1g-dev libzstd-dev cmake pkg-config
+          echo "FPM_FC=gfortran-13" >> "$GITHUB_ENV"
+
+      - name: Install fpm
+        run: ./scripts/install-host-requirements.sh fortran
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (fortran)
+        run: ./scripts/check-host-requirements.sh fortran
+
+      - name: Run Fortran roundtrip test
+        run: |
+          cmake -S fortran -B fortran/build-cmake -DCMAKE_BUILD_TYPE=Release
+          cmake --build fortran/build-cmake -j"$(nproc)"
+          ./fortran/build-cmake/test_roundtrip
+
+      - name: Run Fortran Benchmark
+        run: |
+          export PATH="${HOME}/.local/bin:${PATH}"
+          ./fortran/scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -751,5 +796,6 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw swift
           $PY scripts/read-config.py --enabled-langs | grep -qw zig
           $PY scripts/read-config.py --enabled-langs | grep -qw mojo
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift|zig|mojo)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw fortran
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift|zig|mojo|fortran)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

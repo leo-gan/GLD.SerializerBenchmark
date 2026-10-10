@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | — | SwiftProtobuf | SwiftProtobuf | — | SwiftProtobuf | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | comptime-bin | — | comptime-bin | no | [zig/results.md](zig/results.md) |
 | mojo | — | mojo-avro | mojo-flatbuffers | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| fortran | — | custom-binary | custom-binary | — | custom-binary | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -69,6 +70,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo | B (flat) | mojo-avro | — | no |
 | mojo | C (sensor) | mojo-flatbuffers | — | no |
 | mojo | E (words) | EmberJson | — | no |
+| fortran | B (flat) | custom-binary | — | no |
+| fortran | C (sensor) | custom-binary | — | no |
+| fortran | E (words) | custom-binary | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -87,6 +91,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | ok | — | — |
 | zig | ok | — | — |
 | mojo | ok | — | — |
+| fortran | ok | — | — |
 
 ## In memory, by language and sample
 
@@ -475,6 +480,35 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | EmberJson | 10.2 | 2419 | slower |
 | ehsanmok-json | 36.1 | 2419 | slower |
 | mojo-toml | 180 | 2546 | slower |
+
+### fortran
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 2.01 | 44 | fastest |
+| toml-f | 37.0 | 169 | slower |
+| fortran-messagepack | 41.2 | 120 | slower |
+| json-fortran | 46.0 | 172 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 2.74 | 383 | fastest |
+| json-fortran | 42.5 | 430 | slower |
+| fortran-messagepack | 57.6 | 362 | slower |
+| toml-f | 64.2 | 462 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| custom-binary | 2.92 | 1059 | fastest |
+| fortran-messagepack | 74.9 | 1209 | slower |
+| toml-f | 337 | 2758 | slower |
+| json-fortran | 345 | 3008 | slower |
 
 ## What we saw
 

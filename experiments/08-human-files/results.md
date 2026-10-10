@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | System.Text.Json | — | — | — | System.Text.Json | no | [csharp/results.md](csharp/results.md) |
 | zig | serde.zon | — | — | — | serde.zon | no | [zig/results.md](zig/results.md) |
 | mojo | mojo-json | — | — | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| fortran | toml-f | — | — | — | json-fortran | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -56,6 +57,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | zig | E (words) | serde.zon | — | no |
 | mojo | A (order) | mojo-json | — | no |
 | mojo | E (words) | EmberJson | — | no |
+| fortran | A (order) | toml-f | — | no |
+| fortran | E (words) | json-fortran | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -74,6 +77,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | ok | `System.Text.Json` | — |
 | zig | ok | `serde.zon` | — |
 | mojo | ok | `mojo-json` | — |
+| fortran | ok | `toml-f`, `json-fortran` | — |
 
 ## In memory, by language and sample
 
@@ -302,6 +306,22 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo-json | 2.98 | 411 | slower |
 | ehsanmok-json | 5.82 | 411 | slower |
 | mojo-toml | 33.0 | 441 | slower |
+
+### fortran
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| toml-f | 84.1 | 524 | fastest |
+| json-fortran | 86.8 | 473 | similar |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json-fortran | 47.3 | 430 | fastest |
+| toml-f | 69.9 | 462 | slower |
 
 ## What we saw
 

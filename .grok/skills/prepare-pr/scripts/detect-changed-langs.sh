@@ -36,7 +36,7 @@ if [[ "${PREPARE_PR_BENCH_ALL:-0}" == "1" ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go java kotlin php cpp swift zig mojo"
+    echo "csharp python rust c javascript go java kotlin php cpp swift zig mojo fortran"
   fi
   echo "[detect-changed-langs] PREPARE_PR_BENCH_ALL=1 → all enabled" >&2
   exit 0
@@ -98,22 +98,30 @@ is_shared_force_all() {
     scripts/run-all-benchmarks.sh|scripts/lib/*|scripts/read-config.py|scripts/resolve_run_config.py)
       return 0
       ;;
-    config/benchmark_config.yaml)
-      return 0
-      ;;
   esac
   return 1
 }
 
+# benchmark_config.yaml is not in is_shared_force_all. Adding a language
+# block must not rebench every other language. config_lang_delta.py
+# returns FORCE_ALL for shared keys and for edits to languages that
+# already exist.
+
 declare -A HIT=()
 SHARED_FORCE_ALL=0
 IGNORED_PROSE=0
+CONFIG_TOUCHED=0
 
 for p in "${PATHS[@]}"; do
   [[ -z "$p" ]] && continue
 
   if is_prose_or_meta "$p"; then
     IGNORED_PROSE=1
+    continue
+  fi
+
+  if [[ "$p" == "config/benchmark_config.yaml" ]]; then
+    CONFIG_TOUCHED=1
     continue
   fi
 
@@ -163,8 +171,28 @@ for p in "${PATHS[@]}"; do
     mojo/*)
       HIT[mojo]=1
       ;;
+    fortran/*)
+      HIT[fortran]=1
+      ;;
   esac
 done
+
+if [[ "$CONFIG_TOUCHED" -eq 1 && "$SHARED_FORCE_ALL" -eq 0 ]]; then
+  if ! delta="$(python3 "$SCRIPT_DIR/config_lang_delta.py" --repo "$PROJECT_ROOT" --base "$BASE_REF")"; then
+    echo "[detect-changed-langs] config delta failed → all enabled languages" >&2
+    SHARED_FORCE_ALL=1
+  elif [[ "$delta" == "FORCE_ALL" ]]; then
+    echo "[detect-changed-langs] benchmark_config.yaml shared or existing-language edit → all enabled languages" >&2
+    SHARED_FORCE_ALL=1
+  else
+    for id in $delta; do
+      [[ -n "$id" ]] && HIT[$id]=1
+    done
+    if [[ -n "${delta// /}" ]]; then
+      echo "[detect-changed-langs] benchmark_config.yaml added language(s): $delta" >&2
+    fi
+  fi
+fi
 
 if [[ "$SHARED_FORCE_ALL" -eq 1 ]]; then
   if [[ -f "$PROJECT_ROOT/scripts/lib/config.sh" ]]; then
@@ -177,14 +205,14 @@ if [[ "$SHARED_FORCE_ALL" -eq 1 ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go java kotlin php cpp swift zig mojo"
+    echo "csharp python rust c javascript go java kotlin php cpp swift zig mojo fortran"
   fi
   echo "[detect-changed-langs] shared path change vs $BASE_REF → all enabled languages" >&2
   exit 0
 fi
 
 ids=()
-for id in csharp python rust c javascript go java kotlin php cpp swift zig mojo; do
+for id in csharp python rust c javascript go java kotlin php cpp swift zig mojo fortran; do
   [[ -n "${HIT[$id]:-}" ]] && ids+=("$id")
 done
 

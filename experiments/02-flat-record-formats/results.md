@@ -1,7 +1,7 @@
 # Should two services inside the company stop using JSON?
 
 **Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -27,6 +27,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | swift | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [swift/results.md](swift/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro`, `mojo-protobuf` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `custom-binary` | — | `custom-binary` | [fortran/results.md](fortran/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -45,6 +46,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | swift | missing | — | — | — |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` |
 | mojo | ok | `mojo-avro` | — | `mojo-avro` |
+| fortran | ok | `custom-binary` | — | `custom-binary` |
 
 ## In memory, by language
 
@@ -305,6 +307,24 @@ no CSV in this language folder yet
 | mojo-cbor | 135 | 12037 | CBOR | slower |
 | ehsanmok-json | 314 | 16556 | JSON — ehsanmok/json | slower |
 | mojo-toml | 1660 | 17554 | TOML | slower |
+
+### fortran
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| custom-binary | 1.93 | 44 | one language — length-prefixed binary | fastest |
+| json-fortran | 38.4 | 172 | JSON — json-fortran | slower |
+| fortran-messagepack | 38.8 | 120 | MessagePack | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| custom-binary | 78.6 | 4956 | one language — length-prefixed binary | fastest |
+| fortran-messagepack | 1475 | 12536 | MessagePack | slower |
+| json-fortran | 1890 | 17806 | JSON — json-fortran | slower |
 
 ## What we saw
 

@@ -305,6 +305,7 @@ const LANG_AXIS = {
   cpp: 'C++',
   swift: 'Swift',
   zig: 'Zig',
+  fortran: 'Fortran',
 };
 
 function langAxis(id) {

@@ -341,6 +341,51 @@ install_zig() {
   echo "[OK] $(zig version)"
 }
 
+install_fortran() {
+  bench_extend_host_path
+  local fc="" major
+  if [[ -x "${HOME}/.local/gfortran13/bin/gfortran" ]]; then
+    fc="${HOME}/.local/gfortran13/bin/gfortran"
+  elif command -v gfortran-13 >/dev/null 2>&1; then
+    fc="gfortran-13"
+  elif command -v gfortran >/dev/null 2>&1; then
+    fc="gfortran"
+  fi
+  major="0"
+  if [[ -n "$fc" ]]; then
+    major="$("$fc" -dumpversion 2>/dev/null | cut -d. -f1)"
+  fi
+  if [[ "${major:-0}" -lt 13 ]]; then
+    echo "[ERROR] Fortran needs gfortran 13 or newer. Found: ${fc:-none} (major ${major})." >&2
+    echo "[ERROR] This script does not use sudo. On Ubuntu 24.04:" >&2
+    echo "  sudo apt-get install gfortran-13 zlib1g-dev libzstd-dev" >&2
+    echo "[ERROR] Ubuntu 22.04 has no gfortran-13 package. Install a user-local GCC 13" >&2
+    echo "[ERROR] (conda-forge gfortran=13 into ~/.local/gfortran13, or the toolchain PPA)." >&2
+    exit 1
+  fi
+  echo "[OK] $($fc --version | head -1)"
+  if command -v fpm >/dev/null 2>&1; then
+    echo "[OK] fpm already present: $(command -v fpm)"
+    return
+  fi
+  local arch asset dest
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64) asset="fpm-0.13.0-linux-x86_64-gcc-12" ;;
+    *)
+      echo "[ERROR] No published fpm 0.13.0 binary for ${arch}." >&2
+      echo "[ERROR] Install fpm and put it on PATH, then re-run this check." >&2
+      exit 1
+      ;;
+  esac
+  dest="${HOME}/.local/bin/fpm"
+  mkdir -p "${HOME}/.local/bin"
+  echo "[INFO] Installing fpm 0.13.0 to ${dest}"
+  curl -fsSL "https://github.com/fortran-lang/fpm/releases/download/v0.13.0/${asset}" -o "$dest"
+  chmod +x "$dest"
+  echo "[OK] $("$dest" --version | head -1)"
+}
+
 install_mojo() {
   bench_extend_host_path
   if [[ -x "${HOME}/.pixi/bin/pixi" ]]; then
@@ -358,7 +403,7 @@ install_mojo() {
   echo "[OK] $(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version)"
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo)
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo fortran)
 
 resolve_targets() {
   local args=("$@")
@@ -370,7 +415,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo fortran)
     fi
     return
   fi
@@ -429,6 +474,9 @@ for t in "${TARGETS[@]}"; do
       ;;
     mojo)
       install_mojo
+      ;;
+    fortran)
+      install_fortran
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

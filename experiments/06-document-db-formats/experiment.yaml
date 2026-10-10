@@ -119,3 +119,10 @@ languages:
       - {name: mojo-json, writes_named_fields: true, role: JSON — mojo-json}
       - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
       - {name: mojo-cbor, writes_named_fields: true, role: CBOR}
+
+  - id: fortran
+    enabled: true
+    libraries:
+      - {name: json-fortran, writes_named_fields: true, role: JSON — json-fortran}
+      - {name: jonquil, writes_named_fields: true, role: JSON — jonquil}
+      - {name: rojff, writes_named_fields: true, role: JSON — rojff}

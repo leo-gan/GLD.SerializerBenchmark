@@ -4,9 +4,9 @@
 [![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 [![Serialization 101](https://img.shields.io/badge/Serialization%20101-8A2BE2?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Languages](https://img.shields.io/badge/languages-13-informational?style=flat-square)](#supported-languages)
+[![Languages](https://img.shields.io/badge/languages-14-informational?style=flat-square)](#supported-languages)
 
-Compare 200+ serialization libraries across **13 languages**.
+Compare 300+ serialization libraries across **14 languages**.
 
 | Start here | |
 |------------|--|
@@ -43,6 +43,7 @@ Compare 200+ serialization libraries across **13 languages**.
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21
 - [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 50 serializers registered
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 39 with Arrow (34 without; sbe still registers)
+- [Fortran](https://leo-gan.github.io/GLD.SerializerBenchmark/fortran/) — 6
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 30
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 27
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 29

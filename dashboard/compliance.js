@@ -50,6 +50,7 @@ const LANG_LABELS = {
   cpp: 'C++',
   swift: 'Swift',
   zig: 'Zig',
+  fortran: 'Fortran',
 };
 
 let payload = null;

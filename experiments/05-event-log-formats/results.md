@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -27,6 +27,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` | [swift/results.md](swift/results.md) |
 | zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `EmberJson` | `mojo-json` | `EmberJson`, `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `custom-binary` | — | `custom-binary` | [fortran/results.md](fortran/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -45,6 +46,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` |
 | zig | ok | `flatbuffers` | — | `flatbuffers`, `protobuf` |
 | mojo | ok | `EmberJson` | — | `EmberJson`, `mojo-avro` |
+| fortran | ok | `custom-binary` | — | `custom-binary` |
 
 ## In memory, by language
 
@@ -307,6 +309,24 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 | mojo-flatbuffers | 324 | 27896 | FlatBuffers | slower |
 | ehsanmok-json | 419 | 27675 | JSON — ehsanmok/json | slower |
 | mojo-toml | 4850 | 29873 | TOML | slower |
+
+### fortran
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| custom-binary | 2.13 | 113 | length-prefixed binary | fastest |
+| json-fortran | 38.1 | 258 | JSON — json-fortran | slower |
+| fortran-messagepack | 60.4 | 197 | MessagePack | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| custom-binary | 109 | 12029 | length-prefixed binary | fastest |
+| json-fortran | 2181 | 26647 | JSON — json-fortran | slower |
+| fortran-messagepack | 4198 | 20443 | MessagePack | slower |
 
 ## What we saw
 

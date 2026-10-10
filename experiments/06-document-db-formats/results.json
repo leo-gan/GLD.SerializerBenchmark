@@ -15,7 +15,7 @@
     "main_io": "memory",
     "require_named_fields": false
   },
-  "generated_at": "2026-09-30T01:43:58Z",
+  "generated_at": "2026-10-10T20:42:09Z",
   "languages": {
     "java": {
       "status": "ok",
@@ -1744,6 +1744,143 @@
           "in_comparison": true,
           "tier": "slower",
           "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
+          "on_time_size_front": false
+        }
+      ]
+    },
+    "fortran": {
+      "status": "ok",
+      "language": "fortran",
+      "csv": "experiments/06-document-db-formats/fortran/logs/fortran/2026-10-10-134208.csv",
+      "error": null,
+      "top_groups": [
+        {
+          "method": "cliffs_delta_vs_fastest",
+          "n": 1,
+          "io": "memory",
+          "similar_max": 0.147,
+          "close_max": 0.33,
+          "reference": "jonquil",
+          "similar": [
+            "jonquil",
+            "json-fortran"
+          ],
+          "close": [],
+          "time_size_front": [
+            "jonquil",
+            "json-fortran"
+          ]
+        }
+      ],
+      "top_group": {
+        "method": "cliffs_delta_vs_fastest",
+        "n": 1,
+        "io": "memory",
+        "similar_max": 0.147,
+        "close_max": 0.33,
+        "reference": "jonquil",
+        "similar": [
+          "jonquil",
+          "json-fortran"
+        ],
+        "close": [],
+        "time_size_front": [
+          "jonquil",
+          "json-fortran"
+        ]
+      },
+      "rows": [
+        {
+          "library": "jonquil",
+          "n": 1,
+          "version": "0.3.2",
+          "role": "JSON — jonquil",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 40590,
+          "read_median_ns": 37062,
+          "total_median_ns": 78168,
+          "write_median_us": 40.5895,
+          "read_median_us": 37.0625,
+          "total_median_us": 78.1675,
+          "total_mean_ns": 80057,
+          "total_p95_ns": 99783,
+          "total_p99_ns": 102103,
+          "total_ci_low_ns": 78114,
+          "total_ci_high_ns": 82191,
+          "size_bytes": 505,
+          "size_gzip_bytes": 252,
+          "fidelity": 1.0,
+          "runs": 92,
+          "runs_raw": 100,
+          "outliers_removed": 7,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "json-fortran",
+          "n": 1,
+          "version": "9.3.1",
+          "role": "JSON — json-fortran",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 35881,
+          "read_median_ns": 44476,
+          "total_median_ns": 80869,
+          "write_median_us": 35.881,
+          "read_median_us": 44.476,
+          "total_median_us": 80.869,
+          "total_mean_ns": 81643,
+          "total_p95_ns": 99461,
+          "total_p99_ns": 101667,
+          "total_ci_low_ns": 79876,
+          "total_ci_high_ns": 83448,
+          "size_bytes": 473,
+          "size_gzip_bytes": 244,
+          "fidelity": 1.0,
+          "runs": 91,
+          "runs_raw": 100,
+          "outliers_removed": 8,
+          "in_comparison": true,
+          "tier": "similar",
+          "cliffs_delta_vs_fastest": 0.1343,
+          "cliffs_label": "negligible",
+          "on_time_size_front": true
+        },
+        {
+          "library": "rojff",
+          "n": 1,
+          "version": "9f68e5aa4c12",
+          "role": "JSON — rojff",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 50682,
+          "read_median_ns": 51468,
+          "total_median_ns": 102670,
+          "write_median_us": 50.682,
+          "read_median_us": 51.468,
+          "total_median_us": 102.6695,
+          "total_mean_ns": 103220,
+          "total_p95_ns": 117040,
+          "total_p99_ns": 121631,
+          "total_ci_low_ns": 101555,
+          "total_ci_high_ns": 104883,
+          "size_bytes": 473,
+          "size_gzip_bytes": 244,
+          "fidelity": 1.0,
+          "runs": 86,
+          "runs_raw": 100,
+          "outliers_removed": 13,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 0.9009,
           "cliffs_label": "large",
           "on_time_size_front": false
         }

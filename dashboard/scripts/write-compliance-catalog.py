@@ -710,6 +710,20 @@ add("mojo", "parquet", ["parquet"], "https://github.com/leo-gan/gld-parquet",
 add("mojo", "parquet-uncompressed", ["parquet"], "https://github.com/leo-gan/gld-parquet",
     "gld-parquet 0.2.0: same writer with page compression off.")
 
+# --- Fortran (pure Fortran; no C wrapper rows) ---
+add("fortran", "json-fortran", ["json"], "https://github.com/jacobwilliams/json-fortran",
+    'README title: "JSON-Fortran: A Modern Fortran JSON API".')
+add("fortran", "jonquil", ["json"], "https://github.com/toml-f/jonquil",
+    'README: "Jonquil is a JSON library for Fortran, built on top of TOML Fortran."')
+add("fortran", "rojff", ["json"], "https://github.com/everythingfunctional/rojff",
+    'README: "rojff: Return of JSON (for Fortran)".')
+add("fortran", "toml-f", ["toml"], "https://github.com/toml-f/toml-f",
+    'README: "A TOML parser implementation for data serialization and deserialization in Fortran" (TOML v1.0.0).')
+add("fortran", "fortran-messagepack", ["msgpack"], "https://github.com/synthfi/fortran-messagepack",
+    'README: "Library for MessagePack support in fortran."')
+add("fortran", "custom-binary", [], "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90",
+    "Suite little-endian length-prefixed V2 baseline; no public interchange spec.")
+
 # --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo", "cpp"):
     for _row in ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed"):

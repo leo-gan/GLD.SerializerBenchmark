@@ -90,6 +90,7 @@ The first ten pages take the speed or size leader in each language and ask why i
 | [Kotlin: kotlinx-json vs Moshi](kotlin-kotlinx-json-vs-moshi.md) | JSON | Show why the same 440-byte JSON can differ between kotlinx.serialization and a generated Moshi adapter |
 | [Kotlin: FlatBuffers vs protobuf](kotlin-flatbuffers-vs-protobuf.md) | FlatBuffers and Protocol Buffers | Show why vtable loads can beat a smaller Protocol Buffers stream on the Kotlin harness |
 | [PHP: JSON vs protobuf](php-json-vs-protobuf.md) | JSON and Protocol Buffers | Show that PHP’s native JSON engine is faster than official userland protobuf, even though JSON is larger |
+| [Fortran: json-fortran vs rojff](fortran-json-fortran-vs-rojff.md) | JSON | Show two pure-Fortran JSON call sites, and why integers past int32 become JSON numbers |
 | [Zig: std.json vs serde.json](zig-std-json-vs-serde-json.md) | JSON | Show two comptime JSON call sites on the same suite document |
 | [Mojo: EmberJson vs mojo-avro](mojo-emberjson-vs-avro.md) | JSON and Avro | Show JSON text vs Avro binary on the same suite document |
 | [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | JSON and Protocol Buffers | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |

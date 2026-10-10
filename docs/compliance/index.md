@@ -75,6 +75,7 @@ binary cousins** that this suite already benches.
 
 Arrow IPC, Parquet, ORC v1, and SBE 1.0 have validity cases under `compliance/data/`. Each cell is that library’s own reader: accept means the reader decoded the case, and when the case names a value the decoded rows must match. A library that accepts a reject case fails that case. Python has no SBE row. Do not score one of these rows with another library's decoder.
 
+
 XML is out of scope (user request). Language-native and private
 binaries (pickle, gob, Kryo, …) are on the Dashboard under
 **Standard → No public spec**: one column, no pass/fail cells, so they
