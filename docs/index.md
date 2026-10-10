@@ -52,7 +52,7 @@ Fourteen runners share the same fixtures and analysis rules.
 | [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
 | [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 50 |
 | [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
-| [Fortran](fortran/) · [Dashboard](dashboard/?lang=fortran) | 6 |
+| [Fortran](fortran/) · [Dashboard](dashboard/?lang=fortran) | 9 |
 | [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |
 | [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 25 |

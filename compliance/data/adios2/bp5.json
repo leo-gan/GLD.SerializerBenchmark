@@ -1,0 +1,46 @@
+{
+  "format": "adios2",
+  "standard": "ADIOS2",
+  "version": "BP5",
+  "standard_url": "https://adios2.readthedocs.io/en/v2.10.2/engines/engines.html",
+  "provenance": "original-work",
+  "notes": "BP5 is a directory. These cases name the metadata index. They are not a byte-level BP5 file and not an ORNL conformance suite.",
+  "cases": [
+    {
+      "id": "adios2-bp5-md-idx",
+      "title": "BP5 metadata index name",
+      "section": "BP5",
+      "section_title": "Directory layout",
+      "section_url": "https://adios2.readthedocs.io/en/v2.10.2/engines/engines.html",
+      "paragraph": "A BP5 dataset is a directory. The metadata index file is named md.idx.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "md.idx",
+      "input_encoding": "utf-8"
+    },
+    {
+      "id": "adios2-bp5-md-0",
+      "title": "BP5 metadata file name",
+      "section": "BP5",
+      "section_title": "Directory layout",
+      "section_url": "https://adios2.readthedocs.io/en/v2.10.2/engines/engines.html",
+      "paragraph": "BP5 writes md.0 next to md.idx. The name is part of the directory marker.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "md.0",
+      "input_encoding": "utf-8"
+    },
+    {
+      "id": "adios2-bp5-missing-index",
+      "title": "Missing md.idx",
+      "section": "BP5",
+      "section_title": "Directory layout",
+      "section_url": "https://adios2.readthedocs.io/en/v2.10.2/engines/engines.html",
+      "paragraph": "A directory with no md.idx is not a BP5 dataset. An empty marker is rejected.",
+      "requirement": "MUST",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "utf-8"
+    }
+  ]
+}

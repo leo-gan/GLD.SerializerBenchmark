@@ -130,3 +130,5 @@ languages:
     libraries:
       - {name: json-fortran, writes_named_fields: true, role: JSON — json-fortran}
       - {name: custom-binary, writes_named_fields: false, role: length-prefixed binary}
+      - {name: hdf5-fortran, writes_named_fields: true, role: HDF5 core virtual file driver}
+      - {name: netcdf-fortran, writes_named_fields: true, role: NetCDF-4 file, published as file-only}

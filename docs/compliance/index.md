@@ -1,160 +1,91 @@
-# Compliance
+---
+# No in-page title (site header has the product name). Browser tab uses site_name.
+hide:
+  - navigation
+  - toc
+  - title
+---
 
-Serializer quality has two public questions:
+Compare **200+** serialization libraries across **14 languages** with fair
+within-language rankings—not marketing microbenchmarks.
 
-| Question | Command |
-|----------|---------|
-| How fast / how big? | `./scripts/run-all-benchmarks.sh` |
-| Does it match the cited spec section? | `./scripts/run-compliance.sh` |
+[Open live Dashboard](dashboard/){ .md-button .md-button--primary }
+[Start Serialization 101](theory/101/){ .md-button }
+[How we measure](analysis/){ .md-button }
 
-This tab explains the catalog. **Live pass/fail numbers live only on the
-[Dashboard → Compliance](../dashboard/#compliance)** view — the same rule
-as timings (Dashboard, not these pages). A language and serializer deep-link
-as `#compliance/{lang}/{serializer}` (example:
-[Python orjson](../dashboard/#compliance/python/orjson)).
+---
+
+## What this project is
+
+This suite runs the **same data shapes** through serializers in many programming
+languages, writes a **shared CSV contract**, and analyzes results with one
+statistics pipeline. Use it to compare libraries **inside one language** (and
+ideally one format family), not to crown a single global winner.
 
 | You want… | Go here |
 |-----------|---------|
-| How to read a FAIL line | [Reading failures](reading-results.md) |
-| Amazon Ion | [Amazon Ion](ion.md) |
-| Arrow IPC | [Arrow IPC](arrow.md) |
-| Avro | [Avro](avro.md) |
-| Bebop | [Bebop](bebop.md) |
-| Bond | [Bond](bond.md) |
-| BSON | [BSON](bson.md) |
-| Cap'n Proto | [Cap'n Proto](capnp.md) |
-| CBOR | [CBOR](cbor.md) |
-| FlatBuffers | [FlatBuffers](flatbuffers.md) |
-| HOCON | [HOCON](hocon.md) |
-| JSON | [JSON](json.md) |
-| MessagePack | [MessagePack](msgpack.md) |
-| ORC | [ORC](orc.md) |
-| Parquet | [Parquet](parquet.md) |
-| Property List | [Property List](plist.md) |
-| Protocol Buffers | [Protocol Buffers](protobuf.md) |
-| SBE | [SBE](sbe.md) |
-| Smile | [Smile](smile.md) |
-| Thrift | [Thrift](thrift.md) |
-| TOML | [TOML](toml.md) |
-| UBJSON | [UBJSON](ubjson.md) |
-| YAML | [YAML](yaml.md) |
-| ZON | [ZON](zon.md) |
-| Plug in another language | [Language adapters](adapters.md) |
-| Why we did not vendor suite X | [Legal provenance](legal.md) |
+| Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
+| One-question tests (why we do not only use the big table) | **[Experiments](experiments/)** |
+| Does this library match the RFC / spec section? | **[Dashboard · Compliance](dashboard/#compliance)** (`#compliance/{lang}/{serializer}`) · [catalog notes](compliance/) |
+| Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
+| Per-language runtime primer, library lists, and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
+| Methodology, metrics, how to add a codec | **[Benchmarks](analysis/)** |
 
-## What is in scope
+---
 
-First delivery: **self-describing text formats** and **IETF / industry
-binary cousins** that this suite already benches.
+## Same data · same pipeline
 
-| Format | Versions in the corpus | Typical Python serializers |
-|--------|------------------------|-------------------------|
-| Amazon Ion | 1.0 text, 1.0 binary, 1.1 | `amazon-ion` |
-| Arrow IPC | IPC stream | `arrow-ipc` |
-| Avro | 1.8, 1.11, 1.12 | `fastavro` |
-| Bebop | 1 | JS `bebop` (limited) |
-| Bond | compact, fast | (catalog) |
-| BSON | 1.0, 1.1, 1.1 decimal128 | `bson` / pymongo |
-| Cap'n Proto | encoding, packed | (catalog; needs generated code) |
-| CBOR | RFC 7049, RFC 8949 | `cbor2` |
-| FlatBuffers | FlexBuffers, tables, file-id | `flexbuffers` |
-| HOCON | 1 | (catalog) |
-| JSON | RFC 4627, RFC 7159, RFC 8259, plus I-JSON (RFC 7493) | `json`, `orjson`, `msgspec`, `rapidjson` |
-| MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
-| ORC | v1 | `orc`, `orc-uncompressed` |
-| Parquet | file format | `parquet`, `parquet-uncompressed` |
-| Property List | XML, binary | `plistlib` |
-| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` (every language runner now has a Doc adapter) |
-| SBE | 1.0 | `sbe` |
-| Smile | 1.0, 1.0 shared names, 1.0.4 | `newsmile` |
-| Thrift | binary, compact | (catalog; Python adapter not wired) |
-| TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
-| UBJSON | Draft 8, Draft 9, Draft 12 | `py-ubjson` |
-| YAML | 1.1, 1.2, 1.2.2 | PyYAML `safe_load` |
-| ZON | 1 | (catalog) |
+The live **Dashboard** is the published home for measured numbers. Pick a
+language and a data type, then read speed vs size and the ranking. Language
+indexes list the roster and caveats.
 
-Arrow IPC, Parquet, ORC v1, and SBE 1.0 have validity cases under `compliance/data/`. Each cell is that library’s own reader: accept means the reader decoded the case, and when the case names a value the decoded rows must match. A library that accepts a reject case fails that case. Python has no SBE row. Do not score one of these rows with another library's decoder.
+[![Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking](assets/dashboard-overview.jpg){ width="780" }](dashboard/)
 
+---
 
-XML is out of scope (user request). Language-native and private
-binaries (pickle, gob, Kryo, …) are on the Dashboard under
-**Standard → No public spec**: one column, no pass/fail cells, so they
-stay selectable as a group.
+## Languages
 
-## How a case is written
+Fourteen runners share the same fixtures and analysis rules.
 
-Every case is a JSON object with:
+| Language | Serializers |
+|----------|------------:|
+| [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
+| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 50 |
+| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 35 |
+| [Fortran](fortran/) · [Dashboard](dashboard/?lang=fortran) | 9 |
+| [Go](go/) · [Dashboard](dashboard/?lang=go) | 26 |
+| [Java](java/) · [Dashboard](dashboard/?lang=java) | 27 |
+| [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 25 |
+| [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 32 |
+| [Mojo](mojo/) · [Dashboard](dashboard/?lang=mojo) | 13 |
+| [PHP](php/) · [Dashboard](dashboard/?lang=php) | 15 |
+| [Python](python/) · [Dashboard](dashboard/?lang=python) | 23 |
+| [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 22 |
+| [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
+| [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |
 
-- a stable `id`
-- `expect`: `accept` or `reject`
-- `requirement`: `MUST` / `MUST NOT` / `SHOULD` / …
-- `section_url` pointing at the published paragraph
-- `paragraph`: the rule in one or two sentences
-- `input`: text or hex
-- optional `decoded`: the value we compare if the parse must succeed
+C++ is 35 when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers.
 
-Cases are **original**. They use names like `harbor` / `kelp` / `berth`,
-not the examples from the spec PDF. See [legal provenance](legal.md).
+---
 
-Official MIT/BSD suites are vendored (JSONTestSuite, yaml-test-suite,
-toml-test, msgpack-test-suite, cbor-wg vectors) plus original extras.
-A compliance **case** is not a suite **data type**. Benchmark data types
-are the five row shapes (`message`, `document`, `telemetry`, `strings`,
-`event`) plus `table`, `table_project`, `nested_table`, and `signal`.
-See [Test data](../analysis/test_data_configuration.md).
+## Learn the ideas first (optional path)
 
-## How to run
+If you are new to serialization, start with the course under **Learn**:
 
-From the repository root (Python 3.12+ and [uv](https://docs.astral.sh/uv/)):
+1. [Serialization 101](theory/101/) — what serialization is; three lenses  
+2. [Serialization 201](theory/201/) — how formats work under the hood  
+3. [Serialization 301](theory/301/) — production judgment  
+4. [Serialization 401](theory/401/) — wire formats and labs  
 
-```bash
-./scripts/run-compliance.sh
-./scripts/run-compliance.sh --format json --serializer orjson
-./scripts/run-compliance.sh --detailed
-```
+Then return to the **[Dashboard](dashboard/)** with clearer questions.
 
-The report lands in `logs/compliance/YYYY-MM-DD-HHMMSS.json`. A full
-(unfiltered) run also updates `dashboard/public/data/compliance.json`
-for the [Dashboard Compliance](../dashboard/#compliance) view.
+---
 
-`./scripts/run-compliance.sh` also runs every other language toolchain
-it finds. Each writes `logs/compliance/latest-<lang>.json`. The
-Dashboard merges them.
+## Honesty rules (short)
 
-This is a **local quality command**, not a CI job and not part of `pytest`.
+- Prefer comparisons **within one language and one standard**. A family is a teaching cut, coarser than the standard. See [Serialization categories](analysis/serialization_categories.md).  
+- Implementation quality often matters more than the format brand name.  
+- Payload shape changes costs a great deal.  
+- Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.
 
-## Policy: report-only
-
-The command **does not fail** because a library disagrees with a MUST.
-Production parsers often accept RFC-invalid input on purpose (NaN,
-YAML 1.1 `yes`, TOML 1.1 syntax on a 1.0 decoder).
-
-The run **does** fail (exit 2) if a catalog file is missing, malformed,
-or lacks a spec URL — that is a runner bug.
-
-A FAIL prints a block like this:
-
-```text
-COMPLIANCE MUST NOT FAIL [json-8259-bare-nan] json
-  Standard : RFC 8259 8259
-  Section  : 6 — Numbers
-  Spec     : https://www.rfc-editor.org/rfc/rfc8259#section-6
-  Rule     : Numeric values are produced from the number grammar; NaN is not a number token.
-  Expected : reject
-  Observed : accepted as nan
-  Case     : NaN is not a JSON number
-```
-
-The `Spec` line is the document you should open.
-
-## Layout in the repo
-
-```text
-compliance/data/<format>/<version>.json   # catalog (no network)
-compliance/LEGAL.md                       # license audit
-scripts/run-compliance.sh                 # public command
-python/src/compliance/                    # runner + adapters
-docs/compliance/                          # this tab
-```
-
-There is no git submodule and no download at run time.
+Full methodology: [Benchmarks overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).

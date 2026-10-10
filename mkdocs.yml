@@ -226,6 +226,7 @@ nav:
   - Experiments: experiments/index.md
   - Compliance:
       - Overview: compliance/index.md
+      - ADIOS2: compliance/adios2.md
       - Amazon Ion: compliance/ion.md
       - Arrow IPC: compliance/arrow.md
       - Avro: compliance/avro.md
@@ -235,9 +236,11 @@ nav:
       - Cap'n Proto: compliance/capnp.md
       - CBOR: compliance/cbor.md
       - FlatBuffers: compliance/flatbuffers.md
+      - HDF5: compliance/hdf5.md
       - HOCON: compliance/hocon.md
       - JSON: compliance/json.md
       - MessagePack: compliance/msgpack.md
+      - NetCDF: compliance/netcdf.md
       - ORC: compliance/orc.md
       - Parquet: compliance/parquet.md
       - Property List: compliance/plist.md

@@ -1,0 +1,58 @@
+{
+  "format": "hdf5",
+  "standard": "HDF5",
+  "version": "superblock",
+  "standard_url": "https://support.hdfgroup.org/documentation/hdf5/latest/group___f_m_t3.html",
+  "provenance": "original-work",
+  "notes": "Signature and superblock version byte only. Not an HDF Group conformance suite.",
+  "cases": [
+    {
+      "id": "hdf5-superblock-v0",
+      "title": "Signature and superblock version 0",
+      "section": "Superblock",
+      "section_title": "Format signature",
+      "section_url": "https://support.hdfgroup.org/documentation/hdf5/latest/group___f_m_t3.html",
+      "paragraph": "An HDF5 file starts with 89 48 44 46 0d 0a 1a 0a. The next byte is the superblock version.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "894844460d0a1a0a00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "hdf5-superblock-v2",
+      "title": "Signature and superblock version 2",
+      "section": "Superblock",
+      "section_title": "Version 2 superblock",
+      "section_url": "https://support.hdfgroup.org/documentation/hdf5/latest/group___f_m_t3.html",
+      "paragraph": "Superblock version 2 is the common modern layout. The version byte is 0x02.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "894844460d0a1a0a02",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "hdf5-truncated-signature",
+      "title": "Truncated signature",
+      "section": "Superblock",
+      "section_title": "Format signature",
+      "section_url": "https://support.hdfgroup.org/documentation/hdf5/latest/group___f_m_t3.html",
+      "paragraph": "Four bytes is not the eight-byte signature. A reader must reject it.",
+      "requirement": "MUST",
+      "expect": "reject",
+      "input": "89484446",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "hdf5-bad-magic",
+      "title": "Missing signature",
+      "section": "Superblock",
+      "section_title": "Format signature",
+      "section_url": "https://support.hdfgroup.org/documentation/hdf5/latest/group___f_m_t3.html",
+      "paragraph": "A file that does not start with the HDF5 signature is not an HDF5 file.",
+      "requirement": "MUST",
+      "expect": "reject",
+      "input": "0000000000000000",
+      "input_encoding": "hex"
+    }
+  ]
+}

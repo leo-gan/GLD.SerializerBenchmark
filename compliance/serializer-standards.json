@@ -952,7 +952,16 @@
       "fortran-messagepack": [
         "msgpack"
       ],
-      "custom-binary": []
+      "custom-binary": [],
+      "hdf5-fortran": [
+        "hdf5"
+      ],
+      "netcdf-fortran": [
+        "netcdf"
+      ],
+      "adios2": [
+        "adios2"
+      ]
     }
   }
 }

@@ -1,6 +1,6 @@
 # Fortran runner
 
-Bytes only. Six pure-Fortran rows: json-fortran, jonquil, rojff, toml-f, fortran-messagepack, and custom-binary. The compiler check requires gfortran 13.
+Six pure-Fortran rows are bytes: json-fortran, jonquil, rojff, toml-f, fortran-messagepack, and custom-binary. hdf5-fortran is bytes on the HDF5 core driver. netcdf-fortran and adios2 are file-only (stream/native). The compiler check requires gfortran 13.
 
 GNU Fortran 11 or newer, zlib, libzstd, and [fpm](https://fpm.fortran-lang.org/) 0.13.
 

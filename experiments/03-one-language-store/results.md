@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-09-30
+**Date:** 2026-10-10
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -21,6 +21,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro`, `mojo-protobuf` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `custom-binary` | — | `custom-binary` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -111,6 +112,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | mojo-cbor | 1.54 | 124 | CBOR | slower |
 | ehsanmok-json | 3.72 | 168 | JSON — ehsanmok/json | slower |
 | mojo-toml | 13.3 | 167 | TOML | slower |
+
+### fortran
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| custom-binary | 1.82 | 44 | one language — length-prefixed binary | fastest |
+| json-fortran | 37.6 | 172 | other languages can read — JSON | slower |
+| hdf5-fortran | 334 | 7704 | HDF5 core virtual file driver | slower |
 
 ## What we saw
 
