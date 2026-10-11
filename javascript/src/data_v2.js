@@ -206,6 +206,22 @@ export function makeOne(typeId, typeConfig = {}, seed = 42, instanceIndex = 0) {
       return makeNestedTable(r, typeConfig);
     case 'signal':
       return makeSignal(r, typeConfig);
+    case 'grid':
+    case 'grid_window': {
+      const nx = typeConfig.nx ?? 512;
+      const ny = typeConfig.ny ?? 512;
+      const values = new Array(nx * ny);
+      for (let i = 0; i < values.length; i++) values[i] = r.nextF64();
+      const grid = { nx, ny, values, x0: 0, y0: 0, wx: 0, wy: 0 };
+      if (typeId === 'grid_window') {
+        const box = typeConfig.window || {};
+        grid.x0 = box.x0 ?? 128;
+        grid.y0 = box.y0 ?? 64;
+        grid.wx = box.wx ?? 256;
+        grid.wy = box.wy ?? 128;
+      }
+      return grid;
+    }
     case 'graph': {
       // Call order is the cross-language contract: regions, orders, names, then the ring.
       const [smin, smax] = slen(typeConfig, 8, 16);

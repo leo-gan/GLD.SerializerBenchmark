@@ -64,7 +64,7 @@ class YasSer final : public ISerializer {
                 "event", ("event_id", v.event_id), ("event_type", v.event_type),
                 ("occurred_at", v.occurred_at), ("producer", v.producer), ("attrs", v.attrs)));
             return {buf.data.get(), buf.data.get() + buf.size};
-          } else if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+          } else if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
             throw std::runtime_error("yas: columnar type unsupported");
           } else {
             // Batch: serialize vector via YAS std support

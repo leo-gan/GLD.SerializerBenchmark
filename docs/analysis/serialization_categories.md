@@ -150,7 +150,7 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
 - **Prefer when:** the payload is one dense numeric array, and a reader may want a spatial window instead of the whole array.
 - **Trade-offs:** file create and metadata dominate a tiny record. These rows are timed on a 512×512 float64 grid. They are not part of `all@`.
 - **Data types:** `grid` (full read) and `grid_window` (same write, interior window on read). Run config: `config/library/array.yaml` (N=1, no compression).
-- **Examples in suite:** Fortran `hdf5-fortran`, `netcdf-fortran`, and `adios2`. Python `h5py`, `netCDF4`, and `adios2`. The other languages in this suite have no maintained writer for all three standards. See [Array bindings](array_bindings.md).
+- **Examples in suite:** C `hdf5`, C++ `highfive`, C# `PureHDF`, Fortran `hdf5-fortran`, `netcdf-fortran`, and `adios2`, JavaScript `h5wasm`, Python `h5py`, `netCDF4`, and `adios2`, Rust `hdf5-metno`. New languages on this track are HDF5 only. See [Array bindings](array_bindings.md).
 
 ### Language-native
 

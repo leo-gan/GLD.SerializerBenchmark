@@ -17,7 +17,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public GoogleProtobufSerializerSer(IDomainNativeMap map) : base(map) { }
 
         public override string Name => "Google.Protobuf";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         protected override void OnNativeTypeReady(Type nativeRoot, List<Type> nativeSecondary)
         {

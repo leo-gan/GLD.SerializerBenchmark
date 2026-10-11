@@ -1,9 +1,15 @@
 # Run config: publication cells for the array data set.
 # Not default.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/array.yaml
-# Pass an explicit serializer allow-list. Fortran:
+# Pass an explicit serializer allow-list. Examples:
 #   hdf5-fortran,netcdf-fortran,adios2
-# The Fortran runner also skips every other serializer on these type ids.
+#   h5py,netCDF4,adios2
+#   hdf5
+#   highfive
+#   hdf5-metno
+#   PureHDF
+#   h5wasm
+# Runners skip every other serializer on these type ids.
 # N stays 1. The array shape is the type config, not the instance count.
 id: array
 description: "grid and grid_window at N=1; bytes sidecar; no post-compression"

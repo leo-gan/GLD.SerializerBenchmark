@@ -22,7 +22,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private Func<object, byte[]> _serBytes;
 
         public override string Name => "GroBuf";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

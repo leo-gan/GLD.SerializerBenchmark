@@ -349,7 +349,8 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 47 serializers registered (Program.cs); ShapeShift.Taml skips the strings fixture.
+    # 48 serializers registered (Program.cs); ShapeShift.Taml skips the strings fixture.
+    # PureHDF times grid and grid_window only.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
     # Added: System.Text.Json, Apache.Avro. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
@@ -539,6 +540,11 @@ languages:
         crate: ion-rs
         rationale: "Official Amazon Ion Rust library (experimental serde)"
         optimal_api: "serde::to_binary / from_ion (allocating; stream adapted)"
+      - name: hdf5-metno
+        category: binary
+        crate: hdf5-metno
+        rationale: "hdf5-metno on the array data set. One float64 dataset. The window read is a hyperslab."
+        optimal_api: "DatasetBuilder::empty + write_raw / read_slice_2d"
 
   c:
     display_name: C
@@ -660,6 +666,11 @@ languages:
         library: ion-c
         rationale: "Official Amazon Ion C library (binary datagram)"
         optimal_api: "ion_writer_open_buffer / ion_reader_open_buffer; native FILE* via ion_stream_open_file_out"
+      - name: hdf5
+        category: binary
+        library: libhdf5
+        rationale: "HDF5 C API on the array data set. Core virtual file driver. The window read is a hyperslab."
+        optimal_api: "H5Dwrite / H5Sselect_hyperslab / H5Fget_file_image"
 
   javascript:
     display_name: "JavaScript (Node.js)"
@@ -799,6 +810,11 @@ languages:
         package: devalue
         rationale: "SvelteKit-style value string codec"
         optimal_api: "stringify / parse"
+      - name: h5wasm
+        category: binary
+        package: h5wasm
+        rationale: "h5wasm on the array data set. WASM HDF5. The window read is a dataset slice."
+        optimal_api: "File create_dataset / Dataset.slice"
 
   go:
     display_name: Go
@@ -1698,7 +1714,11 @@ languages:
         library: Boost.Serialization
         rationale: "Classic C++ native binary archives (medium value / historical)"
         optimal_api: "binary_oarchive / binary_iarchive (no_header)"
-
+      - name: highfive
+        category: binary
+        library: HighFive
+        rationale: "HighFive on the array data set. One float64 dataset. The window read is a hyperslab."
+        optimal_api: "createDataSet write_raw / select read_raw"
 
   swift:
     display_name: Swift

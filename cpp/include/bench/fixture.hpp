@@ -19,7 +19,7 @@ using Value = std::variant<Message, Document, Telemetry, Strings, Event,
                            std::vector<Event>, Table, NestedRow, Signal,
                            std::vector<Table>, std::vector<NestedRow>,
                            std::vector<Signal>, std::vector<double>, Book,
-                           std::vector<Book>>;
+                           std::vector<Book>, Grid>;
 
 template <typename T>
 inline constexpr bool is_columnar_alt_v =
@@ -31,6 +31,9 @@ inline constexpr bool is_columnar_alt_v =
 template <typename T>
 inline constexpr bool is_graph_alt_v =
     std::is_same_v<T, Book> || std::is_same_v<T, std::vector<Book>>;
+
+template <typename T>
+inline constexpr bool is_array_alt_v = std::is_same_v<T, Grid>;
 
 // Copy one row or the batch. Used inside timed serialize.
 template <typename T>
@@ -65,10 +68,23 @@ struct TypeConfig {
   int order_count = -1;
   int region_count = -1;
   int ring_size = -1;
+  int nx = 512;
+  int ny = 512;
+  int x0 = 128;
+  int y0 = 64;
+  int wx = 256;
+  int wy = 128;
 };
 
 // table_project compares the f_float_0 column (length N), not the full row(s).
 inline Value expected_for_fidelity(const Fixture& fx) {
+  if (fx.type_id == "grid" || fx.type_id == "grid_window") {
+    const auto& grid = std::get<Grid>(fx.value);
+    if (fx.type_id == "grid") return grid;
+    Grid window;
+    window.values = grid.window_values();
+    return window;
+  }
   if (fx.type_id != "table_project") return fx.value;
   std::vector<double> col;
   if (const auto* one = std::get_if<Table>(&fx.value)) {

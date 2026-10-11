@@ -55,6 +55,8 @@ const char *test_data_name(test_data_kind_t k) {
         case TD_TELEMETRY: return "telemetry";
         case TD_STRINGS: return "strings";
         case TD_EVENT: return "event";
+        case TD_GRID: return "grid";
+        case TD_GRID_WINDOW: return "grid_window";
         default: return "unknown";
     }
 }
@@ -137,9 +139,55 @@ void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, in
             }
             break;
         }
+        case TD_GRID:
+            data_fill_grid(out, kind, seed, instance_index, 512, 512, 0, 0, 0, 0);
+            break;
+        case TD_GRID_WINDOW:
+            data_fill_grid(out, kind, seed, instance_index, 512, 512, 128, 64, 256, 128);
+            break;
         default:
             break;
     }
+}
+
+void data_free_grid(test_fixture_t *fx) {
+    if (!fx || !fx->grid.values) return;
+    free(fx->grid.values);
+    fx->grid.values = NULL;
+    fx->grid.nvalues = 0;
+}
+
+void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
+                    int nx, int ny, int x0, int y0, int wx, int wy) {
+    data_free_grid(out);
+    memset(out, 0, sizeof(*out));
+    out->kind = kind;
+    out->name = test_data_name(kind);
+    out->batch_n = 1;
+    if (nx <= 0) nx = 512;
+    if (ny <= 0) ny = 512;
+    if (kind != TD_GRID_WINDOW) {
+        x0 = y0 = wx = wy = 0;
+    } else if (wx <= 0 || wy <= 0) {
+        x0 = 128;
+        y0 = 64;
+        wx = 256;
+        wy = 128;
+    }
+    size_t n = (size_t)nx * (size_t)ny;
+    double *values = (double *)malloc(n * sizeof(double));
+    if (!values) return;
+    rng_t r;
+    rng_init(&r, mix_seed(seed, kind, instance_index));
+    for (size_t i = 0; i < n; i++) values[i] = rng_f64(&r);
+    out->grid.nx = nx;
+    out->grid.ny = ny;
+    out->grid.x0 = x0;
+    out->grid.y0 = y0;
+    out->grid.wx = wx;
+    out->grid.wy = wy;
+    out->grid.nvalues = (int)n;
+    out->grid.values = values;
 }
 
 void data_init_all(test_fixture_t *out, int count, uint64_t seed) {

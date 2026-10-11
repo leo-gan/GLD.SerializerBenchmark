@@ -42,6 +42,7 @@ namespace GLD.SerializerBenchmark
                 ["arrow-ipc"] = "Apache.Arrow",
                 ["parquet"] = "Parquet",
                 ["parquet-uncompressed"] = "Parquet",
+                ["PureHDF"] = "PureHDF",
                 ["GroBuf"] = "GroBuf",
                 ["Hyperion"] = "Hyperion",
                 ["NetSerializer"] = "NetSerializer",

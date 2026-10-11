@@ -45,6 +45,7 @@ SerializerPtr make_dagr_packed();         // Dagr, the four node layouts (ser_da
 SerializerPtr make_dagr_regular();
 SerializerPtr make_dagr_frozen();
 SerializerPtr make_dagr_frozen_packed();
+SerializerPtr make_highfive();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -95,6 +96,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_dagr_regular());
   add(v, make_dagr_frozen());
   add(v, make_dagr_frozen_packed());
+  add(v, make_highfive());
   return v;
 }
 

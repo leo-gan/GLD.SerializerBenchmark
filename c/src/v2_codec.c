@@ -114,6 +114,7 @@ static v2_write_fn v2_writer_table[TD_COUNT] = {
 int v2_write_fixture(const test_fixture_t *fx, const v2_writer_t *w) {
     if (!fx || !w) return -1;
     if ((unsigned)fx->kind >= (unsigned)TD_COUNT) return -1;
+    if (!v2_writer_table[fx->kind]) return -1;
     return v2_writer_table[fx->kind](fx, w);
 }
 

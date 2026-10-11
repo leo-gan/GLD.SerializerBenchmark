@@ -139,6 +139,7 @@ namespace GLD.SerializerBenchmark
                 new ArrowIpcSerializerSer(),
                 new ParquetColumnarSerializerSer(uncompressed: false),
                 new ParquetColumnarSerializerSer(uncompressed: true),
+                new PureHdfSerializerSer(),
         };
 
         /// <summary>

@@ -200,6 +200,27 @@ Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed,
     return make_book(r, resolve_or(cfg.order_count, 32), resolve_or(cfg.region_count, 4),
                      resolve_or(cfg.ring_size, 8), smin, smax);
   }
+  if (type_id == "grid" || type_id == "grid_window") {
+    const bool window = type_id == "grid_window";
+    const int nx = cfg.nx > 0 ? cfg.nx : 512;
+    const int ny = cfg.ny > 0 ? cfg.ny : 512;
+    Grid grid;
+    grid.nx = nx;
+    grid.ny = ny;
+    if (window) {
+      grid.x0 = cfg.x0;
+      grid.y0 = cfg.y0;
+      grid.wx = cfg.wx > 0 ? cfg.wx : 256;
+      grid.wy = cfg.wy > 0 ? cfg.wy : 128;
+    }
+    grid.values.resize(static_cast<size_t>(nx) * static_cast<size_t>(ny));
+    for (int y = 0; y < ny; ++y) {
+      for (int x = 0; x < nx; ++x)
+        grid.values[static_cast<size_t>(y) * static_cast<size_t>(nx) + static_cast<size_t>(x)] =
+            r.next_f64();
+    }
+    return grid;
+  }
   throw std::runtime_error("unknown type_id: " + type_id);
 }
 
@@ -300,6 +321,8 @@ Fixture make_fixture(const std::string& type_id, const TypeConfig& cfg, uint64_t
     fx.value = many_of<NestedRow>(type_id, cfg, seed, fx.instance_count);
   else if (type_id == "signal") fx.value = many_of<Signal>(type_id, cfg, seed, fx.instance_count);
   else if (type_id == "graph") fx.value = many_of<Book>(type_id, cfg, seed, fx.instance_count);
+  else if (type_id == "grid" || type_id == "grid_window")
+    throw std::runtime_error("grid N must be 1");
   else
     throw std::runtime_error("unknown type_id: " + type_id);
   return fx;

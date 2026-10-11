@@ -450,7 +450,7 @@ impl BenchSerializer for ProstSer {
                     PreparedPb::Signal(rows)
                 }
             }
-            Fixture::Rows(_) | Fixture::Projected(_) | Fixture::Graph(_) => {
+            Fixture::Rows(_) | Fixture::Projected(_) | Fixture::Graph(_) | Fixture::Grid(_) => {
                 return Err(anyhow!("prost: unexpected fixture shape"));
             }
         };

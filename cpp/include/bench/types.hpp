@@ -181,6 +181,28 @@ struct Region {
   int32_t version = 0;
 };
 
+struct Grid {
+  int nx = 0;
+  int ny = 0;
+  int x0 = 0;
+  int y0 = 0;
+  int wx = 0;
+  int wy = 0;
+  std::vector<double> values;
+
+  std::vector<double> window_values() const {
+    std::vector<double> out;
+    out.reserve(static_cast<size_t>(wx) * static_cast<size_t>(wy));
+    for (int y = y0; y < y0 + wy; ++y) {
+      const size_t row = static_cast<size_t>(y) * static_cast<size_t>(nx);
+      for (int x = x0; x < x0 + wx; ++x) out.push_back(values[row + static_cast<size_t>(x)]);
+    }
+    return out;
+  }
+
+  bool operator==(const Grid& o) const { return values == o.values; }
+};
+
 struct Order {
   std::string sku;
   int32_t qty = 0;

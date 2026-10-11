@@ -37,7 +37,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private object _reuse;
 
         public override string Name => "Apache.Avro";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

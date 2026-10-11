@@ -29,7 +29,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private MigEnvelope _native;
 
         public override string Name => "Migrant";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, System.Collections.Generic.List<Type> serializableSecondaryTypes = null)
         {

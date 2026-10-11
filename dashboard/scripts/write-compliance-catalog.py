@@ -69,6 +69,8 @@ add("c", "libyaml", ["yaml"], "https://github.com/yaml/libyaml",
     "libyaml: official C library for YAML 1.1 (the parser under PyYAML / Yams).")
 add("c", "ion-c", ["ion"], "https://github.com/amazon-ion/ion-c",
     "ion-c: Ion team C implementation of the Amazon Ion data format (binary and text).")
+add("c", "hdf5", ["hdf5"], "https://www.hdfgroup.org/solutions/hdf5/",
+    "HDF5 C API. This row uses the core driver and a dataset hyperslab.")
 
 # --- Python ---
 add("python", "json", ["json"], "https://docs.python.org/3/library/json.html",
@@ -187,6 +189,8 @@ add("javascript", "parquet", ["parquet"], "https://github.com/hyparam/hyparquet-
     "hyparquet-writer Parquet writer. The omitted codec is the library default, Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 add("javascript", "parquet-uncompressed", ["parquet"], "https://github.com/hyparam/hyparquet-writer",
     "Same hyparquet-writer path as parquet, with codec UNCOMPRESSED. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("javascript", "h5wasm", ["hdf5"], "https://github.com/usnistgov/h5wasm",
+    "h5wasm: HDF5 compiled to WebAssembly. This row uses a dataset slice.")
 
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
@@ -465,6 +469,8 @@ add("csharp", "parquet", ["parquet"], "https://github.com/aloneguid/parquet-dotn
     "Parquet.Net writer. The library default is Snappy. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 add("csharp", "parquet-uncompressed", ["parquet"], "https://github.com/aloneguid/parquet-dotnet",
     "Same Parquet.Net writer as parquet, with CompressionMethod.None. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
+add("csharp", "PureHDF", ["hdf5"], "https://github.com/Apollo3zehn/PureHDF",
+    "PureHDF: managed HDF5 reader and writer. This row uses a hyperslab selection.")
 
 # --- Rust ---
 add("rust", "serde_json", ["json"], "https://docs.rs/serde_json",
@@ -511,6 +517,8 @@ add("rust", "parquet-uncompressed", ["parquet"], "https://docs.rs/parquet",
     "Same arrow-rs Parquet writer as parquet, with uncompressed pages. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 add("rust", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
     "sbe-tool 1.40.2 generated Rust codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
+add("rust", "hdf5-metno", ["hdf5"], "https://github.com/metno/hdf5-rust",
+    "hdf5-metno: Rust bindings for HDF5. This row reads a hyperslab.")
 
 # --- C++ ---
 add("cpp", "nlohmann_json", ["json"], "https://json.nlohmann.me/",
@@ -585,6 +593,8 @@ add("cpp", "orc-uncompressed", ["orc"], "https://arrow.apache.org/docs/cpp/orc.h
     "Same Arrow C++ ORC adapter as orc, with compression UNCOMPRESSED. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
 add("cpp", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
     "sbe-tool 1.40.2 generated C++ flyweight. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
+add("cpp", "highfive", ["hdf5"], "https://github.com/highfive-devs/highfive",
+    "HighFive: header-only C++ HDF5 API. This row reads a hyperslab.")
 
 # --- Swift ---
 add("swift", "Foundation.JSONEncoder", ["json"], "https://developer.apple.com/documentation/foundation/jsonencoder",

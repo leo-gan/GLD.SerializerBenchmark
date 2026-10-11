@@ -21,7 +21,10 @@ namespace GLD.SerializerBenchmark
         /// </summary>
         public virtual string StreamMode => StreamModeHelper.Resolve(Name);
 
-        public virtual bool Supports(string testDataName) => true;
+        public static bool IsArrayType(string testDataName) =>
+            testDataName is "grid" or "grid_window";
+
+        public virtual bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         /// <summary>Run-config type id for this fixture. table and table_project share a CLR type.</summary>
         public string FixtureName { get; private set; } = "";

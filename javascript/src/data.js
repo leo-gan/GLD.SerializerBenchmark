@@ -27,6 +27,15 @@ export const V2_TYPE_IDS = [
  * table_project encodes the full row and returns f_float_0 only, including N=1.
  */
 export function expectedForFidelity(typeId, value) {
+  if (typeId === 'grid') return value.values;
+  if (typeId === 'grid_window') {
+    const out = [];
+    for (let y = value.y0; y < value.y0 + value.wy; y++) {
+      const row = y * value.nx;
+      for (let x = value.x0; x < value.x0 + value.wx; x++) out.push(value.values[row + x]);
+    }
+    return out;
+  }
   if (typeId !== 'table_project') return value;
   const rows = Array.isArray(value) ? value : [value];
   const out = new Array(rows.length);

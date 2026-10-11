@@ -53,7 +53,7 @@ class CerealSer final : public ISerializer {
       cereal::BinaryOutputArchive ar(oss);
       std::visit([&](auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
           throw std::runtime_error("cereal: columnar type unsupported");
         } else {
           ar(v);
@@ -75,7 +75,7 @@ class CerealSer final : public ISerializer {
       cereal::BinaryOutputArchive ar(os);
       std::visit([&](auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
           throw std::runtime_error("cereal: columnar type unsupported");
         } else {
           ar(v);

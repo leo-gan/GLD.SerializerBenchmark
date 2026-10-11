@@ -47,6 +47,7 @@
     <PackageReference Include="Apache.Arrow" Version="23.*" />
     <!-- Explicit net10.0 asset. Library default compression is Snappy. -->
     <PackageReference Include="Parquet.Net" Version="6.*" />
+    <PackageReference Include="PureHDF" Version="2.2.0" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
     <PackageReference Include="Hyperion" Version="0.12.*" />

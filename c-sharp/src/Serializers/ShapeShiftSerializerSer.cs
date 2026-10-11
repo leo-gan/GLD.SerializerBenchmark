@@ -193,7 +193,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "ShapeShift.Taml";
 
-        public override bool Supports(string testDataName) => testDataName != "strings";
+        public override bool Supports(string testDataName) =>
+            testDataName != "strings" && !IsArrayType(testDataName);
 
         protected override string SerializeTyped<T>(T value) => serializer.Serialize(value);
 

@@ -31,7 +31,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private XmlEnvelope _native;
 
         public override string Name => "ExtendedXmlSerializer";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void PrepareData(object data)
         {

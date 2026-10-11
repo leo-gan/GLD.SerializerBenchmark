@@ -20,7 +20,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public FlatSharpSerializerSer(IDomainNativeMap map) : base(map) { }
 
         public override string Name => "FlatSharp";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         protected override void OnNativeTypeReady(Type nativeRoot, List<Type> nativeSecondary)
         {

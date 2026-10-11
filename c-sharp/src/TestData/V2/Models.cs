@@ -389,4 +389,29 @@ namespace GLD.SerializerBenchmark.TestData.V2
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
         public virtual List<Signal> Items { get; set; } = new List<Signal>();
     }
+
+    /// <summary>Dense float64 array. Values are catalog order, index y * nx + x.</summary>
+    public sealed class Grid
+    {
+        public int Nx { get; set; }
+        public int Ny { get; set; }
+        public int X0 { get; set; }
+        public int Y0 { get; set; }
+        public int Wx { get; set; }
+        public int Wy { get; set; }
+        public double[] Values { get; set; } = System.Array.Empty<double>();
+
+        public double[] WindowValues()
+        {
+            var outv = new double[Wx * Wy];
+            var i = 0;
+            for (var y = Y0; y < Y0 + Wy; y++)
+            {
+                var row = y * Nx;
+                for (var x = X0; x < X0 + Wx; x++)
+                    outv[i++] = Values[row + x];
+            }
+            return outv;
+        }
+    }
 }

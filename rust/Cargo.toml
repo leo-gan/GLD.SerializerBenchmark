@@ -52,6 +52,8 @@ arrow = "=60.0.0"
 parquet = "=60.0.0"
 # SBE flyweights from schemas/v2/sbe/signal.xml (sbe-tool 1.40.2). Crate version stays 0.1.0.
 benchmark_v2 = { path = "gen/sbe" }
+# HDF5 array rows. System libhdf5 via pkg-config. No extra compression features.
+hdf5-metno = "0.15"
 
 [build-dependencies]
 prost-build = "0.13"
