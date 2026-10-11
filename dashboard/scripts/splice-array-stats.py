@@ -30,19 +30,21 @@ from benchmark_analysis.stats import (  # noqa: E402
 DATA = REPO / "dashboard" / "public" / "data"
 ARRAY_TYPES = ("grid", "grid_window")
 LANGUAGE = "fortran"
-ARRAY_NAMES = ("hdf5-fortran", "netcdf-fortran", "adios2")
+ARRAY_NAMES = ("hdf5-fortran", "netcdf-fortran", "adios2", "gld-arrow")
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 MIN_REPS = 100
-DEFAULT_CSV = REPO / "logs/fortran/2026-10-10-fortran-array-full.csv"
+DEFAULT_CSV = REPO / "logs/fortran/2026-10-11-fortran-array-full.csv"
 STANDARDS = {
     "hdf5-fortran": "hdf5",
     "netcdf-fortran": "netcdf",
     "adios2": "adios2",
+    "gld-arrow": "arrow",
 }
 MODES = {
     "hdf5-fortran": "bytes",
     "netcdf-fortran": "stream",
     "adios2": "stream",
+    "gld-arrow": "bytes",
 }
 
 

@@ -1,7 +1,7 @@
 # When is JSON too big for a sensor?
 
 **Question:** As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
-**Date:** 2026-09-30
+**Date:** 2026-10-11
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -55,8 +55,8 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 |---------|--------|--------|--------|--------|--------------------------|------|
 | json | 217 | 654 | 2406 | 9380 | >128, >512 | JSON — stdlib |
 | rybakit-msgpack | 121 | 339 | 1203 | 4659 | >128, >512 | MessagePack |
+| cbor | 121 | 338 | 1202 | 4659 | >128, >512 | CBOR |
 | protobuf | 91 | 284 | 1052 | 4124 | >128, >512 | Protocol Buffers |
-| cbor | 120 | 337 | 1201 | 4658 | >128, >512 | CBOR |
 
 ### zig
 
@@ -74,14 +74,14 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 
 | Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
 |---------|--------|--------|--------|--------|--------------------------|------|
-| mojo-avro | 103 | 295 | 1071 | 4135 | >128, >512 | Avro |
-| mojo-json | 186 | 491 | 1727 | 6627 | >128, >512 | JSON — mojo-json |
-| mojo-cbor | 135 | 352 | 1223 | 4672 | >128, >512 | CBOR |
-| EmberJson | 229 | 668 | 2419 | 9368 | >128, >512 | JSON — EmberJson |
-| mojo-protobuf | 105 | 298 | 1073 | 4137 | >128, >512 | Protocol Buffers |
-| mojo-flatbuffers | 176 | 368 | 1136 | 4200 | >128, >512 | FlatBuffers |
-| ehsanmok-json | 229 | 668 | 2419 | 9368 | >128, >512 | JSON — ehsanmok/json |
-| mojo-toml | 236 | 699 | 2546 | 9879 | >128, >512 | TOML |
+| mojo-avro | 92 | 288 | 1059 | 4126 | >128, >512 | Avro |
+| mojo-protobuf | 94 | 291 | 1061 | 4128 | >128, >512 | Protocol Buffers |
+| mojo-cbor | 124 | 345 | 1211 | 4663 | >128, >512 | CBOR |
+| mojo-json | 177 | 486 | 1716 | 6621 | >128, >512 | JSON — mojo-json |
+| mojo-flatbuffers | 160 | 352 | 1128 | 4192 | >128, >512 | FlatBuffers |
+| EmberJson | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — EmberJson |
+| ehsanmok-json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — ehsanmok/json |
+| mojo-toml | 227 | 694 | 2534 | 9874 | >128, >512 | TOML |
 
 ## Time and groups, by list length
 
@@ -189,49 +189,49 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 ### kotlin
 
-**8 numbers** — not clearly slower: `moshi-codegen`, `protobuf`. Small gap: —.
+**8 numbers** — not clearly slower: `moshi-codegen`. Small gap: `protobuf`.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 52.2 | 220 | fastest |
-| protobuf | 54.2 | 94 | similar |
-| kotlinx-cbor | 77.5 | 127 | slower |
-| kotlinx-json | 109 | 220 | slower |
-| jackson-cbor | 137 | 125 | slower |
-| msgpack | 157 | 124 | slower |
+| moshi-codegen | 43.9 | 220 | fastest |
+| protobuf | 56.2 | 94 | close |
+| kotlinx-cbor | 67.8 | 127 | slower |
+| kotlinx-json | 93.1 | 220 | slower |
+| jackson-cbor | 123 | 125 | slower |
+| msgpack | 131 | 124 | slower |
 
 **32 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 27.3 | 291 | fastest |
-| moshi-codegen | 40.8 | 663 | slower |
-| kotlinx-cbor | 46.2 | 347 | slower |
-| jackson-cbor | 71.4 | 346 | slower |
-| kotlinx-json | 77.6 | 663 | slower |
-| msgpack | 92.3 | 346 | slower |
+| protobuf | 30.0 | 291 | fastest |
+| moshi-codegen | 42.1 | 663 | slower |
+| kotlinx-cbor | 46.8 | 347 | slower |
+| jackson-cbor | 73.6 | 346 | slower |
+| kotlinx-json | 84.1 | 663 | slower |
+| msgpack | 89.6 | 346 | slower |
 
 **128 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 19.4 | 1061 | fastest |
-| kotlinx-cbor | 33.0 | 1213 | slower |
+| protobuf | 25.4 | 1061 | fastest |
+| kotlinx-cbor | 34.9 | 1213 | slower |
 | jackson-cbor | 54.5 | 1212 | slower |
-| moshi-codegen | 56.4 | 2407 | slower |
-| msgpack | 67.1 | 1212 | slower |
-| kotlinx-json | 82.0 | 2407 | slower |
+| moshi-codegen | 55.5 | 2407 | slower |
+| msgpack | 58.4 | 1212 | slower |
+| kotlinx-json | 81.4 | 2407 | slower |
 
 **512 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 25.3 | 4128 | fastest |
-| kotlinx-cbor | 56.3 | 4664 | slower |
-| jackson-cbor | 72.7 | 4664 | slower |
-| msgpack | 78.0 | 4663 | slower |
-| kotlinx-json | 168 | 9363 | slower |
-| moshi-codegen | 169 | 9363 | slower |
+| protobuf | 21.0 | 4128 | fastest |
+| kotlinx-cbor | 51.5 | 4664 | slower |
+| jackson-cbor | 53.8 | 4664 | slower |
+| msgpack | 62.8 | 4663 | slower |
+| moshi-codegen | 168 | 9363 | slower |
+| kotlinx-json | 172 | 9363 | slower |
 
 ### php
 
@@ -239,37 +239,37 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 7.66 | 217 | fastest |
-| rybakit-msgpack | 11.1 | 121 | slower |
-| protobuf | 65.9 | 91 | slower |
-| cbor | 153 | 120 | slower |
+| json | 8.07 | 217 | fastest |
+| rybakit-msgpack | 10.7 | 121 | slower |
+| cbor | 53.8 | 121 | slower |
+| protobuf | 65.8 | 91 | slower |
 
 **32 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 19.9 | 339 | fastest |
-| json | 23.5 | 654 | slower |
+| rybakit-msgpack | 19.3 | 339 | fastest |
+| json | 23.1 | 654 | slower |
+| cbor | 95.1 | 338 | slower |
 | protobuf | 109 | 284 | slower |
-| cbor | 441 | 337 | slower |
 
 **128 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 53.3 | 1203 | fastest |
-| json | 87.2 | 2406 | slower |
-| protobuf | 288 | 1052 | slower |
-| cbor | 1630 | 1201 | slower |
+| rybakit-msgpack | 50.8 | 1203 | fastest |
+| json | 86.0 | 2406 | slower |
+| cbor | 263 | 1202 | slower |
+| protobuf | 282 | 1052 | slower |
 
 **512 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 173 | 4659 | fastest |
-| json | 317 | 9380 | slower |
-| protobuf | 940 | 4124 | slower |
-| cbor | 6126 | 4658 | slower |
+| rybakit-msgpack | 172 | 4659 | fastest |
+| json | 321 | 9380 | slower |
+| cbor | 901 | 4659 | slower |
+| protobuf | 946 | 4124 | slower |
 
 ### zig
 
@@ -277,103 +277,103 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 0.24 | 107 | fastest |
-| flatbuffers | 0.39 | 156 | slower |
+| comptime-bin | 0.28 | 107 | fastest |
+| flatbuffers | 0.43 | 156 | slower |
 | serde.msgpack | 0.59 | 124 | slower |
-| protobuf | 0.61 | 94 | slower |
-| serde.json | 1.16 | 220 | slower |
-| std.json | 1.66 | 220 | slower |
-| capnproto | 3.34 | 152 | slower |
+| protobuf | 0.71 | 94 | slower |
+| serde.json | 1.28 | 220 | slower |
+| std.json | 1.61 | 220 | slower |
+| capnproto | 6.12 | 152 | slower |
 
 **32 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
 | comptime-bin | 0.33 | 303 | fastest |
-| flatbuffers | 0.49 | 348 | slower |
-| protobuf | 1.12 | 291 | slower |
-| serde.msgpack | 1.15 | 346 | slower |
-| serde.json | 2.77 | 663 | slower |
-| capnproto | 3.46 | 344 | slower |
-| std.json | 3.65 | 663 | slower |
+| flatbuffers | 0.55 | 348 | slower |
+| serde.msgpack | 0.85 | 346 | slower |
+| protobuf | 1.27 | 291 | slower |
+| serde.json | 3.20 | 663 | slower |
+| std.json | 3.67 | 663 | slower |
+| capnproto | 7.02 | 344 | slower |
 
-**128 numbers** — not clearly slower: `comptime-bin`. Small gap: `flatbuffers`.
+**128 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 0.58 | 1073 | fastest |
-| flatbuffers | 0.62 | 1124 | close |
-| serde.msgpack | 1.98 | 1212 | slower |
-| protobuf | 2.23 | 1061 | slower |
-| capnproto | 3.77 | 1120 | slower |
-| serde.json | 8.79 | 2407 | slower |
-| std.json | 11.0 | 2407 | slower |
+| comptime-bin | 0.50 | 1073 | fastest |
+| flatbuffers | 0.72 | 1124 | slower |
+| serde.msgpack | 1.37 | 1212 | slower |
+| protobuf | 2.27 | 1061 | slower |
+| capnproto | 8.88 | 1120 | slower |
+| serde.json | 10.5 | 2407 | slower |
+| std.json | 11.6 | 2407 | slower |
 
 **512 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 1.61 | 4140 | fastest |
-| serde.msgpack | 4.82 | 4663 | slower |
-| capnproto | 4.93 | 4184 | slower |
-| flatbuffers | 6.65 | 4188 | slower |
-| protobuf | 6.94 | 4128 | slower |
-| serde.json | 35.5 | 9363 | slower |
-| std.json | 42.6 | 9363 | slower |
+| comptime-bin | 0.98 | 4140 | fastest |
+| serde.msgpack | 3.69 | 4663 | slower |
+| flatbuffers | 5.74 | 4188 | slower |
+| protobuf | 6.59 | 4128 | slower |
+| capnproto | 17.4 | 4184 | slower |
+| serde.json | 41.6 | 9363 | slower |
+| std.json | 44.7 | 9363 | slower |
 
 ### mojo
 
-**8 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
+**8 numbers** — not clearly slower: `mojo-avro`, `mojo-protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 1.03 | 103 | fastest |
-| mojo-json | 1.12 | 186 | slower |
-| mojo-cbor | 1.53 | 135 | slower |
-| EmberJson | 1.55 | 229 | slower |
-| mojo-protobuf | 1.60 | 105 | slower |
-| mojo-flatbuffers | 2.04 | 176 | slower |
-| ehsanmok-json | 5.12 | 229 | slower |
-| mojo-toml | 20.8 | 236 | slower |
+| mojo-avro | 2.46 | 92 | fastest |
+| mojo-protobuf | 2.65 | 94 | similar |
+| mojo-cbor | 3.10 | 124 | slower |
+| mojo-json | 3.40 | 177 | slower |
+| mojo-flatbuffers | 3.90 | 160 | slower |
+| EmberJson | 6.01 | 220 | slower |
+| ehsanmok-json | 12.3 | 220 | slower |
+| mojo-toml | 32.7 | 227 | slower |
 
-**32 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
-
-| Library | Write + read (µs) | Size (bytes) | Group |
-|---------|-------------------|--------------|-------|
-| mojo-avro | 1.57 | 295 | fastest |
-| mojo-cbor | 2.48 | 352 | slower |
-| mojo-flatbuffers | 2.49 | 368 | slower |
-| mojo-protobuf | 2.51 | 298 | slower |
-| mojo-json | 2.55 | 491 | slower |
-| EmberJson | 3.38 | 668 | slower |
-| ehsanmok-json | 11.6 | 668 | slower |
-| mojo-toml | 54.2 | 699 | slower |
-
-**128 numbers** — not clearly slower: `mojo-avro`. Small gap: `mojo-flatbuffers`.
+**32 numbers** — not clearly slower: `mojo-avro`, `mojo-protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 3.26 | 1071 | fastest |
-| mojo-flatbuffers | 3.29 | 1136 | close |
-| mojo-protobuf | 5.05 | 1073 | slower |
-| mojo-cbor | 5.67 | 1223 | slower |
-| mojo-json | 7.95 | 1727 | slower |
-| EmberJson | 10.3 | 2419 | slower |
-| ehsanmok-json | 35.4 | 2419 | slower |
-| mojo-toml | 181 | 2546 | slower |
+| mojo-avro | 2.56 | 288 | fastest |
+| mojo-protobuf | 2.57 | 291 | similar |
+| mojo-cbor | 3.47 | 345 | slower |
+| mojo-flatbuffers | 3.69 | 352 | slower |
+| mojo-json | 4.44 | 486 | slower |
+| EmberJson | 7.62 | 663 | slower |
+| ehsanmok-json | 15.1 | 663 | slower |
+| mojo-toml | 63.8 | 694 | slower |
 
-**512 numbers** — not clearly slower: `mojo-flatbuffers`. Small gap: —.
+**128 numbers** — not clearly slower: `mojo-protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-flatbuffers | 5.85 | 4200 | fastest |
-| mojo-avro | 9.37 | 4135 | slower |
-| mojo-protobuf | 13.6 | 4137 | slower |
-| mojo-cbor | 17.4 | 4672 | slower |
-| mojo-json | 29.1 | 6627 | slower |
-| EmberJson | 39.5 | 9368 | slower |
-| ehsanmok-json | 130 | 9368 | slower |
-| mojo-toml | 681 | 9879 | slower |
+| mojo-protobuf | 3.29 | 1061 | fastest |
+| mojo-avro | 4.02 | 1059 | slower |
+| mojo-flatbuffers | 4.34 | 1128 | slower |
+| mojo-cbor | 5.82 | 1211 | slower |
+| mojo-json | 9.89 | 1716 | slower |
+| EmberJson | 14.9 | 2407 | slower |
+| ehsanmok-json | 34.5 | 2407 | slower |
+| mojo-toml | 185 | 2534 | slower |
+
+**512 numbers** — not clearly slower: `mojo-protobuf`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-protobuf | 5.17 | 4128 | fastest |
+| mojo-flatbuffers | 6.25 | 4192 | slower |
+| mojo-avro | 9.49 | 4126 | slower |
+| mojo-cbor | 15.5 | 4663 | slower |
+| mojo-json | 31.4 | 6621 | slower |
+| EmberJson | 44.0 | 9363 | slower |
+| ehsanmok-json | 117 | 9363 | slower |
+| mojo-toml | 686 | 9874 | slower |
 
 ## What we saw
 

@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,8 +22,8 @@ We do not name a single winner. This sample is one small order. A different reco
 | csharp | ok | `MS Bond Fast` | `MS Bond Compact` | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
 | javascript | ok | `protobufjs` | — | `protobufjs` | [javascript/results.md](javascript/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro` | `mojo-json` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
-| fortran | ok | `json-fortran`, `jonquil` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
+| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| fortran | ok | `jonquil` | — | `jonquil`, `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -49,14 +49,14 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| moshi-codegen | 48.2 | 440 | JSON — another library (Moshi) | fastest |
-| kotlinx-cbor | 70.0 | 335 | kotlinx.serialization — CBOR | slower |
-| kotlinx-protobuf | 76.6 | 155 | kotlinx.serialization — ProtoBuf | slower |
-| kotlinx-json | 95.3 | 440 | kotlinx.serialization — JSON | slower |
-| gson | 100.0 | 440 | JSON — another library (Gson) | slower |
-| jackson-cbor | 144 | 334 | Jackson — CBOR | slower |
+| moshi-codegen | 44.8 | 440 | JSON — another library (Moshi) | fastest |
+| kotlinx-cbor | 64.2 | 335 | kotlinx.serialization — CBOR | slower |
+| kotlinx-protobuf | 78.7 | 155 | kotlinx.serialization — ProtoBuf | slower |
+| kotlinx-json | 87.1 | 440 | kotlinx.serialization — JSON | slower |
+| gson | 87.2 | 440 | JSON — another library (Gson) | slower |
+| jackson-cbor | 135 | 334 | Jackson — CBOR | slower |
 | jackson | 144 | 440 | Jackson — JSON | slower |
-| msgpack | 170 | 317 | MessagePack | slower |
+| msgpack | 160 | 317 | MessagePack | slower |
 
 ### php
 
@@ -64,12 +64,12 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 5.76 | 454 | stdlib — JSON | fastest |
-| symfony-json | 7.76 | 454 | Symfony — JSON | slower |
-| rybakit-msgpack | 21.7 | 335 | rybakit — MessagePack | slower |
-| protobuf | 197 | 160 | google/protobuf | slower |
-| cbor | 240 | 339 | cbor-php — CBOR | slower |
-| yaml | 282 | 515 | Symfony — YAML | slower |
+| json | 6.50 | 454 | stdlib — JSON | fastest |
+| symfony-json | 8.56 | 454 | Symfony — JSON | slower |
+| rybakit-msgpack | 21.8 | 335 | rybakit — MessagePack | slower |
+| cbor | 144 | 339 | cbor-php — CBOR | slower |
+| protobuf | 200 | 160 | google/protobuf | slower |
+| yaml | 292 | 515 | Symfony — YAML | slower |
 
 ### cpp
 
@@ -125,16 +125,16 @@ Every listed library (same library across formats, and same format across librar
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
 | comptime-bin | 0.38 | 214 | in-tree — packed | fastest |
-| s2s | 0.55 | 266 | s2s — native binary | slower |
-| flatbuffers | 1.06 | 468 | FlatBuffers | slower |
-| protobuf | 1.10 | 155 | Protocol Buffers — zig-protobuf | slower |
-| serde.msgpack | 1.66 | 325 | serde.zig — MessagePack | slower |
+| s2s | 0.61 | 266 | s2s — native binary | slower |
+| flatbuffers | 1.17 | 468 | FlatBuffers | slower |
+| serde.msgpack | 1.18 | 325 | serde.zig — MessagePack | slower |
+| protobuf | 1.33 | 155 | Protocol Buffers — zig-protobuf | slower |
 | serde.json | 2.47 | 448 | serde.zig — JSON | slower |
-| std.json | 3.46 | 448 | stdlib — JSON | slower |
-| zbor | 3.97 | 332 | zbor — CBOR | slower |
-| serde.toml | 5.06 | 508 | serde.zig — TOML | slower |
-| zig-msgpack | 5.35 | 325 | zigcc — MessagePack | slower |
-| capnproto | 7.57 | 376 | Cap’n Proto | slower |
+| std.json | 3.05 | 448 | stdlib — JSON | slower |
+| zbor | 4.30 | 332 | zbor — CBOR | slower |
+| serde.toml | 5.52 | 508 | serde.zig — TOML | slower |
+| zig-msgpack | 5.69 | 325 | zigcc — MessagePack | slower |
+| capnproto | 11.3 | 376 | Cap’n Proto | slower |
 
 ### mojo
 
@@ -142,14 +142,14 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.75 | 118 | Avro | fastest |
-| mojo-json | 1.78 | 452 | JSON — mojo-json | close |
-| EmberJson | 2.25 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.43 | 157 | Protocol Buffers | slower |
-| mojo-flatbuffers | 4.65 | 416 | FlatBuffers | slower |
-| mojo-cbor | 4.85 | 329 | CBOR | slower |
-| ehsanmok-json | 8.05 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 80.6 | 489 | TOML | slower |
+| mojo-avro | 2.62 | 114 | Avro | fastest |
+| mojo-json | 2.95 | 448 | JSON — mojo-json | slower |
+| mojo-protobuf | 3.07 | 155 | Protocol Buffers | slower |
+| mojo-flatbuffers | 4.79 | 408 | FlatBuffers | slower |
+| mojo-cbor | 5.11 | 332 | CBOR | slower |
+| EmberJson | 7.32 | 448 | JSON — EmberJson | slower |
+| ehsanmok-json | 9.62 | 448 | JSON — ehsanmok/json | slower |
+| mojo-toml | 78.9 | 485 | TOML | slower |
 
 ### fortran
 
@@ -157,9 +157,9 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json-fortran | 85.7 | 473 | json-fortran — JSON | fastest |
-| jonquil | 86.1 | 505 | jonquil — JSON | similar |
-| rojff | 111 | 473 | rojff — JSON | slower |
+| jonquil | 64.1 | 505 | jonquil — JSON | fastest |
+| json-fortran | 68.3 | 473 | json-fortran — JSON | slower |
+| rojff | 84.3 | 473 | rojff — JSON | slower |
 
 ## What we saw
 

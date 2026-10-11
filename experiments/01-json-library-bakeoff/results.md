@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -17,7 +17,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | python | ok | `orjson` | — | `orjson` | [python/results.md](python/results.md) |
 | go | ok | `goccy/go-json`, `segmentio/encoding/json`, `sonic` | — | `goccy/go-json` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter` | [java/results.md](java/results.md) |
-| kotlin | ok | `moshi-codegen`, `moshi-reflect` | — | `moshi-codegen` | [kotlin/results.md](kotlin/results.md) |
+| kotlin | ok | `moshi-reflect`, `moshi-codegen` | — | `moshi-reflect` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify` | [javascript/results.md](javascript/results.md) |
 | rust | ok | `sonic-rs` | — | `sonic-rs` | [rust/results.md](rust/results.md) |
@@ -27,7 +27,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | swift | ok | `IkigaJSON` | — | `IkigaJSON` | [swift/results.md](swift/results.md) |
 | zig | ok | `serde.json` | — | `serde.json` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-json` | — | `mojo-json` | [mojo/results.md](mojo/results.md) |
-| fortran | ok | `json-fortran`, `jonquil` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
+| fortran | ok | `jonquil` | — | `jonquil`, `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## Named JSON, in memory, by language
 
@@ -70,19 +70,19 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 51.0 | 440 | fastest |
-| moshi-reflect | 52.2 | 440 | similar |
-| kotlinx-json | 105 | 440 | slower |
-| gson | 110 | 440 | slower |
-| jackson | 161 | 440 | slower |
+| moshi-reflect | 44.7 | 440 | fastest |
+| moshi-codegen | 47.7 | 440 | similar |
+| kotlinx-json | 95.1 | 440 | slower |
+| gson | 98.6 | 440 | slower |
+| jackson | 140 | 440 | slower |
 
 ### php
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 6.07 | 454 | fastest |
-| symfony-json | 7.59 | 454 | slower |
-| jms-json | 34.6 | 454 | slower |
+| json | 6.59 | 454 | fastest |
+| symfony-json | 8.46 | 454 | slower |
+| jms-json | 35.7 | 454 | slower |
 
 ### javascript
 
@@ -141,32 +141,32 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 54.4 | 448 | fastest |
-| Foundation.JSONEncoder | 55.7 | 448 | slower |
+| IkigaJSON | 50.2 | 448 | fastest |
+| Foundation.JSONEncoder | 51.6 | 448 | slower |
 
 ### zig
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 2.61 | 448 | fastest |
-| std.json.scanner | 3.70 | 448 | slower |
-| std.json | 3.70 | 448 | slower |
+| serde.json | 2.37 | 448 | fastest |
+| std.json.scanner | 2.91 | 448 | slower |
+| std.json | 2.92 | 448 | slower |
 
 ### mojo
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 1.93 | 452 | fastest |
-| EmberJson | 2.32 | 452 | slower |
-| ehsanmok-json | 8.40 | 452 | slower |
+| mojo-json | 3.30 | 448 | fastest |
+| EmberJson | 7.63 | 448 | slower |
+| ehsanmok-json | 10.7 | 448 | slower |
 
 ### fortran
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 72.1 | 473 | fastest |
-| jonquil | 72.4 | 505 | similar |
-| rojff | 96.1 | 473 | slower |
+| jonquil | 65.7 | 505 | fastest |
+| json-fortran | 71.4 | 473 | slower |
+| rojff | 87.1 | 473 | slower |
 
 ## What this page is not
 

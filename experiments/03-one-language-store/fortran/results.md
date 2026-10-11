@@ -1,7 +1,7 @@
 # Experiment 3 results — fortran
 
-**Date:** 2026-10-10
-**Raw file:** `experiments/03-one-language-store/fortran/logs/fortran/2026-10-10-134110.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/03-one-language-store/fortran/logs/fortran/2026-10-11-150020.csv`
 **Language:** fortran
 **Sample:** one flat record (`message`), 1 record per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,8 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| custom-binary | v2-1.0 | 0.42 | 1.32 | 1.82 | 44 | 62 | one language — length-prefixed binary | fastest | yes | 98 |
-| json-fortran | 9.3.1 | 18.0 | 19.4 | 37.6 | 172 | 142 | other languages can read — JSON | slower | yes | 91 |
-| hdf5-fortran | 1.10.7 | 182 | 149 | 334 | 7704 | 614 | HDF5 core virtual file driver | slower | yes | 91 |
+| custom-binary | v2-1.0 | 0.14 | 0.84 | 0.99 | 44 | 62 | one language — length-prefixed binary | fastest | yes | 92 |
+| json-fortran | 9.3.1 | 11.9 | 13.1 | 25.2 | 172 | 142 | other languages can read — JSON | slower | yes | 96 |
 
 ## Libraries that belong in the conversation
 

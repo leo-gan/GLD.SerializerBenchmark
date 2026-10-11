@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -17,7 +17,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | python | ok | `msgspec-msgpack` | `orjson` | `msgspec-msgpack` | [python/results.md](python/results.md) |
 | go | ok | `goccy/go-json`, `protobuf` | — | `goccy/go-json`, `protobuf` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter`, `protobuf` | [java/results.md](java/results.md) |
-| kotlin | ok | `moshi-codegen`, `protobuf` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
+| kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr`, `google-protobuf` | [javascript/results.md](javascript/results.md) |
 | rust | ok | `prost` | — | `prost` | [rust/results.md](rust/results.md) |
@@ -25,8 +25,8 @@ We do not name a single winner. This sample is one small order. A different reco
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `MessagePack-CSharp` | [csharp/results.md](csharp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf` | [swift/results.md](swift/results.md) |
-| zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| zig | ok | `serde.msgpack` | — | `serde.msgpack`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | `mojo-protobuf` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 | fortran | ok | `json-fortran` | — | `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
@@ -64,18 +64,18 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| moshi-codegen | 57.1 | 440 | public JSON — fastest named JSON from Experiment 1 | fastest |
-| protobuf | 66.1 | 155 | shared schema — Protocol Buffers | similar |
-| kotlinx-json | 104 | 440 | public JSON — compiler-generated kotlinx.serialization | slower |
-| msgpack | 181 | 317 | compact internal bytes — MessagePack | slower |
+| moshi-codegen | 48.9 | 440 | public JSON — fastest named JSON from Experiment 1 | fastest |
+| protobuf | 59.9 | 155 | shared schema — Protocol Buffers | slower |
+| kotlinx-json | 86.8 | 440 | public JSON — compiler-generated kotlinx.serialization | slower |
+| msgpack | 160 | 317 | compact internal bytes — MessagePack | slower |
 
 ### php
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 6.14 | 454 | public JSON — ships with PHP (also fastest in Experiment 1) | fastest |
-| rybakit-msgpack | 22.0 | 335 | compact internal bytes — MessagePack | slower |
-| protobuf | 199 | 160 | shared schema — Protocol Buffers | slower |
+| json | 6.85 | 454 | public JSON — ships with PHP (also fastest in Experiment 1) | fastest |
+| rybakit-msgpack | 22.5 | 335 | compact internal bytes — MessagePack | slower |
+| protobuf | 204 | 160 | shared schema — Protocol Buffers | slower |
 
 ### javascript
 
@@ -125,37 +125,37 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| SwiftProtobuf | 16.7 | 155 | shared schema — Protocol Buffers | fastest |
-| IkigaJSON | 59.7 | 448 | public JSON — fastest named JSON from Experiment 1 | slower |
-| Foundation.JSONEncoder | 65.1 | 448 | public JSON — ships with Swift | slower |
-| SwiftMsgpack | 91.8 | 329 | compact internal bytes — MessagePack | slower |
+| SwiftProtobuf | 10.5 | 155 | shared schema — Protocol Buffers | fastest |
+| IkigaJSON | 50.8 | 448 | public JSON — fastest named JSON from Experiment 1 | slower |
+| Foundation.JSONEncoder | 52.0 | 448 | public JSON — ships with Swift | slower |
+| SwiftMsgpack | 81.3 | 329 | compact internal bytes — MessagePack | slower |
 
 ### zig
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 1.14 | 155 | shared schema — Protocol Buffers | fastest |
-| serde.msgpack | 1.67 | 325 | compact internal bytes — MessagePack | slower |
-| serde.json | 2.42 | 448 | public JSON — fastest named JSON from Experiment 1 | slower |
-| std.json | 3.42 | 448 | public JSON — ships with Zig | slower |
+| serde.msgpack | 1.19 | 325 | compact internal bytes — MessagePack | fastest |
+| protobuf | 1.36 | 155 | shared schema — Protocol Buffers | slower |
+| serde.json | 2.54 | 448 | public JSON — fastest named JSON from Experiment 1 | slower |
+| std.json | 3.15 | 448 | public JSON — ships with Zig | slower |
 
 ### mojo
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.75 | 118 | Avro | fastest |
-| mojo-json | 1.80 | 452 | JSON — mojo-json | slower |
-| EmberJson | 2.28 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.42 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.81 | 329 | CBOR | slower |
-| ehsanmok-json | 8.05 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 80.8 | 489 | TOML | slower |
+| mojo-avro | 3.97 | 114 | Avro | fastest |
+| mojo-json | 5.46 | 448 | JSON — mojo-json | slower |
+| mojo-protobuf | 5.63 | 155 | Protocol Buffers | close |
+| mojo-cbor | 7.33 | 332 | CBOR | slower |
+| EmberJson | 10.6 | 448 | JSON — EmberJson | slower |
+| ehsanmok-json | 15.2 | 448 | JSON — ehsanmok/json | slower |
+| mojo-toml | 102 | 485 | TOML | slower |
 
 ### fortran
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json-fortran | 84.8 | 473 | public JSON — json-fortran | fastest |
+| json-fortran | 69.1 | 473 | public JSON — json-fortran | fastest |
 
 ## What this page is not
 

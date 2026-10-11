@@ -1,7 +1,7 @@
 # Experiment 2 results — kotlin
 
-**Date:** 2026-08-28
-**Raw file:** `experiments/02-flat-record-formats/kotlin/logs/kotlin/2026-08-27-181711.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/02-flat-record-formats/kotlin/logs/kotlin/2026-10-11-145909.csv`
 **Language:** kotlin
 **Sample:** one flat record (`message`), 1 and 100 records per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,11 +12,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 4.28.3 | 24.9 | 12.5 | 37.8 | 50 | 2114 | Protocol Buffers | fastest | yes | 88 |
-| moshi-codegen | 1.15.2 | 23.2 | 26.7 | 50.0 | 158 | 2452 | JSON — fast writer from Experiment 1 | slower | yes | 87 |
-| kotlinx-json | 1.8.1 | 35.7 | 67.5 | 102 | 158 | 2452 | JSON — compiler-generated kotlinx.serialization | slower | yes | 92 |
-| msgpack | 0.9.8 | 63.0 | 85.0 | 151 | 114 | 2254 | MessagePack | slower | yes | 87 |
-| jackson | 2.18.3 | 59.5 | 95.5 | 158 | 158 | 2452 | JSON — common default | slower | yes | 92 |
+| protobuf | 4.35.0 | 23.6 | 12.9 | 37.1 | 50 | 2114 | Protocol Buffers | fastest | yes | 96 |
+| moshi-codegen | 1.15.2 | 19.7 | 23.3 | 47.0 | 158 | 2452 | JSON — fast writer from Experiment 1 | slower | yes | 89 |
+| kotlinx-json | 1.8.1 | 25.6 | 54.2 | 78.0 | 158 | 2452 | JSON — compiler-generated kotlinx.serialization | slower | yes | 86 |
+| msgpack | 0.9.8 | 49.8 | 66.3 | 115 | 114 | 2254 | MessagePack | slower | yes | 89 |
+| jackson | 2.19.0 | 50.0 | 79.6 | 131 | 158 | 2452 | JSON — common default | slower | yes | 91 |
 
 ## In memory — 100 record(s) per write
 
@@ -24,26 +24,26 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 4.28.3 | 66.2 | 49.9 | 110 | 4841 | 2114 | Protocol Buffers | fastest | yes | 93 |
-| moshi-codegen | 1.15.2 | 93.7 | 126 | 222 | 15546 | 2452 | JSON — fast writer from Experiment 1 | slower | yes | 89 |
-| kotlinx-json | 1.8.1 | 103 | 144 | 246 | 15546 | 2452 | JSON — compiler-generated kotlinx.serialization | slower | yes | 86 |
-| jackson | 2.18.3 | 121 | 234 | 356 | 15546 | 2452 | JSON — common default | slower | yes | 91 |
-| msgpack | 0.9.8 | 151 | 214 | 368 | 11031 | 2254 | MessagePack | slower | yes | 88 |
+| protobuf | 4.35.0 | 36.2 | 36.2 | 76.8 | 4841 | 2114 | Protocol Buffers | fastest | yes | 90 |
+| moshi-codegen | 1.15.2 | 86.7 | 116 | 205 | 15546 | 2452 | JSON — fast writer from Experiment 1 | slower | yes | 92 |
+| kotlinx-json | 1.8.1 | 103 | 133 | 245 | 15546 | 2452 | JSON — compiler-generated kotlinx.serialization | slower | yes | 87 |
+| jackson | 2.19.0 | 91.2 | 167 | 262 | 15546 | 2452 | JSON — common default | slower | yes | 87 |
+| msgpack | 0.9.8 | 120 | 167 | 286 | 11031 | 2254 | MessagePack | slower | yes | 84 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| protobuf | 1 | 15.2 | 12.1 | 28.1 | real |
-| moshi-codegen | 1 | 13.2 | 17.3 | 30.7 | real |
-| kotlinx-json | 1 | 23.6 | 38.4 | 62.1 | real |
-| jackson | 1 | 29.6 | 49.7 | 80.1 | real |
-| msgpack | 1 | 35.2 | 47.8 | 83.4 | real |
-| protobuf | 100 | 31.5 | 35.5 | 68.0 | real |
-| moshi-codegen | 100 | 70.0 | 107 | 177 | real |
-| kotlinx-json | 100 | 83.0 | 103 | 189 | real |
-| jackson | 100 | 70.2 | 155 | 226 | real |
-| msgpack | 100 | 88.1 | 141 | 228 | real |
+| protobuf | 1 | 15.7 | 11.0 | 27.1 | real |
+| moshi-codegen | 1 | 10.8 | 17.8 | 28.7 | real |
+| kotlinx-json | 1 | 23.1 | 38.3 | 60.8 | real |
+| msgpack | 1 | 33.7 | 46.4 | 77.7 | real |
+| jackson | 1 | 29.3 | 51.1 | 81.3 | real |
+| protobuf | 100 | 26.6 | 26.1 | 53.2 | real |
+| kotlinx-json | 100 | 67.4 | 83.3 | 152 | real |
+| moshi-codegen | 100 | 62.0 | 96.5 | 162 | real |
+| jackson | 100 | 53.2 | 122 | 177 | real |
+| msgpack | 100 | 63.7 | 122 | 188 | real |
 
 ## Libraries that belong in the conversation
 

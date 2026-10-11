@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,16 +15,16 @@ We do not name a single winner. This sample is one small flat record. A differen
 | Language | Status | Not clearly slower | Small gap | Time/size front | Full table |
 |----------|--------|--------------------|-----------|-----------------|------------|
 | java | ok | `jackson-smile`, `jackson`, `jackson-cbor` | — | `jackson-smile` | [java/results.md](java/results.md) |
-| kotlin | ok | `jackson-cbor`, `jackson` | — | `jackson-cbor`, `msgpack`, `kotlinx-ion` | [kotlin/results.md](kotlin/results.md) |
+| kotlin | ok | `jackson`, `jackson-cbor` | `kotlinx-ion`, `msgpack` | `jackson`, `jackson-cbor`, `kotlinx-ion` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr` | [javascript/results.md](javascript/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `vmihailenco/msgpack` | [go/results.md](go/results.md) |
 | rust | ok | `rmp-serde` | `sonic-rs` | `rmp-serde` | [rust/results.md](rust/results.md) |
 | c | ok | `mpack` | — | `mpack` | [c/results.md](c/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
-| zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
+| zig | ok | `flatbuffers`, `serde.msgpack` | — | `flatbuffers`, `serde.msgpack`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-json` | — | `mojo-json`, `mojo-cbor` | [mojo/results.md](mojo/results.md) |
-| fortran | ok | `jonquil`, `json-fortran` | — | `jonquil`, `json-fortran` | [fortran/results.md](fortran/results.md) |
+| fortran | ok | `jonquil` | — | `jonquil`, `json-fortran` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
 
@@ -49,11 +49,11 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| jackson-cbor | 140 | 334 | CBOR — Jackson | fastest |
-| jackson | 150 | 440 | JSON — Jackson | similar |
-| msgpack | 162 | 317 | MessagePack | slower |
-| kotlinx-ion | 183 | 234 | Ion | slower |
-| kbson | 191 | 1032 | BSON | slower |
+| jackson | 171 | 440 | JSON — Jackson | fastest |
+| jackson-cbor | 172 | 334 | CBOR — Jackson | similar |
+| kotlinx-ion | 219 | 234 | Ion | close |
+| msgpack | 222 | 317 | MessagePack | close |
+| kbson | 234 | 1000 | BSON | slower |
 
 ### php
 
@@ -61,9 +61,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 5.97 | 454 | JSON | fastest |
-| rybakit-msgpack | 22.2 | 335 | MessagePack | slower |
-| cbor | 243 | 339 | CBOR | slower |
+| json | 6.42 | 454 | JSON | fastest |
+| rybakit-msgpack | 21.8 | 335 | MessagePack | slower |
+| cbor | 143 | 339 | CBOR | slower |
 
 ### javascript
 
@@ -111,9 +111,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| IkigaJSON | 49.4 | 448 | JSON — Experiment 1 | fastest |
-| SwiftMsgpack | 78.2 | 329 | MessagePack | slower |
-| SwiftBSON | 102 | 525 | BSON | slower |
+| IkigaJSON | 51.8 | 448 | JSON — Experiment 1 | fastest |
+| SwiftMsgpack | 82.4 | 329 | MessagePack | slower |
+| SwiftBSON | 106 | 525 | BSON | slower |
 
 ### zig
 
@@ -121,12 +121,12 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| flatbuffers | 2.64 | 468 | FlatBuffers | fastest |
-| protobuf | 2.78 | 155 | Protocol Buffers | close |
-| serde.msgpack | 3.74 | 325 | MessagePack | slower |
-| serde.zon | 6.26 | 994 | ZON | slower |
-| std.json | 7.92 | 448 | JSON | slower |
-| capnproto | 25.9 | 376 | Cap’n Proto | slower |
+| flatbuffers | 1.08 | 468 | FlatBuffers | fastest |
+| serde.msgpack | 1.08 | 325 | MessagePack | similar |
+| protobuf | 1.26 | 155 | Protocol Buffers | slower |
+| std.json | 3.00 | 448 | JSON | slower |
+| serde.zon | 3.00 | 994 | ZON | slower |
+| capnproto | 10.5 | 376 | Cap’n Proto | slower |
 
 ### mojo
 
@@ -134,10 +134,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-json | 1.74 | 452 | JSON — mojo-json | fastest |
-| EmberJson | 2.16 | 452 | JSON | slower |
-| mojo-cbor | 4.62 | 329 | CBOR | slower |
-| ehsanmok-json | 7.78 | 452 | JSON — ehsanmok/json | slower |
+| mojo-json | 4.63 | 448 | JSON — mojo-json | fastest |
+| mojo-cbor | 7.18 | 332 | CBOR | slower |
+| EmberJson | 10.7 | 448 | JSON | slower |
+| ehsanmok-json | 14.8 | 448 | JSON — ehsanmok/json | slower |
 
 ### fortran
 
@@ -145,9 +145,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| jonquil | 78.2 | 505 | JSON — jonquil | fastest |
-| json-fortran | 80.9 | 473 | JSON — json-fortran | similar |
-| rojff | 103 | 473 | JSON — rojff | slower |
+| jonquil | 62.8 | 505 | JSON — jonquil | fastest |
+| json-fortran | 69.0 | 473 | JSON — json-fortran | slower |
+| rojff | 84.4 | 473 | JSON — rojff | slower |
 
 ## What we saw
 

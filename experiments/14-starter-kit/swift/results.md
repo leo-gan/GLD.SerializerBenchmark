@@ -1,7 +1,7 @@
 # Experiment 14 results — swift
 
-**Date:** 2026-08-29
-**Raw file:** `experiments/14-starter-kit/swift/logs/swift/2026-08-28-182314.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/14-starter-kit/swift/logs/swift/2026-10-11-151257.csv`
 **Language:** swift
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,19 +12,19 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| SwiftProtobuf | 1.38.1 | 9.57 | 6.76 | 16.7 | 155 | 174 | yes | fastest | yes | 94 |
-| IkigaJSON | 2.5.3 | 21.7 | 38.0 | 59.7 | 448 | 229 | yes | slower | yes | 93 |
-| Foundation.JSONEncoder | Foundation | 28.7 | 36.2 | 65.1 | 448 | 233 | yes | slower | yes | 94 |
-| SwiftMsgpack | 1.2.1 | 53.0 | 38.8 | 91.8 | 329 | 230 | yes | slower | yes | 91 |
+| SwiftProtobuf | 1.38.1 | 5.58 | 4.96 | 10.5 | 155 | 174 | yes | fastest | yes | 77 |
+| IkigaJSON | 2.5.4 | 18.3 | 32.7 | 50.8 | 448 | 229 | yes | slower | yes | 83 |
+| Foundation.JSONEncoder | Foundation | 22.1 | 29.8 | 52.0 | 448 | 232 | yes | slower | yes | 84 |
+| SwiftMsgpack | 1.2.1 | 47.0 | 34.4 | 81.3 | 329 | 230 | yes | slower | yes | 85 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| SwiftProtobuf | 20.6 | 7.37 | 27.9 | copied |
-| IkigaJSON | 54.8 | 37.4 | 93.0 | copied |
-| Foundation.JSONEncoder | 59.7 | 35.4 | 95.1 | copied |
-| SwiftMsgpack | 78.3 | 39.5 | 117 | copied |
+| SwiftProtobuf | 18.5 | 6.50 | 25.0 | copied |
+| IkigaJSON | 51.6 | 35.2 | 86.7 | copied |
+| Foundation.JSONEncoder | 55.9 | 32.2 | 88.4 | copied |
+| SwiftMsgpack | 73.4 | 36.3 | 110 | copied |
 
 ## Libraries that belong in the conversation
 

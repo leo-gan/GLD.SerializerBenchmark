@@ -1,7 +1,7 @@
 # Experiment 8 results — swift
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/08-human-files/swift/logs/swift/2026-08-17-110418.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/08-human-files/swift/logs/swift/2026-10-11-150425.csv`
 **Language:** swift
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,10 +12,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| IkigaJSON | 2.5.3 | 20.0 | 33.0 | 53.2 | 448 | — | JSON | fastest | yes | 87 |
-| TOML | 2.0.0 | 153 | 42.9 | 196 | 508 | — | TOML | slower | yes | 81 |
-| XMLCoder | 0.18.2 | 186 | 227 | 413 | 729 | — | XML | slower | yes | 85 |
-| Yams | 5.4.0 | 237 | 180 | 417 | 429 | — | YAML | slower | yes | 87 |
+| IkigaJSON | 2.5.4 | 18.2 | 33.0 | 51.0 | 448 | 255 | JSON | fastest | yes | 80 |
+| TOML | 2.0.0 | 150 | 42.4 | 192 | 508 | 258 | TOML | slower | yes | 92 |
+| XMLCoder | 0.18.2 | 180 | 220 | 401 | 729 | 272 | XML | slower | yes | 93 |
+| Yams | 5.4.0 | 226 | 175 | 404 | 429 | 247 | YAML | slower | yes | 92 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -23,10 +23,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| IkigaJSON | 2.5.3 | 14.6 | 19.9 | 34.6 | 411 | — | JSON | fastest | yes | 85 |
-| TOML | 2.0.0 | 44.1 | 31.4 | 76.2 | 441 | — | TOML | slower | yes | 92 |
-| Yams | 5.4.0 | 262 | 58.3 | 320 | 407 | — | YAML | slower | yes | 92 |
-| XMLCoder | 0.18.2 | 204 | 197 | 402 | 803 | — | XML | slower | yes | 90 |
+| IkigaJSON | 2.5.4 | 13.4 | 18.8 | 32.2 | 411 | 255 | JSON | fastest | yes | 84 |
+| TOML | 2.0.0 | 42.1 | 30.8 | 73.1 | 441 | 258 | TOML | slower | yes | 77 |
+| Yams | 5.4.0 | 243 | 52.9 | 297 | 407 | 247 | YAML | slower | yes | 87 |
+| XMLCoder | 0.18.2 | 194 | 188 | 382 | 803 | 272 | XML | slower | yes | 86 |
 
 ## Libraries that belong in the conversation
 
