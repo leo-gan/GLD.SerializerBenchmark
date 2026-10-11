@@ -68,6 +68,8 @@ PECL rows register only when the extension is loaded. This host’s static PHP C
 | [cbor](https://github.com/Spomky-Labs/cbor-php) | Binary | spomky-labs/cbor-php | adapted | RFC 8949 |
 | [yaml](https://github.com/symfony/yaml) | Text | symfony/yaml | text_on_stream | Pure PHP YAML |
 | [yaml-pecl](https://github.com/php/pecl-file_formats-yaml) | Text | ext-yaml | text_on_stream | LibYAML; skip if missing |
+| [gld-arrow](https://github.com/leo-gan/gld-arrow-php) | Schema | leo-gan/gld-arrow-php 0.2.0 | adapted | Arrow IPC stream for the five suite types |
+| [gld-ion](https://github.com/leo-gan/gld-ion-php) | Binary | leo-gan/gld-ion-php 0.2.0 | adapted | Ion 1.0 binary encode / decode |
 
 ### Specifics
 
@@ -132,6 +134,14 @@ The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a hu
 #### [yaml-pecl](https://github.com/php/pecl-file_formats-yaml)
 
 ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML.
+
+#### [gld-arrow](https://github.com/leo-gan/gld-arrow-php) · `0.2.0`
+
+gld-arrow-php is a from-scratch Apache Arrow library for PHP. This row writes one IPC stream for a suite value or a batch and reads it back. It is not the columnar data set.
+
+#### [gld-ion](https://github.com/leo-gan/gld-ion-php) · `0.2.0`
+
+gld-ion-php is a from-scratch Amazon Ion library for PHP. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decode on the five suite types.
 
 ## Not in this suite (and why)
 

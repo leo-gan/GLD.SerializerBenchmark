@@ -4,7 +4,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Serializers
 
-See [docs/php/index.md](../docs/php/index.md) for the inventory, PECL skip rules, and excluded candidates.
+See [docs/php/index.md](../docs/php/index.md) for the inventory, PECL skip rules, and excluded candidates. `gld-arrow` and `gld-ion` are leo-gan/gld-arrow-php and leo-gan/gld-ion-php 0.2.0. They round-trip the five suite types.
 
 ## Runner
 

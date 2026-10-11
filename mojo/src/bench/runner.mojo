@@ -23,6 +23,7 @@ from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
 from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
+from bench.hdf5_ser import AdiosSer, Hdf5Ser, NcSer
 from bench.arrow_ser import ArrowIpcSer
 from bench.parquet_ser import ParquetSer
 from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
@@ -256,6 +257,9 @@ def run() raises:
     var bson = BsonSer()
     var ion = IonSer()
     var smile = SmileSer()
+    var h5 = Hdf5Ser()
+    var nc = NcSer()
+    var adios = AdiosSer()
     var arrow = ArrowIpcSer()
     var parquet = ParquetSer("parquet", CODEC_SNAPPY)
     var parquet_raw = ParquetSer("parquet-uncompressed", CODEC_NONE)
@@ -273,6 +277,9 @@ def run() raises:
     names.append(bson.name())
     names.append(ion.name())
     names.append(smile.name())
+    names.append(h5.name())
+    names.append(nc.name())
+    names.append(adios.name())
     names.append(msgp.name())
     names.append(dagr.name())
     names.append(dagr_reg.name())
@@ -372,6 +379,12 @@ def run() raises:
                     _ = ion.serialize_bytes(fx)
                 elif nm == smile.name():
                     _ = smile.serialize_bytes(fx)
+                elif nm == h5.name():
+                    _ = h5.serialize_bytes(fx)
+                elif nm == nc.name():
+                    _ = nc.serialize_bytes(fx)
+                elif nm == adios.name():
+                    _ = adios.serialize_bytes(fx)
                 elif nm == arrow.name():
                     _ = arrow.serialize_bytes(fx)
                 elif nm == parquet.name():
@@ -595,6 +608,42 @@ def run() raises:
                             var buf = smile.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = smile.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == h5.name():
+                            ver = h5.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = h5.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = h5.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == nc.name():
+                            ver = nc.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = nc.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = nc.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == adios.name():
+                            ver = adios.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = adios.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = adios.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

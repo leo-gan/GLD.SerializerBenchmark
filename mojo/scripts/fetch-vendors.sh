@@ -2,7 +2,7 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,gldtoml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src,arrow_src,parquet_src}.
+# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,gldtoml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src,arrow_src,parquet_src,hdf5_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -48,6 +48,7 @@ acquire gld-smile "$tmp/gld-smile" https://github.com/leo-gan/gld-smile.git
 acquire gld-toml "$tmp/gld-toml" https://github.com/leo-gan/gld-toml.git
 acquire gld-arrow "$tmp/gld-arrow" https://github.com/leo-gan/gld-arrow.git
 acquire gld-parquet "$tmp/gld-parquet" https://github.com/leo-gan/gld-parquet.git
+acquire gld-hdf5 "$tmp/gld-hdf5" https://github.com/leo-gan/gld-hdf5.git
 # DataBooth/mojo-toml keeps the `toml` package. gld-toml is vendored separately below.
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
@@ -234,6 +235,17 @@ rewrite_tree(
         "codegen": "parquet_codegen",
         "compress": "parquet_compress",
         "parquet": "parquet",
+    },
+)
+rewrite_tree(
+    src_root / "gld-hdf5" / "src",
+    mojo / "vendor" / "hdf5_src",
+    {
+        "runtime": "hdf5_runtime",
+        "wire": "hdf5_wire",
+        "schema": "hdf5_schema",
+        "codegen": "hdf5_codegen",
+        "hdf5": "hdf5",
     },
 )
 rewrite_tree(

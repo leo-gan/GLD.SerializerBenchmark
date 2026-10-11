@@ -347,6 +347,8 @@ add("kotlin", "capnproto", ["capnp"], "https://capnproto.org/",
     "Official Cap'n Proto.")
 add("kotlin", "thrift", ["thrift"], "https://thrift.apache.org/",
     "Apache Thrift TCompactProtocol.")
+add("kotlin", "gld-ion", ["ion"], "https://github.com/leo-gan/gld-ion-kotlin",
+    "gld-ion-kotlin 0.2.0: from-scratch Ion 1.0 binary encode/decode. Vendored; not on Maven Central.")
 add("kotlin", "kotlinx-properties", [], "https://github.com/Kotlin/kotlinx.serialization",
     "java.util.Properties map, not a catalogued interchange spec.")
 add("kotlin", "kryo", [], "https://github.com/EsotericSoftware/kryo",
@@ -615,6 +617,10 @@ add("swift", "FlatBuffers", ["flatbuffers"], "https://flatbuffers.dev/",
     "Official FlatBuffers Swift runtime.")
 add("swift", "SwiftAvroCore", ["avro"], "https://github.com/barrettekra/SwiftAvroCore",
     "SwiftAvroCore: Apache Avro.")
+add("swift", "gld-avro", ["avro"], "https://github.com/leo-gan/gld-avro-swift",
+    "gld-avro-swift 0.2.0: from-scratch Avro encodeGeneric/decodeGeneric.")
+add("swift", "gld-ion", ["ion"], "https://github.com/leo-gan/gld-ion-swift",
+    "gld-ion-swift 0.2.0: Ion 1.0 binary encode/decodeBinary.")
 add("swift", "SwiftBSON", ["bson"], "https://github.com/mongodb/swift-bson",
     "Official MongoDB swift-bson.")
 add("swift", "CapnProto", ["capnp"], "https://capnproto.org/",
@@ -649,6 +655,20 @@ add("php", "serialize", [], "https://www.php.net/manual/en/function.serialize.ph
     "PHP serialize(): PHP-only format.")
 add("php", "symfony-xml", [], "https://symfony.com/doc/current/components/serializer.html",
     "Symfony XML encoder; XML is out of catalog scope.")
+add("php", "gld-arrow", ["arrow"], "https://github.com/leo-gan/gld-arrow-php",
+    "gld-arrow-php 0.2.0: Arrow IPC stream for the five suite types.")
+add("php", "gld-ion", ["ion"], "https://github.com/leo-gan/gld-ion-php",
+    "gld-ion-php 0.2.0: Ion 1.0 binary encode/decode.")
+add("php", "simdjson", ["json"], "https://github.com/crazyxman/simdjson_php",
+    "simdjson_php: JSON decode. Encode stays json_encode.")
+add("php", "msgpack-pecl", ["msgpack"], "https://github.com/msgpack/msgpack-php",
+    "PECL msgpack: MessagePack.")
+add("php", "bson", ["bson"], "https://github.com/mongodb/mongo-php-driver",
+    "MongoDB PHP BSON extension.")
+add("php", "yaml-pecl", ["yaml"], "https://github.com/php/pecl-file_formats-yaml",
+    "PECL yaml: LibYAML.")
+add("php", "igbinary", [], "https://github.com/igbinary/igbinary",
+    "igbinary: PHP-only binary. No public interchange spec.")
 
 # --- Zig ---
 add("zig", "std.json", ["json"], "https://ziglang.org/documentation/master/std/#std.json",
@@ -689,6 +709,14 @@ add("zig", "comptime-bin", [], "https://github.com/leo-gan/GLD.SerializerBenchma
     "In-tree comptime length-prefixed binary.")
 add("zig", "s2s", [], "https://github.com/ziglibs/s2s",
     "s2s: Zig struct-to-stream, Zig-only.")
+add("zig", "gld-avro", ["avro"], "https://github.com/leo-gan/gld-avro-zig",
+    "gld-avro-zig 0.2.0: from-scratch Avro Datum.encodeTo / decodeBin.")
+add("zig", "gld-arrow", ["arrow"], "https://github.com/leo-gan/gld-arrow-zig",
+    "gld-arrow-zig 0.2.0: Arrow IPC stream for the five suite types.")
+add("zig", "serde.json.borrowed", ["json"], "https://github.com/getty-zig/getty",
+    "serde.zig JSON borrowed decode.")
+add("zig", "std.json.borrowed", ["json"], "https://ziglang.org/documentation/master/std/#std.json",
+    "std.json parseFromSliceLeaky borrowed decode.")
 
 # --- Mojo ---
 add("mojo", "EmberJson", ["json"], "https://github.com/bgreni/EmberJson",
@@ -725,6 +753,12 @@ add("mojo", "parquet", ["parquet"], "https://github.com/leo-gan/gld-parquet",
     "gld-parquet 0.2.0: Parquet file encode_table / decode_table with Snappy.")
 add("mojo", "parquet-uncompressed", ["parquet"], "https://github.com/leo-gan/gld-parquet",
     "gld-parquet 0.2.0: same writer with page compression off.")
+add("mojo", "gld-hdf5", ["hdf5"], "https://github.com/leo-gan/gld-hdf5",
+    "gld-hdf5 0.2.0: from-scratch HDF5 datasets. Does not link libhdf5.")
+add("mojo", "gld-netcdf", ["netcdf"], "https://github.com/leo-gan/gld-hdf5",
+    "gld-hdf5 0.2.0 NetCDF-4 writer. Variables are float64.")
+add("mojo", "gld-adios2", ["adios2"], "https://github.com/leo-gan/gld-hdf5",
+    "gld-hdf5 0.2.0 BP5 writer: one float64 variable and one string attribute.")
 
 # --- Fortran (pure Fortran; no C wrapper rows) ---
 add("fortran", "json-fortran", ["json"], "https://github.com/jacobwilliams/json-fortran",
@@ -745,6 +779,8 @@ add("fortran", "netcdf-fortran", ["netcdf"], "https://github.com/Unidata/netcdf-
     "Official NetCDF Fortran API. The timed row is a NetCDF-4 file, not a bytes buffer.")
 add("fortran", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
     "Official ADIOS2 Fortran binding. Serial BP5 directory, no bytes buffer.")
+add("fortran", "gld-arrow", ["arrow"], "https://github.com/leo-gan/gld-arrow-fortran",
+    "gld-arrow-fortran 0.2.0: Arrow C Data Interface numeric buffers. Does not link libarrow.")
 
 # --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo", "cpp"):

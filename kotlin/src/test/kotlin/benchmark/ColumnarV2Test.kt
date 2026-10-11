@@ -78,7 +78,7 @@ class ColumnarV2Test {
     @Test
     fun filterAllowListPreservesRegistryOrder() {
         val names = Registry.names()
-        assertEquals(32, names.size)
+        assertEquals(33, names.size)
         assertEquals(names, Registry.select("").map { it.name() })
         val protobuf = Registry.select("protobuf").map { it.name() }
         assertTrue(protobuf.contains("protobuf"))

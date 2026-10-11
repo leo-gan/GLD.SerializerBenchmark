@@ -1242,6 +1242,11 @@
         "source_url": "https://github.com/Peanuuutz/tomlkt",
         "version": "0.5.0",
         "specifics": "tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config language. tomlkt encodes `@Serializable` types to TOML text."
+      },
+      "gld-ion": {
+        "source_url": "https://github.com/leo-gan/gld-ion-kotlin",
+        "version": "0.2.0",
+        "specifics": "gld-ion-kotlin is a from-scratch Amazon Ion library for Kotlin. It is vendored because it is not on Maven Central. This row builds an IonDoc inside the timed call and uses binary encode and decode. The existing kotlinx-ion row stays on ion-java."
       }
     },
     "mojo": {
@@ -1349,6 +1354,21 @@
         "source_url": "https://github.com/leo-gan/gld-parquet",
         "version": "0.2.0",
         "specifics": "This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override."
+      },
+      "gld-hdf5": {
+        "source_url": "https://github.com/leo-gan/gld-hdf5",
+        "version": "0.2.0",
+        "specifics": "gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row writes i32, i64, f64, and uint8 datasets for a suite value and reads them back with read_hdf5. It does not link libhdf5."
+      },
+      "gld-netcdf": {
+        "source_url": "https://github.com/leo-gan/gld-hdf5",
+        "version": "0.2.0",
+        "specifics": "gld-netcdf is the NetCDF-4 writer in gld-hdf5. NetCDF exists for named scientific arrays. This library stores variables as float64, so integers ride as exact float64 values and strings ride as float64 bit patterns. Dimension names are not variable names."
+      },
+      "gld-adios2": {
+        "source_url": "https://github.com/leo-gan/gld-hdf5",
+        "version": "0.2.0",
+        "specifics": "gld-adios2 is the BP5 writer in gld-hdf5. ADIOS2 BP5 is a step directory. This library writes one float64 variable and one string attribute, so the suite record is packed into that variable. The timed size is the directory files concatenated. bpls does not open this pure-Mojo metadata."
       }
     },
     "php": {
@@ -1421,6 +1441,16 @@
       "yaml-pecl": {
         "source_url": "https://github.com/php/pecl-file_formats-yaml",
         "specifics": "ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML."
+      },
+      "gld-arrow": {
+        "source_url": "https://github.com/leo-gan/gld-arrow-php",
+        "version": "0.2.0",
+        "specifics": "gld-arrow-php is a from-scratch Apache Arrow library for PHP. This row writes one IPC stream for a suite value or a batch and reads it back. It is not the columnar data set."
+      },
+      "gld-ion": {
+        "source_url": "https://github.com/leo-gan/gld-ion-php",
+        "version": "0.2.0",
+        "specifics": "gld-ion-php is a from-scratch Amazon Ion library for PHP. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decode on the five suite types."
       }
     },
     "python": {
@@ -1830,6 +1860,16 @@
       "protobuf-wire": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",
         "specifics": "This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`."
+      },
+      "gld-avro": {
+        "source_url": "https://github.com/leo-gan/gld-avro-swift",
+        "version": "0.2.0",
+        "specifics": "gld-avro-swift is a from-scratch Apache Avro library for Swift. Avro exists for compact, schema-driven records. This row parses the suite schema once, then times encodeGeneric and decodeGeneric."
+      },
+      "gld-ion": {
+        "source_url": "https://github.com/leo-gan/gld-ion-swift",
+        "version": "0.2.0",
+        "specifics": "gld-ion-swift is a from-scratch Amazon Ion library for Swift. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decodeBinary on the five suite types."
       }
     },
     "zig": {
@@ -1925,6 +1965,16 @@
         "source_url": "https://github.com/zigcc/zig-msgpack",
         "version": "0.0.18",
         "specifics": "zigcc/zig-msgpack is a MessagePack implementation for Zig. MessagePack exists as compact binary JSON. This package exposes a Payload encode/decode API."
+      },
+      "gld-avro": {
+        "source_url": "https://github.com/leo-gan/gld-avro-zig",
+        "version": "0.2.0",
+        "specifics": "gld-avro-zig is a from-scratch Apache Avro library for Zig. Avro exists for compact, schema-driven records. Prepare parses the schema and builds a Datum. The timed path is Datum.encodeTo and decodeBin."
+      },
+      "gld-arrow": {
+        "source_url": "https://github.com/leo-gan/gld-arrow-zig",
+        "version": "0.2.0",
+        "specifics": "gld-arrow-zig is a from-scratch Apache Arrow library for Zig. This suite row encodes one suite value as an Arrow IPC stream and reads it back with rowsFromBatch. It is not the columnar data set."
       }
     }
   }

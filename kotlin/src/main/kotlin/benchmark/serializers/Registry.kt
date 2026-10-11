@@ -27,6 +27,7 @@ object Registry {
             Entry("protostuff", ::ProtostuffSer),
             Entry("kbson", ::KBsonSer),
             Entry("kotlinx-ion", ::KotlinxIonSer),
+            Entry("gld-ion", ::GldIonSer),
             Entry("tomlkt", ::TomlktSer),
             // Schema
             Entry("kotlinx-protobuf", ::KotlinxProtobufSer),

@@ -36,6 +36,14 @@
             .url = "https://github.com/nDimensional/zig-flatbuffers/archive/refs/tags/v0.2.1.tar.gz",
             .hash = "flatbuffers-0.2.1-Ntd6Dj4tAgAaAnjU4WN1nBvxfeZ0yHDW1JNCNr1i1EKB",
         },
+        .gld_avro_zig = .{
+            .url = "git+https://github.com/leo-gan/gld-avro-zig?ref=0.2.0#65d45de54a222c8afa1d4aaf90c6646762ff0b87",
+            .hash = "gld_avro_zig-0.2.0-1wSpKL0YBABB8zW6GcpS_Gte5L8IhuRKluGvxAakuVIe",
+        },
+        .gld_arrow_zig = .{
+            .url = "git+https://github.com/leo-gan/gld-arrow-zig?ref=0.2.0#9b3d8948747d761e748bdd95f7abcc796dcec07a",
+            .hash = "gld_arrow_zig-0.2.0-9moWMHGMAwD1Yaukj6dXUXAo3I7qNS75mLPTTMvfO162",
+        },
     },
     .paths = .{
         "build.zig",

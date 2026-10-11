@@ -77,27 +77,27 @@ How to install the toolchain and run the benchmark: [`fortran/README.md`](https:
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the in-tree path this suite times). A version after the name is the `SerializerVersion` this runner writes.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
 
 #### [json-fortran](https://github.com/jacobwilliams/json-fortran) · `9.3.1`
 
-JSON-Fortran is a modern Fortran JSON API. It exists so Fortran programs can read and write JSON without calling a C library. This row times `json_core` serialize and deserialize. The runner builds it with `-DINT64` and `-DREAL64`, so `json_IK` is int64 and `json_RK` is real64. Epoch milliseconds stay JSON integers.
+JSON-Fortran is a modern Fortran JSON API. It exists so Fortran programs can read and write JSON without calling a C library. This row times json_core serialize and deserialize. The runner builds it with -DINT64 and -DREAL64, so json_IK is int64 and json_RK is real64. Epoch milliseconds stay JSON integers.
 
 #### [jonquil](https://github.com/toml-f/jonquil) · `0.3.2`
 
-Jonquil is a JSON library for Fortran, built on TOML Fortran. It exists so a Fortran program can parse and serialize JSON with the same document model as toml-f. This row times `json_dumps` and `json_loads`.
-
-#### [rojff](https://github.com/everythingfunctional/rojff) · `9f68e5aa4c12`
-
-rojff (Return of JSON for Fortran) is a pure Fortran JSON value tree. It was written to construct JSON faster than earlier Fortran JSON libraries, with functional constructors and a move API. This row times `to_compact_string` and `parse_json_from_string`. Its integer kind is the compiler's default integer, int32 here. Values outside that range are written as JSON numbers so the integer reader does not overflow, and are read back with `nint`.
+Jonquil is a JSON library for Fortran, built on TOML Fortran. It exists so a Fortran program can parse and serialize JSON with the same document model as toml-f. This row times json_dumps and json_loads.
 
 #### [toml-f](https://github.com/toml-f/toml-f) · `0.5.2`
 
-TOML Fortran is a TOML 1.0 parser and serializer for Fortran. It exists so Fortran projects can load and save configuration as TOML. This row times `toml_serialize` and `toml_loads`. A batch of more than one record is a table with a `records` array, because TOML has no bare array at the root. The JSON rows use the same envelope so one reader serves both.
+TOML Fortran is a TOML 1.0 parser and serializer for Fortran. It exists so Fortran projects can load and save configuration as TOML. This row times toml_serialize and toml_loads. A batch of more than one record is a table with a records array, because TOML has no bare array at the root. The JSON rows use the same envelope so one reader serves both.
+
+#### [rojff](https://github.com/everythingfunctional/rojff) · `9f68e5aa4c12`
+
+rojff (Return of JSON for Fortran) is a pure Fortran JSON value tree. It was written to construct JSON faster than earlier Fortran JSON libraries, with functional constructors and a move API. This row times to_compact_string and parse_json_from_string. Its integer kind is the compiler's default integer, int32 here. Values outside that range are written as JSON numbers so the integer reader does not overflow, and are read back with nint.
 
 #### [fortran-messagepack](https://github.com/synthfi/fortran-messagepack) · `0.3.1`
 
-fortran-messagepack is a pure Fortran MessagePack library. MessagePack exists as a compact binary form of JSON-like values. This row times `pack_alloc` and `unpack`. Integers are MessagePack integers, including int64 epoch milliseconds.
+fortran-messagepack is a pure Fortran MessagePack library. MessagePack exists as a compact binary form of JSON-like values. This row times pack_alloc and unpack. Integers are MessagePack integers, including int64 epoch milliseconds.
 
 #### [custom-binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90) · `v2-1.0`
 
@@ -105,15 +105,19 @@ This is the suite's length-prefixed V2 baseline, not a published format. It exis
 
 #### [hdf5-fortran](https://github.com/HDFGroup/hdf5) · `1.10.7`
 
-hdf5-fortran is the official HDF5 Fortran API. This row times the core virtual file driver on the array data set: one contiguous float64 dataset `grid`, backing store off, and the byte size is the flushed file image. `grid_window` reads an interior hyperslab.
+hdf5-fortran is the official HDF5 Fortran API. This row times the array data set: one contiguous float64 dataset named grid, on the core virtual file driver with backing store off. The byte size is the flushed file image. grid_window reads an interior hyperslab. The row does not time the five suite types.
 
-#### [netcdf-fortran](https://github.com/Unidata/netcdf-fortran)
+#### [netcdf-fortran](https://github.com/Unidata/netcdf-fortran) · `4.8.1 of Sep 29 2021 09:36:14 $`
 
-netcdf-fortran is the official NetCDF Fortran API. `NF90_DISKLESS` discards the file on close, so this row times a real NetCDF-4 file on the array data set: one `NF90_DOUBLE` variable `grid`. `grid_window` reads with 1-based `start` and `count`. The CSV mode is stream, StreamMode is native, and the size is the file size. It is published through `config/file-only.txt`.
+netcdf-fortran is the official NetCDF Fortran API. NF90_DISKLESS discards the file on close, so there is no buffer and no honest size. This row times one NF90_DOUBLE variable named grid in a real NetCDF-4 file. grid_window reads with a 1-based start and count. The CSV mode is stream, StreamMode is native, and the size is the file size. It is published through config/file-only.txt. The row does not time the five suite types.
 
 #### [adios2](https://github.com/ornladios/ADIOS2) · `2.10.2`
 
-adios2 is the official ADIOS2 Fortran binding over the C++ core. The build is serial, MPI is off, and the engine is BP5. This row times one float64 variable `grid` in a BP5 directory. `grid_window` sets a 0-based selection before get. The API has no bytes buffer. The size is the sum of the file sizes. It is published through `config/file-only.txt`.
+adios2 is the official ADIOS2 Fortran binding over the C++ core. The build is serial, MPI is off, and the engine is BP5. BP5 writes a directory and the API has no bytes buffer. This row times one float64 variable named grid. grid_window sets a 0-based selection before get. The CSV mode is stream, StreamMode is native, and the size is the sum of the file sizes. It is published through config/file-only.txt. The row does not time the five suite types.
+
+#### [gld-arrow](https://github.com/leo-gan/gld-arrow-fortran) · `0.2.0`
+
+gld-arrow is a from-scratch Fortran layer over the Arrow C Data Interface. This row times arrow_export_float64 and arrow_import_float64 on one contiguous float64 grid. The byte size is the numeric buffer, 8 bytes per value. grid_window imports the grid and copies the interior window. The row does not time the five suite types and does not write an IPC file.
 
 ## Not registered
 

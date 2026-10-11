@@ -32,6 +32,7 @@ from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
 from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
+from bench.hdf5_ser import AdiosSer, Hdf5Ser, NcSer
 from bench.arrow_ser import ArrowIpcSer
 from bench.parquet_ser import ParquetSer
 from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
@@ -94,6 +95,15 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("mojo-ion fidelity " + type_id)
     if not smile.check(fx, smile.serialize_bytes(fx)):
         raise Error("mojo-smile fidelity " + type_id)
+    var h5 = Hdf5Ser()
+    var nc = NcSer()
+    var adios = AdiosSer()
+    if not h5.check(fx, h5.serialize_bytes(fx)):
+        raise Error("gld-hdf5 fidelity " + type_id)
+    if not nc.check(fx, nc.serialize_bytes(fx)):
+        raise Error("gld-netcdf fidelity " + type_id)
+    if not adios.check(fx, adios.serialize_bytes(fx)):
+        raise Error("gld-adios2 fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:
@@ -384,12 +394,31 @@ def _columnar_scale() raises:
         raise Error("parquet negative float")
 
 
+def _gld_sci_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var fx = make_cell(type_id, cfg, UInt64(42), 3, "")
+    var h5 = Hdf5Ser()
+    var nc = NcSer()
+    var adios = AdiosSer()
+    if not h5.check(fx, h5.serialize_bytes(fx)):
+        raise Error("gld-hdf5 fidelity n=3 " + type_id)
+    if not nc.check(fx, nc.serialize_bytes(fx)):
+        raise Error("gld-netcdf fidelity n=3 " + type_id)
+    if not adios.check(fx, adios.serialize_bytes(fx)):
+        raise Error("gld-adios2 fidelity n=3 " + type_id)
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
     _roundtrip_all("telemetry")
     _roundtrip_all("strings")
     _roundtrip_all("event")
+    _gld_sci_batch("message")
+    _gld_sci_batch("document")
+    _gld_sci_batch("telemetry")
+    _gld_sci_batch("strings")
+    _gld_sci_batch("event")
     _ehsan_batch("document")
     _ehsan_batch("telemetry")
     _flatbuffers_batch("document")

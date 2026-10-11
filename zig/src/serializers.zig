@@ -12,6 +12,8 @@ const extra = @import("extra.zig");
 const proto_ser = @import("proto_ser.zig");
 const fb_ser = @import("fb_ser.zig");
 const capnp_ser = @import("capnp_ser.zig");
+const avro_ser = @import("avro_ser.zig");
+const arrow_ser = @import("arrow_ser.zig");
 
 pub const StreamMode = enum {
     native,
@@ -333,8 +335,22 @@ const capnproto_vtable = Serializer.VTable{
     .serialize = capnp_ser.serialize,
     .deserialize = capnp_ser.deserialize,
 };
+const gld_avro_vtable = Serializer.VTable{
+    .prepare = avro_ser.prepare,
+    .begin_encode = avro_ser.beginEncode,
+    .serialize = avro_ser.serialize,
+    .deserialize = avro_ser.deserialize,
+    .supports = avro_ser.supports,
+};
+const gld_arrow_vtable = Serializer.VTable{
+    .prepare = arrow_ser.prepare,
+    .begin_encode = arrow_ser.beginEncode,
+    .serialize = arrow_ser.serialize,
+    .deserialize = arrow_ser.deserialize,
+    .supports = arrow_ser.supports,
+};
 
-pub fn allSerializers() [20]Serializer {
+pub fn allSerializers() [22]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -495,6 +511,22 @@ pub fn allSerializers() [20]Serializer {
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
             .vtable = &serde_json_borrowed_vtable,
+        },
+        .{
+            .name = "gld-avro",
+            .version = avro_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&avro_ser.state),
+            .vtable = &gld_avro_vtable,
+        },
+        .{
+            .name = "gld-arrow",
+            .version = arrow_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&arrow_ser.state),
+            .vtable = &gld_arrow_vtable,
         },
     };
 }
@@ -671,26 +703,65 @@ test "protobuf all v2 types" {
     }
 }
 
+test "gld-avro and gld-arrow round-trip one message" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const sers = allSerializers();
+    const names = [_][]const u8{ "gld-avro", "gld-arrow" };
+    const kinds = [_][]const u8{ "message", "document", "telemetry", "strings", "event" };
+    for (names) |name| {
+        const ser = named(&sers, name) orelse return error.MissingSerializer;
+        try std.testing.expect(!ser.supports("graph"));
+        try std.testing.expectEqualStrings("0.2.0", ser.version);
+        for (kinds) |tid| {
+            const fx = try data.makeOne(arena.allocator(), tid, 42, 0, .{});
+            var out = try buf_mod.Buf.initCapacity(arena.allocator(), 8192);
+            try ser.prepare(arena.allocator(), &.{fx});
+            ser.beginEncode();
+            try ser.serialize(fx, &out);
+            try std.testing.expect(out.len > 0);
+            const back = try ser.deserialize(arena.allocator(), tid, out.items());
+            if (!data.fidelity(fx, back)) {
+                std.debug.print("fidelity {s} {s}\n", .{ name, tid });
+                return error.Fidelity;
+            }
+        }
+        const batch = try data.instances(arena.allocator(), "message", 42, 2, .{});
+        try ser.prepare(arena.allocator(), batch);
+        ser.beginEncode();
+        for (batch) |fx| {
+            var one = try buf_mod.Buf.initCapacity(arena.allocator(), 4096);
+            try ser.serialize(fx, &one);
+            const back = try ser.deserialize(arena.allocator(), "message", one.items());
+            try std.testing.expect(data.fidelity(fx, back));
+        }
+    }
+}
+
 test "registry includes std.json" {
-    var tmp: [24]Serializer = undefined;
+    var tmp: [32]Serializer = undefined;
     const n = select("", &tmp);
-    try std.testing.expect(n >= 20);
+    try std.testing.expect(n >= 22);
     var found_pb = false;
     var found_fb = false;
     var found_capnp = false;
+    var found_avro = false;
+    var found_arrow = false;
     for (tmp[0..n]) |s| {
         if (std.mem.eql(u8, s.name, "protobuf")) found_pb = true;
         if (std.mem.eql(u8, s.name, "flatbuffers")) found_fb = true;
         if (std.mem.eql(u8, s.name, "capnproto")) found_capnp = true;
+        if (std.mem.eql(u8, s.name, "gld-avro")) found_avro = true;
+        if (std.mem.eql(u8, s.name, "gld-arrow")) found_arrow = true;
     }
     try std.testing.expect(found_pb);
     try std.testing.expect(found_fb);
     try std.testing.expect(found_capnp);
+    try std.testing.expect(found_avro);
+    try std.testing.expect(found_arrow);
     var found = false;
     for (tmp[0..n]) |s| {
         if (std.mem.eql(u8, s.name, "std.json")) found = true;
     }
     try std.testing.expect(found);
 }
-
-

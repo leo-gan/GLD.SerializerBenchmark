@@ -70,6 +70,9 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 | [mojo-ion](https://github.com/leo-gan/gld-ion) | Binary | leo-gan/gld-ion 0.2.0 | bytes only | Ion 1.0 binary document encode / decode |
 | [mojo-smile](https://github.com/leo-gan/gld-smile) | Binary | leo-gan/gld-smile 0.2.0 | bytes only | Smile document encode / decode |
+| [gld-hdf5](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | HDF5 datasets for the five suite types. No libhdf5 |
+| [gld-netcdf](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | NetCDF-4 float64 variables. Dimension names differ from variable names |
+| [gld-adios2](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | BP5 directory framed as bytes. One float64 variable |
 | [arrow-ipc](https://github.com/leo-gan/gld-arrow) | Columnar | leo-gan/gld-arrow 0.2.0 | bytes only | IPC stream on `table`, `table_project`, `nested_table`, and `signal` |
 | [parquet](https://github.com/leo-gan/gld-parquet) | Columnar | leo-gan/gld-parquet 0.2.0 | bytes only | Parquet file, Snappy pages |
 | [parquet-uncompressed](https://github.com/leo-gan/gld-parquet) | Columnar | leo-gan/gld-parquet 0.2.0 | bytes only | Same writer with page compression off |
@@ -100,7 +103,7 @@ gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf e
 
 #### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.4.0`
 
-mojo-flatbuffers is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
+gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`.
 
 #### [mojo-avro](https://github.com/leo-gan/gld-avro) · `0.4.0`
 
@@ -122,6 +125,22 @@ gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a huma
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
 
+#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+
+Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
+
+#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+
+Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
+
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+
+Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
+
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+
+Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
+
 #### [mojo-bson](https://github.com/leo-gan/gld-bson) · `0.1.0`
 
 gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types.
@@ -134,6 +153,18 @@ gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a t
 
 gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value.
 
+#### [gld-hdf5](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+
+gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row writes i32, i64, f64, and uint8 datasets for a suite value and reads them back with read_hdf5. It does not link libhdf5.
+
+#### [gld-netcdf](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+
+gld-netcdf is the NetCDF-4 writer in gld-hdf5. NetCDF exists for named scientific arrays. This library stores variables as float64, so integers ride as exact float64 values and strings ride as float64 bit patterns. Dimension names are not variable names.
+
+#### [gld-adios2](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+
+gld-adios2 is the BP5 writer in gld-hdf5. ADIOS2 BP5 is a step directory. This library writes one float64 variable and one string attribute, so the suite record is packed into that variable. The timed size is the directory files concatenated. bpls does not open this pure-Mojo metadata.
+
 #### [arrow-ipc](https://github.com/leo-gan/gld-arrow) · `0.2.0`
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a from-scratch Arrow library for Mojo. This row times `encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not the Arrow file. The record batch is built inside serialize. gld-arrow has no included-fields reader, so table_project decodes the stream and then materializes f_float_0 only. Suite columns are required because these rows have no nulls.
@@ -145,22 +176,6 @@ Apache Parquet was created as a columnar file for scans that touch a few fields 
 #### [parquet-uncompressed](https://github.com/leo-gan/gld-parquet) · `0.2.0`
 
 This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override.
-
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
-
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
-
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
-
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
 ### Call-path contract
 

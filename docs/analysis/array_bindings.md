@@ -16,7 +16,7 @@ NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already ti
 | Python | `h5py` | `netCDF4` | `adios2` |
 | Rust | `hdf5-metno` | | |
 
-`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the C# string path carries the file bytes as Latin-1 so the size is the file length. Every window read is a hyperslab, a slice, or a selection. These rows do not time the five suite types.
+`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the C# string path carries the file bytes as Latin-1 so the size is the file length. Every window read is a hyperslab, a slice, or a selection. These rows do not time the five suite types. Fortran also times `gld-arrow` on the same grid: Arrow C Data Interface numeric buffers, not an HDF5 file.
 
 ## Not registered
 
@@ -25,7 +25,7 @@ NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already ti
 | Go | `gonum.org/v1/hdf5` is archived. There is no maintained writer for the array contract. |
 | Java | The HDF Group Java binding is a native installer, not a Maven dependency this runner can build. JHDF is read-focused. |
 | Kotlin | A Kotlin row would call the Java libraries. Those are not registered. |
-| Mojo | No HDF5 library. A hand-written C FFI is not a separate row. |
+| Mojo | `gld-hdf5` times the five suite types. It does not write the array data set. |
 | PHP | No maintained writer. |
 | Swift | No maintained writer. A C import would time libhdf5 plus an FFI crossing this suite did not write a library for. |
 | Zig | No maintained writer. The same FFI crossing applies. |

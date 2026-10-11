@@ -58,6 +58,8 @@ pub fn build(b: *std.Build) void {
     const s2s_dep = b.dependency("s2s", .{ .target = target, .optimize = optimize });
     const protobuf_dep = b.dependency("protobuf", .{ .target = target, .optimize = optimize });
     const flatbuffers_dep = b.dependency("flatbuffers", .{ .target = target, .optimize = optimize });
+    const avro_dep = b.dependency("gld_avro_zig", .{ .target = target, .optimize = optimize });
+    const arrow_dep = b.dependency("gld_arrow_zig", .{ .target = target, .optimize = optimize });
 
     const gen_proto = b.step("gen-proto", "Generate Zig types from schemas/v2/protobuf/benchmark_v2.proto");
     const protoc_step = protobuf.RunProtocStep.create(protobuf_dep.builder, target, .{
@@ -76,6 +78,8 @@ pub fn build(b: *std.Build) void {
         .{ .name = "s2s", .module = s2s_dep.module("s2s") },
         .{ .name = "protobuf", .module = protobuf_dep.module("protobuf") },
         .{ .name = "flatbuffers", .module = flatbuffers_dep.module("flatbuffers") },
+        .{ .name = "avro", .module = avro_dep.module("avro") },
+        .{ .name = "arrow", .module = arrow_dep.module("arrow") },
     };
 
     const serde_tests = b.addTest(.{
@@ -144,8 +148,10 @@ pub fn build(b: *std.Build) void {
         .imports = &imports,
     });
     applyCapnp(b, test_root, capnp_so, capnp_prefix);
+    const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &.{};
     const unit_tests = b.addTest(.{
         .root_module = test_root,
+        .filters = test_filters,
     });
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run harness tests");
