@@ -42,6 +42,9 @@ from .serializers import (
     CloudpickleSerializer,
     DagrSerializer,
     DillSerializer,
+    Adios2Serializer,
+    H5pySerializer,
+    NetCdf4Serializer,
     FlatBuffersSerializer,
     MashumaroSerializer,
     MsgpackSerializer,
@@ -91,6 +94,9 @@ ALL_SERIALIZERS = [
     PickleSerializer(),
     CloudpickleSerializer(),
     DillSerializer(),
+    H5pySerializer(),
+    NetCdf4Serializer(),
+    Adios2Serializer(),
 ]
 
 

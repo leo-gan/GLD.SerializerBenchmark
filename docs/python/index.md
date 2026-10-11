@@ -39,6 +39,8 @@ The official FlatBuffers Python package builds with a pure-Python Builder. The C
 
 `pickle`, `cloudpickle`, and `dill` work only in Python. Loading untrusted input with them can run arbitrary code.
 
+`h5py`, `netCDF4`, and `adios2` time the array data set only (`grid` and `grid_window` in `config/library/array.yaml`). They do not run on the five suite types. `h5py` uses the HDF5 core driver. `netCDF4` writes a NetCDF-4 file. `adios2` writes a serial BP5 directory. The window read is a hyperslab, a variable slice, or an ADIOS selection.
+
 These times cannot be ranked against another language.
 
 ### Where to go next

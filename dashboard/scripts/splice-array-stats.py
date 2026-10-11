@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Append array.yaml groups onto the published Fortran snapshot.
+"""Append array.yaml groups onto a published language snapshot.
 
 The CSV name is not YYYY-MM-DD-HHMMSS, so sync-data.py does not select it.
 This script analyzes that full run and appends grid and grid_window.
-It removes the previous suite groups for hdf5-fortran, netcdf-fortran, and
-adios2. The six interchange serializers stay as they were.
+It replaces previous groups only for the array serializers of that language.
 """
 from __future__ import annotations
 
@@ -30,6 +29,7 @@ from benchmark_analysis.stats import (  # noqa: E402
 
 DATA = REPO / "dashboard" / "public" / "data"
 ARRAY_TYPES = ("grid", "grid_window")
+LANGUAGE = "fortran"
 ARRAY_NAMES = ("hdf5-fortran", "netcdf-fortran", "adios2")
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 MIN_REPS = 100
@@ -111,7 +111,7 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
     error_rows = _error_rows(csv_path)
     if error_rows:
         raise SystemExit(f"{csv_path}: refusing to publish; {error_rows} error row(s)")
-    records, skipped = parse_csv_file(str(csv_path), language_hint="fortran")
+    records, skipped = parse_csv_file(str(csv_path), language_hint=LANGUAGE)
     if skipped:
         raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
     if not records:
@@ -142,9 +142,12 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
         mode = str(row.get("StringOrStream") or "")
         if mode != MODES[name]:
             raise SystemExit(f"{csv_path}: {name} I/O mode {mode!r}")
-        if name != "hdf5-fortran" and str(row.get("StreamMode") or "").strip() != "native":
+        stream_mode = str(row.get("StreamMode") or "").strip()
+        if MODES[name] == "stream" and stream_mode != "native":
             raise SystemExit(f"{csv_path}: {name} StreamMode {row.get('StreamMode')!r}")
-        if str(row.get("Language") or "") != "fortran":
+        if MODES[name] == "bytes" and stream_mode not in ("", "adapted"):
+            raise SystemExit(f"{csv_path}: {name} StreamMode {row.get('StreamMode')!r}")
+        if str(row.get("Language") or "") != LANGUAGE:
             raise SystemExit(f"{csv_path}: row language {row.get('Language')!r}")
         fidelity = row.get("FidelityScore")
         if not isinstance(fidelity, (int, float)) or abs(float(fidelity) - 1.0) > 1e-9:
@@ -158,8 +161,8 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
                 raise SystemExit(f"{csv_path}: {(name, type_id)} repetition indexes are not 0..{MIN_REPS - 1}")
 
     config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint="fortran")
-    fresh = build_stats_export_payload(by_policy, "fortran")
+    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=LANGUAGE)
+    fresh = build_stats_export_payload(by_policy, LANGUAGE)
     if fresh.get("schema_version") != "2.2":
         raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
     meta = {
@@ -182,7 +185,7 @@ def _validate_fresh(fresh: dict, published_groups: list) -> list:
         name = str(group.get("serializer") or "")
         if name not in STANDARDS:
             raise SystemExit(f"fortran: unexpected serializer {name!r}")
-        if group.get("language") != "fortran":
+        if group.get("language") != LANGUAGE:
             raise SystemExit(f"fortran: analysis group language is {group.get('language')!r}")
         if _base(group.get("test_data")) not in ARRAY_TYPES:
             raise SystemExit(f"fortran: analysis test_data {group.get('test_data')!r}")
@@ -224,22 +227,32 @@ def _split(groups: list) -> tuple[list, list]:
     return keep, old
 
 
-def splice(csv_path: Path, *, dry_run: bool) -> None:
-    payload_path = DATA / "fortran_latest.json.gz"
-    stats_path = DATA / "stats_fortran_latest.json.gz"
+def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
+    payload_path = DATA / f"{language}_latest.json.gz"
+    stats_path = DATA / f"stats_{language}_latest.json.gz"
     if not payload_path.is_file() or not stats_path.is_file():
-        raise SystemExit("fortran: missing published snapshot")
+        raise SystemExit(f"{language}: missing published snapshot")
     payload = _load_gz(payload_path)
     stats = _load_gz(stats_path)
     embedded = payload.get("stats")
     if not isinstance(embedded, dict):
-        raise SystemExit("fortran: payload has no stats object")
+        raise SystemExit(f"{language}: payload has no stats object")
 
     fresh, meta = _analyze(csv_path)
     new_groups = _validate_fresh(fresh, list(stats.get("groups") or []))
     stats_keep, stats_old = _split(list(stats.get("groups") or []))
     payload_keep, payload_old = _split(list(embedded.get("groups") or []))
     before_suite = _counts(stats_keep, SUITE_TYPES)
+    if LANGUAGE == "python":
+        kept = (
+            "Previous groups for h5py, netCDF4, and adios2 were removed. "
+            "Suite, columnar, and graph groups for the other Python serializers were not recomputed."
+        )
+    else:
+        kept = (
+            "Suite rows for hdf5-fortran, netcdf-fortran, and adios2 were removed. "
+            "The six interchange serializers were not recomputed."
+        )
     note = {
         "source_csv": str(csv_path.relative_to(REPO)),
         "run_config": "config/library/array.yaml",
@@ -253,42 +266,62 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
         "note": (
             "Array groups were measured in a separate full-mode run "
             "(config/library/array.yaml, 100 repetitions) and appended. "
-            "Suite rows for hdf5-fortran, netcdf-fortran, and adios2 were removed. "
-            "The six interchange serializers were not recomputed."
+            + kept
         ),
     }
     print(
-        f"fortran: {meta['rows']} rows, {len(new_groups)} groups, "
+        f"{language}: {meta['rows']} rows, {len(new_groups)} groups, "
         f"remove {len(stats_old)} previous groups for {', '.join(ARRAY_NAMES)}"
     )
     if dry_run:
-        print("fortran: dry-run, snapshots not written")
+        print(f"{language}: dry-run, snapshots not written")
         return
     if len(stats_old) != len(payload_old):
-        raise SystemExit("fortran: stats/payload groups for the three serializers diverged")
+        raise SystemExit(f"{language}: stats/payload groups for these serializers diverged")
     stats["groups"] = stats_keep + new_groups
     stats["array_splice"] = note
     embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
     embedded["array_splice"] = copy.deepcopy(note)
     payload["array_splice"] = copy.deepcopy(note)
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
-        raise SystemExit("fortran: suite counts for the interchange serializers changed")
+        raise SystemExit(f"{language}: suite counts for the other serializers changed")
     if any(str(group.get("serializer") or "") in STANDARDS and group.get("data_set") != "array"
            for group in stats["groups"]):
-        raise SystemExit("fortran: a scientific serializer still has a non-array group")
+        raise SystemExit(f"{language}: an array serializer still has a non-array group")
     _write_gz(stats_path, stats)
     _write_gz(payload_path, payload)
-    print(f"fortran: wrote {len(new_groups)} array groups")
+    print(f"{language}: wrote {len(new_groups)} array groups")
+
+
+def _select_language(language: str) -> None:
+    global ARRAY_NAMES, STANDARDS, MODES, LANGUAGE
+    LANGUAGE = language
+    if language == "fortran":
+        return
+    if language != "python":
+        raise SystemExit(f"unsupported language {language}")
+    ARRAY_NAMES = ("h5py", "netCDF4", "adios2")
+    STANDARDS = {"h5py": "hdf5", "netCDF4": "netcdf", "adios2": "adios2"}
+    MODES = {name: "bytes" for name in ARRAY_NAMES}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV)
+    parser.add_argument("--language", default="fortran", choices=("fortran", "python"))
+    parser.add_argument("--csv", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
-    if not args.csv.is_file():
-        raise SystemExit(f"CSV not found: {args.csv}")
-    splice(args.csv, dry_run=args.dry_run)
+    _select_language(args.language)
+    csv_path = args.csv or (
+        DEFAULT_CSV if args.language == "fortran"
+        else REPO / "logs/python/2026-10-10-python-array-full.csv"
+    )
+    if not csv_path.is_absolute():
+        csv_path = REPO / csv_path
+    csv_path = csv_path.resolve()
+    if not csv_path.is_file():
+        raise SystemExit(f"CSV not found: {csv_path}")
+    splice(csv_path, dry_run=args.dry_run, language=args.language)
     return 0
 
 

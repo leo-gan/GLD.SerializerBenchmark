@@ -423,6 +423,21 @@ languages:
         category: native
         package: cloudpickle
         rationale: "Extended pickle for complex objects"
+      - name: h5py
+        category: binary
+        package: h5py
+        rationale: "h5py on the array data set. Core virtual file driver, one contiguous float64 dataset."
+        optimal_api: "File driver=core / dataset hyperslab"
+      - name: netCDF4
+        category: binary
+        package: netCDF4
+        rationale: "netCDF4 on the array data set. One NetCDF-4 variable. The window read is a slice."
+        optimal_api: "Dataset createVariable / variable slice"
+      - name: adios2
+        category: binary
+        package: adios2
+        rationale: "Official ADIOS2 Python API on the array data set. Serial BP5, one variable. The window read is a selection."
+        optimal_api: "adios2.Stream write / read start,count"
 
   rust:
     display_name: Rust

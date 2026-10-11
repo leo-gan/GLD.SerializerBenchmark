@@ -32,7 +32,11 @@ else
   REPS="$(bench_mode_reps "$MODE")"
   if [[ "$MODE" == "smoke" ]]; then
     FILTER_SER="${FILTER_SER:-json}"
-    FILTER_DATA="${FILTER_DATA:-message}"
+    # Suite smoke stays on message. A caller that sets BENCHMARK_RUN_CONFIG
+    # keeps every type in that file unless they pass a data filter.
+    if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+      FILTER_DATA="${FILTER_DATA:-message}"
+    fi
   fi
 fi
 

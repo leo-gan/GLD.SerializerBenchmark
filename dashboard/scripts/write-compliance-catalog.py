@@ -127,6 +127,12 @@ add("python", "parquet-uncompressed", ["parquet"], "https://arrow.apache.org/doc
     "Same pyarrow Parquet writer as parquet, with compression NONE. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 add("python", "orc", ["orc"], "https://arrow.apache.org/docs/python/orc.html",
     "pyarrow ORC writer and reader. pyarrow 25 defaults to uncompressed ORC, so this row does not force Zlib. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
+add("python", "h5py", ["hdf5"], "https://docs.h5py.org/",
+    "h5py: HDF5 for Python. This row uses the core driver and a dataset hyperslab.")
+add("python", "netCDF4", ["netcdf"], "https://unidata.github.io/netcdf4-python/",
+    "netCDF4: Python interface to NetCDF. This row writes one NetCDF-4 variable and slices it.")
+add("python", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
+    "Official ADIOS2 Python API. Serial BP5 Stream write and a start/count read.")
 add("python", "orc-uncompressed", ["orc"], "https://arrow.apache.org/docs/python/orc.html",
     "Same pyarrow ORC writer as orc, with compression set to uncompressed. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
 

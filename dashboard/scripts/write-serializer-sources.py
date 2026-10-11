@@ -453,6 +453,25 @@ SPECIFICS: dict[str, str] = {
         "uncompressed. Apache ORC's own C++ and Java writers default to Zlib; "
         "this binding does not. table_project passes columns=['f_float_0'] on read."
     ),
+    "h5py": (
+        "h5py is the standard Python binding for HDF5. This row times the "
+        "array data set: one contiguous float64 dataset named grid on the "
+        "core virtual file driver. The byte size is the flushed file image. "
+        "grid_window reads an interior hyperslab. The row does not time the "
+        "five suite types."
+    ),
+    "netCDF4": (
+        "netCDF4 is the Python interface to the NetCDF C library. This row "
+        "times one float64 variable named grid in a NetCDF-4 file. "
+        "grid_window reads that variable with a 0-based slice. The returned "
+        "buffer is the file. The row does not time the five suite types."
+    ),
+    "adios2-python": (
+        "adios2 is the official ADIOS2 Python API. The engine is BP5 and MPI "
+        "is off. This row times one float64 variable named grid. grid_window "
+        "reads with a 0-based start and count. The buffer is a packed copy of "
+        "the BP5 directory. The row does not time the five suite types."
+    ),
     "orc-uncompressed": (
         "This is the same pyarrow ORC writer as orc, with "
         "compression='uncompressed'. On pyarrow 25 that codec is also the "
@@ -1935,6 +1954,9 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "pydantic"): "pydantic",
     ("python", "mashumaro"): "mashumaro",
     ("python", "serpyco-rs"): "serpyco-rs",
+    ("python", "h5py"): "h5py",
+    ("python", "netCDF4"): "netCDF4",
+    ("python", "adios2"): "adios2-python",
     ("python", "yaml"): "pyyaml",
     ("python", "cbor2"): "cbor2",
     ("python", "msgpack"): "msgpack-py",

@@ -216,6 +216,7 @@ nav:
       - Timing honesty: analysis/TIMING_HONESTY.md
       - Modes: analysis/modes.md
       - Categories: analysis/serialization_categories.md
+      - Array bindings: analysis/array_bindings.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
       - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
