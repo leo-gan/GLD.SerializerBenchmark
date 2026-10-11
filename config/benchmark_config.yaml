@@ -1856,3 +1856,8 @@ languages:
         package: ornladios/ADIOS2
         rationale: "Official ADIOS2 Fortran binding on the array data set, serial BP5. BP5 writes a directory and has no bytes API, so the row is file-only."
         optimal_api: "adios2_put / adios2_get"
+      - name: gld-arrow
+        category: binary
+        package: leo-gan/gld-arrow-fortran
+        rationale: "From-scratch Arrow C Data Interface. One contiguous float64 grid. The timed value is the numeric buffer, not an IPC file."
+        optimal_api: "arrow_export_float64 / arrow_import_float64"

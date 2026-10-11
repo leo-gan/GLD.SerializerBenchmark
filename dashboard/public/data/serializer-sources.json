@@ -600,6 +600,11 @@
         "version": "v2-1.0",
         "specifics": "This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler."
       },
+      "gld-arrow": {
+        "source_url": "https://github.com/leo-gan/gld-arrow-fortran",
+        "version": "0.2.0",
+        "specifics": "gld-arrow is a from-scratch Fortran layer over the Arrow C Data Interface. This row times arrow_export_float64 and arrow_import_float64 on one contiguous float64 grid. The byte size is the numeric buffer, 8 bytes per value. grid_window imports the grid and copies the interior window. The row does not time the five suite types and does not write an IPC file."
+      },
       "fortran-messagepack": {
         "source_url": "https://github.com/synthfi/fortran-messagepack",
         "version": "0.3.1",

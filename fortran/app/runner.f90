@@ -13,6 +13,7 @@ program serializer_benchmark_fortran
   use ser_hdf5
   use ser_netcdf
   use ser_adios2
+  use ser_gld_arrow
   implicit none
 
   integer, parameter :: max_sers = 12
@@ -25,6 +26,7 @@ program serializer_benchmark_fortran
   integer, parameter :: ser_h5 = 7
   integer, parameter :: ser_nc = 8
   integer, parameter :: ser_ad = 9
+  integer, parameter :: ser_ga = 10
   integer, parameter :: buf_cap = 8 * 1024 * 1024
   character(len=64) :: ser_names(max_sers)
   character(len=32) :: ser_versions(max_sers)
@@ -67,7 +69,7 @@ contains
 
   subroutine load_registry()
     integer :: prep
-    nser = 9
+    nser = 10
     ser_names(ser_custom) = cb_name
     ser_versions(ser_custom) = cb_version
     ser_names(ser_jf) = jf_name
@@ -89,6 +91,9 @@ contains
     ser_names(ser_ad) = ad_name
     call ad_prepare(prep)
     ser_versions(ser_ad) = ad_version
+    ser_names(ser_ga) = ga_name
+    call ga_prepare(prep)
+    ser_versions(ser_ga) = ga_version
   end subroutine
 
   function read_seed() result(v)
@@ -149,7 +154,8 @@ contains
   function ser_is_array(ser_index) result(yes)
     integer, intent(in) :: ser_index
     logical :: yes
-    yes = ser_index == ser_h5 .or. ser_index == ser_nc .or. ser_index == ser_ad
+    yes = ser_index == ser_h5 .or. ser_index == ser_nc .or. ser_index == ser_ad &
+        .or. ser_index == ser_ga
   end function
 
   function ser_selected(name, filter) result(yes)
@@ -235,6 +241,18 @@ contains
     read(unit, iostat=ios) buf(1:n)
     close(unit)
     if (ios == 0) out_len = n
+  end subroutine
+
+  subroutine copy_grid_bytes(values, out_len)
+    real(real64), intent(in) :: values(:, :)
+    integer, intent(out) :: out_len
+    integer(int8), allocatable :: raw(:)
+    integer :: n
+    raw = transfer(values, raw)
+    n = size(raw)
+    out_len = n
+    if (n > buf_cap) n = buf_cap
+    if (n > 0) buf(1:n) = raw(1:n)
   end subroutine
 
   subroutine copy_payload(payload, out_len)
@@ -514,6 +532,12 @@ contains
       write(ad_path, '("/tmp/gld-fortran-ad-",I0,".bp")') c_getpid()
       call ad_write_grid(values, trim(ad_path), mark, stat)
       if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ga)
+      call ga_write_grid(values, stat)
+      if (stat == 0) then
+        mark = transfer(values(1, 1), mark)
+        call black_box_bytes(c_loc(mark), 8_c_size_t)
+      end if
     case default
       stat = 1
     end select
@@ -549,6 +573,13 @@ contains
         call ad_read_grid(trim(ad_path), got, stat)
       end if
       if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ga)
+      if (is_window) then
+        call ga_read_window(x0, y0, wx, wy, win, stat)
+      else
+        call ga_read_grid(got, stat)
+      end if
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
     case default
       stat = 1
     end select
@@ -576,6 +607,8 @@ contains
     end if
     if (ser_index == ser_h5) then
       call copy_payload(payload, out_len)
+    else if (ser_index == ser_ga) then
+      call copy_grid_bytes(values, out_len)
     else if (ser_index == ser_nc) then
       call slurp_file(trim(nc_path), out_len)
       call nc_remove(trim(nc_path))

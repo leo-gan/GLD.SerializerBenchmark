@@ -73,6 +73,7 @@ How to install the toolchain and run the benchmark: [`fortran/README.md`](https:
 | [hdf5-fortran](https://github.com/HDFGroup/hdf5) | HDF5 | HDF-Group/hdf5 | bytes | Array data set. Core driver. One dataset `grid`. Hyperslab on `grid_window` |
 | [netcdf-fortran](https://github.com/Unidata/netcdf-fortran) | NetCDF | Unidata/netcdf-fortran | file | Array data set. Real NetCDF-4 file. File-only. Window uses 1-based start |
 | [adios2](https://github.com/ornladios/ADIOS2) | ADIOS2 | ornladios/ADIOS2 | file | Array data set. Serial BP5 directory. File-only. Window uses `adios2_set_selection` |
+| [gld-arrow](https://github.com/leo-gan/gld-arrow-fortran) | Arrow | leo-gan/gld-arrow-fortran | bytes | Array data set. Arrow C Data Interface. Contiguous float64 buffer. Window is a slice after import |
 
 ### Specifics
 
