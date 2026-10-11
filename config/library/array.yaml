@@ -2,7 +2,7 @@
 # Not default.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/array.yaml
 # Pass an explicit serializer allow-list. Examples:
-#   hdf5-fortran,netcdf-fortran,adios2
+#   hdf5-fortran,netcdf-fortran,adios2,gld-arrow
 #   h5py,netCDF4,adios2
 #   hdf5
 #   highfive

@@ -2,9 +2,9 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (32)
+## Serializers (33)
 
-The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompressed), ORC (ZSTD default and uncompressed), and SBE.
+The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompressed), ORC (ZSTD default and uncompressed), SBE, and gld-ion.
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -26,6 +26,7 @@ The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompr
 | protostuff | Binary | protostuff-runtime | `RuntimeSchema` + `LinkedBuffer` |
 | kbson | BSON | com.github.jershell:kbson | kotlinx BSON `dump` / `load` |
 | kotlinx-ion | Ion | ion-java | Amazon Ion binary via kotlinx encoder + ion-java |
+| gld-ion | Ion | gld-ion-kotlin 0.2.0 (vendored) | `ion.IonDoc` binary encode/decode. Suite types only; skips graph |
 | tomlkt | TOML | net.peanuuutz.tomlkt | Table root; list wrap `{ items = [...] }` for N>1 |
 | protobuf | Schema | protobuf-java | Java `newBuilder()`; timed `toByteArray`/`parseFrom` |
 | protobuf-kotlin | Schema | protobuf-kotlin | Kotlin DSL builders (`message { }`) then wire encode |

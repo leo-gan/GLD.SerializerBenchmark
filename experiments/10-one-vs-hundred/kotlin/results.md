@@ -1,7 +1,7 @@
 # Experiment 10 results — kotlin
 
-**Date:** 2026-08-28
-**Raw file:** `experiments/10-one-vs-hundred/kotlin/logs/kotlin/2026-08-27-181757.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/10-one-vs-hundred/kotlin/logs/kotlin/2026-10-11-150723.csv`
 **Language:** kotlin
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,10 +12,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| moshi-codegen | 1.15.2 | 9.07 | 9.76 | 19.1 | 254 | 2474 | JSON — fast writer from Experiment 1 | fastest | yes | 88 |
-| protobuf | 4.28.3 | 14.7 | 11.6 | 26.7 | 123 | 2150 | Protocol Buffers | slower | yes | 84 |
-| jackson | 2.18.3 | 27.3 | 35.2 | 65.5 | 254 | 2474 | JSON — common default | slower | yes | 84 |
-| msgpack | 0.9.8 | 31.1 | 35.2 | 66.8 | 196 | 2282 | MessagePack | slower | yes | 85 |
+| moshi-codegen | 1.15.2 | 11.2 | 12.5 | 24.5 | 254 | 2474 | JSON — fast writer from Experiment 1 | fastest | yes | 90 |
+| protobuf | 4.35.0 | 19.2 | 15.8 | 35.0 | 123 | 2150 | Protocol Buffers | slower | yes | 89 |
+| msgpack | 0.9.8 | 35.0 | 43.4 | 78.5 | 196 | 2282 | MessagePack | slower | yes | 89 |
+| jackson | 2.19.0 | 36.2 | 45.4 | 81.6 | 254 | 2474 | JSON — common default | slower | yes | 85 |
 
 ## In memory — sample D (event), 100 record(s) per write
 
@@ -23,10 +23,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 4.28.3 | 106 | 80.7 | 186 | 12477 | 2150 | Protocol Buffers | fastest | yes | 95 |
-| moshi-codegen | 1.15.2 | 114 | 114 | 228 | 25446 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 90 |
-| jackson | 2.18.3 | 99.8 | 220 | 322 | 25446 | 2474 | JSON — common default | slower | yes | 93 |
-| msgpack | 0.9.8 | 146 | 264 | 413 | 19548 | 2282 | MessagePack | slower | yes | 89 |
+| protobuf | 4.35.0 | 109 | 80.5 | 191 | 12477 | 2150 | Protocol Buffers | fastest | yes | 89 |
+| moshi-codegen | 1.15.2 | 98.4 | 112 | 212 | 25446 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 88 |
+| jackson | 2.19.0 | 88.6 | 204 | 300 | 25446 | 2474 | JSON — common default | slower | yes | 88 |
+| msgpack | 0.9.8 | 133 | 247 | 390 | 19548 | 2282 | MessagePack | slower | yes | 85 |
 
 ## In memory — sample B (flat), 1 record(s) per write
 
@@ -34,10 +34,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 4.28.3 | 22.8 | 12.1 | 35.0 | 50 | 2150 | Protocol Buffers | fastest | yes | 95 |
-| moshi-codegen | 1.15.2 | 20.8 | 23.8 | 47.5 | 158 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 89 |
-| msgpack | 0.9.8 | 60.0 | 73.3 | 132 | 114 | 2282 | MessagePack | slower | yes | 91 |
-| jackson | 2.18.3 | 56.2 | 91.2 | 147 | 158 | 2474 | JSON — common default | slower | yes | 92 |
+| protobuf | 4.35.0 | 20.9 | 12.0 | 32.9 | 50 | 2150 | Protocol Buffers | fastest | yes | 92 |
+| moshi-codegen | 1.15.2 | 17.9 | 22.8 | 43.7 | 158 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 88 |
+| msgpack | 0.9.8 | 49.1 | 65.6 | 111 | 114 | 2282 | MessagePack | slower | yes | 89 |
+| jackson | 2.19.0 | 46.8 | 69.9 | 119 | 158 | 2474 | JSON — common default | slower | yes | 90 |
 
 ## In memory — sample B (flat), 100 record(s) per write
 
@@ -45,10 +45,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 4.28.3 | 67.6 | 52.5 | 120 | 4841 | 2150 | Protocol Buffers | fastest | yes | 97 |
-| moshi-codegen | 1.15.2 | 102 | 117 | 225 | 15546 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 94 |
-| jackson | 2.18.3 | 112 | 228 | 338 | 15546 | 2474 | JSON — common default | slower | yes | 90 |
-| msgpack | 0.9.8 | 153 | 226 | 388 | 11031 | 2282 | MessagePack | slower | yes | 92 |
+| protobuf | 4.35.0 | 47.4 | 42.8 | 92.8 | 4841 | 2150 | Protocol Buffers | fastest | yes | 96 |
+| moshi-codegen | 1.15.2 | 82.2 | 106 | 188 | 15546 | 2474 | JSON — fast writer from Experiment 1 | slower | yes | 91 |
+| jackson | 2.19.0 | 94.8 | 164 | 264 | 15546 | 2474 | JSON — common default | slower | yes | 85 |
+| msgpack | 0.9.8 | 124 | 154 | 274 | 11031 | 2282 | MessagePack | slower | yes | 86 |
 
 ## Libraries that belong in the conversation
 

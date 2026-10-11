@@ -25,6 +25,8 @@ final class Registry
             new YamlPeclSer(),
             new SimdjsonSer(),
             new BsonSer(),
+            new ArrowSer(),
+            new IonSer(),
         ];
         $all = array_values(array_filter(
             $all,

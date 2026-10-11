@@ -1,7 +1,7 @@
 # What does a Fortran call add?
 
 **Question:** For one shop order, how much time does a Fortran call add over the C runner calling the same C library?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -40,16 +40,16 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| flatcc | 0.96 | 240 | fastest |
-| nanopb | 1.13 | 169 | slower |
-| avro-c | 1.30 | 214 | slower |
-| mpack | 2.38 | 337 | slower |
-| yyjson | 5.34 | 464 | slower |
-| tinycbor | 7.41 | 344 | slower |
-| libbson | 8.03 | 581 | slower |
-| cJSON | 12.0 | 464 | slower |
-| ion-c | 16.7 | 251 | slower |
-| libyaml | 27.7 | 465 | slower |
+| flatcc | 0.91 | 240 | fastest |
+| nanopb | 1.06 | 169 | slower |
+| avro-c | 1.15 | 214 | slower |
+| mpack | 2.20 | 337 | slower |
+| yyjson | 4.89 | 464 | slower |
+| tinycbor | 6.87 | 344 | slower |
+| libbson | 7.30 | 581 | slower |
+| cJSON | 10.5 | 464 | slower |
+| ion-c | 14.5 | 251 | slower |
+| libyaml | 22.2 | 465 | slower |
 
 ## What this page is not
 

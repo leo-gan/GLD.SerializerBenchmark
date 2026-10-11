@@ -63,6 +63,8 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 | [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native | Foundation | adapted | Binary plist |
 | [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | JSON | IkigaJSON | adapted | Server JSON |
 | [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
+| [gld-avro](https://github.com/leo-gan/gld-avro-swift) | Schema | leo-gan/gld-avro-swift 0.2.0 | adapted | `parseAvsc` once; `encodeGeneric` / `decodeGeneric` |
+| [gld-ion](https://github.com/leo-gan/gld-ion-swift) | Binary | leo-gan/gld-ion-swift 0.2.0 | adapted | Ion 1.0 binary `encode` / `decodeBinary` |
 | [SwiftBSON](https://github.com/mongodb/swift-bson) | Binary | swift-bson | adapted | Map-root wrap for N>1 |
 | [SwiftCbor](https://github.com/nnabeyang/swift-cbor) | Binary | swift-cbor | adapted | Codable CBOR |
 | [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack) | Binary | swift-msgpack | adapted | Codable MessagePack |
@@ -83,19 +85,19 @@ BinaryCodable is a pure-Swift binary Codable implementation. It was written so S
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
@@ -118,6 +120,14 @@ IkigaJSON is a server-oriented JSON encoder/decoder for Swift. The problem was F
 #### [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) · `2.3.0`
 
 SwiftAvroCore implements Apache Avro for Swift. Avro exists for compact, schema-driven records. The library encodes binary Avro with a schema.
+
+#### [gld-avro](https://github.com/leo-gan/gld-avro-swift) · `0.2.0`
+
+gld-avro-swift is a from-scratch Apache Avro library for Swift. Avro exists for compact, schema-driven records. This row parses the suite schema once, then times encodeGeneric and decodeGeneric.
+
+#### [gld-ion](https://github.com/leo-gan/gld-ion-swift) · `0.2.0`
+
+gld-ion-swift is a from-scratch Amazon Ion library for Swift. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decodeBinary on the five suite types.
 
 #### [SwiftBSON](https://github.com/mongodb/swift-bson) · `3.1.0`
 

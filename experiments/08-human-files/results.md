@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,8 +23,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | goccy/go-json | — | — | — | goccy/go-json | no | [go/results.md](go/results.md) |
 | swift | IkigaJSON | — | — | — | IkigaJSON | no | [swift/results.md](swift/results.md) |
 | csharp | System.Text.Json | — | — | — | System.Text.Json | no | [csharp/results.md](csharp/results.md) |
-| zig | serde.zon | — | — | — | serde.zon | no | [zig/results.md](zig/results.md) |
-| mojo | mojo-json | — | — | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| zig | std.json | — | — | — | serde.zon | no | [zig/results.md](zig/results.md) |
+| mojo | mojo-json | — | — | — | mojo-json | no | [mojo/results.md](mojo/results.md) |
 | fortran | toml-f | — | — | — | json-fortran | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
@@ -53,10 +53,10 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | E (words) | IkigaJSON | — | no |
 | csharp | A (order) | System.Text.Json | — | no |
 | csharp | E (words) | System.Text.Json | — | no |
-| zig | A (order) | serde.zon | — | no |
+| zig | A (order) | std.json | — | no |
 | zig | E (words) | serde.zon | — | no |
 | mojo | A (order) | mojo-json | — | no |
-| mojo | E (words) | EmberJson | — | no |
+| mojo | E (words) | mojo-json | — | no |
 | fortran | A (order) | toml-f | — | no |
 | fortran | E (words) | json-fortran | — | no |
 
@@ -75,9 +75,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | ok | `goccy/go-json` | — |
 | swift | ok | `IkigaJSON` | — |
 | csharp | ok | `System.Text.Json` | — |
-| zig | ok | `serde.zon` | — |
+| zig | ok | `std.json`, `serde.zon` | — |
 | mojo | ok | `mojo-json` | — |
-| fortran | ok | `toml-f`, `json-fortran` | — |
+| fortran | ok | `toml-f` | — |
 
 ## In memory, by language and sample
 
@@ -119,17 +119,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jackson | 154 | 440 | fastest |
-| tomlkt | 250 | 499 | slower |
-| kaml | 584 | 440 | slower |
+| jackson | 193 | 440 | fastest |
+| tomlkt | 301 | 499 | slower |
+| kaml | 723 | 440 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jackson | 61.2 | 411 | fastest |
-| tomlkt | 112 | 570 | slower |
-| kaml | 286 | 470 | slower |
+| jackson | 64.3 | 411 | fastest |
+| tomlkt | 119 | 570 | slower |
+| kaml | 297 | 470 | slower |
 
 ### php
 
@@ -137,15 +137,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 6.33 | 454 | fastest |
+| json | 6.67 | 454 | fastest |
 | yaml | 294 | 515 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.26 | 326 | fastest |
-| yaml | 194 | 386 | slower |
+| json | 3.53 | 326 | fastest |
+| yaml | 203 | 386 | slower |
 
 ### javascript
 
@@ -235,19 +235,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 53.2 | 448 | fastest |
-| TOML | 196 | 508 | slower |
-| XMLCoder | 413 | 729 | slower |
-| Yams | 417 | 429 | slower |
+| IkigaJSON | 51.0 | 448 | fastest |
+| TOML | 192 | 508 | slower |
+| XMLCoder | 401 | 729 | slower |
+| Yams | 404 | 429 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 34.6 | 411 | fastest |
-| TOML | 76.2 | 441 | slower |
-| Yams | 320 | 407 | slower |
-| XMLCoder | 402 | 803 | slower |
+| IkigaJSON | 32.2 | 411 | fastest |
+| TOML | 73.1 | 441 | slower |
+| Yams | 297 | 407 | slower |
+| XMLCoder | 382 | 803 | slower |
 
 ### csharp
 
@@ -273,19 +273,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.zon | 3.40 | 994 | fastest |
-| std.json | 3.84 | 448 | slower |
-| serde.toml | 5.70 | 508 | slower |
-| std.zon | 8.30 | 429 | slower |
+| std.json | 2.99 | 448 | fastest |
+| serde.zon | 3.04 | 994 | similar |
+| serde.toml | 5.59 | 508 | slower |
+| std.zon | 7.65 | 429 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.zon | 2.53 | 713 | fastest |
-| std.json | 3.56 | 411 | slower |
-| serde.toml | 3.72 | 441 | slower |
-| std.zon | 6.35 | 412 | slower |
+| serde.zon | 2.12 | 713 | fastest |
+| std.json | 2.72 | 411 | slower |
+| serde.toml | 3.30 | 441 | slower |
+| std.zon | 5.87 | 412 | slower |
 
 ### mojo
 
@@ -293,19 +293,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 1.71 | 452 | fastest |
-| EmberJson | 2.13 | 452 | slower |
-| ehsanmok-json | 7.43 | 452 | slower |
-| mojo-toml | 75.1 | 489 | slower |
+| mojo-json | 3.04 | 448 | fastest |
+| EmberJson | 7.46 | 448 | slower |
+| ehsanmok-json | 9.52 | 448 | slower |
+| mojo-toml | 81.3 | 485 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.91 | 411 | fastest |
-| mojo-json | 2.98 | 411 | slower |
-| ehsanmok-json | 5.82 | 411 | slower |
-| mojo-toml | 33.0 | 441 | slower |
+| mojo-json | 3.56 | 411 | fastest |
+| EmberJson | 5.31 | 411 | slower |
+| ehsanmok-json | 7.20 | 411 | slower |
+| mojo-toml | 35.8 | 441 | slower |
 
 ### fortran
 
@@ -313,15 +313,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| toml-f | 84.1 | 524 | fastest |
-| json-fortran | 86.8 | 473 | similar |
+| toml-f | 61.5 | 524 | fastest |
+| json-fortran | 71.1 | 473 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 47.3 | 430 | fastest |
-| toml-f | 69.9 | 462 | slower |
+| json-fortran | 34.7 | 430 | fastest |
+| toml-f | 52.4 | 462 | slower |
 
 ## What we saw
 

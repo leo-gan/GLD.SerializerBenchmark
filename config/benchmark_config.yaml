@@ -1204,6 +1204,11 @@ languages:
         package: org.apache.thrift:libthrift
         rationale: "Apache Thrift compact protocol from Kotlin"
         optimal_api: "TCompactProtocol + TMemoryBuffer; field ids match suite proto"
+      - name: gld-ion
+        category: binary
+        package: leo-gan/gld-ion-kotlin
+        rationale: "From-scratch Ion 1.0 binary. Vendored; not on Maven Central. kotlinx-ion stays on ion-java."
+        optimal_api: "ion.encode / ion.decode on an IonDoc built inside the timed call"
 
   php:
     display_name: PHP
@@ -1290,6 +1295,16 @@ languages:
         package: ext-yaml
         rationale: "PECL LibYAML"
         optimal_api: "yaml_emit / yaml_parse"
+      - name: gld-arrow
+        category: schema
+        package: leo-gan/gld-arrow-php
+        rationale: "From-scratch Arrow IPC stream for the five suite types"
+        optimal_api: "One IPC stream per value or batch; readStream rebuilds the suite value"
+      - name: gld-ion
+        category: binary
+        package: leo-gan/gld-ion-php
+        rationale: "From-scratch Ion 1.0 binary for the five suite types"
+        optimal_api: "IonDoc encode with binary EncodeOptions / decode"
 
   zig:
     display_name: Zig
@@ -1401,6 +1416,16 @@ languages:
         package: capnproto C++ 1.0.2
         rationale: "Official C++ runtime from cpp/schemas/benchmark.capnp (no Zig 0.16 plugin)"
         optimal_api: "MallocMessageBuilder / FlatArrayMessageReader via CapnpBridge"
+      - name: gld-avro
+        category: schema
+        package: leo-gan/gld-avro-zig
+        rationale: "From-scratch Avro binary for the five suite types"
+        optimal_api: "parseAvsc in prepare; Datum.encodeTo / decodeBin"
+      - name: gld-arrow
+        category: schema
+        package: leo-gan/gld-arrow-zig
+        rationale: "From-scratch Arrow IPC stream for the five suite types, not the columnar data set"
+        optimal_api: "encodeStream / decodeStream; rowsFromBatch rebuilds the suite value"
 
   mojo:
     display_name: Mojo
@@ -1503,6 +1528,21 @@ languages:
         package: leo-gan/gld-smile
         rationale: "Pure-Mojo Smile 1.0 via document encode / decode"
         optimal_api: "smile.encode_doc / smile.decode_bytes on a SmileDoc built from the suite value (vendored as smile_*)"
+      - name: gld-hdf5
+        category: binary
+        package: leo-gan/gld-hdf5
+        rationale: "From-scratch HDF5 datasets for the five suite types. Does not link libhdf5."
+        optimal_api: "write_hdf5 / read_hdf5 on i32, i64, f64, and uint8 datasets (vendored as hdf5_*)"
+      - name: gld-netcdf
+        category: binary
+        package: leo-gan/gld-hdf5
+        rationale: "NetCDF-4 in gld-hdf5. Variables are float64. Dimension names differ from variable names."
+        optimal_api: "write_nc4 / read_nc4"
+      - name: gld-adios2
+        category: binary
+        package: leo-gan/gld-hdf5
+        rationale: "BP5 directory in gld-hdf5: one float64 variable and one string attribute. Size is the directory files."
+        optimal_api: "write_bp5 / read_bp5; the harness frames the directory as bytes"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language
@@ -1772,6 +1812,16 @@ languages:
       - name: SwiftAvroCore
         category: schema
         package: lynixliu/SwiftAvroCore
+      - name: gld-avro
+        category: schema
+        package: leo-gan/gld-avro-swift
+        rationale: "From-scratch Avro binary for the five suite types. SwiftAvroCore stays."
+        optimal_api: "parseAvsc in prepare; encodeGeneric / decodeGeneric"
+      - name: gld-ion
+        category: binary
+        package: leo-gan/gld-ion-swift
+        rationale: "From-scratch Ion 1.0 binary for the five suite types"
+        optimal_api: "encode with binary EncodeOptions / decodeBinary"
       - name: CapnProto
         category: schema
         package: capnproto C++ via CapnpBridge
@@ -1856,3 +1906,8 @@ languages:
         package: ornladios/ADIOS2
         rationale: "Official ADIOS2 Fortran binding on the array data set, serial BP5. BP5 writes a directory and has no bytes API, so the row is file-only."
         optimal_api: "adios2_put / adios2_get"
+      - name: gld-arrow
+        category: binary
+        package: leo-gan/gld-arrow-fortran
+        rationale: "From-scratch Arrow C Data Interface. One contiguous float64 grid. The timed value is the numeric buffer, not an IPC file."
+        optimal_api: "arrow_export_float64 / arrow_import_float64"

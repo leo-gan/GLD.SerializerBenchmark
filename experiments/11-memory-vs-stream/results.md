@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-09-30
+**Date:** 2026-10-11
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -19,8 +19,8 @@ We do not name a single winner. This sample is one small flat record. A differen
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
-| zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro`, `mojo-json` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| zig | ok | `flatbuffers` | `serde.msgpack` | `flatbuffers`, `serde.msgpack`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | `mojo-json`, `mojo-protobuf` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -54,10 +54,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| moshi-codegen | 48.2 | 440 | JSON | fastest |
-| protobuf | 62.3 | 155 | Protocol Buffers | slower |
-| jackson | 144 | 440 | JSON — common default | slower |
-| msgpack | 170 | 317 | MessagePack | slower |
+| moshi-codegen | 50.2 | 440 | JSON | fastest |
+| protobuf | 68.7 | 155 | Protocol Buffers | slower |
+| jackson | 156 | 440 | JSON — common default | slower |
+| msgpack | 181 | 317 | MessagePack | slower |
 
 ### php
 
@@ -65,9 +65,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 6.04 | 454 | JSON | fastest |
-| rybakit-msgpack | 22.5 | 335 | MessagePack | slower |
-| protobuf | 201 | 160 | Protocol Buffers | slower |
+| json | 6.64 | 454 | JSON | fastest |
+| rybakit-msgpack | 22.3 | 335 | MessagePack | slower |
+| protobuf | 204 | 160 | Protocol Buffers | slower |
 
 ### cpp
 
@@ -86,12 +86,12 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| flatbuffers | 1.09 | 468 | FlatBuffers | fastest |
-| protobuf | 1.12 | 155 | Protocol Buffers | close |
-| serde.msgpack | 1.76 | 325 | MessagePack | slower |
-| std.json | 3.69 | 448 | JSON | slower |
-| std.json.scanner | 3.71 | 448 | JSON — streaming parser | slower |
-| capnproto | 7.87 | 376 | Cap’n Proto | slower |
+| flatbuffers | 1.16 | 468 | FlatBuffers | fastest |
+| serde.msgpack | 1.25 | 325 | MessagePack | close |
+| protobuf | 1.38 | 155 | Protocol Buffers | slower |
+| std.json.scanner | 3.16 | 448 | JSON — streaming parser | slower |
+| std.json | 3.17 | 448 | JSON | slower |
+| capnproto | 12.1 | 376 | Cap’n Proto | slower |
 
 ### mojo
 
@@ -99,14 +99,14 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.70 | 118 | Avro | fastest |
-| mojo-json | 1.72 | 452 | JSON — mojo-json | similar |
-| EmberJson | 2.17 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.34 | 157 | Protocol Buffers | slower |
-| mojo-flatbuffers | 4.49 | 416 | FlatBuffers | slower |
-| mojo-cbor | 4.62 | 329 | CBOR | slower |
-| ehsanmok-json | 7.77 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 78.1 | 489 | TOML | slower |
+| mojo-avro | 2.73 | 114 | Avro | fastest |
+| mojo-json | 3.08 | 448 | JSON — mojo-json | close |
+| mojo-protobuf | 3.17 | 155 | Protocol Buffers | close |
+| mojo-flatbuffers | 5.07 | 408 | FlatBuffers | slower |
+| mojo-cbor | 5.27 | 332 | CBOR | slower |
+| EmberJson | 7.20 | 448 | JSON — EmberJson | slower |
+| ehsanmok-json | 10.1 | 448 | JSON — ehsanmok/json | slower |
+| mojo-toml | 79.9 | 485 | TOML | slower |
 
 ## What we saw
 

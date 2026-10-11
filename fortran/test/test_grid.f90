@@ -6,6 +6,7 @@ program test_grid
   use ser_hdf5
   use ser_netcdf
   use ser_adios2
+  use ser_gld_arrow
   implicit none
   integer, parameter :: nx = 512
   integer, parameter :: ny = 512
@@ -83,6 +84,22 @@ program test_grid
       if (stat /= 0 .or. .not. grid_equal(win, expect)) call fail("ad window")
     end if
     call ad_remove(ad_path)
+  end if
+
+  call ga_prepare(stat)
+  if (stat /= 0) call fail("ga_prepare")
+  call ga_write_grid(values, stat)
+  if (stat /= 0) then
+    call fail("ga write")
+  else
+    got = 0
+    call ga_read_grid(got, stat)
+    if (stat /= 0 .or. .not. grid_equal(got, values)) call fail("ga full read")
+    call ga_write_grid(values, stat)
+    if (stat /= 0) call fail("ga rewrite")
+    win = 0
+    call ga_read_window(x0, y0, wx, wy, win, stat)
+    if (stat /= 0 .or. .not. grid_equal(win, expect)) call fail("ga window")
   end if
 
   if (nfail /= 0) error stop 1

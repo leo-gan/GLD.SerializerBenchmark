@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,7 +20,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro`, `mojo-protobuf` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `mojo-protobuf` | — | `mojo-protobuf`, `mojo-avro` | [mojo/results.md](mojo/results.md) |
 | fortran | ok | `custom-binary` | — | `custom-binary` | [fortran/results.md](fortran/results.md) |
 
 ## In memory, by language
@@ -59,10 +59,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 39.0 | 50 | other languages can read — Protocol Buffers | fastest |
-| fory | 51.2 | 133 | one language — Apache Fory | slower |
-| kryo | 59.6 | 46 | one language — Kryo | slower |
-| kotlinx-json | 108 | 158 | other languages can read — JSON | slower |
+| protobuf | 32.2 | 50 | other languages can read — Protocol Buffers | fastest |
+| fory | 44.7 | 133 | one language — Apache Fory | slower |
+| kryo | 54.7 | 46 | one language — Kryo | slower |
+| kotlinx-json | 90.7 | 158 | other languages can read — JSON | slower |
 
 ### php
 
@@ -70,9 +70,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 2.89 | 168 | other languages can read — JSON | fastest |
-| serialize | 3.78 | 222 | one language — PHP serialize | slower |
-| rybakit-msgpack | 8.78 | 126 | other languages can read — MessagePack | slower |
+| json | 3.33 | 168 | other languages can read — JSON | fastest |
+| serialize | 4.07 | 222 | one language — PHP serialize | slower |
+| rybakit-msgpack | 8.91 | 126 | other languages can read — MessagePack | slower |
 
 ### go
 
@@ -90,13 +90,13 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| comptime-bin | 0.15 | 57 | one language — comptime packed | fastest |
-| s2s | 0.21 | 73 | one language — s2s stream | slower |
-| protobuf | 0.28 | 50 | other languages can read — Protocol Buffers | slower |
-| flatbuffers | 0.31 | 108 | other languages can read — FlatBuffers | slower |
-| serde.msgpack | 0.49 | 124 | other languages can read — MessagePack | slower |
-| std.json | 1.12 | 168 | other languages can read — JSON | slower |
-| capnproto | 2.09 | 96 | other languages can read — Cap’n Proto | slower |
+| comptime-bin | 0.18 | 57 | one language — comptime packed | fastest |
+| s2s | 0.28 | 73 | one language — s2s stream | slower |
+| flatbuffers | 0.36 | 108 | other languages can read — FlatBuffers | slower |
+| protobuf | 0.40 | 50 | other languages can read — Protocol Buffers | slower |
+| serde.msgpack | 0.50 | 124 | other languages can read — MessagePack | slower |
+| std.json | 1.10 | 168 | other languages can read — JSON | slower |
+| capnproto | 4.09 | 96 | other languages can read — Cap’n Proto | slower |
 
 ### mojo
 
@@ -104,14 +104,14 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 0.56 | 44 | Avro | fastest |
-| mojo-protobuf | 0.59 | 50 | Protocol Buffers | similar |
-| mojo-json | 0.63 | 164 | JSON — mojo-json | slower |
-| EmberJson | 0.85 | 168 | JSON — EmberJson | slower |
-| mojo-flatbuffers | 1.06 | 104 | FlatBuffers | slower |
-| mojo-cbor | 1.54 | 124 | CBOR | slower |
-| ehsanmok-json | 3.72 | 168 | JSON — ehsanmok/json | slower |
-| mojo-toml | 13.3 | 167 | TOML | slower |
+| mojo-protobuf | 1.35 | 50 | Protocol Buffers | fastest |
+| mojo-avro | 1.64 | 44 | Avro | slower |
+| mojo-json | 2.35 | 164 | JSON — mojo-json | slower |
+| mojo-flatbuffers | 2.53 | 104 | FlatBuffers | slower |
+| mojo-cbor | 2.96 | 124 | CBOR | slower |
+| EmberJson | 5.36 | 168 | JSON — EmberJson | slower |
+| ehsanmok-json | 6.77 | 168 | JSON — ehsanmok/json | slower |
+| mojo-toml | 21.5 | 167 | TOML | slower |
 
 ### fortran
 
@@ -119,9 +119,8 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| custom-binary | 1.82 | 44 | one language — length-prefixed binary | fastest |
-| json-fortran | 37.6 | 172 | other languages can read — JSON | slower |
-| hdf5-fortran | 334 | 7704 | HDF5 core virtual file driver | slower |
+| custom-binary | 0.99 | 44 | one language — length-prefixed binary | fastest |
+| json-fortran | 25.2 | 172 | other languages can read — JSON | slower |
 
 ## What we saw
 

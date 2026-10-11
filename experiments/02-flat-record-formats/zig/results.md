@@ -1,7 +1,7 @@
 # Experiment 2 results — zig
 
-**Date:** 2026-08-29
-**Raw file:** `experiments/02-flat-record-formats/zig/logs/zig/2026-08-28-173401.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/02-flat-record-formats/zig/logs/zig/2026-10-11-145859.csv`
 **Language:** zig
 **Sample:** one flat record (`message`), 1 and 100 records per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,14 +12,14 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| comptime-bin | in-tree | 0.07 | 0.10 | 0.16 | 57 | 2108 | comptime byte-packed binary | fastest | yes | 90 |
-| protobuf | 5.0.0 | 0.14 | 0.16 | 0.30 | 50 | 2131 | Protocol Buffers | slower | yes | 86 |
-| flatbuffers | 0.2.1 | 0.22 | 0.11 | 0.33 | 108 | 2532 | FlatBuffers | slower | yes | 91 |
-| serde.msgpack | 1.0.7 | 0.25 | 0.29 | 0.54 | 124 | 2346 | MessagePack — serde.zig | slower | yes | 91 |
-| zbor | 0.21.0 | 0.23 | 0.73 | 0.95 | 124 | 2330 | CBOR — zbor | slower | yes | 91 |
-| std.json | 0.16.0 | 0.41 | 0.82 | 1.24 | 168 | 2624 | JSON — stdlib | slower | yes | 93 |
-| zig-msgpack | 0.0.14 | 0.64 | 0.88 | 1.53 | 124 | 2382 | MessagePack — zigcc | slower | yes | 89 |
-| capnproto | 1.0.2 | 1.49 | 1.29 | 2.79 | 96 | 2352 | Cap’n Proto | slower | yes | 90 |
+| comptime-bin | in-tree | 0.07 | 0.09 | 0.16 | 57 | 2108 | comptime byte-packed binary | fastest | yes | 91 |
+| flatbuffers | 0.2.1 | 0.23 | 0.13 | 0.35 | 108 | 2532 | FlatBuffers | slower | yes | 94 |
+| protobuf | 5.0.0 | 0.20 | 0.19 | 0.38 | 50 | 2131 | Protocol Buffers | slower | yes | 92 |
+| serde.msgpack | 1.2.2 | 0.21 | 0.30 | 0.51 | 124 | 2346 | MessagePack — serde.zig | slower | yes | 85 |
+| std.json | 0.16.0 | 0.33 | 0.67 | 0.99 | 168 | 2624 | JSON — stdlib | slower | yes | 90 |
+| zbor | 0.21.3 | 0.29 | 0.76 | 1.05 | 124 | 2330 | CBOR — zbor | slower | yes | 95 |
+| zig-msgpack | 0.0.18 | 0.70 | 0.84 | 1.53 | 124 | 2382 | MessagePack — zigcc | slower | yes | 91 |
+| capnproto | 1.0.2 | 2.39 | 1.78 | 4.10 | 96 | 2352 | Cap’n Proto | slower | yes | 95 |
 
 ## In memory — 100 record(s) per write
 
@@ -27,35 +27,35 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| comptime-bin | in-tree | 3.07 | 3.91 | 6.98 | 5758 | 2108 | comptime byte-packed binary | fastest | yes | 90 |
-| flatbuffers | 0.2.1 | 9.60 | 5.93 | 15.6 | 10644 | 2532 | FlatBuffers | slower | yes | 88 |
-| protobuf | 5.0.0 | 7.21 | 8.56 | 15.9 | 5045 | 2131 | Protocol Buffers | slower | yes | 95 |
-| serde.msgpack | 1.0.7 | 13.7 | 18.7 | 32.6 | 12432 | 2346 | MessagePack — serde.zig | slower | yes | 93 |
-| zbor | 0.21.0 | 16.6 | 57.0 | 74.0 | 12432 | 2330 | CBOR — zbor | slower | yes | 90 |
-| std.json | 0.16.0 | 33.7 | 63.5 | 96.9 | 16849 | 2624 | JSON — stdlib | slower | yes | 96 |
-| zig-msgpack | 0.0.14 | 52.0 | 73.7 | 126 | 12432 | 2382 | MessagePack — zigcc | slower | yes | 92 |
-| capnproto | 1.0.2 | 99.0 | 83.2 | 181 | 9572 | 2352 | Cap’n Proto | slower | yes | 97 |
+| comptime-bin | in-tree | 2.09 | 4.03 | 6.13 | 5758 | 2108 | comptime byte-packed binary | fastest | yes | 92 |
+| flatbuffers | 0.2.1 | 10.5 | 6.18 | 16.8 | 10644 | 2532 | FlatBuffers | slower | yes | 95 |
+| protobuf | 5.0.0 | 8.03 | 9.10 | 17.3 | 5045 | 2131 | Protocol Buffers | slower | yes | 96 |
+| serde.msgpack | 1.2.2 | 8.95 | 14.5 | 23.8 | 12432 | 2346 | MessagePack — serde.zig | slower | yes | 93 |
+| zbor | 0.21.3 | 17.3 | 54.4 | 71.9 | 12432 | 2330 | CBOR — zbor | slower | yes | 93 |
+| std.json | 0.16.0 | 23.4 | 52.5 | 75.8 | 16849 | 2624 | JSON — stdlib | slower | yes | 90 |
+| zig-msgpack | 0.0.18 | 51.9 | 73.3 | 126 | 12432 | 2382 | MessagePack — zigcc | slower | yes | 82 |
+| capnproto | 1.0.2 | 118 | 96.0 | 214 | 9572 | 2352 | Cap’n Proto | slower | yes | 86 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
 | comptime-bin | 1 | 0.07 | 0.10 | 0.17 | copied |
-| protobuf | 1 | 0.15 | 0.16 | 0.31 | copied |
-| flatbuffers | 1 | 0.24 | 0.11 | 0.36 | copied |
-| serde.msgpack | 1 | 0.26 | 0.30 | 0.56 | copied |
-| zbor | 1 | 0.23 | 0.75 | 0.99 | copied |
-| std.json | 1 | 0.43 | 0.83 | 1.25 | text_on_stream |
-| zig-msgpack | 1 | 0.68 | 0.95 | 1.62 | copied |
-| capnproto | 1 | 1.49 | 1.34 | 2.84 | copied |
-| comptime-bin | 100 | 3.02 | 3.85 | 6.85 | copied |
-| flatbuffers | 100 | 9.63 | 5.82 | 15.5 | copied |
-| protobuf | 100 | 7.30 | 8.23 | 15.7 | copied |
-| serde.msgpack | 100 | 13.3 | 17.8 | 31.1 | copied |
-| zbor | 100 | 16.3 | 54.9 | 71.7 | copied |
-| std.json | 100 | 32.0 | 59.3 | 91.9 | copied |
-| zig-msgpack | 100 | 50.4 | 70.3 | 121 | copied |
-| capnproto | 100 | 95.0 | 79.6 | 175 | copied |
+| flatbuffers | 1 | 0.23 | 0.13 | 0.36 | copied |
+| protobuf | 1 | 0.19 | 0.20 | 0.39 | copied |
+| serde.msgpack | 1 | 0.20 | 0.30 | 0.50 | copied |
+| std.json | 1 | 0.35 | 0.68 | 1.03 | text_on_stream |
+| zbor | 1 | 0.33 | 0.77 | 1.10 | copied |
+| zig-msgpack | 1 | 0.72 | 0.86 | 1.58 | copied |
+| capnproto | 1 | 2.50 | 1.82 | 4.33 | copied |
+| comptime-bin | 100 | 2.10 | 4.00 | 6.13 | copied |
+| flatbuffers | 100 | 10.4 | 6.07 | 16.6 | copied |
+| protobuf | 100 | 7.91 | 9.00 | 17.0 | copied |
+| serde.msgpack | 100 | 9.35 | 14.4 | 23.7 | copied |
+| zbor | 100 | 17.3 | 54.0 | 71.4 | copied |
+| std.json | 100 | 23.5 | 52.7 | 76.1 | copied |
+| zig-msgpack | 100 | 51.8 | 70.9 | 122 | copied |
+| capnproto | 100 | 118 | 96.4 | 215 | copied |
 
 ## Libraries that belong in the conversation
 

@@ -489,6 +489,9 @@
       ],
       "sbe": [
         "sbe"
+      ],
+      "gld-ion": [
+        "ion"
       ]
     },
     "csharp": {
@@ -607,7 +610,8 @@
       ],
       "PureHDF": [
         "hdf5"
-      ]
+      ],
+      "Jil": []
     },
     "rust": {
       "serde_json": [
@@ -820,7 +824,13 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "gld-avro": [
+        "avro"
+      ],
+      "gld-ion": [
+        "ion"
+      ]
     },
     "php": {
       "json": [
@@ -848,7 +858,26 @@
         "cbor"
       ],
       "serialize": [],
-      "symfony-xml": []
+      "symfony-xml": [],
+      "gld-arrow": [
+        "arrow"
+      ],
+      "gld-ion": [
+        "ion"
+      ],
+      "simdjson": [
+        "json"
+      ],
+      "msgpack-pecl": [
+        "msgpack"
+      ],
+      "bson": [
+        "bson"
+      ],
+      "yaml-pecl": [
+        "yaml"
+      ],
+      "igbinary": []
     },
     "zig": {
       "std.json": [
@@ -901,7 +930,19 @@
       ],
       "serde.xml": [],
       "comptime-bin": [],
-      "s2s": []
+      "s2s": [],
+      "gld-avro": [
+        "avro"
+      ],
+      "gld-arrow": [
+        "arrow"
+      ],
+      "serde.json.borrowed": [
+        "json"
+      ],
+      "std.json.borrowed": [
+        "json"
+      ]
     },
     "mojo": {
       "EmberJson": [
@@ -958,7 +999,16 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "gld-hdf5": [
+        "hdf5"
+      ],
+      "gld-netcdf": [
+        "netcdf"
+      ],
+      "gld-adios2": [
+        "adios2"
+      ]
     },
     "fortran": {
       "json-fortran": [
@@ -985,6 +1035,9 @@
       ],
       "adios2": [
         "adios2"
+      ],
+      "gld-arrow": [
+        "arrow"
       ]
     }
   }

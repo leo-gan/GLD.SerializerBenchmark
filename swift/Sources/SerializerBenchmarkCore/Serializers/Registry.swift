@@ -21,6 +21,8 @@ public func allSerializers() -> [any BenchSerializer] {
         SwiftProtobufSerializer(),
         FlatBuffersSerializer(),
         SwiftAvroSerializer(),
+        GldAvroSerializer(),
+        GldIonSerializer(),
         CapnProtoSerializer(),
         DagrSerializer(),
         DagrSerializer(layout: .regular),

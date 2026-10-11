@@ -1,7 +1,7 @@
 # Experiment 1 results — swift
 
-**Date:** 2026-08-16
-**Raw file:** `experiments/01-json-library-bakeoff/swift/logs/swift/2026-08-16-150620.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/01-json-library-bakeoff/swift/logs/swift/2026-10-11-145715.csv`
 **Language:** swift
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,15 +12,15 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| IkigaJSON | 2.5.3 | 20.2 | 33.9 | 54.4 | 448 | — | yes | fastest | yes | 79 |
-| Foundation.JSONEncoder | Foundation | 23.1 | 33.0 | 55.7 | 448 | — | yes | slower | yes | 81 |
+| IkigaJSON | 2.5.4 | 18.2 | 32.0 | 50.2 | 448 | 229 | yes | fastest | yes | 75 |
+| Foundation.JSONEncoder | Foundation | 21.9 | 29.7 | 51.6 | 448 | 232 | yes | slower | yes | 83 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| IkigaJSON | 53.3 | 35.3 | 88.7 | copied |
-| Foundation.JSONEncoder | 57.8 | 33.0 | 90.8 | copied |
+| IkigaJSON | 49.6 | 33.6 | 83.3 | copied |
+| Foundation.JSONEncoder | 53.4 | 31.2 | 84.7 | copied |
 
 ## Libraries that belong in the conversation
 

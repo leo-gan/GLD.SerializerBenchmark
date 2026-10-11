@@ -64,6 +64,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.0"),
         .package(url: "https://github.com/google/flatbuffers.git", exact: "24.3.25"),
         .package(url: "https://github.com/lynixliu/SwiftAvroCore.git", from: "2.0.0"),
+        .package(url: "https://github.com/leo-gan/gld-avro-swift.git", from: "0.2.0"),
+        .package(url: "https://github.com/leo-gan/gld-ion-swift.git", from: "0.2.0"),
         .package(url: "https://github.com/christophhagen/BinaryCodable", from: "4.0.0"),
         .package(url: "https://github.com/mattt/swift-toml.git", from: "2.0.0"),
         // CryptoKit-compatible SHA-256 on Linux (Apple platforms use system CryptoKit).
@@ -121,6 +123,8 @@ let package = Package(
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "FlatBuffers", package: "flatbuffers"),
                 .product(name: "SwiftAvroCore", package: "SwiftAvroCore"),
+                .product(name: "Avro", package: "gld-avro-swift"),
+                .product(name: "Ion", package: "gld-ion-swift"),
                 .product(name: "BinaryCodable", package: "BinaryCodable"),
                 .product(name: "TOML", package: "swift-toml"),
                 .product(name: "Crypto", package: "swift-crypto"),
@@ -149,7 +153,11 @@ let package = Package(
         ),
         .testTarget(
             name: "SerializerBenchmarkTests",
-            dependencies: ["SerializerBenchmarkCore"],
+            dependencies: [
+                "SerializerBenchmarkCore",
+                .product(name: "Avro", package: "gld-avro-swift"),
+                .product(name: "Ion", package: "gld-ion-swift"),
+            ],
             path: "Tests/SerializerBenchmarkTests"
         ),
     ],

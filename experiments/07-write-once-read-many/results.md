@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,7 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | flatcc | — | protobuf-wire | — | — | no | [c/results.md](c/results.md) |
 | swift | FlatBuffers | — | SwiftProtobuf | — | — | no | [swift/results.md](swift/results.md) |
 | zig | comptime-bin | — | comptime-bin | — | — | no | [zig/results.md](zig/results.md) |
-| mojo | mojo-avro | — | mojo-flatbuffers | — | — | no | [mojo/results.md](mojo/results.md) |
+| mojo | mojo-avro | — | mojo-protobuf | — | — | no | [mojo/results.md](mojo/results.md) |
 | fortran | custom-binary | — | custom-binary | — | — | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
@@ -53,7 +53,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | zig | A (order) | comptime-bin | — | no |
 | zig | C (sensor) | comptime-bin | — | no |
 | mojo | A (order) | mojo-avro | — | no |
-| mojo | C (sensor) | mojo-flatbuffers | — | no |
+| mojo | C (sensor) | mojo-protobuf | — | no |
 | fortran | A (order) | custom-binary | — | no |
 | fortran | C (sensor) | custom-binary | — | no |
 
@@ -72,7 +72,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | ok | `flatcc` | — |
 | swift | ok | `FlatBuffers` | — |
 | zig | ok | `comptime-bin` | — |
-| mojo | ok | `mojo-avro` | — |
+| mojo | ok | `mojo-avro` | `mojo-protobuf` |
 | fortran | ok | `custom-binary` | — |
 
 ## In memory, by language and sample
@@ -143,17 +143,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatbuffers | 27.5 | 18.9 | 416 | fastest |
-| protobuf | 30.2 | 27.3 | 155 | close |
-| capnproto | 52.5 | 39.1 | 376 | slower |
+| flatbuffers | 30.7 | 16.7 | 416 | fastest |
+| protobuf | 33.6 | 29.3 | 155 | close |
+| capnproto | 61.3 | 37.9 | 376 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatbuffers | 72.0 | 51.5 | 4192 | fastest |
-| protobuf | 78.8 | 52.2 | 4128 | similar |
-| capnproto | 91.2 | 67.1 | 4184 | slower |
+| flatbuffers | 62.9 | 43.4 | 4192 | fastest |
+| protobuf | 71.2 | 46.4 | 4128 | similar |
+| capnproto | 79.3 | 62.0 | 4184 | slower |
 
 ### php
 
@@ -161,13 +161,13 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf | 129 | 71.3 | 160 | fastest |
+| protobuf | 134 | 73.8 | 160 | fastest |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf | 595 | 370 | 4124 | fastest |
+| protobuf | 579 | 360 | 4124 | fastest |
 
 ### javascript
 
@@ -239,17 +239,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| FlatBuffers | 3.85 | 3.92 | 440 | fastest |
-| SwiftProtobuf | 4.65 | 4.35 | 155 | slower |
-| CapnProto | 15.9 | 10.5 | 376 | slower |
+| FlatBuffers | 3.84 | 3.94 | 440 | fastest |
+| SwiftProtobuf | 5.64 | 4.95 | 155 | slower |
+| CapnProto | 14.2 | 10.3 | 376 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| SwiftProtobuf | 5.73 | 4.90 | 4128 | fastest |
-| FlatBuffers | 5.62 | 8.36 | 4216 | slower |
-| CapnProto | 33.9 | 15.2 | 4184 | slower |
+| SwiftProtobuf | 5.36 | 5.11 | 4128 | fastest |
+| FlatBuffers | 6.01 | 8.97 | 4216 | slower |
+| CapnProto | 31.4 | 14.9 | 4184 | slower |
 
 ### zig
 
@@ -257,21 +257,21 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| comptime-bin | 0.16 | 0.23 | 214 | fastest |
-| flatbuffers | 0.71 | 0.38 | 468 | slower |
-| protobuf | 0.60 | 0.54 | 155 | slower |
-| serde.msgpack | 1.05 | 0.66 | 325 | slower |
-| capnproto | 3.57 | 4.13 | 376 | slower |
+| comptime-bin | 0.14 | 0.25 | 214 | fastest |
+| flatbuffers | 0.73 | 0.45 | 468 | slower |
+| serde.msgpack | 0.50 | 0.70 | 325 | slower |
+| protobuf | 0.69 | 0.68 | 155 | slower |
+| capnproto | 5.53 | 5.85 | 376 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| comptime-bin | 1.33 | 0.37 | 4140 | fastest |
-| capnproto | 2.79 | 2.43 | 4184 | slower |
-| serde.msgpack | 3.18 | 1.91 | 4663 | slower |
-| flatbuffers | 6.23 | 0.55 | 4188 | slower |
-| protobuf | 3.81 | 3.47 | 4128 | slower |
+| comptime-bin | 0.53 | 0.42 | 4140 | fastest |
+| serde.msgpack | 2.19 | 1.03 | 4663 | slower |
+| flatbuffers | 4.52 | 0.59 | 4188 | slower |
+| protobuf | 3.69 | 2.66 | 4128 | slower |
+| capnproto | 7.79 | 8.75 | 4184 | slower |
 
 ### mojo
 
@@ -279,17 +279,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-avro | 0.22 | 1.53 | 118 | fastest |
-| mojo-protobuf | 0.59 | 1.85 | 157 | slower |
-| mojo-flatbuffers | 3.59 | 1.10 | 416 | slower |
+| mojo-avro | 0.86 | 2.55 | 114 | fastest |
+| mojo-protobuf | 1.63 | 2.26 | 155 | close |
+| mojo-flatbuffers | 4.54 | 1.89 | 408 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-flatbuffers | 3.21 | 2.55 | 4200 | fastest |
-| mojo-avro | 2.71 | 7.65 | 4135 | slower |
-| mojo-protobuf | 3.26 | 10.3 | 4137 | slower |
+| mojo-protobuf | 2.25 | 2.96 | 4128 | fastest |
+| mojo-flatbuffers | 3.74 | 2.76 | 4192 | slower |
+| mojo-avro | 2.66 | 8.29 | 4126 | slower |
 
 ### fortran
 
@@ -297,17 +297,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| custom-binary | 0.77 | 2.26 | 211 | fastest |
-| json-fortran | 33.1 | 41.6 | 473 | slower |
-| hdf5-fortran | 206 | 167 | 9536 | slower |
+| custom-binary | 0.30 | 1.12 | 211 | fastest |
+| json-fortran | 32.4 | 36.1 | 473 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| custom-binary | 3.33 | 3.64 | 4131 | fastest |
-| hdf5-fortran | 232 | 157 | 11256 | slower |
-| json-fortran | 721 | 525 | 11802 | slower |
+| custom-binary | 2.32 | 2.44 | 4131 | fastest |
+| json-fortran | 714 | 522 | 11802 | slower |
 
 ## What we saw
 

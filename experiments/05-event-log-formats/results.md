@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,8 +25,8 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | c | ok | `protobuf-wire` | — | `protobuf-wire` | [c/results.md](c/results.md) |
 | cpp | ok | `avro` | — | `avro` | [cpp/results.md](cpp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` | [swift/results.md](swift/results.md) |
-| zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `EmberJson` | `mojo-json` | `EmberJson`, `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| zig | ok | `serde.msgpack` | `flatbuffers` | `serde.msgpack`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro`, `mojo-protobuf` | `mojo-json` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 | fortran | ok | `custom-binary` | — | `custom-binary` | [fortran/results.md](fortran/results.md) |
 
 ## At a glance (100 records per write)
@@ -35,7 +35,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 |----------|--------|--------------------|-----------|-----------------|
 | python | ok | `protobuf` | — | `protobuf`, `avro` |
 | java | ok | `protobuf` | — | `protobuf`, `avro` |
-| kotlin | ok | `protobuf` | `avro4k`, `avro` | `protobuf`, `avro4k` |
+| kotlin | ok | `protobuf` | `avro4k` | `protobuf`, `avro4k` |
 | php | ok | `json` | — | `json`, `avro` |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` |
@@ -44,8 +44,8 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | c | ok | `protobuf-wire` | — | `protobuf-wire` |
 | cpp | ok | `avro` | — | `avro` |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` |
-| zig | ok | `flatbuffers` | — | `flatbuffers`, `protobuf` |
-| mojo | ok | `EmberJson` | — | `EmberJson`, `mojo-avro` |
+| zig | ok | `flatbuffers` | — | `flatbuffers`, `serde.msgpack`, `protobuf` |
+| mojo | ok | `mojo-json` | — | `mojo-json`, `mojo-protobuf`, `mojo-avro` |
 | fortran | ok | `custom-binary` | — | `custom-binary` |
 
 ## In memory, by language
@@ -94,19 +94,19 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 47.6 | 123 | Protocol Buffers | fastest |
-| avro | 120 | 105 | Avro | slower |
-| avro4k | 133 | 105 | Avro — avro4k | slower |
-| jackson | 140 | 254 | JSON — common default | slower |
+| protobuf | 64.1 | 123 | Protocol Buffers | fastest |
+| avro | 157 | 105 | Avro | slower |
+| avro4k | 170 | 105 | Avro — avro4k | slower |
+| jackson | 195 | 254 | JSON — common default | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 226 | 12477 | Protocol Buffers | fastest |
-| avro4k | 235 | 10448 | Avro — avro4k | close |
-| avro | 276 | 10448 | Avro | close |
-| jackson | 363 | 25446 | JSON — common default | slower |
+| protobuf | 191 | 12477 | Protocol Buffers | fastest |
+| avro4k | 204 | 10448 | Avro — avro4k | close |
+| avro | 224 | 10448 | Avro | slower |
+| jackson | 310 | 25446 | JSON — common default | slower |
 
 ### php
 
@@ -114,17 +114,17 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 3.48 | 267 | JSON — stdlib | fastest |
-| avro | 48.4 | 115 | Avro | slower |
-| protobuf | 107 | 133 | Protocol Buffers | slower |
+| json | 3.88 | 267 | JSON — stdlib | fastest |
+| avro | 48.2 | 115 | Avro | slower |
+| protobuf | 106 | 133 | Protocol Buffers | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 207 | 25976 | JSON — stdlib | fastest |
-| avro | 3713 | 10678 | Avro | slower |
-| protobuf | 9419 | 12717 | Protocol Buffers | slower |
+| json | 213 | 25976 | JSON — stdlib | fastest |
+| avro | 3624 | 10678 | Avro | slower |
+| protobuf | 9090 | 12717 | Protocol Buffers | slower |
 
 ### go
 
@@ -246,17 +246,17 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| SwiftProtobuf | 6.88 | 123 | Protocol Buffers | fastest |
-| IkigaJSON | 29.0 | 257 | JSON — Experiment 1 | slower |
-| SwiftAvroCore | 77.7 | 105 | Avro | slower |
+| SwiftProtobuf | 8.67 | 123 | Protocol Buffers | fastest |
+| IkigaJSON | 28.5 | 257 | JSON — Experiment 1 | slower |
+| SwiftAvroCore | 78.9 | 105 | Avro | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| SwiftProtobuf | 231 | 12477 | Protocol Buffers | fastest |
-| IkigaJSON | 1644 | 25746 | JSON — Experiment 1 | slower |
-| SwiftAvroCore | 5368 | 10448 | Avro | slower |
+| SwiftProtobuf | 243 | 12477 | Protocol Buffers | fastest |
+| IkigaJSON | 1503 | 25746 | JSON — Experiment 1 | slower |
+| SwiftAvroCore | 4846 | 10448 | Avro | slower |
 
 ### zig
 
@@ -264,23 +264,23 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 0.70 | 123 | Protocol Buffers | fastest |
-| flatbuffers | 0.73 | 296 | FlatBuffers | slower |
-| serde.msgpack | 0.95 | 199 | MessagePack | slower |
-| serde.json | 1.35 | 257 | JSON — serde.zig | slower |
-| std.json | 2.01 | 257 | JSON — stdlib | slower |
-| capnproto | 6.34 | 256 | Cap’n Proto | slower |
+| serde.msgpack | 0.69 | 199 | MessagePack | fastest |
+| flatbuffers | 0.72 | 296 | FlatBuffers | close |
+| protobuf | 0.76 | 123 | Protocol Buffers | slower |
+| serde.json | 1.30 | 257 | JSON — serde.zig | slower |
+| std.json | 1.65 | 257 | JSON — stdlib | slower |
+| capnproto | 8.94 | 256 | Cap’n Proto | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| flatbuffers | 38.7 | 31124 | FlatBuffers | fastest |
-| protobuf | 50.7 | 12649 | Protocol Buffers | slower |
-| serde.msgpack | 66.7 | 20249 | MessagePack | slower |
-| serde.json | 128 | 26049 | JSON — serde.zig | slower |
-| std.json | 181 | 26049 | JSON — stdlib | slower |
-| capnproto | 588 | 26820 | Cap’n Proto | slower |
+| flatbuffers | 38.2 | 31124 | FlatBuffers | fastest |
+| serde.msgpack | 41.1 | 20249 | MessagePack | slower |
+| protobuf | 50.4 | 12649 | Protocol Buffers | slower |
+| serde.json | 119 | 26049 | JSON — serde.zig | slower |
+| std.json | 143 | 26049 | JSON — stdlib | slower |
+| capnproto | 636 | 26820 | Cap’n Proto | slower |
 
 ### mojo
 
@@ -288,27 +288,27 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 1.48 | 290 | JSON — EmberJson | fastest |
-| mojo-json | 1.53 | 290 | JSON — mojo-json | close |
-| mojo-avro | 2.09 | 138 | Avro | slower |
-| mojo-protobuf | 2.41 | 156 | Protocol Buffers | slower |
-| mojo-cbor | 3.46 | 232 | CBOR | slower |
-| mojo-flatbuffers | 3.63 | 320 | FlatBuffers | slower |
-| ehsanmok-json | 5.06 | 290 | JSON — ehsanmok/json | slower |
-| mojo-toml | 34.5 | 304 | TOML | slower |
+| mojo-avro | 2.91 | 105 | Avro | fastest |
+| mojo-protobuf | 3.03 | 123 | Protocol Buffers | similar |
+| mojo-json | 3.32 | 257 | JSON — mojo-json | close |
+| mojo-cbor | 4.19 | 199 | CBOR | slower |
+| mojo-flatbuffers | 5.00 | 272 | FlatBuffers | slower |
+| EmberJson | 6.90 | 257 | JSON — EmberJson | slower |
+| ehsanmok-json | 8.01 | 257 | JSON — ehsanmok/json | slower |
+| mojo-toml | 45.7 | 271 | TOML | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 120 | 27675 | JSON — EmberJson | fastest |
-| mojo-json | 133 | 27675 | JSON — mojo-json | slower |
-| mojo-avro | 187 | 12367 | Avro | slower |
-| mojo-protobuf | 214 | 14449 | Protocol Buffers | slower |
-| mojo-cbor | 313 | 21773 | CBOR | slower |
-| mojo-flatbuffers | 324 | 27896 | FlatBuffers | slower |
-| ehsanmok-json | 419 | 27675 | JSON — ehsanmok/json | slower |
-| mojo-toml | 4850 | 29873 | TOML | slower |
+| mojo-json | 101 | 25756 | JSON — mojo-json | fastest |
+| mojo-protobuf | 112 | 12477 | Protocol Buffers | slower |
+| mojo-avro | 148 | 10448 | Avro | slower |
+| EmberJson | 177 | 25756 | JSON — EmberJson | slower |
+| mojo-flatbuffers | 193 | 25968 | FlatBuffers | slower |
+| mojo-cbor | 207 | 19854 | CBOR | slower |
+| ehsanmok-json | 313 | 25756 | JSON — ehsanmok/json | slower |
+| mojo-toml | 4736 | 27954 | TOML | slower |
 
 ### fortran
 
@@ -316,17 +316,17 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| custom-binary | 2.13 | 113 | length-prefixed binary | fastest |
-| json-fortran | 38.1 | 258 | JSON — json-fortran | slower |
-| fortran-messagepack | 60.4 | 197 | MessagePack | slower |
+| custom-binary | 1.29 | 113 | length-prefixed binary | fastest |
+| json-fortran | 27.8 | 258 | JSON — json-fortran | slower |
+| fortran-messagepack | 47.7 | 197 | MessagePack | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| custom-binary | 109 | 12029 | length-prefixed binary | fastest |
-| json-fortran | 2181 | 26647 | JSON — json-fortran | slower |
-| fortran-messagepack | 4198 | 20443 | MessagePack | slower |
+| custom-binary | 99.4 | 12029 | length-prefixed binary | fastest |
+| json-fortran | 1728 | 26647 | JSON — json-fortran | slower |
+| fortran-messagepack | 3311 | 20443 | MessagePack | slower |
 
 ## What we saw
 

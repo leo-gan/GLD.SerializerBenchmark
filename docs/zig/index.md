@@ -75,6 +75,8 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | [protobuf](https://github.com/Arwalk/zig-protobuf) | Schema | Arwalk/zig-protobuf 5.0.0 | adapted | Generated from `schemas/v2/protobuf/benchmark_v2.proto`. Prepare copies suite → generated message; timed path is `encode` / `decode` |
 | [flatbuffers](https://github.com/nDimensional/zig-flatbuffers) | Schema | nDimensional/zig-flatbuffers 0.2.1 | adapted | Generated from `cpp/schemas/benchmark.fbs`. Timed path is `Builder.writeTable` / `decodeRoot` |
 | [capnproto](https://github.com/capnproto/capnproto) | Schema | Cap’n Proto C++ 1.0.2 | adapted | Generated from `cpp/schemas/benchmark.capnp`. Official C++ runtime via a C ABI (same pattern as Swift). Zig 0.16 has no native plugin |
+| [gld-avro](https://github.com/leo-gan/gld-avro-zig) | Schema | leo-gan/gld-avro-zig 0.2.0 | adapted | `parseAvsc` in prepare; timed `Datum.encodeTo` / `decodeBin` |
+| [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) | Schema | leo-gan/gld-arrow-zig 0.2.0 | adapted | Arrow IPC stream for the five suite types; `rowsFromBatch` on decode |
 
 ### Specifics
 
@@ -96,33 +98,29 @@ ZON (Zig Object Notation) is Zig's own data notation, in the standard library. I
 
 comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers).
 
-#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the JSON backend of serde.zig.
 
-#### [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
-
-The same encode as `serde.json`; the decode is `fromSliceBorrowed`, which returns strings that point into the input instead of copying them. serde.zig's borrowed API is strictly a view: it rejects a string carrying any escape rather than allocating to unescape it, so this row is only comparable on inputs whose strings are literal. `std.json.borrowed` is the stdlib counterpart (`alloc_if_needed`), which does allocate for an escaped string; the fixtures in this suite are unescaped, so both rows decode the same bytes.
-
-#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the MessagePack backend of serde.zig.
 
-#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
-serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (no document / event).
+serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (message / strings only).
 
-#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the TOML backend of serde.zig.
 
-#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the ZON backend of serde.zig.
 
-#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
 
-serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig.
+serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig (message / strings only).
 
 #### [zig-msgpack](https://github.com/zigcc/zig-msgpack) · `0.0.18`
 
@@ -155,6 +153,14 @@ nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers
 #### [capnproto](https://github.com/capnproto/capnproto) · `1.0.2`
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
+
+#### [gld-avro](https://github.com/leo-gan/gld-avro-zig) · `0.2.0`
+
+gld-avro-zig is a from-scratch Apache Avro library for Zig. Avro exists for compact, schema-driven records. Prepare parses the schema and builds a Datum. The timed path is Datum.encodeTo and decodeBin.
+
+#### [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) · `0.2.0`
+
+gld-arrow-zig is a from-scratch Apache Arrow library for Zig. This suite row encodes one suite value as an Arrow IPC stream and reads it back with rowsFromBatch. It is not the columnar data set.
 
 ## Not a `@bitCast` of the whole fixture
 

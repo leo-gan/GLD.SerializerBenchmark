@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -24,7 +24,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | — | Google.Protobuf | — | SpanJson | — | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | — | SwiftProtobuf | — | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | — | comptime-bin | — | no | [zig/results.md](zig/results.md) |
-| mojo | — | mojo-protobuf | — | EmberJson | — | no | [mojo/results.md](mojo/results.md) |
+| mojo | — | mojo-protobuf | — | mojo-avro | — | no | [mojo/results.md](mojo/results.md) |
 | fortran | — | custom-binary | — | custom-binary | — | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
@@ -55,8 +55,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | D (event) | SwiftProtobuf | SwiftProtobuf | yes |
 | zig | B (flat) | comptime-bin | comptime-bin | yes |
 | zig | D (event) | comptime-bin | comptime-bin | yes |
-| mojo | B (flat) | mojo-protobuf | mojo-avro | no |
-| mojo | D (event) | EmberJson | EmberJson | yes |
+| mojo | B (flat) | mojo-protobuf | mojo-protobuf | yes |
+| mojo | D (event) | mojo-avro | mojo-json | no |
 | fortran | B (flat) | custom-binary | custom-binary | yes |
 | fortran | D (event) | custom-binary | custom-binary | yes |
 
@@ -209,37 +209,37 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 19.1 | 254 | fastest |
-| protobuf | 26.7 | 123 | slower |
-| jackson | 65.5 | 254 | slower |
-| msgpack | 66.8 | 196 | slower |
+| moshi-codegen | 24.5 | 254 | fastest |
+| protobuf | 35.0 | 123 | slower |
+| msgpack | 78.5 | 196 | slower |
+| jackson | 81.6 | 254 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 186 | 12477 | fastest |
-| moshi-codegen | 228 | 25446 | slower |
-| jackson | 322 | 25446 | slower |
-| msgpack | 413 | 19548 | slower |
+| protobuf | 191 | 12477 | fastest |
+| moshi-codegen | 212 | 25446 | slower |
+| jackson | 300 | 25446 | slower |
+| msgpack | 390 | 19548 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 35.0 | 50 | fastest |
-| moshi-codegen | 47.5 | 158 | slower |
-| msgpack | 132 | 114 | slower |
-| jackson | 147 | 158 | slower |
+| protobuf | 32.9 | 50 | fastest |
+| moshi-codegen | 43.7 | 158 | slower |
+| msgpack | 111 | 114 | slower |
+| jackson | 119 | 158 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 120 | 4841 | fastest |
-| moshi-codegen | 225 | 15546 | slower |
-| jackson | 338 | 15546 | slower |
-| msgpack | 388 | 11031 | slower |
+| protobuf | 92.8 | 4841 | fastest |
+| moshi-codegen | 188 | 15546 | slower |
+| jackson | 264 | 15546 | slower |
+| msgpack | 274 | 11031 | slower |
 
 ### php
 
@@ -247,33 +247,33 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.67 | 267 | fastest |
-| rybakit-msgpack | 13.0 | 209 | slower |
-| protobuf | 105 | 133 | slower |
+| json | 3.88 | 267 | fastest |
+| rybakit-msgpack | 13.2 | 209 | slower |
+| protobuf | 110 | 133 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
 | json | 217 | 25976 | fastest |
-| rybakit-msgpack | 776 | 20078 | slower |
-| protobuf | 9265 | 12717 | slower |
+| rybakit-msgpack | 770 | 20078 | slower |
+| protobuf | 9124 | 12717 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 2.87 | 168 | fastest |
-| rybakit-msgpack | 8.83 | 126 | slower |
-| protobuf | 48.3 | 54 | slower |
+| json | 3.31 | 168 | fastest |
+| rybakit-msgpack | 9.11 | 126 | slower |
+| protobuf | 50.6 | 54 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
 | json | 158 | 16337 | fastest |
-| rybakit-msgpack | 419 | 11818 | slower |
-| protobuf | 3626 | 4665 | slower |
+| rybakit-msgpack | 424 | 11818 | slower |
+| protobuf | 3657 | 4665 | slower |
 
 ### javascript
 
@@ -487,37 +487,37 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 7.35 | 123 | fastest |
-| IkigaJSON | 29.5 | 257 | slower |
-| Foundation.JSONEncoder | 31.6 | 257 | slower |
-| SwiftMsgpack | 45.1 | 199 | slower |
+| SwiftProtobuf | 8.54 | 123 | fastest |
+| IkigaJSON | 28.3 | 257 | slower |
+| Foundation.JSONEncoder | 30.1 | 257 | slower |
+| SwiftMsgpack | 43.8 | 199 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 222 | 12477 | fastest |
-| Foundation.JSONEncoder | 1438 | 25746 | slower |
-| IkigaJSON | 1559 | 25746 | slower |
-| SwiftMsgpack | 2720 | 19848 | slower |
+| SwiftProtobuf | 244 | 12477 | fastest |
+| Foundation.JSONEncoder | 1411 | 25746 | slower |
+| IkigaJSON | 1524 | 25746 | slower |
+| SwiftMsgpack | 2628 | 19848 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 3.71 | 50 | fastest |
-| IkigaJSON | 19.6 | 168 | slower |
-| Foundation.JSONEncoder | 20.0 | 168 | slower |
-| SwiftMsgpack | 25.3 | 124 | slower |
+| SwiftProtobuf | 4.32 | 50 | fastest |
+| IkigaJSON | 20.1 | 168 | slower |
+| Foundation.JSONEncoder | 20.9 | 168 | slower |
+| SwiftMsgpack | 27.0 | 124 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 56.4 | 4841 | fastest |
-| Foundation.JSONEncoder | 703 | 16546 | slower |
-| IkigaJSON | 797 | 16546 | slower |
-| SwiftMsgpack | 1191 | 12041 | slower |
+| SwiftProtobuf | 59.2 | 4841 | fastest |
+| Foundation.JSONEncoder | 679 | 16546 | slower |
+| IkigaJSON | 770 | 16546 | slower |
+| SwiftMsgpack | 1144 | 12041 | slower |
 
 ### zig
 
@@ -525,45 +525,45 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 0.36 | 142 | fastest |
-| protobuf | 0.71 | 123 | slower |
-| flatbuffers | 0.73 | 296 | slower |
-| serde.msgpack | 0.94 | 199 | slower |
-| std.json | 2.03 | 257 | slower |
-| capnproto | 6.66 | 256 | slower |
+| comptime-bin | 0.39 | 142 | fastest |
+| serde.msgpack | 0.74 | 199 | slower |
+| flatbuffers | 0.83 | 296 | slower |
+| protobuf | 0.83 | 123 | slower |
+| std.json | 1.76 | 257 | slower |
+| capnproto | 9.81 | 256 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 24.8 | 14549 | fastest |
-| flatbuffers | 38.2 | 31124 | slower |
-| protobuf | 51.3 | 12649 | slower |
-| serde.msgpack | 67.5 | 20249 | slower |
-| std.json | 183 | 26049 | slower |
-| capnproto | 601 | 26820 | slower |
+| comptime-bin | 22.5 | 14549 | fastest |
+| flatbuffers | 38.8 | 31124 | slower |
+| serde.msgpack | 42.0 | 20249 | slower |
+| protobuf | 51.2 | 12649 | slower |
+| std.json | 145 | 26049 | slower |
+| capnproto | 659 | 26820 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 0.17 | 57 | fastest |
-| protobuf | 0.30 | 50 | slower |
-| flatbuffers | 0.34 | 108 | slower |
-| serde.msgpack | 0.54 | 124 | slower |
-| std.json | 1.23 | 168 | slower |
-| capnproto | 2.28 | 96 | slower |
+| comptime-bin | 0.18 | 57 | fastest |
+| protobuf | 0.39 | 50 | slower |
+| flatbuffers | 0.40 | 108 | slower |
+| serde.msgpack | 0.51 | 124 | slower |
+| std.json | 1.08 | 168 | slower |
+| capnproto | 4.29 | 96 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| comptime-bin | 6.99 | 5758 | fastest |
-| protobuf | 15.3 | 5045 | slower |
-| flatbuffers | 15.7 | 10644 | slower |
-| serde.msgpack | 31.7 | 12432 | slower |
-| std.json | 93.6 | 16849 | slower |
-| capnproto | 178 | 9572 | slower |
+| comptime-bin | 6.11 | 5758 | fastest |
+| flatbuffers | 16.5 | 10644 | slower |
+| protobuf | 16.8 | 5045 | slower |
+| serde.msgpack | 23.6 | 12432 | slower |
+| std.json | 76.3 | 16849 | slower |
+| capnproto | 213 | 9572 | slower |
 
 ### mojo
 
@@ -571,53 +571,53 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.63 | 290 | fastest |
-| mojo-json | 1.72 | 290 | close |
-| mojo-avro | 2.34 | 138 | slower |
-| mojo-protobuf | 2.70 | 156 | slower |
-| mojo-cbor | 3.94 | 232 | slower |
-| mojo-flatbuffers | 4.12 | 320 | slower |
-| ehsanmok-json | 5.73 | 290 | slower |
-| mojo-toml | 39.7 | 304 | slower |
+| mojo-avro | 2.56 | 105 | fastest |
+| mojo-protobuf | 2.66 | 123 | similar |
+| mojo-json | 2.84 | 257 | close |
+| mojo-cbor | 3.55 | 199 | slower |
+| mojo-flatbuffers | 3.95 | 272 | slower |
+| EmberJson | 5.53 | 257 | slower |
+| ehsanmok-json | 6.87 | 257 | slower |
+| mojo-toml | 38.5 | 271 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 117 | 27675 | fastest |
-| mojo-json | 130 | 27675 | slower |
-| mojo-avro | 182 | 12367 | slower |
-| mojo-protobuf | 203 | 14449 | slower |
-| mojo-cbor | 302 | 21773 | slower |
-| mojo-flatbuffers | 312 | 27896 | slower |
-| ehsanmok-json | 404 | 27675 | slower |
-| mojo-toml | 4697 | 29873 | slower |
+| mojo-json | 99.2 | 25756 | fastest |
+| mojo-protobuf | 107 | 12477 | slower |
+| mojo-avro | 144 | 10448 | slower |
+| EmberJson | 172 | 25756 | slower |
+| mojo-flatbuffers | 181 | 25968 | slower |
+| mojo-cbor | 205 | 19854 | slower |
+| ehsanmok-json | 317 | 25756 | slower |
+| mojo-toml | 4249 | 27954 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-protobuf | 0.55 | 50 | fastest |
-| mojo-avro | 0.55 | 44 | similar |
-| mojo-json | 0.60 | 164 | slower |
-| EmberJson | 0.81 | 168 | slower |
-| mojo-flatbuffers | 0.99 | 104 | slower |
-| mojo-cbor | 1.47 | 124 | slower |
-| ehsanmok-json | 3.56 | 168 | slower |
-| mojo-toml | 12.4 | 167 | slower |
+| mojo-protobuf | 1.16 | 50 | fastest |
+| mojo-avro | 1.51 | 44 | slower |
+| mojo-json | 2.08 | 164 | slower |
+| mojo-flatbuffers | 2.47 | 104 | slower |
+| mojo-cbor | 2.82 | 124 | slower |
+| EmberJson | 4.95 | 168 | slower |
+| ehsanmok-json | 6.72 | 168 | slower |
+| mojo-toml | 20.3 | 167 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 39.2 | 4051 | fastest |
-| mojo-json | 43.2 | 16114 | slower |
-| mojo-protobuf | 45.7 | 4841 | slower |
-| EmberJson | 55.9 | 16556 | slower |
-| mojo-flatbuffers | 82.1 | 8032 | slower |
-| mojo-cbor | 135 | 12037 | slower |
-| ehsanmok-json | 312 | 16556 | slower |
-| mojo-toml | 1634 | 17554 | slower |
+| mojo-protobuf | 22.7 | 4841 | fastest |
+| mojo-avro | 33.0 | 4051 | slower |
+| mojo-json | 34.3 | 16114 | slower |
+| mojo-flatbuffers | 45.4 | 8032 | slower |
+| EmberJson | 83.9 | 16556 | slower |
+| mojo-cbor | 95.5 | 12037 | slower |
+| ehsanmok-json | 251 | 16556 | slower |
+| mojo-toml | 1463 | 17554 | slower |
 
 ### fortran
 
@@ -625,33 +625,33 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| custom-binary | 2.89 | 113 | fastest |
-| json-fortran | 44.7 | 258 | slower |
-| fortran-messagepack | 66.9 | 197 | slower |
+| custom-binary | 1.35 | 113 | fastest |
+| json-fortran | 27.8 | 258 | slower |
+| fortran-messagepack | 48.7 | 197 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| custom-binary | 122 | 12029 | fastest |
-| json-fortran | 2284 | 26647 | slower |
-| fortran-messagepack | 4444 | 20443 | slower |
+| custom-binary | 99.7 | 12029 | fastest |
+| json-fortran | 1733 | 26647 | slower |
+| fortran-messagepack | 3295 | 20443 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| custom-binary | 2.16 | 44 | fastest |
-| fortran-messagepack | 45.4 | 120 | slower |
-| json-fortran | 46.3 | 172 | slower |
+| custom-binary | 0.94 | 44 | fastest |
+| json-fortran | 24.5 | 172 | slower |
+| fortran-messagepack | 28.6 | 120 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| custom-binary | 81.1 | 4956 | fastest |
-| fortran-messagepack | 1546 | 12536 | slower |
-| json-fortran | 1962 | 17806 | slower |
+| custom-binary | 67.2 | 4956 | fastest |
+| fortran-messagepack | 1168 | 12536 | slower |
+| json-fortran | 1525 | 17806 | slower |
 
 ## What we saw
 

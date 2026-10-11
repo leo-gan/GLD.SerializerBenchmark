@@ -1,5 +1,5 @@
 {
-  "originHash" : "8c9a594d7238e8861239a5f3c0900f02202583d8707dd03e912c02a62ac91da2",
+  "originHash" : "d3e253b61dab49fb6f05d33293541f9925fbbdca1bbd64da0f2910eb9c8c278a",
   "pins" : [
     {
       "identity" : "binarycodable",
@@ -17,6 +17,24 @@
       "state" : {
         "revision" : "595bf0007ab1929570c7671f091313c8fc20644e",
         "version" : "24.3.25"
+      }
+    },
+    {
+      "identity" : "gld-avro-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leo-gan/gld-avro-swift.git",
+      "state" : {
+        "revision" : "ac81254f210d4f9b1298f9130c497bb05b154d03",
+        "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "gld-ion-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leo-gan/gld-ion-swift.git",
+      "state" : {
+        "revision" : "09ba5ca35faf130aacb7559d5ea2790b4f420c0c",
+        "version" : "0.2.0"
       }
     },
     {

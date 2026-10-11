@@ -2,7 +2,7 @@
 # Not the suite smoke path. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/array-smoke.yaml
 # Pass an explicit serializer allow-list. Fortran:
-#   hdf5-fortran,netcdf-fortran,adios2
+#   hdf5-fortran,netcdf-fortran,adios2,gld-arrow
 # The Fortran runner also skips every other serializer on these type ids.
 id: array-smoke
 description: "grid and grid_window at N=1; bytes sidecar; no post-compression"

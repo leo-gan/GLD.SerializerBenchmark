@@ -2,6 +2,16 @@
   "name": "gld/serializer-benchmark-php",
   "description": "PHP runner for the multi-language serializer benchmark",
   "type": "project",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/leo-gan/gld-arrow-php"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/leo-gan/gld-ion-php"
+    }
+  ],
   "require": {
     "php": ">=8.2",
     "ext-gmp": "*",
@@ -10,6 +20,8 @@
     "flix-tech/avro-php": "^5.1",
     "google/protobuf": "^4.29",
     "jms/serializer": "^3.32",
+    "leo-gan/gld-arrow-php": "0.2.0",
+    "leo-gan/gld-ion-php": "0.2.0",
     "rybakit/msgpack": "^0.9",
     "spomky-labs/cbor-php": "^3.3.5",
     "symfony/property-access": "^7.2",

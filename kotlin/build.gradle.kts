@@ -234,6 +234,10 @@ sourceSets {
             srcDir(layout.buildDirectory.dir("generated/avro"))
             srcDir(layout.buildDirectory.dir("generated/sbe"))
         }
+        // gld-ion-kotlin 0.2.0 is not on Maven Central. Package ion, tag 0.2.0.
+        kotlin {
+            srcDir("vendor/gld-ion-kotlin")
+        }
         proto {
             srcDir("${rootDir}/../schemas/v2/protobuf")
         }

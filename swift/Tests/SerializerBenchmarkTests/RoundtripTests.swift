@@ -1,3 +1,5 @@
+import Avro
+import Ion
 import XCTest
 @testable import SerializerBenchmarkCore
 
@@ -48,6 +50,57 @@ final class RoundtripTests: XCTestCase {
         for ser in allSerializers() {
             try roundtrip(ser, fx)
         }
+    }
+
+    /// One message through gld-avro and gld-ion, plus the other suite types.
+    func testGldAvroAndIonRoundtripMessage() throws {
+        let avro = GldAvroSerializer()
+        let ion = GldIonSerializer()
+        XCTAssertEqual(avro.name, "gld-avro")
+        XCTAssertEqual(ion.name, "gld-ion")
+        XCTAssertEqual(avro.version, avroLibraryVersion)
+        XCTAssertEqual(ion.version, ionVersion)
+        XCTAssertFalse(avro.version.isEmpty)
+        XCTAssertFalse(ion.version.isEmpty)
+        XCTAssertEqual(avro.streamMode, .adapted)
+        XCTAssertEqual(ion.streamMode, .adapted)
+        XCTAssertEqual(avro.nativeKind, .schema)
+        XCTAssertEqual(ion.nativeKind, .message)
+        XCTAssertFalse(avro.supports(testDataName: "graph"))
+        XCTAssertFalse(ion.supports(testDataName: "graph"))
+        XCTAssertTrue(avro.supports(testDataName: "message"))
+        XCTAssertTrue(ion.supports(testDataName: "message"))
+        let names = Set(allSerializers().map(\.name))
+        XCTAssertTrue(names.contains(avro.name))
+        XCTAssertTrue(names.contains(ion.name))
+
+        let message = try fixtureFromCell(
+            typeId: "message", typeConfig: [:], typeConfigHash: "", instanceCount: 1, seed: 42
+        )
+        for ser in [avro, ion] as [any BenchSerializer] {
+            try roundtrip(ser, message)
+            try ser.prepare(message)
+            let (streamData, n) = try ser.serializeStream(message)
+            XCTAssertEqual(n, streamData.count)
+            var streamed = try ser.deserializeStream(streamData)
+            if let conv = ser as? DomainConverter {
+                streamed = try conv.toDomain(streamed)
+            }
+            XCTAssertTrue(message.fidelity(against: streamed), ser.name)
+        }
+
+        for typeId in ["document", "telemetry", "strings", "event"] {
+            let fx = try fixtureFromCell(
+                typeId: typeId, typeConfig: [:], typeConfigHash: "", instanceCount: 1, seed: 42
+            )
+            try roundtrip(avro, fx)
+            try roundtrip(ion, fx)
+        }
+        let batch = try fixtureFromCell(
+            typeId: "message", typeConfig: [:], typeConfigHash: "", instanceCount: 4, seed: 9
+        )
+        try roundtrip(avro, batch)
+        try roundtrip(ion, batch)
     }
 
     /// Dagr frames N>1 itself (u32 count + (u32 len + buffer)×N) — cover every type.

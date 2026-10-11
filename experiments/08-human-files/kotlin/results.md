@@ -1,7 +1,7 @@
 # Experiment 8 results — kotlin
 
-**Date:** 2026-08-28
-**Raw file:** `experiments/08-human-files/kotlin/logs/kotlin/2026-08-27-181747.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/08-human-files/kotlin/logs/kotlin/2026-10-11-150453.csv`
 **Language:** kotlin
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| jackson | 2.18.3 | 56.9 | 91.8 | 154 | 440 | 256 | JSON | fastest | yes | 86 |
-| tomlkt | 0.5.0 | 119 | 129 | 250 | 499 | 259 | TOML | slower | yes | 88 |
-| kaml | 0.72.0 | 222 | 341 | 584 | 440 | 250 | YAML — kaml | slower | yes | 92 |
+| jackson | 2.19.0 | 72.6 | 117 | 193 | 440 | 256 | JSON | fastest | yes | 90 |
+| tomlkt | 0.5.0 | 137 | 154 | 301 | 499 | 259 | TOML | slower | yes | 91 |
+| kaml | 0.72.0 | 262 | 446 | 723 | 440 | 250 | YAML — kaml | slower | yes | 91 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -22,9 +22,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| jackson | 2.18.3 | 28.5 | 31.7 | 61.2 | 411 | 256 | JSON | fastest | yes | 88 |
-| tomlkt | 0.5.0 | 58.9 | 53.8 | 112 | 570 | 259 | TOML | slower | yes | 87 |
-| kaml | 0.72.0 | 126 | 156 | 286 | 470 | 250 | YAML — kaml | slower | yes | 92 |
+| jackson | 2.19.0 | 30.3 | 34.4 | 64.3 | 411 | 256 | JSON | fastest | yes | 92 |
+| tomlkt | 0.5.0 | 62.8 | 54.9 | 119 | 570 | 259 | TOML | slower | yes | 92 |
+| kaml | 0.72.0 | 124 | 174 | 297 | 470 | 250 | YAML — kaml | slower | yes | 93 |
 
 ## Libraries that belong in the conversation
 

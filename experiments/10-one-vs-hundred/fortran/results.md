@@ -1,7 +1,7 @@
 # Experiment 10 results — fortran
 
-**Date:** 2026-10-10
-**Raw file:** `experiments/10-one-vs-hundred/fortran/logs/fortran/2026-10-10-134215.csv`
+**Date:** 2026-10-11
+**Raw file:** `experiments/10-one-vs-hundred/fortran/logs/fortran/2026-10-11-150801.csv`
 **Language:** fortran
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| custom-binary | v2-1.0 | 0.80 | 1.99 | 2.89 | 113 | 1998 | length-prefixed binary | fastest | yes | 90 |
-| json-fortran | 9.3.1 | 21.4 | 23.1 | 44.7 | 258 | 2471 | JSON — json-fortran | slower | yes | 93 |
-| fortran-messagepack | 0.3.1 | 31.9 | 34.6 | 66.9 | 197 | 2274 | MessagePack | slower | yes | 86 |
+| custom-binary | v2-1.0 | 0.26 | 1.08 | 1.35 | 113 | 1998 | length-prefixed binary | fastest | yes | 94 |
+| json-fortran | 9.3.1 | 13.6 | 14.0 | 27.8 | 258 | 2471 | JSON — json-fortran | slower | yes | 92 |
+| fortran-messagepack | 0.3.1 | 22.2 | 26.4 | 48.7 | 197 | 2274 | MessagePack | slower | yes | 83 |
 
 ## In memory — sample D (event), 100 record(s) per write
 
@@ -22,9 +22,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| custom-binary | v2-1.0 | 24.9 | 93.2 | 122 | 12029 | 1998 | length-prefixed binary | fastest | yes | 95 |
-| json-fortran | 9.3.1 | 1206 | 1065 | 2284 | 26647 | 2471 | JSON — json-fortran | slower | yes | 86 |
-| fortran-messagepack | 0.3.1 | 1954 | 2472 | 4444 | 20443 | 2274 | MessagePack | slower | yes | 92 |
+| custom-binary | v2-1.0 | 20.3 | 78.5 | 99.7 | 12029 | 1998 | length-prefixed binary | fastest | yes | 90 |
+| json-fortran | 9.3.1 | 822 | 905 | 1733 | 26647 | 2471 | JSON — json-fortran | slower | yes | 85 |
+| fortran-messagepack | 0.3.1 | 1391 | 1896 | 3295 | 20443 | 2274 | MessagePack | slower | yes | 95 |
 
 ## In memory — sample B (flat), 1 record(s) per write
 
@@ -32,9 +32,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| custom-binary | v2-1.0 | 0.59 | 1.48 | 2.16 | 44 | 1998 | length-prefixed binary | fastest | yes | 82 |
-| fortran-messagepack | 0.3.1 | 22.3 | 22.3 | 45.4 | 120 | 2274 | MessagePack | slower | yes | 96 |
-| json-fortran | 9.3.1 | 22.2 | 23.7 | 46.3 | 172 | 2471 | JSON — json-fortran | slower | yes | 92 |
+| custom-binary | v2-1.0 | 0.14 | 0.80 | 0.94 | 44 | 1998 | length-prefixed binary | fastest | yes | 94 |
+| json-fortran | 9.3.1 | 11.7 | 12.9 | 24.5 | 172 | 2471 | JSON — json-fortran | slower | yes | 95 |
+| fortran-messagepack | 0.3.1 | 13.7 | 14.9 | 28.6 | 120 | 2274 | MessagePack | slower | yes | 89 |
 
 ## In memory — sample B (flat), 100 record(s) per write
 
@@ -42,9 +42,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| custom-binary | v2-1.0 | 6.11 | 73.6 | 81.1 | 4956 | 1998 | length-prefixed binary | fastest | yes | 87 |
-| fortran-messagepack | 0.3.1 | 667 | 870 | 1546 | 12536 | 2274 | MessagePack | slower | yes | 86 |
-| json-fortran | 9.3.1 | 934 | 1020 | 1962 | 17806 | 2471 | JSON — json-fortran | slower | yes | 86 |
+| custom-binary | v2-1.0 | 5.37 | 62.1 | 67.2 | 4956 | 1998 | length-prefixed binary | fastest | yes | 86 |
+| fortran-messagepack | 0.3.1 | 483 | 682 | 1168 | 12536 | 2274 | MessagePack | slower | yes | 85 |
+| json-fortran | 9.3.1 | 623 | 881 | 1525 | 17806 | 2471 | JSON — json-fortran | slower | yes | 95 |
 
 ## Libraries that belong in the conversation
 

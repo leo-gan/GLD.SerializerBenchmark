@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-10-10
+**Date:** 2026-10-11
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,7 +15,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | orjson | orjson | orjson | orjson | orjson | yes | [python/results.md](python/results.md) |
 | go | goccy/go-json | goccy/go-json | sonic | goccy/go-json | sonic | no | [go/results.md](go/results.md) |
 | java | jsoniter | jsoniter | jsoniter | dsl-json | dsl-json | no | [java/results.md](java/results.md) |
-| kotlin | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | yes | [kotlin/results.md](kotlin/results.md) |
+| kotlin | moshi-reflect | moshi-reflect | moshi-reflect | moshi-codegen | moshi-codegen | no | [kotlin/results.md](kotlin/results.md) |
 | php | json | json | json | json | json | yes | [php/results.md](php/results.md) |
 | javascript | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | yes | [javascript/results.md](javascript/results.md) |
 | rust | sonic-rs | sonic-rs | serde_json | sonic-rs | sonic-rs | no | [rust/results.md](rust/results.md) |
@@ -24,7 +24,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | SpanJson | SpanJson | NetJSON | SpanJson | SpanJson | no | [csharp/results.md](csharp/results.md) |
 | swift | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | yes | [swift/results.md](swift/results.md) |
 | zig | serde.json | serde.json | serde.json | serde.json | serde.json | yes | [zig/results.md](zig/results.md) |
-| mojo | mojo-json | mojo-json | mojo-json | EmberJson | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| mojo | mojo-json | mojo-json | mojo-json | mojo-json | mojo-json | yes | [mojo/results.md](mojo/results.md) |
 | fortran | jonquil | jonquil | jonquil | json-fortran | json-fortran | no | [fortran/results.md](fortran/results.md) |
 
 ## Does the fastest stay the same at 100 records?
@@ -49,8 +49,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | kotlin | A (order) | moshi-reflect | moshi-codegen | no |
 | kotlin | B (flat) | moshi-reflect | moshi-reflect | yes |
 | kotlin | C (sensor) | moshi-reflect | jackson | no |
-| kotlin | D (event) | moshi-reflect | moshi-codegen | no |
-| kotlin | E (words) | moshi-reflect | jackson | no |
+| kotlin | D (event) | moshi-codegen | moshi-codegen | yes |
+| kotlin | E (words) | moshi-codegen | jackson | no |
 | php | A (order) | json | json | yes |
 | php | B (flat) | json | json | yes |
 | php | C (sensor) | json | json | yes |
@@ -83,7 +83,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | E (words) | SpanJson | SpanJson | yes |
 | swift | A (order) | IkigaJSON | Foundation.JSONEncoder | no |
 | swift | B (flat) | IkigaJSON | Foundation.JSONEncoder | no |
-| swift | C (sensor) | IkigaJSON | IkigaJSON | yes |
+| swift | C (sensor) | IkigaJSON | Foundation.JSONEncoder | no |
 | swift | D (event) | IkigaJSON | Foundation.JSONEncoder | no |
 | swift | E (words) | IkigaJSON | IkigaJSON | yes |
 | zig | A (order) | serde.json | serde.json | yes |
@@ -94,8 +94,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | mojo | A (order) | mojo-json | mojo-json | yes |
 | mojo | B (flat) | mojo-json | mojo-json | yes |
 | mojo | C (sensor) | mojo-json | mojo-json | yes |
-| mojo | D (event) | EmberJson | EmberJson | yes |
-| mojo | E (words) | EmberJson | EmberJson | yes |
+| mojo | D (event) | mojo-json | mojo-json | yes |
+| mojo | E (words) | mojo-json | EmberJson | no |
 | fortran | A (order) | jonquil | json-fortran | no |
 | fortran | B (flat) | jonquil | json-fortran | no |
 | fortran | C (sensor) | jonquil | json-fortran | no |
@@ -119,7 +119,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | ok | `IkigaJSON` | — |
 | zig | ok | `serde.json` | — |
 | mojo | ok | `mojo-json` | — |
-| fortran | ok | `jonquil`, `json-fortran` | — |
+| fortran | ok | `jonquil` | — |
 
 ## In memory, by language and sample
 
@@ -465,101 +465,101 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 50.4 | 440 | fastest |
-| moshi-codegen | 51.5 | 440 | similar |
-| kotlinx-json | 103 | 440 | slower |
-| gson | 103 | 440 | slower |
-| jackson | 153 | 440 | slower |
+| moshi-reflect | 45.4 | 440 | fastest |
+| moshi-codegen | 45.7 | 440 | similar |
+| gson | 92.0 | 440 | slower |
+| kotlinx-json | 98.0 | 440 | slower |
+| jackson | 137 | 440 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 403 | 44604 | fastest |
-| moshi-reflect | 412 | 44604 | similar |
-| kotlinx-json | 443 | 44604 | slower |
-| jackson | 545 | 44604 | slower |
-| gson | 743 | 44604 | slower |
+| moshi-codegen | 372 | 44604 | fastest |
+| moshi-reflect | 374 | 44604 | similar |
+| kotlinx-json | 429 | 44604 | slower |
+| gson | 458 | 44604 | slower |
+| jackson | 512 | 44604 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 10.9 | 254 | fastest |
-| moshi-codegen | 11.0 | 254 | similar |
-| kotlinx-json | 12.5 | 254 | slower |
-| gson | 16.9 | 254 | slower |
-| jackson | 21.1 | 254 | slower |
+| moshi-codegen | 10.8 | 254 | fastest |
+| moshi-reflect | 11.2 | 254 | similar |
+| kotlinx-json | 14.2 | 254 | slower |
+| gson | 16.4 | 254 | slower |
+| jackson | 23.6 | 254 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 215 | 25446 | fastest |
-| moshi-reflect | 216 | 25446 | similar |
-| kotlinx-json | 231 | 25446 | slower |
-| jackson | 269 | 25446 | slower |
-| gson | 361 | 25446 | slower |
+| moshi-codegen | 211 | 25446 | fastest |
+| moshi-reflect | 212 | 25446 | similar |
+| kotlinx-json | 229 | 25446 | slower |
+| gson | 236 | 25446 | slower |
+| jackson | 264 | 25446 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 18.4 | 158 | fastest |
-| moshi-codegen | 19.1 | 158 | similar |
-| kotlinx-json | 35.7 | 158 | slower |
-| gson | 45.5 | 158 | slower |
-| jackson | 55.3 | 158 | slower |
+| moshi-reflect | 22.1 | 158 | fastest |
+| moshi-codegen | 23.3 | 158 | similar |
+| kotlinx-json | 49.0 | 158 | slower |
+| gson | 51.9 | 158 | slower |
+| jackson | 65.0 | 158 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 191 | 15546 | fastest |
-| moshi-codegen | 195 | 15546 | similar |
-| kotlinx-json | 209 | 15546 | slower |
-| jackson | 265 | 15546 | slower |
-| gson | 351 | 15546 | slower |
+| moshi-reflect | 164 | 15546 | fastest |
+| moshi-codegen | 164 | 15546 | similar |
+| kotlinx-json | 174 | 15546 | close |
+| jackson | 199 | 15546 | slower |
+| gson | 207 | 15546 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 7.95 | 411 | fastest |
-| moshi-codegen | 8.10 | 411 | similar |
-| gson | 11.0 | 411 | slower |
-| kotlinx-json | 12.3 | 411 | slower |
-| jackson | 16.6 | 411 | slower |
+| moshi-codegen | 8.39 | 411 | fastest |
+| moshi-reflect | 8.48 | 411 | similar |
+| gson | 10.1 | 411 | slower |
+| kotlinx-json | 13.1 | 411 | slower |
+| jackson | 17.2 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jackson | 263 | 41431 | fastest |
-| moshi-codegen | 334 | 41431 | slower |
-| moshi-reflect | 336 | 41431 | slower |
-| kotlinx-json | 349 | 41431 | slower |
-| gson | 436 | 41431 | slower |
+| jackson | 251 | 41431 | fastest |
+| gson | 290 | 41431 | slower |
+| moshi-reflect | 319 | 41431 | slower |
+| moshi-codegen | 324 | 41431 | slower |
+| kotlinx-json | 346 | 41431 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-reflect | 39.5 | 663 | fastest |
-| moshi-codegen | 40.0 | 663 | similar |
-| gson | 46.7 | 663 | slower |
-| kotlinx-json | 51.8 | 663 | slower |
-| jackson | 65.8 | 663 | slower |
+| moshi-reflect | 35.3 | 663 | fastest |
+| kotlinx-json | 39.5 | 663 | close |
+| moshi-codegen | 39.9 | 663 | close |
+| gson | 56.3 | 663 | slower |
+| jackson | 66.2 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jackson | 1025 | 65958 | fastest |
-| kotlinx-json | 1038 | 65958 | similar |
-| gson | 1202 | 65958 | slower |
-| moshi-reflect | 1253 | 65958 | slower |
-| moshi-codegen | 1265 | 65958 | slower |
+| jackson | 945 | 65958 | fastest |
+| kotlinx-json | 963 | 65958 | slower |
+| gson | 1078 | 65958 | slower |
+| moshi-codegen | 1168 | 65958 | slower |
+| moshi-reflect | 1170 | 65958 | slower |
 
 ### php
 
@@ -567,81 +567,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 6.18 | 454 | fastest |
-| symfony-json | 8.26 | 454 | slower |
-| jms-json | 35.9 | 454 | slower |
+| json | 6.54 | 454 | fastest |
+| symfony-json | 8.54 | 454 | slower |
+| jms-json | 36.0 | 454 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 430 | 45480 | fastest |
-| symfony-json | 436 | 45480 | similar |
-| jms-json | 1338 | 45480 | slower |
+| json | 436 | 45480 | fastest |
+| symfony-json | 445 | 45480 | close |
+| jms-json | 1331 | 45480 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.84 | 267 | fastest |
-| symfony-json | 5.76 | 267 | slower |
-| jms-json | 26.5 | 267 | slower |
+| json | 4.10 | 267 | fastest |
+| symfony-json | 6.25 | 267 | slower |
+| jms-json | 28.8 | 267 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 221 | 25976 | fastest |
-| symfony-json | 230 | 25976 | close |
-| jms-json | 678 | 25976 | slower |
+| json | 230 | 25976 | fastest |
+| symfony-json | 237 | 25976 | close |
+| jms-json | 698 | 25976 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.00 | 168 | fastest |
-| symfony-json | 4.96 | 168 | slower |
-| jms-json | 23.7 | 168 | slower |
+| json | 3.25 | 168 | fastest |
+| symfony-json | 5.23 | 168 | slower |
+| jms-json | 24.5 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
 | json | 164 | 16337 | fastest |
-| symfony-json | 166 | 16337 | close |
-| jms-json | 381 | 16337 | slower |
+| symfony-json | 172 | 16337 | slower |
+| jms-json | 396 | 16337 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.23 | 326 | fastest |
-| symfony-json | 4.93 | 326 | slower |
-| jms-json | 25.7 | 326 | slower |
+| json | 3.57 | 326 | fastest |
+| symfony-json | 5.55 | 326 | slower |
+| jms-json | 28.0 | 326 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 251 | 34941 | fastest |
-| symfony-json | 260 | 34941 | slower |
-| jms-json | 907 | 34941 | slower |
+| json | 258 | 34941 | fastest |
+| symfony-json | 262 | 34941 | close |
+| jms-json | 920 | 34941 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 23.8 | 654 | fastest |
-| symfony-json | 26.2 | 654 | slower |
-| jms-json | 53.3 | 654 | slower |
+| json | 22.9 | 654 | fastest |
+| symfony-json | 25.4 | 654 | slower |
+| jms-json | 53.4 | 654 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 2098 | 65984 | fastest |
-| symfony-json | 2106 | 65984 | similar |
-| jms-json | 3012 | 65984 | slower |
+| json | 2112 | 65984 | fastest |
+| symfony-json | 2119 | 65984 | close |
+| jms-json | 3014 | 65984 | slower |
 
 ### javascript
 
@@ -1189,71 +1189,71 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 54.7 | 448 | fastest |
-| Foundation.JSONEncoder | 56.7 | 448 | slower |
+| IkigaJSON | 50.5 | 448 | fastest |
+| Foundation.JSONEncoder | 52.1 | 448 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| Foundation.JSONEncoder | 3387 | 45404 | fastest |
-| IkigaJSON | 3472 | 45404 | slower |
+| Foundation.JSONEncoder | 3160 | 45404 | fastest |
+| IkigaJSON | 3355 | 45404 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 30.7 | 257 | fastest |
-| Foundation.JSONEncoder | 31.9 | 257 | slower |
+| IkigaJSON | 29.9 | 257 | fastest |
+| Foundation.JSONEncoder | 31.7 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| Foundation.JSONEncoder | 1450 | 25746 | fastest |
-| IkigaJSON | 1574 | 25746 | slower |
+| Foundation.JSONEncoder | 1397 | 25746 | fastest |
+| IkigaJSON | 1543 | 25746 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 19.7 | 168 | fastest |
-| Foundation.JSONEncoder | 20.5 | 168 | slower |
+| IkigaJSON | 20.7 | 168 | fastest |
+| Foundation.JSONEncoder | 21.7 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| Foundation.JSONEncoder | 707 | 16546 | fastest |
-| IkigaJSON | 794 | 16546 | slower |
+| Foundation.JSONEncoder | 691 | 16546 | fastest |
+| IkigaJSON | 782 | 16546 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 33.1 | 411 | fastest |
-| Foundation.JSONEncoder | 36.0 | 411 | slower |
+| IkigaJSON | 31.9 | 411 | fastest |
+| Foundation.JSONEncoder | 35.8 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 2218 | 41431 | fastest |
-| Foundation.JSONEncoder | 2391 | 41431 | slower |
+| IkigaJSON | 2107 | 41431 | fastest |
+| Foundation.JSONEncoder | 2296 | 41431 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 49.1 | 663 | fastest |
-| Foundation.JSONEncoder | 52.8 | 663 | slower |
+| IkigaJSON | 47.2 | 663 | fastest |
+| Foundation.JSONEncoder | 51.0 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| IkigaJSON | 3294 | 65958 | fastest |
-| Foundation.JSONEncoder | 3439 | 65958 | slower |
+| Foundation.JSONEncoder | 3301 | 65958 | fastest |
+| IkigaJSON | 3305 | 65958 | similar |
 
 ### zig
 
@@ -1261,81 +1261,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 2.38 | 448 | fastest |
-| std.json.scanner | 3.40 | 448 | slower |
-| std.json | 3.41 | 448 | slower |
+| serde.json | 2.48 | 448 | fastest |
+| std.json.scanner | 3.09 | 448 | slower |
+| std.json | 3.12 | 448 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 233 | 45707 | fastest |
-| std.json.scanner | 332 | 45707 | slower |
-| std.json | 332 | 45707 | slower |
+| serde.json | 219 | 45707 | fastest |
+| std.json.scanner | 264 | 45707 | slower |
+| std.json | 264 | 45707 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 1.40 | 257 | fastest |
-| std.json | 2.07 | 257 | slower |
-| std.json.scanner | 2.08 | 257 | slower |
+| serde.json | 1.53 | 257 | fastest |
+| std.json | 1.88 | 257 | slower |
+| std.json.scanner | 1.91 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 134 | 26049 | fastest |
-| std.json.scanner | 188 | 26049 | slower |
-| std.json | 188 | 26049 | slower |
+| serde.json | 119 | 26049 | fastest |
+| std.json.scanner | 144 | 26049 | slower |
+| std.json | 146 | 26049 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 1.02 | 168 | fastest |
-| std.json.scanner | 1.22 | 168 | slower |
-| std.json | 1.23 | 168 | slower |
+| serde.json | 0.94 | 168 | fastest |
+| std.json.scanner | 1.04 | 168 | slower |
+| std.json | 1.07 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 80.9 | 16849 | fastest |
-| std.json.scanner | 95.2 | 16849 | slower |
-| std.json | 95.4 | 16849 | slower |
+| serde.json | 64.9 | 16849 | fastest |
+| std.json | 76.7 | 16849 | slower |
+| std.json.scanner | 77.6 | 16849 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 1.95 | 411 | fastest |
-| std.json.scanner | 3.05 | 411 | slower |
-| std.json | 3.14 | 411 | slower |
+| serde.json | 2.03 | 411 | fastest |
+| std.json.scanner | 2.68 | 411 | slower |
+| std.json | 2.70 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 217 | 41734 | fastest |
-| std.json.scanner | 358 | 41734 | slower |
-| std.json | 359 | 41734 | slower |
+| serde.json | 223 | 41734 | fastest |
+| std.json.scanner | 262 | 41734 | slower |
+| std.json | 264 | 41734 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 2.90 | 663 | fastest |
-| std.json | 3.81 | 663 | slower |
-| std.json.scanner | 3.82 | 663 | slower |
+| serde.json | 3.28 | 663 | fastest |
+| std.json.scanner | 3.64 | 663 | slower |
+| std.json | 3.75 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde.json | 291 | 66261 | fastest |
-| std.json.scanner | 364 | 66261 | slower |
-| std.json | 364 | 66261 | slower |
+| serde.json | 298 | 66261 | fastest |
+| std.json | 327 | 66261 | slower |
+| std.json.scanner | 327 | 66261 | slower |
 
 ### mojo
 
@@ -1343,81 +1343,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 1.70 | 452 | fastest |
-| EmberJson | 2.14 | 452 | slower |
-| ehsanmok-json | 7.65 | 452 | slower |
+| mojo-json | 5.08 | 448 | fastest |
+| EmberJson | 10.6 | 448 | slower |
+| ehsanmok-json | 14.2 | 448 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 170 | 47144 | fastest |
-| EmberJson | 196 | 47144 | slower |
-| ehsanmok-json | 714 | 47144 | slower |
+| mojo-json | 116 | 45414 | fastest |
+| EmberJson | 300 | 45414 | slower |
+| ehsanmok-json | 553 | 45414 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.55 | 290 | fastest |
-| mojo-json | 1.59 | 290 | close |
-| ehsanmok-json | 5.24 | 290 | slower |
+| mojo-json | 3.95 | 257 | fastest |
+| EmberJson | 7.73 | 257 | slower |
+| ehsanmok-json | 9.80 | 257 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 131 | 27675 | fastest |
-| mojo-json | 140 | 27675 | slower |
-| ehsanmok-json | 437 | 27675 | slower |
+| mojo-json | 100 | 25756 | fastest |
+| EmberJson | 171 | 25756 | slower |
+| ehsanmok-json | 317 | 25756 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 0.66 | 164 | fastest |
-| EmberJson | 0.87 | 168 | slower |
-| ehsanmok-json | 4.03 | 168 | slower |
+| mojo-json | 2.88 | 164 | fastest |
+| EmberJson | 6.28 | 168 | slower |
+| ehsanmok-json | 8.22 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 48.7 | 16114 | fastest |
-| EmberJson | 63.0 | 16556 | slower |
-| ehsanmok-json | 347 | 16556 | slower |
+| mojo-json | 37.0 | 16114 | fastest |
+| EmberJson | 87.7 | 16556 | slower |
+| ehsanmok-json | 258 | 16556 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.97 | 411 | fastest |
-| mojo-json | 3.10 | 411 | slower |
-| ehsanmok-json | 6.20 | 411 | slower |
+| mojo-json | 4.57 | 411 | fastest |
+| EmberJson | 6.45 | 411 | slower |
+| ehsanmok-json | 9.71 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 212 | 41441 | fastest |
-| mojo-json | 314 | 41441 | slower |
-| ehsanmok-json | 577 | 41441 | slower |
+| EmberJson | 260 | 41441 | fastest |
+| mojo-json | 266 | 41441 | close |
+| ehsanmok-json | 464 | 41441 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 2.73 | 491 | fastest |
-| EmberJson | 3.66 | 668 | slower |
-| ehsanmok-json | 12.6 | 668 | slower |
+| mojo-json | 6.50 | 486 | fastest |
+| EmberJson | 10.2 | 663 | slower |
+| ehsanmok-json | 19.6 | 663 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 274 | 49656 | fastest |
-| EmberJson | 403 | 66898 | slower |
-| ehsanmok-json | 1289 | 66902 | slower |
+| mojo-json | 227 | 48752 | fastest |
+| EmberJson | 367 | 65968 | slower |
+| ehsanmok-json | 932 | 65970 | slower |
 
 ### fortran
 
@@ -1425,81 +1425,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jonquil | 86.5 | 505 | fastest |
-| json-fortran | 89.5 | 473 | similar |
-| rojff | 116 | 473 | slower |
+| jonquil | 65.2 | 505 | fastest |
+| json-fortran | 70.8 | 473 | slower |
+| rojff | 85.0 | 473 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 6609 | 46434 | fastest |
-| rojff | 10642 | 46434 | slower |
-| jonquil | 26629 | 49527 | slower |
+| json-fortran | 5143 | 46434 | fastest |
+| rojff | 7462 | 46434 | slower |
+| jonquil | 22662 | 49527 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 40.8 | 258 | fastest |
-| jonquil | 48.9 | 273 | slower |
-| rojff | 64.5 | 260 | slower |
+| json-fortran | 24.9 | 258 | fastest |
+| jonquil | 32.7 | 273 | slower |
+| rojff | 38.7 | 260 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 2239 | 26647 | fastest |
-| rojff | 4825 | 26847 | slower |
-| jonquil | 8224 | 28040 | slower |
+| json-fortran | 1770 | 26647 | fastest |
+| rojff | 3850 | 26847 | slower |
+| jonquil | 6839 | 28040 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jonquil | 45.7 | 180 | fastest |
-| json-fortran | 46.5 | 172 | similar |
-| rojff | 50.8 | 168 | slower |
+| jonquil | 22.5 | 180 | fastest |
+| json-fortran | 22.8 | 172 | similar |
+| rojff | 24.7 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 1877 | 17806 | fastest |
-| rojff | 2727 | 17406 | slower |
-| jonquil | 3460 | 18509 | slower |
+| json-fortran | 1538 | 17806 | fastest |
+| rojff | 2224 | 17406 | slower |
+| jonquil | 2786 | 18509 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 44.8 | 430 | fastest |
-| jonquil | 63.6 | 433 | slower |
-| rojff | 64.2 | 430 | slower |
+| json-fortran | 26.9 | 430 | fastest |
+| rojff | 38.2 | 430 | slower |
+| jonquil | 44.2 | 433 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 2776 | 42110 | fastest |
-| rojff | 6146 | 42110 | slower |
-| jonquil | 14630 | 42303 | slower |
+| json-fortran | 2635 | 42110 | fastest |
+| rojff | 4925 | 42110 | slower |
+| jonquil | 13672 | 42303 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jonquil | 106 | 722 | fastest |
-| json-fortran | 111 | 811 | slower |
-| rojff | 209 | 685 | slower |
+| jonquil | 87.4 | 722 | fastest |
+| json-fortran | 91.7 | 811 | slower |
+| rojff | 173 | 685 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json-fortran | 10251 | 82130 | fastest |
-| rojff | 19895 | 69558 | slower |
-| jonquil | 27445 | 73072 | slower |
+| json-fortran | 8532 | 82130 | fastest |
+| rojff | 16969 | 69558 | slower |
+| jonquil | 25106 | 73072 | slower |
 
 ## What we saw
 
