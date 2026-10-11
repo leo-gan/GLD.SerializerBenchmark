@@ -27,7 +27,6 @@ Catalog: `compliance/data/hdf5/`. Inputs are hex.
 
 ## Fortran serializer
 
-`hdf5-fortran` times the official Fortran API on the core virtual file
-driver. That row is a benchmark measurement. It does not decode this corpus.
-Bool is stored as int8 because the HDF5 1.10 Fortran API has no bool type.
-Strings in that row are fixed-length fields plus an explicit length.
+`hdf5-fortran` times the official Fortran API on the array data set
+(`grid` and `grid_window`): one float64 dataset, core virtual file driver.
+That row is a benchmark measurement. It does not decode this corpus.

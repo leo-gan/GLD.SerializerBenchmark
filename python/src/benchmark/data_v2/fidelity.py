@@ -184,10 +184,31 @@ def fidelity_graph(expected: Any, actual: Any) -> float:
     return 1.0 if _graph_pair(expected, actual, {}, {}) else 0.0
 
 
+def fidelity_exact_floats(expected: Any, actual: Any) -> float:
+    """Bit-identical float64 lists. ``grid`` and ``grid_window`` use this."""
+    if isinstance(expected, list) and expected and isinstance(expected[0], list):
+        if not isinstance(actual, list) or len(expected) != len(actual):
+            return 0.0
+        ok = all(fidelity_exact_floats(a, b) == 1.0 for a, b in zip(expected, actual))
+        return 1.0 if ok else 0.0
+    if not isinstance(expected, list) or not isinstance(actual, list):
+        return 0.0
+    if len(expected) != len(actual):
+        return 0.0
+    for a, b in zip(expected, actual):
+        if isinstance(a, bool) or isinstance(b, bool):
+            return 0.0
+        if not isinstance(a, float) or not isinstance(b, float) or a != b:
+            return 0.0
+    return 1.0
+
+
 def fidelity_for(type_id: str, expected: Any, actual: Any) -> float:
     """Dispatch fidelity. ``graph`` must not use the structural walk."""
     if type_id == "graph":
         return fidelity_graph(expected, actual)
+    if type_id in ("grid", "grid_window"):
+        return fidelity_exact_floats(expected, actual)
     return fidelity_v2(expected, actual)
 
 
@@ -217,6 +238,12 @@ def expected_for_fidelity(type_id: str, instances: list[Any]) -> Any:
     """
     if type_id == "table_project":
         return [float(getattr(row, "f_float_0")) for row in instances]
+    if type_id == "grid_window":
+        windows = [row.window_values() for row in instances]
+        return windows[0] if len(windows) == 1 else windows
+    if type_id == "grid":
+        buffers = [list(row.values) for row in instances]
+        return buffers[0] if len(buffers) == 1 else buffers
     if len(instances) == 1:
         return instances[0]
     return list(instances)

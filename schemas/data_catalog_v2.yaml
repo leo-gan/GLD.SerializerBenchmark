@@ -23,6 +23,7 @@ forbidden_type_config_keys:
 
 # data_set is the parent of a type id. suite = the five publication types.
 # columnar = table, table_project, nested_table, and signal.
+# graph = graph. array = grid and grid_window.
 # A serializer is measured only on the sets it already supports.
 types:
   message:
@@ -148,3 +149,32 @@ types:
       string_len:
         min: 8
         max: 16
+
+  # One dense float64 array. Not in default.yaml or smoke.yaml.
+  # Run from config/library/array.yaml with the scientific-format allow-list.
+  # Fill order is y outer, x inner, one unscaled unit-interval float64 per
+  # element. Fortran stores values(nx, ny) and the file dims follow that
+  # array: first dimension x, second dimension y. Coordinates are 0-based.
+  # N is 1. The array is one value.
+  grid:
+    description: "One dense float64 array. Full write and full read."
+    category: array
+    data_set: array
+    default_type_config:
+      nx: 512
+      ny: 512
+
+  # Same write as grid. Deserialize reads the interior window only
+  # (hyperslab, NetCDF start/count, or ADIOS selection).
+  grid_window:
+    description: "Same dense float64 array. Deserialize reads an interior window."
+    category: array_window
+    data_set: array
+    default_type_config:
+      nx: 512
+      ny: 512
+      window:
+        x0: 128
+        y0: 64
+        wx: 256
+        wy: 128

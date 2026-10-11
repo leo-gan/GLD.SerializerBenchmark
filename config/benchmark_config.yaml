@@ -1769,9 +1769,11 @@ languages:
     log_dir: logs/fortran
     time_unit: nanoseconds
     docs_dir: docs/fortran
-    # Interchange rows are in-memory strings or buffers. hdf5-fortran is the
-    # core virtual file driver (bytes). netcdf-fortran and adios2 have no
-    # bytes API; their stream/native rows are published via config/file-only.txt.
+    # Interchange rows are in-memory strings or buffers on the suite types.
+    # hdf5-fortran, netcdf-fortran, and adios2 time the array data set
+    # (config/library/array.yaml). hdf5-fortran is the core virtual file
+    # driver (bytes). netcdf-fortran and adios2 have no bytes API; their
+    # stream/native rows are published via config/file-only.txt.
     stream_policy: bytes_only
     serializers:
       - name: json-fortran
@@ -1807,15 +1809,15 @@ languages:
       - name: hdf5-fortran
         category: binary
         package: HDF-Group/hdf5
-        rationale: "Official HDF5 Fortran API on the core virtual file driver. The timed value is the flushed file image."
+        rationale: "Official HDF5 Fortran API on the array data set. Core virtual file driver. One float64 dataset. The timed value is the flushed file image."
         optimal_api: "h5dwrite_f / h5dread_f with H5Pset_fapl_core"
       - name: netcdf-fortran
         category: binary
         package: Unidata/netcdf-fortran
-        rationale: "Official NetCDF Fortran API. Diskless mode discards the file on close, so this row is a real NetCDF-4 file published as file-only."
+        rationale: "Official NetCDF Fortran API on the array data set. Diskless mode discards the file on close, so this row is a real NetCDF-4 file published as file-only."
         optimal_api: "nf90_put_var / nf90_get_var"
       - name: adios2
         category: binary
         package: ornladios/ADIOS2
-        rationale: "Official ADIOS2 Fortran binding, serial BP5. BP5 writes a directory and has no bytes API, so the row is file-only."
+        rationale: "Official ADIOS2 Fortran binding on the array data set, serial BP5. BP5 writes a directory and has no bytes API, so the row is file-only."
         optimal_api: "adios2_put / adios2_get"

@@ -9,9 +9,10 @@
 export const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
 export const COLUMNAR_TYPE_IDS = ['table', 'table_project', 'nested_table', 'signal'];
 export const GRAPH_TYPE_IDS = ['graph'];
-export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS, ...GRAPH_TYPE_IDS];
-export const DATA_SET_ORDER = ['suite', 'columnar', 'graph'];
-export const DATA_SET_LABELS = { suite: 'Suite', columnar: 'Columnar', graph: 'Graph' };
+export const ARRAY_TYPE_IDS = ['grid', 'grid_window'];
+export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS, ...GRAPH_TYPE_IDS, ...ARRAY_TYPE_IDS];
+export const DATA_SET_ORDER = ['suite', 'columnar', 'graph', 'array'];
+export const DATA_SET_LABELS = { suite: 'Suite', columnar: 'Columnar', graph: 'Graph', array: 'Array' };
 
 export function dataSetLabel(id) {
   return DATA_SET_LABELS[id] || 'Suite';
@@ -88,13 +89,14 @@ export function discoverFixtureOptions(allGroups) {
   };
 }
 
-/** suite, columnar, or graph for a data-type menu key, including all@n compounds. */
+/** suite, columnar, graph, or array for a data-type menu key, including all@n compounds. */
 export function dataSetForFixture(key) {
   const s = String(key || '');
   if (!s || s === 'all@all' || /^all@/i.test(s)) return 'suite';
   const base = baseTypeId(s);
   if (COLUMNAR_TYPE_IDS.includes(base)) return 'columnar';
   if (GRAPH_TYPE_IDS.includes(base)) return 'graph';
+  if (ARRAY_TYPE_IDS.includes(base)) return 'array';
   return 'suite';
 }
 
@@ -125,12 +127,15 @@ export function pickPreferredFixture(options) {
   for (const key of ['graph@n=1', 'graph', 'graph@n=100']) {
     if (options.includes(key)) return key;
   }
+  for (const key of ['grid@n=1', 'grid', 'grid@n=100']) {
+    if (options.includes(key)) return key;
+  }
   return options[0] || '';
 }
 
 function groupDataSet(group) {
   if (!group) return '';
-  if (group.data_set === 'suite' || group.data_set === 'columnar' || group.data_set === 'graph') {
+  if (group.data_set === 'suite' || group.data_set === 'columnar' || group.data_set === 'graph' || group.data_set === 'array') {
     return group.data_set;
   }
   if (!group.test_data) return '';

@@ -15,7 +15,12 @@ sys.path.insert(0, str(_REPO / "analysis" / "src"))
 from benchmark_analysis.run_config_v2 import load_catalog, resolve_run_config, resolve_type_config
 
 from benchmark.data_v2 import instances_for_cell, make_one
-from benchmark.data_v2.fidelity import expected_for_fidelity, fidelity_for, fidelity_graph, fidelity_v2
+from benchmark.data_v2.fidelity import (
+    expected_for_fidelity,
+    fidelity_for,
+    fidelity_graph,
+    fidelity_v2,
+)
 from benchmark.data_v2.models import (
     Book,
     Document,
@@ -196,6 +201,30 @@ def test_signal_group_is_fixed_then_variable(catalog):
     row = make_one("signal", cfg, seed=9, instance_index=0)
     assert len(row.legs) == 4
     assert all(leg.leg_pad == 0 for leg in row.legs)
+
+
+def test_grid_shape_window_and_exact_fidelity(catalog):
+    grid_cfg = resolve_type_config("grid", {}, catalog)
+    window_cfg = resolve_type_config("grid_window", {}, catalog)
+    grid = make_one("grid", grid_cfg, seed=42, instance_index=0)
+    again = make_one("grid", grid_cfg, seed=42, instance_index=0)
+    assert grid.nx == 512 and grid.ny == 512
+    assert len(grid.values) == 262144
+    assert grid == again
+    other = make_one("grid", grid_cfg, seed=42, instance_index=1)
+    assert grid != other
+    assert fidelity_for("grid", expected_for_fidelity("grid", [grid]), list(grid.values)) == 1.0
+    nudged = list(grid.values)
+    nudged[0] = 0.0 if nudged[0] != 0.0 else 1.0
+    assert fidelity_for("grid", expected_for_fidelity("grid", [grid]), nudged) == 0.0
+
+    window = make_one("grid_window", window_cfg, seed=42, instance_index=0)
+    expected = expected_for_fidelity("grid_window", [window])
+    assert len(expected) == 32768
+    assert expected[0] == window.values[64 * 512 + 128]
+    assert expected[-1] == window.values[(64 + 128 - 1) * 512 + (128 + 256 - 1)]
+    assert fidelity_for("grid_window", expected, list(expected)) == 1.0
+    assert fidelity_for("grid_window", expected, expected[:-1]) == 0.0
 
 
 def test_default_run_config_cells_generate():

@@ -26,7 +26,8 @@ Catalog: `compliance/data/adios2/`. Inputs are UTF-8 file-name markers.
 
 ## Fortran serializer
 
-`adios2` times the official Fortran binding over the C++ core. The build
-is serial, MPI is off, and the engine is BP5. The binding has no bytes
+`adios2` times the official Fortran binding on the array data set
+(`grid` and `grid_window`). The build is serial, MPI is off, and the
+engine is BP5. The binding has no bytes
 buffer. The benchmark publishes the directory timing through
 `config/file-only.txt`. It does not decode this corpus.

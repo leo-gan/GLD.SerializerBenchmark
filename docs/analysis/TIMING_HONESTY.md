@@ -77,6 +77,9 @@ Building that object is **prepare**. Writing it out is **serialize**.
    For `table`, `table_project`, `nested_table`, and `signal`, building an Arrow record batch, Parquet or ORC columns, or an SBE flyweight from suite rows is **serialize** work. Schema objects, writer properties, and SBE codegen stay in `prepare` or in the build. Pre-building the batch in `prepare` and timing a byte copy hides the cost this family measures. This overrides rule 3 for these four type ids only.  
    `TimeDeser` for `table`, `nested_table`, and `signal` materializes domain rows. `TimeDeser` for `table_project` materializes `f_float_0` only. Row peers may fully decode and then slice that column. That decode stays on the clock.
 
+9. **Array types time the file, not the source fill.**  
+   For `grid` and `grid_window`, building the float64 array is prepare. Creating the file, writing the whole array, and reading either the whole array or the window are timed. Declaring the ADIOS IO and selecting the BP5 engine is prepare. `grid_window` deserialize is a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. A full read plus a host-side slice is not a `grid_window` result. The size column is the full file.
+
 ## Allowed exceptions (must be labelled)
 
 | Exception | Why it exists | How to label it |

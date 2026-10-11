@@ -9,6 +9,7 @@ Named **run configs** select the measurement matrix:
 Publication type ids: `message` · `document` · `telemetry` · `strings` · `event`  
 Columnar / aligned type ids: `table` · `table_project` · `nested_table` · `signal`  
 Graph type id: `graph`  
+Array type ids: `grid` · `grid_window`  
 (catalog: `schemas/data_catalog_v2.yaml`).
 
 ## Files
@@ -20,6 +21,8 @@ Graph type id: `graph`
 | `columnar-smoke.yaml` | Four new types × n=1. Requires a serializer allow-list. |
 | `columnar.yaml` | Columnar and `signal` cells. Requires a serializer allow-list. |
 | `graph.yaml` | Data type `graph` at N=1 and N=100. Requires a serializer allow-list. |
+| `array-smoke.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
+| `array.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
 
 ## Usage
 

@@ -15,6 +15,7 @@ from .models import (
     NestedMeta,
     NestedRow,
     Book,
+    Grid,
     Order,
     Person,
     Region,
@@ -58,6 +59,8 @@ def make_one(
         return _make_signal(rng, type_config)
     if type_id == "graph":
         return _make_graph(rng, type_config)
+    if type_id in ("grid", "grid_window"):
+        return _make_grid(rng, type_config, window=type_id == "grid_window")
     raise ValueError(f"unknown type_id: {type_id!r}")
 
 
@@ -258,6 +261,25 @@ def _make_event(rng: XorShift64, cfg: dict[str, Any]) -> Event:
         occurred_at=_BASE_TS_MS + rng.next_int(0, 86_400_000),
         producer=rng.word(smin, smax),
         attrs=attrs,
+    )
+
+
+def _make_grid(rng: XorShift64, cfg: dict[str, Any], *, window: bool) -> Grid:
+    """Fill y outer, x inner. Values are unscaled ``next_f64`` results."""
+    nx = int(cfg["nx"])
+    ny = int(cfg["ny"])
+    values = [rng.next_f64() for _y in range(ny) for _x in range(nx)]
+    if not window:
+        return Grid(nx=nx, ny=ny, values=values)
+    box = cfg["window"]
+    return Grid(
+        nx=nx,
+        ny=ny,
+        values=values,
+        x0=int(box["x0"]),
+        y0=int(box["y0"]),
+        wx=int(box["wx"]),
+        wy=int(box["wy"]),
     )
 
 

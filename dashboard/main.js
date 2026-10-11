@@ -410,7 +410,7 @@ function applySavedSettings(saved) {
   if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
     state.currentLanguage = saved.currentLanguage;
   }
-  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar' || saved.currentDataSet === 'graph')) {
+  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar' || saved.currentDataSet === 'graph' || saved.currentDataSet === 'array')) {
     state.currentDataSet = saved.currentDataSet;
   }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
@@ -477,7 +477,7 @@ function applySavedSettings(saved) {
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
-  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar' || p.get('dataset') === 'graph')) {
+  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar' || p.get('dataset') === 'graph' || p.get('dataset') === 'array')) {
     state.currentDataSet = p.get('dataset');
   }
   if (p.has('data')) state.currentTestData = p.get('data');
@@ -1974,6 +1974,7 @@ function populateFixtureSelect(options, cfg = {}) {
     addGroup('Suite', options.filter((key) => dataSetForFixture(key) === 'suite'));
     addGroup('Columnar', options.filter((key) => dataSetForFixture(key) === 'columnar'));
     addGroup('Graph', options.filter((key) => dataSetForFixture(key) === 'graph'));
+    addGroup('Array', options.filter((key) => dataSetForFixture(key) === 'array'));
   } else {
     appendFixtureOptions(sel, options);
   }
