@@ -91,7 +91,8 @@ macro_rules! impl_kinded_direct {
                     | Fixture::Signal(_)
                     | Fixture::Rows(_)
                     | Fixture::Projected(_)
-                    | Fixture::Graph(_) => {
+                    | Fixture::Graph(_)
+                    | Fixture::Grid(_) => {
                         return Err(::anyhow::anyhow!(
                             "direct codec does not implement {}",
                             fixture.name()

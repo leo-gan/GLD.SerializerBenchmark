@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private NetSerializer.Serializer _serializer;
 
         public override string Name => "NetSerializer";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type type, List<Type> secondaryTypes)
         {

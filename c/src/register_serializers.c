@@ -70,5 +70,8 @@ void register_all_serializers(serializer_t *out, int *count) {
 #ifdef HAS_IONC
     bench_register_ionc(out, count);
 #endif
+#ifdef HAS_HDF5
+    bench_register_hdf5(out, count);
+#endif
     fprintf(stderr, "[bench-c] registered %d serializers\n", *count);
 }

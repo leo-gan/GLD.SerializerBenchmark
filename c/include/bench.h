@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define BENCH_MAX_SERIALIZERS 32
+#define BENCH_MAX_SERIALIZERS 40
 #define BENCH_MAX_NAME 64
 
 /* Data Model v2 only — message / document / telemetry / strings / event */
@@ -24,8 +24,16 @@ typedef enum {
     TD_TELEMETRY,
     TD_STRINGS,
     TD_EVENT,
+    TD_GRID,
+    TD_GRID_WINDOW,
     TD_COUNT
 } test_data_kind_t;
+
+typedef struct {
+    int nx, ny, x0, y0, wx, wy;
+    int nvalues;
+    double *values;
+} grid_t;
 
 typedef struct {
     bool f_bool;
@@ -94,6 +102,7 @@ struct test_fixture {
     telemetry_t telemetry;
     strings_t strings;
     event_t event;
+    grid_t grid;
     /* Batch cell: batch_n==1 uses fields above; batch_n>1 uses heap array. */
     int batch_n;
     test_fixture_t *batch;
@@ -119,6 +128,9 @@ extern "C" {
 void data_init_all(test_fixture_t *out, int count, uint64_t seed);
 void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
                    int children, int points, int str_count, int attr_count);
+void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
+                    int nx, int ny, int x0, int y0, int wx, int wy);
+void data_free_grid(test_fixture_t *fx);
 const char *test_data_name(test_data_kind_t k);
 #ifdef __cplusplus
 }
@@ -184,6 +196,7 @@ void bench_register_avro_c(serializer_t *out, int *count);
 void bench_register_yaml(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 void bench_register_ionc(serializer_t *out, int *count);
+void bench_register_hdf5(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);

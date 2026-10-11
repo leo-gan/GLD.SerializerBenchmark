@@ -58,6 +58,7 @@ static void test_all_roundtrips(void) {
             CHECK(rc == 0, "%s deserialize %s rc=%d", S->name, fx->name, rc);
             if (rc != 0) continue;
             bool ok = S->fidelity ? S->fidelity(fx, &out) : true;
+            data_free_grid(&out);
             CHECK(ok, "%s fidelity %s", S->name, fx->name);
             if (!(S->serialize_fp && S->deserialize_fp)) continue;
             FILE *wf = fmemopen(buf, sizeof buf, "w+");
@@ -82,6 +83,7 @@ static void test_all_roundtrips(void) {
             CHECK(drc == 0, "%s stream deserialize %s rc=%d", S->name, fx->name, drc);
             if (drc != 0) continue;
             bool ok2 = S->fidelity ? S->fidelity(fx, &out2) : true;
+            data_free_grid(&out2);
             CHECK(ok2, "%s stream fidelity %s", S->name, fx->name);
         }
     }
@@ -163,10 +165,13 @@ static void test_v2_type_names(void) {
     test_fixture_t fixtures[TD_COUNT];
     data_init_all(fixtures, TD_COUNT, 1);
     const char *expect[] = {"message", "document", "telemetry", "strings", "event"};
-    for (int i = 0; i < TD_COUNT; i++) {
+    for (int i = 0; i < 5; i++) {
         CHECK(strcmp(fixtures[i].name, expect[i]) == 0, "type %d name %s", i, fixtures[i].name);
         CHECK(strcmp(test_data_name(fixtures[i].kind), expect[i]) == 0, "kind name");
     }
+    CHECK(strcmp(test_data_name(TD_GRID), "grid") == 0, "grid name");
+    CHECK(strcmp(test_data_name(TD_GRID_WINDOW), "grid_window") == 0, "grid_window name");
+    for (int i = 0; i < TD_COUNT; i++) data_free_grid(&fixtures[i]);
 }
 
 static void test_schedule_golden(void) {

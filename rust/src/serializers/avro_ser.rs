@@ -181,6 +181,9 @@ fn write_datum<W: Write>(
         Fixture::Graph(_) => {
             return Err(anyhow!("serde_avro_fast: graph is not a tree"));
         }
+        Fixture::Grid(_) => {
+            return Err(anyhow!("serde_avro_fast: grid is an array"));
+        }
     };
     written.context("serde_avro_fast to_datum")
 }

@@ -22,6 +22,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 "table" or "table_project" => MakeTable(rng, typeConfig, seed, typeId),
                 "nested_table" => MakeNestedTable(rng, typeConfig),
                 "signal" => MakeSignal(rng, typeConfig),
+                "grid" or "grid_window" => MakeGrid(rng, typeConfig, typeId == "grid_window"),
                 _ => throw new ArgumentException($"unknown type_id: {typeId}")
             };
         }
@@ -97,6 +98,13 @@ namespace GLD.SerializerBenchmark.TestData.V2
                     if (n == 1) return (list[0], typeof(Signal), sec);
                     sec.Insert(0, typeof(Signal));
                     return (new BatchSignal { Items = list }, typeof(BatchSignal), sec);
+                }
+                case "grid":
+                case "grid_window":
+                {
+                    if (n != 1) throw new ArgumentException("grid N must be 1");
+                    var grid = (Grid)MakeOne(typeId, typeConfig, seed, 0);
+                    return (grid, typeof(Grid), new List<Type>());
                 }
                 default:
                     throw new ArgumentException($"unknown type_id: {typeId}");
@@ -280,6 +288,23 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 Producer = r.Word(smin, smax),
                 Attrs = attrs,
             };
+        }
+
+        static Grid MakeGrid(Rng rng, JsonElement cfg, bool window)
+        {
+            var nx = GetInt(cfg, "nx", 512);
+            var ny = GetInt(cfg, "ny", 512);
+            var values = new double[nx * ny];
+            for (var i = 0; i < values.Length; i++) values[i] = rng.NextF64();
+            var grid = new Grid { Nx = nx, Ny = ny, Values = values };
+            if (!window) return grid;
+            JsonElement box = default;
+            var has = cfg.ValueKind == JsonValueKind.Object && cfg.TryGetProperty("window", out box);
+            grid.X0 = has ? GetInt(box, "x0", 128) : 128;
+            grid.Y0 = has ? GetInt(box, "y0", 64) : 64;
+            grid.Wx = has ? GetInt(box, "wx", 256) : 256;
+            grid.Wy = has ? GetInt(box, "wy", 128) : 128;
+            return grid;
         }
 
         static (int min, int max) SLen(JsonElement cfg, int defMin = 3, int defMax = 16)

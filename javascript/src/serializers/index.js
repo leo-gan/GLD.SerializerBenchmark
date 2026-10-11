@@ -13,6 +13,7 @@ import { modernSerializers } from './modern.js';
 import { yamlSerializers } from './yaml.js';
 import { dagrSerializers } from './dagr.js';
 import { columnarSerializers } from './columnar.js';
+import { hdf5Serializers } from './hdf5.js';
 
 export const ALL_SERIALIZERS = [
   ...jsonSerializers(),
@@ -23,6 +24,7 @@ export const ALL_SERIALIZERS = [
   ...yamlSerializers(),
   ...dagrSerializers(),
   ...columnarSerializers(),
+  ...hdf5Serializers(),
 ];
 
 export { deepEqual, performance };

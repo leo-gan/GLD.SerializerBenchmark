@@ -33,6 +33,7 @@
     "fast-json-stringify": "^6.0.0",
     "flatbuffers": "^24.12.23",
     "google-protobuf": "^3.21.4",
+    "h5wasm": "0.10.3",
     "hyparquet": "^1.31.2",
     "hyparquet-writer": "^0.16.10",
     "ion-js": "^5.2.1",

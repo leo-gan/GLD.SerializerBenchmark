@@ -243,15 +243,16 @@ def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
     stats_keep, stats_old = _split(list(stats.get("groups") or []))
     payload_keep, payload_old = _split(list(embedded.get("groups") or []))
     before_suite = _counts(stats_keep, SUITE_TYPES)
-    if LANGUAGE == "python":
-        kept = (
-            "Previous groups for h5py, netCDF4, and adios2 were removed. "
-            "Suite, columnar, and graph groups for the other Python serializers were not recomputed."
-        )
-    else:
+    names = ", ".join(ARRAY_NAMES)
+    if LANGUAGE == "fortran":
         kept = (
             "Suite rows for hdf5-fortran, netcdf-fortran, and adios2 were removed. "
             "The six interchange serializers were not recomputed."
+        )
+    else:
+        kept = (
+            f"Previous groups for {names} were removed. "
+            "Other groups for this language were not recomputed."
         )
     note = {
         "source_csv": str(csv_path.relative_to(REPO)),
@@ -296,26 +297,52 @@ def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
 def _select_language(language: str) -> None:
     global ARRAY_NAMES, STANDARDS, MODES, LANGUAGE
     LANGUAGE = language
-    if language == "fortran":
-        return
-    if language != "python":
+    profiles = {
+        "fortran": None,
+        "python": (
+            ("h5py", "netCDF4", "adios2"),
+            {"h5py": "hdf5", "netCDF4": "netcdf", "adios2": "adios2"},
+            "bytes",
+        ),
+        "c": (("hdf5",), {"hdf5": "hdf5"}, "bytes"),
+        "cpp": (("highfive",), {"highfive": "hdf5"}, "bytes"),
+        "rust": (("hdf5-metno",), {"hdf5-metno": "hdf5"}, "bytes"),
+        "javascript": (("h5wasm",), {"h5wasm": "hdf5"}, "bytes"),
+        # The C# runner labels the in-memory row "string". Analysis publishes it as bytes.
+        "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "string"),
+    }
+    if language not in profiles:
         raise SystemExit(f"unsupported language {language}")
-    ARRAY_NAMES = ("h5py", "netCDF4", "adios2")
-    STANDARDS = {"h5py": "hdf5", "netCDF4": "netcdf", "adios2": "adios2"}
-    MODES = {name: "bytes" for name in ARRAY_NAMES}
+    chosen = profiles[language]
+    if chosen is None:
+        return
+    names, standards, mode = chosen
+    ARRAY_NAMES = names
+    STANDARDS = standards
+    MODES = {name: mode for name in names}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="fortran", choices=("fortran", "python"))
+    parser.add_argument(
+        "--language",
+        default="fortran",
+        choices=("fortran", "python", "c", "cpp", "rust", "javascript", "csharp"),
+    )
     parser.add_argument("--csv", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     _select_language(args.language)
-    csv_path = args.csv or (
-        DEFAULT_CSV if args.language == "fortran"
-        else REPO / "logs/python/2026-10-10-python-array-full.csv"
-    )
+    defaults = {
+        "fortran": DEFAULT_CSV,
+        "python": REPO / "logs/python/2026-10-10-python-array-full.csv",
+        "c": REPO / "logs/c/2026-10-11-c-hdf5-array.csv",
+        "cpp": REPO / "logs/cpp/2026-10-11-cpp-hdf5-array.csv",
+        "rust": REPO / "logs/rust/2026-10-11-rust-hdf5-array.csv",
+        "javascript": REPO / "logs/javascript/2026-10-11-js-hdf5-array.csv",
+        "csharp": REPO / "logs/csharp/2026-10-11-csharp-hdf5-array.csv",
+    }
+    csv_path = args.csv or defaults[args.language]
     if not csv_path.is_absolute():
         csv_path = REPO / csv_path
     csv_path = csv_path.resolve()

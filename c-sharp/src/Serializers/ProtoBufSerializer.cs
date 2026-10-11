@@ -28,7 +28,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "ProtoBuf";
 
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

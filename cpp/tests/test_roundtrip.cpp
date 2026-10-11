@@ -71,6 +71,27 @@ int main() {
       }
     }
   }
+  for (auto& ser : sers) {
+    if (std::string(ser->name()) != "highfive") continue;
+    for (const char* tid : {"grid", "grid_window"}) {
+      try {
+        Fixture fx = make_fixture(tid, cfg, 42, 1, "test");
+        ser->prepare(fx);
+        auto buf = ser->serialize_bytes(fx);
+        auto out = ser->deserialize_bytes(buf);
+        if (!fidelity(expected_for_fidelity(fx), out)) {
+          std::cerr << "FAIL fidelity " << ser->name() << " / " << tid << " size=" << buf.size()
+                    << "\n";
+          ++failures;
+        } else {
+          std::cout << "OK " << ser->name() << " / " << tid << " size=" << buf.size() << "\n";
+        }
+      } catch (const std::exception& e) {
+        std::cerr << "FAIL " << ser->name() << " / " << tid << ": " << e.what() << "\n";
+        ++failures;
+      }
+    }
+  }
   if (failures) {
     std::cerr << failures << " failure(s)\n";
     return 1;

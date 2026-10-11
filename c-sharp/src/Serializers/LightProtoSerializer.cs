@@ -7,7 +7,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private readonly MemoryStream _serMs = new MemoryStream(4096);
         public override string Name => "LightProto";
 
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override string Serialize(object serializable)
         {

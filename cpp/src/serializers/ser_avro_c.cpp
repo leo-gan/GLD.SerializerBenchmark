@@ -285,7 +285,7 @@ class AvroCSer final : public ISerializer {
     std::visit(
         [&](const auto& x) {
           using T = std::decay_t<decltype(x)>;
-          if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+          if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
             throw std::runtime_error("avro_c: columnar type unsupported");
           } else if constexpr (std::is_same_v<T, Message>) fill_message(root, x);
           else if constexpr (std::is_same_v<T, Document>) fill_document(root, x);

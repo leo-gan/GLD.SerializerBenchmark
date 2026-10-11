@@ -14,19 +14,29 @@ FILTER_SER="${2:-}"
 FILTER_DATA="${3:-}"
 
 VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
-case " $VALID_MODES " in
+case " $VALID_MODES custom " in
   *" $MODE "*) ;;
   *)
-    echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"
+    echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
+    echo "  custom: $0 custom <reps> <serializerFilter> [dataFilter]"
     echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
+    echo "  The C binary does not filter names. grid and grid_window are skipped by every serializer except hdf5."
     exit 1
     ;;
 esac
 
-REPS="$(bench_mode_reps "$MODE")"
-if [[ "$MODE" == "smoke" ]]; then
-  FILTER_SER="${FILTER_SER:-cJSON}"
-  FILTER_DATA="${FILTER_DATA:-message}"
+if [[ "$MODE" == "custom" ]]; then
+  REPS="${2:-10}"
+  FILTER_SER="${3:-}"
+  FILTER_DATA="${4:-}"
+else
+  REPS="$(bench_mode_reps "$MODE")"
+  if [[ "$MODE" == "smoke" ]]; then
+    FILTER_SER="${FILTER_SER:-cJSON}"
+    if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+      FILTER_DATA="${FILTER_DATA:-message}"
+    fi
+  fi
 fi
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"

@@ -35,6 +35,7 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 mod avro_ser;
 mod binary_serde;
 mod columnar;
+mod hdf5_metno;
 mod dagr_ser;
 mod direct;
 mod json;
@@ -48,6 +49,7 @@ use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
 };
 use columnar::{ArrowIpc, ParquetSer};
+use hdf5_metno::Hdf5Metno;
 use dagr_ser::{DagrFrozenPackedSer, DagrFrozenSer, DagrRegularSer, DagrSer};
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
@@ -112,7 +114,9 @@ pub trait BenchSerializer: Send {
     fn supports(&self, test_data_name: &str) -> bool {
         // Columnar ids and `graph` are opt-in. `graph` is shared nodes plus a
         // reference cycle; only a codec that keeps aliases should override this.
-        test_data_name != "graph" && !crate::data::is_columnar_id(test_data_name)
+        test_data_name != "graph"
+            && !crate::data::is_columnar_id(test_data_name)
+            && !crate::data::is_array_id(test_data_name)
     }
 
     /// Untimed: build reusable codec state / bind kind-specific encode fns.
@@ -215,6 +219,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(ParquetSer::default()),
         Box::new(ParquetSer::uncompressed()),
         Box::new(SbeSer::default()),
+        Box::new(Hdf5Metno::default()),
     ]
 }
 
@@ -259,7 +264,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 26);
+        assert_eq!(all.len(), 27);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;

@@ -11,7 +11,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name => "System.Text.Json";
         public override string Version =>
             typeof(JsonSerializer).Assembly.GetName().Version?.ToString() ?? "System.Text.Json";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void PrepareData(object data) => _native = data;
 

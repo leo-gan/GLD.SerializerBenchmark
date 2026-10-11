@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override bool Supports(string testDataName)
         {
             // Ceras is now enabled - uses reflection for generic type deserialization
-            return true;
+            return !IsArrayType(testDataName);
         }
         public override string Serialize(object serializable) => Convert.ToBase64String(_serializer.Value.Serialize(serializable));
 

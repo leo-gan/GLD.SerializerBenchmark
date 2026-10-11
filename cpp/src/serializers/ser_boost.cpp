@@ -79,7 +79,7 @@ class BoostSer final : public ISerializer {
       boost::archive::binary_oarchive oa(oss, boost::archive::no_header);
       std::visit([&](auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
           throw std::runtime_error("boost_serialization: columnar type unsupported");
         } else {
           oa << v;
@@ -103,7 +103,7 @@ class BoostSer final : public ISerializer {
       boost::archive::binary_oarchive oa(os, boost::archive::no_header);
       std::visit([&](auto& v) {
         using T = std::decay_t<decltype(v)>;
-        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T>)) {
+        if constexpr ((is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>)) {
           throw std::runtime_error("boost_serialization: columnar type unsupported");
         } else {
           oa << v;

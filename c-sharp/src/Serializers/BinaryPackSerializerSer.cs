@@ -21,7 +21,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private Func<Stream, object> _deserStream;
 
         public override string Name => "BinaryPack";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

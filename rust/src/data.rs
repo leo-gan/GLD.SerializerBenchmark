@@ -594,6 +594,19 @@ impl TypeConfig {
     }
 }
 
+fn window_i32(cfg: &TypeConfig, key: &str, default: i32) -> i32 {
+    cfg.value
+        .get("window")
+        .and_then(|v| v.get(key))
+        .and_then(|v| v.as_i64())
+        .map(|n| n as i32)
+        .unwrap_or(default)
+}
+
+pub fn is_array_id(type_id: &str) -> bool {
+    matches!(type_id, "grid" | "grid_window")
+}
+
 pub fn is_columnar_id(type_id: &str) -> bool {
     matches!(
         type_id,
@@ -852,6 +865,37 @@ pub fn make_one(
         "nested_table" => Ok(Fixture::NestedTable(make_nested(&mut r, cfg))),
         "signal" => Ok(Fixture::Signal(make_signal(&mut r, cfg))),
         "graph" => Ok(Fixture::Graph(make_graph(&mut r, cfg)?)),
+        "grid" | "grid_window" => {
+            let window = type_id == "grid_window";
+            let nx = cfg.i32("nx", 512).max(1);
+            let ny = cfg.i32("ny", 512).max(1);
+            let (x0, y0, wx, wy) = if window {
+                (
+                    window_i32(cfg, "x0", 128),
+                    window_i32(cfg, "y0", 64),
+                    window_i32(cfg, "wx", 256).max(1),
+                    window_i32(cfg, "wy", 128).max(1),
+                )
+            } else {
+                (0, 0, 0, 0)
+            };
+            let mut values = Vec::with_capacity((nx as usize) * (ny as usize));
+            for _y in 0..ny {
+                for _x in 0..nx {
+                    values.push(r.next_f64());
+                }
+            }
+            Ok(Fixture::Grid(Grid {
+                nx,
+                ny,
+                values,
+                x0,
+                y0,
+                wx,
+                wy,
+                read_window: window,
+            }))
+        }
         other => anyhow::bail!("unknown v2 type_id {other}"),
     }
 }
@@ -876,6 +920,32 @@ pub fn collect_f_float_0(fx: &Fixture) -> anyhow::Result<Vec<f64>> {
 // Fixture enum
 // ---------------------------------------------------------------------------
 
+/// Dense float64 array. `values` is catalog order: index `y * nx + x`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Grid {
+    pub nx: i32,
+    pub ny: i32,
+    pub values: Vec<f64>,
+    pub x0: i32,
+    pub y0: i32,
+    pub wx: i32,
+    pub wy: i32,
+    pub read_window: bool,
+}
+
+impl Grid {
+    pub fn window_values(&self) -> Vec<f64> {
+        let mut out = Vec::with_capacity((self.wx as usize) * (self.wy as usize));
+        for y in self.y0..(self.y0 + self.wy) {
+            let row = (y as usize) * (self.nx as usize);
+            for x in self.x0..(self.x0 + self.wx) {
+                out.push(self.values[row + (x as usize)]);
+            }
+        }
+        out
+    }
+}
+
 /// Holder for harness fixtures (externally tagged for Serde formats).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Fixture {
@@ -895,6 +965,8 @@ pub enum Fixture {
     Projected(Vec<f64>),
     /// Shared regions and one person ring. `==` is the identity walker, not derived equality.
     Graph(Book),
+    /// `grid` and `grid_window`. `read_window` selects the interior hyperslab on read.
+    Grid(Grid),
 }
 
 impl Fixture {
@@ -911,6 +983,13 @@ impl Fixture {
             Fixture::NestedTable(_) => "nested_table",
             Fixture::Signal(_) => "signal",
             Fixture::Graph(_) => "graph",
+            Fixture::Grid(g) => {
+                if g.read_window {
+                    "grid_window"
+                } else {
+                    "grid"
+                }
+            }
             Fixture::Rows(rows) => rows.first().map(|r| r.name()).unwrap_or("rows"),
         }
     }
@@ -952,6 +1031,7 @@ pub fn fidelity(a: &Fixture, b: &Fixture) -> bool {
         (Fixture::NestedTable(x), Fixture::NestedTable(y)) => x == y,
         (Fixture::Signal(x), Fixture::Signal(y)) => x == y,
         (Fixture::Graph(x), Fixture::Graph(y)) => x == y,
+        (Fixture::Grid(x), Fixture::Grid(y)) => x.values == y.values,
         (Fixture::Rows(x), Fixture::Rows(y)) => {
             x.len() == y.len() && x.iter().zip(y.iter()).all(|(p, q)| fidelity(p, q))
         }
@@ -1003,6 +1083,30 @@ impl TableRow {
 /// `table_project` accepts only a single [`Fixture::Projected`] whose length is N.
 /// A full row, a batch of rows, or any other shape fails that check.
 pub fn check_cell_fidelity(type_id: &str, expected: &[Fixture], got: &[Fixture]) -> anyhow::Result<()> {
+    if type_id == "grid" || type_id == "grid_window" {
+        if got.len() != 1 || expected.len() != 1 {
+            anyhow::bail!("grid fidelity expects one value");
+        }
+        let Fixture::Grid(actual) = &got[0] else {
+            anyhow::bail!("grid deserialize returned {}", got[0].name());
+        };
+        let Fixture::Grid(src) = &expected[0] else {
+            anyhow::bail!("grid expected a Grid");
+        };
+        let want = if type_id == "grid_window" {
+            src.window_values()
+        } else {
+            src.values.clone()
+        };
+        if actual.values != want {
+            anyhow::bail!(
+                "grid values mismatch len {} != {}",
+                actual.values.len(),
+                want.len()
+            );
+        }
+        return Ok(());
+    }
     if type_id == "table_project" {
         if got.len() != 1 {
             anyhow::bail!(

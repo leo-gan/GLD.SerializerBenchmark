@@ -18,7 +18,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private Polenter.Serialization.SharpSerializer _serializer;
 
         public override string Name => "SharpSerializer";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override void Initialize(Type serializablePrimaryType, System.Collections.Generic.List<Type> serializableSecondaryTypes = null)
         {

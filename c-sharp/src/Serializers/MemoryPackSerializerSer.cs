@@ -12,7 +12,7 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class MemoryPackSerializerSer : SerDeser
     {
         public override string Name => "MemoryPack";
-        public override bool Supports(string testDataName) => true;
+        public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
         public override string Serialize(object serializable)
         {

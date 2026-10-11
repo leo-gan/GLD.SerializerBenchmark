@@ -71,6 +71,9 @@
       ],
       "ion-c": [
         "ion"
+      ],
+      "hdf5": [
+        "hdf5"
       ]
     },
     "python": {
@@ -236,6 +239,9 @@
       ],
       "parquet-uncompressed": [
         "parquet"
+      ],
+      "h5wasm": [
+        "hdf5"
       ],
       "dagr-packed": [],
       "dagr-regular": [],
@@ -598,6 +604,9 @@
       ],
       "parquet-uncompressed": [
         "parquet"
+      ],
+      "PureHDF": [
+        "hdf5"
       ]
     },
     "rust": {
@@ -654,6 +663,9 @@
       ],
       "sbe": [
         "sbe"
+      ],
+      "hdf5-metno": [
+        "hdf5"
       ],
       "dagr-packed": [],
       "dagr-regular": [],
@@ -754,6 +766,9 @@
       ],
       "sbe": [
         "sbe"
+      ],
+      "highfive": [
+        "hdf5"
       ],
       "dagr-packed": [],
       "dagr-regular": [],

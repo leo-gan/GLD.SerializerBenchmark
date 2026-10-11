@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-static inline bool supports_all(test_data_kind_t k) { (void)k; return true; }
+static inline bool supports_all(test_data_kind_t k) {
+    /* grid is opt-in. The suite codecs do not have an array model. */
+    return k != TD_GRID && k != TD_GRID_WINDOW;
+}
 
 static inline bool f64_close(double a, double b) {
     double d = a - b; if (d < 0) d = -d;

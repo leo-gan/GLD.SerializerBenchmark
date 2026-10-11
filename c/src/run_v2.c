@@ -56,13 +56,20 @@ static test_data_kind_t kind_from_type_id(const char *type_id) {
     if (strcmp(type_id, "telemetry") == 0) return TD_TELEMETRY;
     if (strcmp(type_id, "strings") == 0) return TD_STRINGS;
     if (strcmp(type_id, "event") == 0) return TD_EVENT;
+    if (strcmp(type_id, "grid") == 0) return TD_GRID;
+    if (strcmp(type_id, "grid_window") == 0) return TD_GRID_WINDOW;
     return TD_MESSAGE;
 }
 
 static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed,
-                            int children, int points, int str_count, int attr_count) {
-    data_make_one(fx, kind_from_type_id(type_id), (uint64_t)seed, 0,
-                  children, points, str_count, attr_count);
+                            int children, int points, int str_count, int attr_count,
+                            int nx, int ny, int x0, int y0, int wx, int wy) {
+    test_data_kind_t kind = kind_from_type_id(type_id);
+    if (kind == TD_GRID || kind == TD_GRID_WINDOW) {
+        data_fill_grid(fx, kind, (uint64_t)seed, 0, nx, ny, x0, y0, wx, wy);
+        return;
+    }
+    data_make_one(fx, kind, (uint64_t)seed, 0, children, points, str_count, attr_count);
 }
 
 /* Timed trial for one serializer × mode × rep. Returns 0 on success. */
@@ -123,10 +130,12 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
     if (rc != 0) {
         fprintf(stderr, "[ERROR] %s / %s N=%d / %s: deserialize failed\n",
                 S->name, type_id, n, mode);
+        data_free_grid(&out_fx);
         if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
         return -1;
     }
     bool ok = bench_fidelity_cell(S, fx, &out_fx);
+    data_free_grid(&out_fx);
     if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
     if (!ok) {
         fprintf(stderr, "[ERROR] %s / %s N=%d / %s: fidelity failed\n",
@@ -240,6 +249,11 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             "c.get('type_config_hash',''),\n"
             "          int(tc.get('points', 32)), int(tc.get('children', 8)),\n"
             "          int(tc.get('count', 32)), int(tc.get('attr_count', 4)),\n"
+            "          int(tc.get('nx', 512)), int(tc.get('ny', 512)),\n"
+            "          int((tc.get('window') or {}).get('x0', 0)),\n"
+            "          int((tc.get('window') or {}).get('y0', 0)),\n"
+            "          int((tc.get('window') or {}).get('wx', 0)),\n"
+            "          int((tc.get('window') or {}).get('wy', 0)),\n"
             "          sep='\\t')\n");
     fclose(cspf);
     char cells_cmd[512];
@@ -251,7 +265,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     static uint8_t buf[8 * 1024 * 1024];
     const char *modes[] = { "bytes", "stream" };
     const int n_modes = 2;
-    char line[512];
+    char line[1024];
     int cells = 0;
     const char *strategy = schedule_resolve_strategy();
     int record_ro = schedule_resolve_record_run_order();
@@ -264,10 +278,11 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         char type_hash[128] = {0};
         int n = 1;
         int points = 32, children = 8, str_count = 32, attr_count = 4;
-        /* type_id \t N \t hash \t points \t children \t count \t attr_count */
-        char *toks[8] = {0};
+        int nx = 512, ny = 512, x0 = 0, y0 = 0, wx = 0, wy = 0;
+        /* type_id N hash points children count attr nx ny x0 y0 wx wy */
+        char *toks[16] = {0};
         int nt = 0;
-        for (char *t = strtok(line, "\t\r\n"); t && nt < 7; t = strtok(NULL, "\t\r\n"))
+        for (char *t = strtok(line, "\t\r\n"); t && nt < 16; t = strtok(NULL, "\t\r\n"))
             toks[nt++] = t;
         if (nt < 2) continue;
         strncpy(type_id, toks[0], sizeof type_id - 1);
@@ -282,6 +297,13 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         if (nt >= 5) children = atoi(toks[4]);
         if (nt >= 6) str_count = atoi(toks[5]);
         if (nt >= 7) attr_count = atoi(toks[6]);
+        if (nt >= 9) { nx = atoi(toks[7]); ny = atoi(toks[8]); }
+        if (nt >= 13) {
+            x0 = atoi(toks[9]);
+            y0 = atoi(toks[10]);
+            wx = atoi(toks[11]);
+            wy = atoi(toks[12]);
+        }
         if (n < 1) n = 1;
         if (points < 0) points = 0;
         printf("[PROGRESS] Cell %s N=%d hash=%s points=%d\n",
@@ -296,7 +318,8 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         }
         for (int i = 0; i < n; i++) {
             fill_v2_fixture(&items[i], type_id, (int)seed + cells * 1000 + i,
-                            children, points, str_count, attr_count);
+                            children, points, str_count, attr_count,
+                            nx, ny, x0, y0, wx, wy);
             items[i].batch_n = 1;
             items[i].batch = NULL;
             items[i].name = type_id;
@@ -395,8 +418,12 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             }
         }
         free(name_owned);
-        if (items) free(items);
-        else if (fx.batch) free(fx.batch);
+        if (n == 1) {
+            data_free_grid(&fx);
+        } else if (fx.batch) {
+            for (int i = 0; i < n; i++) data_free_grid(&fx.batch[i]);
+            free(fx.batch);
+        }
     }
     pclose(cp);
     unlink(tmpj);

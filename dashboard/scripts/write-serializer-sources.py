@@ -453,6 +453,37 @@ SPECIFICS: dict[str, str] = {
         "uncompressed. Apache ORC's own C++ and Java writers default to Zlib; "
         "this binding does not. table_project passes columns=['f_float_0'] on read."
     ),
+    "hdf5-c": (
+        "The HDF5 C API is the baseline the other bindings call. This row "
+        "times one contiguous float64 dataset named grid on the core virtual "
+        "file driver. The byte size is the flushed file image. grid_window "
+        "reads an interior hyperslab. The row does not time the five suite types."
+    ),
+    "highfive": (
+        "HighFive is the header-only C++ API most scientific code uses for "
+        "HDF5. This row times one contiguous float64 dataset named grid. "
+        "grid_window reads an interior hyperslab. The buffer is the file. "
+        "The row does not time the five suite types."
+    ),
+    "PureHDF": (
+        "PureHDF is a managed C# HDF5 reader and writer. It does not call "
+        "libhdf5. This row times one float64 dataset named grid. grid_window "
+        "reads a hyperslab selection. The string path carries the file bytes "
+        "as Latin-1 so the size is the file length. The row does not time "
+        "the five suite types."
+    ),
+    "h5wasm": (
+        "h5wasm compiles HDF5 to WebAssembly. This row times one float64 "
+        "dataset named grid in the WASM memory filesystem. grid_window reads "
+        "a dataset slice, which is a libhdf5 hyperslab. The row does not time "
+        "the five suite types."
+    ),
+    "hdf5-metno": (
+        "hdf5-metno is the maintained Rust binding for HDF5, the active fork "
+        "of hdf5-rust. This row times one contiguous float64 dataset named "
+        "grid. grid_window reads a hyperslab. The buffer is the file. The row "
+        "does not time the five suite types."
+    ),
     "h5py": (
         "h5py is the standard Python binding for HDF5. This row times the "
         "array data set: one contiguous float64 dataset named grid on the "
@@ -1954,6 +1985,11 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "pydantic"): "pydantic",
     ("python", "mashumaro"): "mashumaro",
     ("python", "serpyco-rs"): "serpyco-rs",
+    ("c", "hdf5"): "hdf5-c",
+    ("cpp", "highfive"): "highfive",
+    ("csharp", "PureHDF"): "PureHDF",
+    ("javascript", "h5wasm"): "h5wasm",
+    ("rust", "hdf5-metno"): "hdf5-metno",
     ("python", "h5py"): "h5py",
     ("python", "netCDF4"): "netCDF4",
     ("python", "adios2"): "adios2-python",

@@ -331,9 +331,27 @@ namespace GLD.SerializerBenchmark
             }
 
             string errorText;
-            var expected = string.Equals(original.Name, "table_project", StringComparison.Ordinal)
-                ? ProjectFFloat0(original.Data)
-                : original.Data;
+            object expected = original.Data;
+            if (string.Equals(original.Name, "table_project", StringComparison.Ordinal))
+                expected = ProjectFFloat0(original.Data);
+            else if (original.Data is TestData.V2.Grid grid &&
+                     (string.Equals(original.Name, "grid", StringComparison.Ordinal) ||
+                      string.Equals(original.Name, "grid_window", StringComparison.Ordinal)))
+            {
+                expected = string.Equals(original.Name, "grid_window", StringComparison.Ordinal)
+                    ? grid.WindowValues()
+                    : grid.Values;
+                if (!ExactDoubles((double[])expected, processed as double[], out errorText))
+                {
+                    error.ErrorText = errorText;
+                    isRepeatedError = !error.TryAddTo(errors);
+                    if (log != null) log.FidelityScore = 0.0;
+                    return;
+                }
+                if (log != null) log.FidelityScore = 1.0;
+                logStorage.Write(log);
+                return;
+            }
             if (Comparer.Compare(expected, processed, out errorText, log, false))
             {
                 logStorage.Write(log);
@@ -348,6 +366,28 @@ namespace GLD.SerializerBenchmark
         /// <summary>
         /// table_project fidelity expects f_float_0 only, length N, including N=1.
         /// </summary>
+        private static bool ExactDoubles(double[] expected, double[] actual, out string errorText)
+        {
+            if (actual == null || expected == null || actual.Length != expected.Length)
+            {
+                errorText = string.Format(
+                    "Comparison Error: grid length {0} != {1}",
+                    expected == null ? -1 : expected.Length,
+                    actual == null ? -1 : actual.Length);
+                return false;
+            }
+            for (var i = 0; i < expected.Length; i++)
+            {
+                if (BitConverter.DoubleToInt64Bits(expected[i]) != BitConverter.DoubleToInt64Bits(actual[i]))
+                {
+                    errorText = string.Format("Comparison Error: grid value {0} != {1} at {2}", expected[i], actual[i], i);
+                    return false;
+                }
+            }
+            errorText = null;
+            return true;
+        }
+
         private static List<double> ProjectFFloat0(object data)
         {
             if (data is TestData.V2.TableRow row)

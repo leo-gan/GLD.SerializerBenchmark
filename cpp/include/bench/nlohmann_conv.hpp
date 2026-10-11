@@ -159,7 +159,7 @@ inline nlohmann::json value_to_json(const Value& v) {
   return std::visit(
       [](const auto& x) -> nlohmann::json {
         using T = std::decay_t<decltype(x)>;
-        if constexpr (is_graph_alt_v<T>) {
+        if constexpr (is_graph_alt_v<T> || is_array_alt_v<T>) {
           throw std::runtime_error("json: graph type unsupported");
         } else {
           return x;

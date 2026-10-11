@@ -1,33 +1,33 @@
 # Array bindings by language
 
-The array data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. A row is registered only when the language has a maintained library that writes that array and reads the window back through its own API. A one-off call into the C library is not a separate row.
+The array data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. A row is registered when a maintained library writes that array and reads the window through its own API. A one-off call into the C library, written only for this benchmark, is not a row.
 
-Fortran already times `hdf5-fortran`, `netcdf-fortran`, and `adios2`. This page is the survey for the other languages.
+NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already times HDF5 would measure the same container again, so new languages on this track are HDF5 only. Fortran and Python keep the NetCDF and ADIOS2 rows that were already published. ADIOS2's own bindings are C++, C, Fortran, Python, and Matlab. No further ADIOS2 row is added: the C and C++ engines are the same library Fortran and Python already call, and the other languages have no binding.
 
 ## Registered
 
 | Language | HDF5 | NetCDF | ADIOS2 |
 |----------|------|--------|--------|
+| C | `hdf5` | | |
+| C++ | `highfive` | | |
+| C# | `PureHDF` | | |
 | Fortran | `hdf5-fortran` | `netcdf-fortran` | `adios2` |
+| JavaScript | `h5wasm` | | |
 | Python | `h5py` | `netCDF4` | `adios2` |
+| Rust | `hdf5-metno` | | |
 
-Python `h5py` uses the HDF5 core driver. `netCDF4` writes a NetCDF-4 file. `adios2` is the official Python API and writes a serial BP5 directory. All three are bytes rows on `config/library/array.yaml`. They do not time the five suite types.
+`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the C# string path carries the file bytes as Latin-1 so the size is the file length. Every window read is a hyperslab, a slice, or a selection. These rows do not time the five suite types.
 
 ## Not registered
 
 | Language | Why there is no row |
 |----------|---------------------|
-| C | The HDF Group C API, the Unidata NetCDF C API, and the ADIOS2 C API are the libraries the other bindings call. This suite already times those libraries from Fortran and Python. A C row would be the same library again. |
-| C++ | HDF5's C++ API, netCDF-CXX4, and ADIOS2's C++ API are the native cores. ADIOS2's C++ core is what the Fortran and Python rows call. A second timing of that core is not a new standard. |
-| C# | PureHDF reads and writes HDF5, and several NetCDF packages are P/Invoke over the C library. There is no maintained ADIOS2 binding. The set is not complete enough for one comparison cell. |
-| Go | `gonum.org/v1/hdf5` is archived. Pure-Go HDF5 writers are incomplete. Go NetCDF libraries are either classic-format only or cgo. ADIOS2 has no Go binding. |
-| Java | The HDF Group ships a Java binding, and Unidata ships NetCDF-Java. ADIOS2 does not. The three standards would not be the same set. |
-| JavaScript | `h5wasm` and `jsfive` cover HDF5 reads, and `netcdfjs` reads NetCDF. None of them is a maintained writer for all three standards. ADIOS2 has no JavaScript binding. |
-| Kotlin | A Kotlin row would call the Java libraries. Those Java libraries are not registered, for the reason above. |
-| Mojo | No HDF5, NetCDF, or ADIOS2 library. |
-| PHP | No maintained writer for these formats. |
-| Rust | The `hdf5` and `netcdf` crates bind the C libraries. ADIOS2 has no Rust binding. The set is not complete. |
-| Swift | No maintained writer. Calling HDF5 or NetCDF through a C import would time the C library plus an FFI crossing. |
+| Go | `gonum.org/v1/hdf5` is archived. There is no maintained writer for the array contract. |
+| Java | The HDF Group Java binding is a native installer, not a Maven dependency this runner can build. JHDF is read-focused. |
+| Kotlin | A Kotlin row would call the Java libraries. Those are not registered. |
+| Mojo | No HDF5 library. A hand-written C FFI is not a separate row. |
+| PHP | No maintained writer. |
+| Swift | No maintained writer. A C import would time libhdf5 plus an FFI crossing this suite did not write a library for. |
 | Zig | No maintained writer. The same FFI crossing applies. |
 
-ADIOS2's own bindings are C++, C, Fortran, Python, and Matlab. Languages outside that list stay off this data set.
+PyTables, xarray, h5netcdf, and SciPy's classic NetCDF reader are not extra Python rows. xarray is not a format. The others sit on HDF5 or on NetCDF-3, and Python already times `h5py` and `netCDF4`.

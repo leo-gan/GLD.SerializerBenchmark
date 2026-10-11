@@ -27,6 +27,11 @@
         "version": "0.6.3",
         "specifics": "flatcc is the maintained C implementation of FlatBuffers. FlatBuffers was created at Google so games and other clients could read serialized data without a parsing/unpacking step. flatcc solves the C side with a schema compiler and a C builder/reader."
       },
+      "hdf5": {
+        "source_url": "https://www.hdfgroup.org/solutions/hdf5/",
+        "version": "1.10.7",
+        "specifics": "The HDF5 C API is the baseline the other bindings call. This row times one contiguous float64 dataset named grid on the core virtual file driver. The byte size is the flushed file image. grid_window reads an interior hyperslab. The row does not time the five suite types."
+      },
       "ion-c": {
         "source_url": "https://github.com/amazon-ion/ion-c",
         "version": "1.1.6",
@@ -152,6 +157,11 @@
       "boost_serialization": {
         "source_url": "https://github.com/boostorg/serialization",
         "specifics": "Boost.Serialization is the classic C++ archive framework. It was created so C++ programs could persist object graphs portably across Boost archives. This row times the binary archive."
+      },
+      "highfive": {
+        "source_url": "https://github.com/highfive-devs/highfive",
+        "version": "2.10.1",
+        "specifics": "HighFive is the header-only C++ API most scientific code uses for HDF5. This row times one contiguous float64 dataset named grid. grid_window reads an interior hyperslab. The buffer is the file. The row does not time the five suite types."
       },
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto",
@@ -547,6 +557,11 @@
         "source_url": "https://github.com/aaubry/YamlDotNet",
         "version": "17.1.0",
         "specifics": "YamlDotNet is the usual YAML library for .NET. YAML exists as a human-friendly config language. YamlDotNet implements YAML 1.1/1.2 serialize/deserialize."
+      },
+      "PureHDF": {
+        "source_url": "https://github.com/Apollo3zehn/PureHDF",
+        "version": "2.2.0",
+        "specifics": "PureHDF is a managed C# HDF5 reader and writer. It does not call libhdf5. This row times one float64 dataset named grid. grid_window reads a hyperslab selection. The string path carries the file bytes as Latin-1 so the size is the file length. The row does not time the five suite types."
       },
       "ZeroFormatter": {
         "source_url": "https://github.com/neuecc/ZeroFormatter",
@@ -975,6 +990,11 @@
         "source_url": "https://codeberg.org/mzaks/dagr",
         "version": "2026.10.1",
         "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type."
+      },
+      "h5wasm": {
+        "source_url": "https://github.com/usnistgov/h5wasm",
+        "version": "0.10.3",
+        "specifics": "h5wasm compiles HDF5 to WebAssembly. This row times one float64 dataset named grid in the WASM memory filesystem. grid_window reads a dataset slice, which is a libhdf5 hyperslab. The row does not time the five suite types."
       },
       "devalue": {
         "source_url": "https://github.com/Rich-Harris/devalue",
@@ -1624,6 +1644,11 @@
         "source_url": "https://github.com/google/flatbuffers",
         "version": "2.0.0",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "hdf5-metno": {
+        "source_url": "https://github.com/metno/hdf5-rust",
+        "version": "0.15.0",
+        "specifics": "hdf5-metno is the maintained Rust binding for HDF5, the active fork of hdf5-rust. This row times one contiguous float64 dataset named grid. grid_window reads a hyperslab. The buffer is the file. The row does not time the five suite types."
       },
       "ion-rs": {
         "source_url": "https://github.com/amazon-ion/ion-rust",

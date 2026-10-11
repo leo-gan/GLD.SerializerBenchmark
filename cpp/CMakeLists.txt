@@ -229,6 +229,7 @@ set(BENCH_SOURCES
   src/serializers/ser_columnar.cpp
   src/serializers/ser_sbe.cpp
   src/serializers/ser_dagr.cpp
+  src/serializers/ser_highfive.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -291,6 +292,26 @@ if(EXISTS ${DAGR_RECEIPT})
 endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${DAGR_RECEIPT})
 
+set(BENCH_HAS_HIGHFIVE 0)
+if(PkgConfig_FOUND)
+  pkg_check_modules(HDF5 QUIET hdf5)
+endif()
+if(HDF5_FOUND)
+  FetchContent_Declare(highfive
+    GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
+    GIT_TAG v2.10.1
+    GIT_SHALLOW TRUE
+  )
+  FetchContent_GetProperties(highfive)
+  if(NOT highfive_POPULATED)
+    FetchContent_Populate(highfive)
+  endif()
+  set(BENCH_HAS_HIGHFIVE 1)
+  message(STATUS "serializer: highfive REAL (HDF5 ${HDF5_VERSION})")
+else()
+  message(STATUS "serializer: highfive SKIPPED (libhdf5 not found)")
+endif()
+
 add_executable(serializer_benchmark_cpp ${BENCH_SOURCES})
 set_source_files_properties(src/serializers/ser_sbe.cpp PROPERTIES COMPILE_OPTIONS "-Wno-macro-redefined")
 
@@ -304,6 +325,14 @@ target_include_directories(serializer_benchmark_cpp PRIVATE
   ${CPP_TP}/msgpack-c/include
   ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
+if(BENCH_HAS_HIGHFIVE)
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_HIGHFIVE=1)
+  target_include_directories(serializer_benchmark_cpp PRIVATE
+    ${highfive_SOURCE_DIR}/include ${HDF5_INCLUDE_DIRS})
+  target_link_directories(serializer_benchmark_cpp PRIVATE ${HDF5_LIBRARY_DIRS})
+  target_link_libraries(serializer_benchmark_cpp PRIVATE ${HDF5_LIBRARIES})
+endif()
+
 target_link_libraries(serializer_benchmark_cpp PRIVATE
   nlohmann_json::nlohmann_json
   glaze::glaze
@@ -384,6 +413,7 @@ set(TEST_SOURCES
   tests/test_columnar.cpp
   tests/test_graph.cpp
   src/serializers/ser_dagr.cpp
+  src/serializers/ser_highfive.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -418,6 +448,13 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   ZLIB::ZLIB
   yaml-cpp::yaml-cpp
 )
+if(BENCH_HAS_HIGHFIVE)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_HIGHFIVE=1)
+  target_include_directories(cpp_serializer_tests PRIVATE
+    ${highfive_SOURCE_DIR}/include ${HDF5_INCLUDE_DIRS})
+  target_link_directories(cpp_serializer_tests PRIVATE ${HDF5_LIBRARY_DIRS})
+  target_link_libraries(cpp_serializer_tests PRIVATE ${HDF5_LIBRARIES})
+endif()
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)
 elseif(TARGET msgpackc-cxx)
