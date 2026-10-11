@@ -1557,6 +1557,21 @@
         "source_url": "https://github.com/yaml/pyyaml",
         "version": "6.0.3",
         "specifics": "PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load."
+      },
+      "h5py": {
+        "source_url": "https://docs.h5py.org/",
+        "version": "3.16.0",
+        "specifics": "h5py is the standard Python binding for HDF5. This row times the array data set: one contiguous float64 dataset named grid on the core virtual file driver. The byte size is the flushed file image. grid_window reads an interior hyperslab. The row does not time the five suite types."
+      },
+      "netCDF4": {
+        "source_url": "https://unidata.github.io/netcdf4-python/",
+        "version": "1.7.4",
+        "specifics": "netCDF4 is the Python interface to the NetCDF C library. This row times one float64 variable named grid in a NetCDF-4 file. grid_window reads that variable with a 0-based slice. The returned buffer is the file. The row does not time the five suite types."
+      },
+      "adios2": {
+        "source_url": "https://github.com/ornladios/ADIOS2",
+        "version": "2.12.1.1001",
+        "specifics": "adios2 is the official ADIOS2 Python API. The engine is BP5 and MPI is off. This row times one float64 variable named grid. grid_window reads with a 0-based start and count. The buffer is a packed copy of the BP5 directory. The row does not time the five suite types."
       }
     },
     "rust": {

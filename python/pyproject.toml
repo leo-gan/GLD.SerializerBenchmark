@@ -33,6 +33,9 @@ dependencies = [
     "py-ubjson>=0.16,<1",
     "newsmile>=1.1,<2",
     "pyarrow>=25.0.1,<26",
+    "h5py>=3.16,<4",
+    "netCDF4>=1.7,<2",
+    "adios2>=2.10,<3",
 ]
 
 [project.optional-dependencies]

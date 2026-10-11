@@ -152,6 +152,15 @@
       "orc": [
         "orc"
       ],
+      "h5py": [
+        "hdf5"
+      ],
+      "netCDF4": [
+        "netcdf"
+      ],
+      "adios2": [
+        "adios2"
+      ],
       "orc-uncompressed": [
         "orc"
       ],

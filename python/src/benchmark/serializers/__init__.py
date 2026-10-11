@@ -24,6 +24,7 @@ from .human_yaml import PyYamlSerializer
 from .native_pickle import PickleSerializer
 from .native_cloudpickle import CloudpickleSerializer
 from .native_dill import DillSerializer
+from .array_scientific import Adios2Serializer, H5pySerializer, NetCdf4Serializer
 
 __all__ = [
     "Serializer",
@@ -46,6 +47,9 @@ __all__ = [
     "PickleSerializer",
     "CloudpickleSerializer",
     "DillSerializer",
+    "H5pySerializer",
+    "NetCdf4Serializer",
+    "Adios2Serializer",
     "ArrowIpcSerializer",
     "ParquetSerializer",
     "ParquetUncompressedSerializer",
