@@ -29,7 +29,8 @@ Catalog: `compliance/data/netcdf/`. Inputs are hex.
 
 ## Fortran serializer
 
-`netcdf-fortran` times the official Fortran API on a real NetCDF-4 file.
+`netcdf-fortran` times the official Fortran API on the array data set
+(`grid` and `grid_window`) as a real NetCDF-4 file.
 `NF90_DISKLESS` discards the file on close, so that flag is not a bytes
 row. The benchmark publishes the file timing through `config/file-only.txt`.
 It does not decode this corpus.

@@ -140,7 +140,7 @@ Standard and Data Set are labels on rows the suite already measures. The machine
 | Dimension | Where it comes from | Values |
 |-----------|---------------------|--------|
 | **Standard** | [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) | `json`, `avro`, `parquet`, … |
-| **Data Set** | `data_set` on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) | `suite` (message, document, telemetry, strings, event), `columnar` (table, table_project, nested_table, signal), and `graph` (graph) |
+| **Data Set** | `data_set` on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) | `suite` (message, document, telemetry, strings, event), `columnar` (table, table_project, nested_table, signal), `graph` (graph), and `array` (grid, grid_window) |
 | **Data Type** | the type id, child of its Data Set | `message`, `table`, … |
 
 An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.

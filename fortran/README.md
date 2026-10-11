@@ -1,6 +1,6 @@
 # Fortran runner
 
-Six pure-Fortran rows are bytes: json-fortran, jonquil, rojff, toml-f, fortran-messagepack, and custom-binary. hdf5-fortran is bytes on the HDF5 core driver. netcdf-fortran and adios2 are file-only (stream/native). The compiler check requires gfortran 13.
+Six pure-Fortran rows are bytes on the suite types: json-fortran, jonquil, rojff, toml-f, fortran-messagepack, and custom-binary. `hdf5-fortran`, `netcdf-fortran`, and `adios2` time the array data set (`grid`, `grid_window`) from `config/library/array.yaml`. `hdf5-fortran` is bytes on the HDF5 core driver. `netcdf-fortran` and `adios2` are file-only (stream/native). The compiler check requires gfortran 13.
 
 GNU Fortran 11 or newer, zlib, libzstd, and [fpm](https://fpm.fortran-lang.org/) 0.13.
 
@@ -10,8 +10,11 @@ GNU Fortran 11 or newer, zlib, libzstd, and [fpm](https://fpm.fortran-lang.org/)
 ./scripts/install-host-requirements.sh fortran   # fpm into ~/.local/bin
 ./scripts/check-host-requirements.sh fortran
 ./fortran/scripts/run-benchmarks.sh smoke        # json-fortran, message
-./fortran/scripts/run-benchmarks.sh all-single   # every row, 10 repetitions
-./fortran/scripts/run-benchmarks.sh full         # every row, 100 repetitions
+./fortran/scripts/run-benchmarks.sh all-single   # suite rows, 10 repetitions
+./fortran/scripts/run-benchmarks.sh full         # suite rows, 100 repetitions
+# Array data set (grid and grid_window). Not part of the suite matrix.
+BENCHMARK_RUN_CONFIG=config/library/array-smoke.yaml \
+  ./fortran/scripts/run-benchmarks.sh smoke "hdf5-fortran,netcdf-fortran,adios2"
 ```
 
 `FPM_FC` selects the compiler. The default is `gfortran`.

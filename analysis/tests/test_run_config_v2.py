@@ -35,6 +35,8 @@ def test_catalog_loads_suite_types():
         "nested_table",
         "signal",
         "graph",
+        "grid",
+        "grid_window",
     }
 
 
@@ -133,6 +135,36 @@ def test_graph_run_config_cell_counts():
     assert cfg["order_count"] == 32
     assert cfg["region_count"] == 4
     assert cfg["ring_size"] == 8
+
+
+def test_array_run_configs_cell_counts():
+    smoke = resolve_run_config(_LIBRARY / "array-smoke.yaml", catalog_path=_CATALOG, seed=42)
+    assert smoke["cell_count"] == 2
+    assert {(c["type_id"], c["data_type_instance_count"]) for c in smoke["cells"]} == {
+        ("grid", 1),
+        ("grid_window", 1),
+    }
+    full = resolve_run_config(_LIBRARY / "array.yaml", catalog_path=_CATALOG, seed=42)
+    assert full["cell_count"] == 2
+    by_id = {c["type_id"]: c for c in full["cells"]}
+    assert by_id["grid"]["type_config"]["nx"] == 512
+    assert by_id["grid"]["type_config"]["ny"] == 512
+    assert "window" not in by_id["grid"]["type_config"]
+    window = by_id["grid_window"]["type_config"]["window"]
+    assert window == {"x0": 128, "y0": 64, "wx": 256, "wy": 128}
+    assert by_id["grid"]["type_config_hash"] != by_id["grid_window"]["type_config_hash"]
+    assert full["compression"]["mode"] == "none"
+    assert full["execution"]["io_modes"] == ["bytes"]
+
+
+def test_grid_window_must_lie_inside_the_array():
+    cat = load_catalog(_CATALOG)
+    with pytest.raises(RunConfigError, match="does not lie inside"):
+        resolve_type_config(
+            "grid_window",
+            {"window": {"x0": 400, "y0": 0, "wx": 256, "wy": 128}},
+            cat,
+        )
 
 
 def test_signal_schema_field_order():

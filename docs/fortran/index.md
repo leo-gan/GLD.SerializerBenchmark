@@ -5,7 +5,7 @@ title: "Fortran"
 Fortran
 ===
 
-Six rows are pure Fortran: three JSON libraries (json-fortran, jonquil, rojff), TOML (toml-f), MessagePack (fortran-messagepack), and an in-tree little-endian baseline (custom-binary). Those rows are **bytes**. `hdf5-fortran` is the official HDF5 Fortran API on the core virtual file driver, so it is also bytes. `netcdf-fortran` and `adios2` have no bytes API. Their CSV rows are `stream` / `native`, and they are published through `config/file-only.txt`.
+Six rows are pure Fortran: three JSON libraries (json-fortran, jonquil, rojff), TOML (toml-f), MessagePack (fortran-messagepack), and an in-tree little-endian baseline (custom-binary). Those rows are **bytes** on the five suite types. `hdf5-fortran`, `netcdf-fortran`, and `adios2` time the array data set (`grid` and `grid_window`) from `config/library/array.yaml`. They do not emit suite rows, so they stay out of `all@`. `hdf5-fortran` is the official HDF5 Fortran API on the core virtual file driver, so it is bytes. `netcdf-fortran` and `adios2` have no bytes API. Their CSV rows are `stream` / `native`, and they are published through `config/file-only.txt`.
 
 Numbers for this language appear on the [Dashboard](../dashboard/?lang=fortran) after a publication run. These times cannot be ranked against another language.
 
@@ -33,7 +33,7 @@ The timed call is the library's own string or buffer API: build the document, se
 
 json-fortran is built with `-DINT64` and `-DREAL64`, so `json_IK` is int64 and epoch milliseconds stay JSON integers. rojff's integer kind is the compiler default, int32. Values outside that range are JSON numbers and are read back with `nint`. They are exact below 2^53. fortran-messagepack stores those timestamps as MessagePack integers.
 
-`hdf5-fortran` times `H5Pset_fapl_core` with backing store off. The byte size is `H5Fget_file_image` after a global flush. Bool is int8 0/1. Strings are fixed-length 48-byte fields plus a length, because this HDF5 1.10 Fortran module does not export a variable-length string type. `netcdf-fortran` does not use `NF90_DISKLESS`: that flag discards the file on close, so there is no buffer and no honest size. The row times a real NetCDF-4 file. `adios2` is the official Fortran binding over the C++ core, serial, MPI off, engine BP5. BP5 writes a directory. The size is the sum of the file sizes.
+`hdf5-fortran`, `netcdf-fortran`, and `adios2` write one float64 dataset named `grid` (512×512) and read it back. `grid_window` writes that same array and reads the interior window at `(128, 64)` size `256×128`. `hdf5-fortran` times `H5Pset_fapl_core` with backing store off. The byte size is `H5Fget_file_image` after a global flush. The window read is `H5Sselect_hyperslab`. `netcdf-fortran` does not use `NF90_DISKLESS`: that flag discards the file on close, so there is no buffer and no honest size. The row times a real NetCDF-4 file. The window read passes 1-based `start` and `count`. `adios2` is the official Fortran binding over the C++ core, serial, MPI off, engine BP5. BP5 writes a directory. The size is the sum of the file sizes. The window read is `adios2_set_selection`. IO declaration and the BP5 engine selection sit outside the repetition clock.
 
 A batch of more than one record is a table with a `records` array, including the JSON rows. TOML has no bare array at the root, and one envelope keeps the readers aligned.
 
@@ -70,9 +70,9 @@ How to install the toolchain and run the benchmark: [`fortran/README.md`](https:
 | [toml-f](https://github.com/toml-f/toml-f) | Text | toml-f/toml-f | bytes | `toml_serialize` / `toml_loads`. TOML 1.0 |
 | [fortran-messagepack](https://github.com/synthfi/fortran-messagepack) | Binary | synthfi/fortran-messagepack | bytes | `pack_alloc` / `unpack`, including int64 |
 | [custom-binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90) | Binary | harness | bytes | Little-endian length-prefixed baseline |
-| [hdf5-fortran](https://github.com/HDFGroup/hdf5) | HDF5 | HDF-Group/hdf5 | bytes | Core virtual file driver. File image after a global flush |
-| [netcdf-fortran](https://github.com/Unidata/netcdf-fortran) | NetCDF | Unidata/netcdf-fortran | file | Real NetCDF-4 file. Published as file-only. No bytes row |
-| [adios2](https://github.com/ornladios/ADIOS2) | ADIOS2 | ornladios/ADIOS2 | file | Official Fortran binding, serial BP5 directory. Published as file-only |
+| [hdf5-fortran](https://github.com/HDFGroup/hdf5) | HDF5 | HDF-Group/hdf5 | bytes | Array data set. Core driver. One dataset `grid`. Hyperslab on `grid_window` |
+| [netcdf-fortran](https://github.com/Unidata/netcdf-fortran) | NetCDF | Unidata/netcdf-fortran | file | Array data set. Real NetCDF-4 file. File-only. Window uses 1-based start |
+| [adios2](https://github.com/ornladios/ADIOS2) | ADIOS2 | ornladios/ADIOS2 | file | Array data set. Serial BP5 directory. File-only. Window uses `adios2_set_selection` |
 
 ### Specifics
 
@@ -104,15 +104,15 @@ This is the suite's length-prefixed V2 baseline, not a published format. It exis
 
 #### [hdf5-fortran](https://github.com/HDFGroup/hdf5) · `1.10.7`
 
-hdf5-fortran is the official HDF5 Fortran API. This row times the core virtual file driver: backing store off, and the byte size is the flushed file image. Bool is an int8 0/1 dataset. Strings are fixed-length 48-byte fields plus an explicit length.
+hdf5-fortran is the official HDF5 Fortran API. This row times the core virtual file driver on the array data set: one contiguous float64 dataset `grid`, backing store off, and the byte size is the flushed file image. `grid_window` reads an interior hyperslab.
 
 #### [netcdf-fortran](https://github.com/Unidata/netcdf-fortran)
 
-netcdf-fortran is the official NetCDF Fortran API. `NF90_DISKLESS` discards the file on close, so this row times a real NetCDF-4 file. The CSV mode is stream, StreamMode is native, and the size is the file size. It is published through `config/file-only.txt`.
+netcdf-fortran is the official NetCDF Fortran API. `NF90_DISKLESS` discards the file on close, so this row times a real NetCDF-4 file on the array data set: one `NF90_DOUBLE` variable `grid`. `grid_window` reads with 1-based `start` and `count`. The CSV mode is stream, StreamMode is native, and the size is the file size. It is published through `config/file-only.txt`.
 
 #### [adios2](https://github.com/ornladios/ADIOS2) · `2.10.2`
 
-adios2 is the official ADIOS2 Fortran binding over the C++ core. The build is serial, MPI is off, and the engine is BP5. BP5 writes a directory and the API has no bytes buffer. The size is the sum of the file sizes. It is published through `config/file-only.txt`.
+adios2 is the official ADIOS2 Fortran binding over the C++ core. The build is serial, MPI is off, and the engine is BP5. This row times one float64 variable `grid` in a BP5 directory. `grid_window` sets a 0-based selection before get. The API has no bytes buffer. The size is the sum of the file sizes. It is published through `config/file-only.txt`.
 
 ## Not registered
 

@@ -4,8 +4,9 @@ module bench_data
   private
   public :: fixture_t, message_t, document_t, telemetry_t, strings_t, event_t
   public :: kind_message, kind_document, kind_telemetry, kind_strings, kind_event
+  public :: kind_grid, kind_grid_window
   public :: v2_str, v2_max_children, v2_max_points, v2_max_strings, v2_max_tags, v2_max_attrs
-  public :: kind_from_name, make_one, fixtures_equal, f64_close, text_of, store_text
+  public :: kind_from_name, make_one, make_grid, grid_equal, fixtures_equal, f64_close, text_of, store_text
 
   integer, parameter :: wide_k = selected_int_kind(38)
   integer, parameter :: v2_str = 48
@@ -19,6 +20,8 @@ module bench_data
   integer, parameter :: kind_telemetry = 2
   integer, parameter :: kind_strings = 3
   integer, parameter :: kind_event = 4
+  integer, parameter :: kind_grid = 5
+  integer, parameter :: kind_grid_window = 6
   integer(int64), parameter :: base_ts_ms = 1704067200000_int64
   integer(int64), parameter :: golden = int(z'9E3779B97F4A7C15', int64)
   integer(int64), parameter :: fnv_prime = int(z'100000001B3', int64)
@@ -139,9 +142,39 @@ contains
       kind_id = kind_strings
     case ("event")
       kind_id = kind_event
+    case ("grid")
+      kind_id = kind_grid
+    case ("grid_window")
+      kind_id = kind_grid_window
     case default
       kind_id = -1
     end select
+  end function
+
+  subroutine make_grid(values, seed, kind_id, instance_index)
+    ! y outer, x inner. values(x, y) matches catalog coordinate (x-1, y-1).
+    real(real64), intent(out) :: values(:, :)
+    integer(int64), intent(in) :: seed
+    integer, intent(in) :: kind_id, instance_index
+    integer :: ix, iy, nx, ny
+    integer(int64) :: state
+    nx = size(values, 1)
+    ny = size(values, 2)
+    state = mix_seed(seed, kind_id, instance_index)
+    if (state == 0_int64) state = golden
+    do iy = 1, ny
+      do ix = 1, nx
+        values(ix, iy) = rng_f64(state)
+      end do
+    end do
+  end subroutine
+
+  function grid_equal(a, b) result(ok)
+    real(real64), intent(in) :: a(:, :), b(:, :)
+    logical :: ok
+    ok = size(a, 1) == size(b, 1) .and. size(a, 2) == size(b, 2)
+    if (.not. ok) return
+    ok = all(a == b)
   end function
 
   function u64_mod(bits, modulus) result(r)

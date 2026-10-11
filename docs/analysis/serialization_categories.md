@@ -145,6 +145,13 @@ SBE (Simple Binary Encoding) sits in this family, next to FlatBuffers-like codec
 - **Data type:** `graph` only. It is its own data set. `all@1`, `all@100`, and `all@all` do not include it. Run config: `config/library/graph.yaml` (N=1 and N=100, bytes, no compression).
 - **Examples in suite:** `dagr-regular` and `dagr-frozen` in C++, Go, JavaScript, Mojo, Python, Rust, and Swift. Python also times `pickle` and `cloudpickle`. Other rows skip the type.
 
+### Array
+
+- **Prefer when:** the payload is one dense numeric array, and a reader may want a spatial window instead of the whole array.
+- **Trade-offs:** file create and metadata dominate a tiny record. These rows are timed on a 512×512 float64 grid. They are not part of `all@`.
+- **Data types:** `grid` (full read) and `grid_window` (same write, interior window on read). Run config: `config/library/array.yaml` (N=1, no compression).
+- **Examples in suite:** Fortran `hdf5-fortran`, `netcdf-fortran`, and `adios2`. `hdf5-fortran` is the core virtual file driver. `netcdf-fortran` and `adios2` are file-only (`stream` / `native`).
+
 ### Language-native
 
 - **Prefer when:** single-runtime caches and rich graphs inside a **hard trust boundary**.

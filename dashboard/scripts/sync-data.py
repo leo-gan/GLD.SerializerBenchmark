@@ -12,11 +12,15 @@ import re
 # those groups onto the five-type snapshot. Dagr publication CSVs use names like
 # 2026-10-08-cpp-dagr-full.csv. dashboard/scripts/splice-dagr-stats.py appends
 # those groups. Graph publication CSVs use names like 2026-10-09-<lang>-graph-full.csv.
-# dashboard/scripts/splice-graph-stats.py appends those groups. Do not let this
-# script drop any of those splices.
+# dashboard/scripts/splice-graph-stats.py appends those groups.
+# Array publication CSVs use names like 2026-10-10-fortran-array-full.csv.
+# dashboard/scripts/splice-array-stats.py appends those groups and drops the
+# old suite rows for hdf5-fortran, netcdf-fortran, and adios2.
+# Do not let this script drop any of those splices.
 _RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 _COLUMNAR_TYPES = {"table", "table_project", "nested_table", "signal"}
 _GRAPH_TYPES = {"graph"}
+_ARRAY_TYPES = {"grid", "grid_window"}
 _DAGR_SERIALIZERS = {
     "dagr-frozen",
     "dagr-frozen-packed",
@@ -86,6 +90,20 @@ def _refuse_graph_loss(lang, existing_stats, new_stats):
     print("That snapshot was built by splice-graph-stats.py. Refusing to overwrite.")
     print("Set DASHBOARD_REPLACE_GRAPH=1 to replace the snapshot anyway.")
     sys.exit(1)
+
+def _refuse_array_loss(lang, existing_stats, new_stats):
+    """Abort when a sync would erase spliced array groups."""
+    lost = (_base_types(existing_stats) & _ARRAY_TYPES) - _base_types(new_stats)
+    if not lost:
+        return
+    if os.environ.get("DASHBOARD_REPLACE_ARRAY", "").strip().lower() in ("1", "true", "yes"):
+        print(f"WARNING: {lang} replacing snapshot and dropping array types {sorted(lost)}")
+        return
+    print(f"ERROR: {lang} snapshot has array types {sorted(lost)} that this sync would drop.")
+    print("That snapshot was built by splice-array-stats.py. Refusing to overwrite.")
+    print("Set DASHBOARD_REPLACE_ARRAY=1 to replace the snapshot anyway.")
+    sys.exit(1)
+
 
 def find_latest_run(lang_logs_dir):
     """Find the most recent run based on timestamped CSV files."""
@@ -209,6 +227,7 @@ def main():
         _refuse_columnar_loss(lang, existing_stats, stats_data)
         _refuse_dagr_loss(lang, existing_stats, stats_data)
         _refuse_graph_loss(lang, existing_stats, stats_data)
+        _refuse_array_loss(lang, existing_stats, stats_data)
         if stats_data:
             stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
                 "utf-8"

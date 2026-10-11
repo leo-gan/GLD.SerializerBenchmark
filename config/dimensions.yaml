@@ -14,7 +14,7 @@ standards:
       "MS Bond Json": json
 
 data_sets:
-  ids: [suite, columnar, graph]
+  ids: [suite, columnar, graph, array]
 
 # Optional I/O. The publication default stays one in-memory level.
 # A second level is stored only for opt_in, and only when honesty is

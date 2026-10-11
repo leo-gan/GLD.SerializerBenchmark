@@ -124,26 +124,65 @@ contains
 
   subroutine split_tabs(line, fields, nfields)
     character(len=*), intent(in) :: line
-    character(len=128), intent(out) :: fields(8)
+    character(len=*), intent(out) :: fields(:)
     integer, intent(out) :: nfields
-    integer :: i, start, n
+    integer :: i, start, n, cap
     nfields = 0
     fields = ""
+    cap = size(fields)
     n = len_trim(line)
     start = 1
     do i = 1, n
       if (line(i:i) == achar(9)) then
-        if (nfields >= 8) exit
+        if (nfields >= cap) exit
         nfields = nfields + 1
         if (i > start) fields(nfields) = line(start:i - 1)
         start = i + 1
       end if
     end do
-    if (start <= n .and. nfields < 8) then
+    if (start <= n .and. nfields < cap) then
       nfields = nfields + 1
       fields(nfields) = line(start:n)
     end if
   end subroutine
+
+  function ser_is_array(ser_index) result(yes)
+    integer, intent(in) :: ser_index
+    logical :: yes
+    yes = ser_index == ser_h5 .or. ser_index == ser_nc .or. ser_index == ser_ad
+  end function
+
+  function ser_selected(name, filter) result(yes)
+    ! Empty filter selects every name. A comma-separated list is exact tokens.
+    ! A filter with no comma is one exact name.
+    character(len=*), intent(in) :: name, filter
+    logical :: yes
+    integer :: i, n, start
+    character(len=128) :: token
+    yes = .false.
+    if (len_trim(filter) == 0) then
+      yes = .true.
+      return
+    end if
+    if (index(filter, ",") == 0) then
+      yes = trim(name) == trim(filter)
+      return
+    end if
+    n = len_trim(filter)
+    start = 1
+    do i = 1, n + 1
+      if (i == n + 1 .or. filter(i:i) == ",") then
+        if (i > start) then
+          token = adjustl(filter(start:i - 1))
+          if (trim(token) == trim(name)) then
+            yes = .true.
+            return
+          end if
+        end if
+        start = i + 1
+      end if
+    end do
+  end function
 
   subroutine touch_text(text)
     character(len=*), intent(in) :: text
@@ -220,9 +259,7 @@ contains
     integer(int64) :: t0, t1, t2, gz, zs
     integer(c_size_t) :: gz_c, zs_c
     integer :: out_len, stat, ro, sp
-    integer(int64), target :: mark
     integer(int64) :: size_col
-    character(len=256) :: nc_path, ad_path
     character(len=8) :: io_mode, sm_csv
     failed = .false.
     io_mode = "bytes"
@@ -253,24 +290,11 @@ contains
     case (ser_mp)
       call mp_write(items, payload, stat)
       if (stat == 0) call touch_payload(payload)
-    case (ser_h5)
-      call h5_write(items, payload, stat)
-      if (stat == 0) call touch_payload(payload)
-    case (ser_nc)
-      write(nc_path, '("/tmp/gld-fortran-nc-",I0,".nc")') c_getpid()
-      call nc_write(items, trim(nc_path), mark, stat)
-      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
-    case (ser_ad)
-      write(ad_path, '("/tmp/gld-fortran-ad-",I0,".bp")') c_getpid()
-      call ad_write(items, trim(ad_path), mark, stat)
-      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
     case default
       stat = 1
     end select
     call system_clock(t1)
     if (stat /= 0) then
-      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
-      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "serialize failed")
       failed = .true.
       return
@@ -294,29 +318,16 @@ contains
     case (ser_mp)
       call mp_read(payload, size(items), got, stat)
       call touch_payload(payload)
-    case (ser_h5)
-      call h5_read(payload, size(items), got, stat)
-      call touch_payload(payload)
-    case (ser_nc)
-      call nc_read(trim(nc_path), size(items), got, stat)
-      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
-    case (ser_ad)
-      call ad_read(trim(ad_path), size(items), got, stat)
-      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
     case default
       stat = 1
     end select
     call system_clock(t2)
     if (stat /= 0 .or. .not. allocated(got)) then
-      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
-      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "deserialize failed")
       failed = .true.
       return
     end if
     if (.not. fixtures_equal(items, got)) then
-      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
-      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
       call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "fidelity failed")
       failed = .true.
       return
@@ -324,14 +335,8 @@ contains
     select case (ser_index)
     case (ser_jf, ser_jonquil, ser_rojff, ser_toml)
       call copy_text(text, out_len)
-    case (ser_mp, ser_h5)
+    case (ser_mp)
       call copy_payload(payload, out_len)
-    case (ser_nc)
-      call slurp_file(trim(nc_path), out_len)
-      call nc_remove(trim(nc_path))
-    case (ser_ad)
-      call ad_slurp(trim(ad_path), buf, out_len, buf_cap)
-      call ad_remove(trim(ad_path))
     end select
     gz_c = 0
     zs_c = 0
@@ -346,16 +351,16 @@ contains
       run_order = run_order + 1
     end if
     size_col = int(out_len, int64)
-    if (ser_index == ser_nc .or. ser_index == ser_ad) size_col = mark
     call csv_row(io_mode, type_id, reps, rep, trim(ser_names(ser_index)), trim(ser_versions(ser_index)), &
          elapsed_ns(t0, t1), elapsed_ns(t1, t2), size_col, size(items), type_hash, ro, sp, gz, zs, &
          stream_mode=sm_csv)
   end subroutine
 
   subroutine run_cell(type_id, n, type_hash, points, children, str_count, attr_count, tag_count, &
-                      reps, filter_ser, run_order)
+                      ny, nx, x0, y0, wx, wy, reps, filter_ser, run_order)
     character(len=*), intent(in) :: type_id, type_hash, filter_ser
-    integer, intent(in) :: n, points, children, str_count, attr_count, tag_count, reps
+    integer, intent(in) :: n, points, children, str_count, attr_count, tag_count
+    integer, intent(in) :: ny, nx, x0, y0, wx, wy, reps
     integer, intent(inout) :: run_order
     type(fixture_t), allocatable :: items(:)
     integer :: kind_id, i, ready(max_sers), nready, order(max_sers), rep, pos, si
@@ -363,6 +368,11 @@ contains
     integer(c_int64_t) :: shuf
     kind_id = kind_from_name(type_id)
     if (kind_id < 0) return
+    if (kind_id == kind_grid .or. kind_id == kind_grid_window) then
+      call run_grid_cell(kind_id, ny, nx, x0, y0, wx, wy, type_id, type_hash, reps, &
+                         filter_ser, run_order)
+      return
+    end if
     allocate(items(n))
     do i = 1, n
       call make_one(items(i), kind_id, seed, i - 1, children, points, str_count, attr_count, tag_count)
@@ -370,7 +380,8 @@ contains
     nready = 0
     failed = .false.
     do i = 1, nser
-      if (len_trim(filter_ser) > 0 .and. trim(ser_names(i)) /= trim(filter_ser)) cycle
+      if (ser_is_array(i)) cycle
+      if (.not. ser_selected(ser_names(i), filter_ser)) cycle
       nready = nready + 1
       ready(nready) = i
     end do
@@ -402,10 +413,209 @@ contains
     deallocate(items)
   end subroutine
 
+  subroutine run_grid_cell(kind_id, ny, nx, x0, y0, wx, wy, type_id, type_hash, reps, &
+                           filter_ser, run_order)
+    integer, intent(in) :: kind_id, ny, nx, x0, y0, wx, wy, reps
+    character(len=*), intent(in) :: type_id, type_hash, filter_ser
+    integer, intent(inout) :: run_order
+    real(real64), allocatable :: values(:, :)
+    integer :: i, nready, ready(max_sers), order(max_sers), rep, pos, si
+    logical :: failed(max_sers), trial_failed, is_window
+    integer(c_int64_t) :: shuf
+    is_window = kind_id == kind_grid_window
+    if (nx < 1 .or. ny < 1) return
+    if (is_window .and. (wx < 1 .or. wy < 1 .or. x0 < 0 .or. y0 < 0)) return
+    if (is_window .and. (x0 + wx > nx .or. y0 + wy > ny)) return
+    allocate(values(nx, ny))
+    call make_grid(values, seed, kind_id, 0)
+    nready = 0
+    failed = .false.
+    if (ser_selected(ser_names(ser_ad), filter_ser)) then
+      call ad_setup_cell(nx, ny, i)
+      if (i /= 0) then
+        failed(ser_ad) = .true.
+        call csv_error(type_id, trim(ser_names(ser_ad)), "stream", 0, "prepare failed")
+      end if
+    end if
+    do i = 1, nser
+      if (.not. ser_is_array(i)) cycle
+      if (.not. ser_selected(ser_names(i), filter_ser)) cycle
+      nready = nready + 1
+      ready(nready) = i
+    end do
+    if (nready == 0) then
+      deallocate(values)
+      return
+    end if
+    if (use_none) then
+      do i = 1, nready
+        si = ready(i)
+        do rep = 0, reps - 1
+          if (failed(si)) exit
+          call run_grid_trial(values, is_window, x0, y0, wx, wy, type_id, reps, rep, si, &
+                              type_hash, run_order, 0, trial_failed)
+          failed(si) = trial_failed
+        end do
+      end do
+    else
+      do rep = 0, reps - 1
+        shuf = schedule_seed(int(seed, c_int64_t), trim(type_id), 1, trim(type_hash), "bytes", rep)
+        call fisher_yates(order, nready, shuf)
+        do pos = 1, nready
+          si = ready(order(pos))
+          if (failed(si)) cycle
+          call run_grid_trial(values, is_window, x0, y0, wx, wy, type_id, reps, rep, si, &
+                              type_hash, run_order, pos - 1, trial_failed)
+          failed(si) = trial_failed
+        end do
+      end do
+    end if
+    deallocate(values)
+  end subroutine
+
+  subroutine run_grid_trial(values, is_window, x0, y0, wx, wy, type_id, reps, rep, ser_index, &
+                            type_hash, run_order, pos, failed)
+    real(real64), intent(in) :: values(:, :)
+    logical, intent(in) :: is_window
+    integer, intent(in) :: x0, y0, wx, wy, reps, rep, ser_index, pos
+    character(len=*), intent(in) :: type_id, type_hash
+    integer, intent(inout) :: run_order
+    logical, intent(out) :: failed
+    real(real64), allocatable, target :: got(:, :), win(:, :)
+    integer(int8), allocatable, target :: payload(:)
+    integer(int64) :: t0, t1, t2, gz, zs
+    integer(c_size_t) :: gz_c, zs_c
+    integer :: out_len, stat, ro, sp
+    integer(int64), target :: mark
+    integer(int64) :: size_col
+    character(len=256) :: nc_path, ad_path
+    character(len=8) :: io_mode, sm_csv
+    logical :: match
+    failed = .false.
+    io_mode = "bytes"
+    sm_csv = ""
+    if (ser_index == ser_nc .or. ser_index == ser_ad) then
+      io_mode = "stream"
+      sm_csv = "native"
+    end if
+    out_len = 0
+    stat = 0
+    mark = 0
+    call system_clock(t0)
+    select case (ser_index)
+    case (ser_h5)
+      call h5_write_grid(values, payload, stat)
+      if (stat == 0) call touch_payload(payload)
+    case (ser_nc)
+      write(nc_path, '("/tmp/gld-fortran-nc-",I0,".nc")') c_getpid()
+      call nc_write_grid(values, trim(nc_path), mark, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ad)
+      write(ad_path, '("/tmp/gld-fortran-ad-",I0,".bp")') c_getpid()
+      call ad_write_grid(values, trim(ad_path), mark, stat)
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case default
+      stat = 1
+    end select
+    call system_clock(t1)
+    if (stat /= 0) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
+      call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "serialize failed")
+      failed = .true.
+      return
+    end if
+    if (is_window) allocate(win(wx, wy))
+    if (.not. is_window) allocate(got(size(values, 1), size(values, 2)))
+    select case (ser_index)
+    case (ser_h5)
+      if (is_window) then
+        call h5_read_window(payload, x0, y0, wx, wy, win, stat)
+      else
+        call h5_read_grid(payload, got, stat)
+      end if
+      if (stat == 0) call touch_payload(payload)
+    case (ser_nc)
+      if (is_window) then
+        call nc_read_window(trim(nc_path), x0, y0, wx, wy, win, stat)
+      else
+        call nc_read_grid(trim(nc_path), got, stat)
+      end if
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_ad)
+      if (is_window) then
+        call ad_read_window(trim(ad_path), x0, y0, wx, wy, win, stat)
+      else
+        call ad_read_grid(trim(ad_path), got, stat)
+      end if
+      if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case default
+      stat = 1
+    end select
+    call system_clock(t2)
+    if (stat /= 0) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
+      call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "deserialize failed")
+      failed = .true.
+      return
+    end if
+    if (is_window) then
+      match = grid_equal(win, values(x0 + 1:x0 + wx, y0 + 1:y0 + wy))
+      call black_box_bytes(c_loc(win(1, 1)), int(size(win) * 8, c_size_t))
+    else
+      match = grid_equal(got, values)
+      call black_box_bytes(c_loc(got(1, 1)), int(size(got) * 8, c_size_t))
+    end if
+    if (.not. match) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
+      call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "fidelity failed")
+      failed = .true.
+      return
+    end if
+    if (ser_index == ser_h5) then
+      call copy_payload(payload, out_len)
+    else if (ser_index == ser_nc) then
+      call slurp_file(trim(nc_path), out_len)
+      call nc_remove(trim(nc_path))
+      out_len = int(mark)
+    else
+      call ad_slurp(trim(ad_path), buf, out_len, buf_cap)
+      call ad_remove(trim(ad_path))
+      out_len = int(mark)
+    end if
+    if (out_len < 0) out_len = 0
+    if (out_len > buf_cap) then
+      if (ser_index == ser_nc) call nc_remove(trim(nc_path))
+      if (ser_index == ser_ad) call ad_remove(trim(ad_path))
+      call csv_error(type_id, trim(ser_names(ser_index)), io_mode, rep, "payload exceeds buf_cap")
+      failed = .true.
+      return
+    end if
+    gz_c = 0
+    zs_c = 0
+    if (out_len > 0) call bench_compress_sizes(c_loc(buf), int(out_len, c_size_t), gz_c, zs_c)
+    gz = int(gz_c, int64)
+    zs = int(zs_c, int64)
+    ro = -1
+    sp = -1
+    if (record_ro) then
+      ro = run_order
+      sp = pos
+      run_order = run_order + 1
+    end if
+    size_col = int(out_len, int64)
+    call csv_row(io_mode, type_id, reps, rep, trim(ser_names(ser_index)), trim(ser_versions(ser_index)), &
+         elapsed_ns(t0, t1), elapsed_ns(t1, t2), size_col, 1, type_hash, ro, sp, gz, zs, &
+         stream_mode=sm_csv)
+  end subroutine
+
   subroutine run()
     character(len=512) :: reps_txt, tsv, log_dir, ts, filter_ser, filter_data, csv_path
     character(len=1024) :: line
-    character(len=128) :: fields(8)
+    character(len=128) :: fields(16)
+    integer :: ny, nx, x0, y0, wx, wy
     integer :: reps, unit, ios, nfields, n, points, children, str_count, attr_count, tag_count
     integer :: run_order, cells
     reps_txt = arg_text(1)
@@ -448,10 +658,22 @@ contains
       if (nfields >= 6) read(fields(6), *, iostat=ios) str_count
       if (nfields >= 7) read(fields(7), *, iostat=ios) attr_count
       if (nfields >= 8) read(fields(8), *, iostat=ios) tag_count
+      ny = 0
+      nx = 0
+      x0 = 0
+      y0 = 0
+      wx = 0
+      wy = 0
+      if (nfields >= 9) read(fields(9), *, iostat=ios) ny
+      if (nfields >= 10) read(fields(10), *, iostat=ios) nx
+      if (nfields >= 11) read(fields(11), *, iostat=ios) x0
+      if (nfields >= 12) read(fields(12), *, iostat=ios) y0
+      if (nfields >= 13) read(fields(13), *, iostat=ios) wx
+      if (nfields >= 14) read(fields(14), *, iostat=ios) wy
       cells = cells + 1
       write(*, '(A,A,A,I0)') "[PROGRESS] Cell ", trim(fields(1)), " N=", n
       call run_cell(trim(fields(1)), n, trim(fields(3)), points, children, str_count, attr_count, &
-                    tag_count, reps, filter_ser, run_order)
+                    tag_count, ny, nx, x0, y0, wx, wy, reps, filter_ser, run_order)
     end do
     close(unit)
     call csv_close()

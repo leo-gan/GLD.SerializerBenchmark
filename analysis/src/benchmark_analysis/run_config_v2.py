@@ -88,12 +88,43 @@ def resolve_type_config(
     defaults = copy.deepcopy(types[type_id].get("default_type_config") or {})
     # shallow merge then nested dict merge one level for known maps
     merged: dict[str, Any] = {**defaults, **user}
-    for key in ("string_len", "int_range"):
+    for key in ("string_len", "int_range", "window"):
         if key in defaults and key in user and isinstance(defaults[key], dict) and isinstance(user[key], dict):
             merged[key] = {**defaults[key], **user[key]}
     if "primitive_types" in merged:
         merged["primitive_types"] = _resolve_primitive_types(merged["primitive_types"], catalog)
+    _check_array_config(type_id, merged)
     return merged
+
+
+def _require_int(merged: dict[str, Any], key: str, type_id: str, *, minimum: int) -> int:
+    value = merged.get(key)
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise RunConfigError(
+            f"{type_id} {key} must be an int >= {minimum}, got {value!r}"
+        )
+    return value
+
+
+def _check_array_config(type_id: str, merged: dict[str, Any]) -> None:
+    """grid and grid_window are one float64 array. The window must lie inside it."""
+    if type_id not in ("grid", "grid_window"):
+        return
+    nx = _require_int(merged, "nx", type_id, minimum=1)
+    ny = _require_int(merged, "ny", type_id, minimum=1)
+    if type_id != "grid_window":
+        return
+    window = merged.get("window")
+    if not isinstance(window, dict):
+        raise RunConfigError(f"{type_id} window must be a mapping, got {window!r}")
+    x0 = _require_int(window, "x0", type_id, minimum=0)
+    y0 = _require_int(window, "y0", type_id, minimum=0)
+    wx = _require_int(window, "wx", type_id, minimum=1)
+    wy = _require_int(window, "wy", type_id, minimum=1)
+    if x0 + wx > nx or y0 + wy > ny:
+        raise RunConfigError(
+            f"grid_window window ({x0},{y0}) {wx}x{wy} does not lie inside {nx}x{ny}"
+        )
 
 
 def _as_count_list(counts: Any, where: str) -> list[int]:

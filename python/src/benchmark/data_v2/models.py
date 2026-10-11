@@ -188,6 +188,33 @@ class Person:
     next: Person | None = None
 
 
+@dataclass
+class Grid:
+    """One dense float64 array. ``values`` is row-major: index ``y * nx + x``.
+
+    ``grid_window`` sets the interior window. ``grid`` leaves those fields at 0.
+    """
+
+    nx: int
+    ny: int
+    values: list[float]
+    x0: int = 0
+    y0: int = 0
+    wx: int = 0
+    wy: int = 0
+
+    def window_values(self) -> list[float]:
+        out: list[float] = []
+        for y in range(self.y0, self.y0 + self.wy):
+            row = y * self.nx
+            for x in range(self.x0, self.x0 + self.wx):
+                out.append(self.values[row + x])
+        return out
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 @dataclass(eq=False, repr=False)
 class Book:
     """One graph instance: shared regions and a person ring."""

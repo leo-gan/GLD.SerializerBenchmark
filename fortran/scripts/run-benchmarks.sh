@@ -26,7 +26,12 @@ esac
 REPS="$(bench_mode_reps "$MODE")"
 if [[ "$MODE" == "smoke" ]]; then
   FILTER_SER="${FILTER_SER:-json-fortran}"
-  FILTER_DATA="${FILTER_DATA:-message}"
+  # Suite smoke stays on message. A caller that sets BENCHMARK_RUN_CONFIG
+  # (array-smoke, for example) keeps every type in that file unless they
+  # pass a data filter as the third argument.
+  if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+    FILTER_DATA="${FILTER_DATA:-message}"
+  fi
 fi
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
@@ -61,6 +66,12 @@ for c in d["cells"]:
         int(tc.get("count", 32)),
         int(tc.get("attr_count", 4)),
         int(tc.get("tag_count", 2)),
+        int(tc.get("ny", 0)),
+        int(tc.get("nx", 0)),
+        int((tc.get("window") or {}).get("x0", 0)),
+        int((tc.get("window") or {}).get("y0", 0)),
+        int((tc.get("window") or {}).get("wx", 0)),
+        int((tc.get("window") or {}).get("wy", 0)),
         sep="\t",
     )
 ' > "$CELLS"

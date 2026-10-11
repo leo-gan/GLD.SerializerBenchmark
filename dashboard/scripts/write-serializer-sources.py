@@ -1837,24 +1837,28 @@ SPECIFICS: dict[str, str] = {
     ),
     "hdf5-fortran": (
         "hdf5-fortran is the official HDF5 Fortran API. This row times the "
-        "core virtual file driver: backing store off, and the byte size is "
-        "the flushed file image. Bool is an int8 0/1 dataset. Strings are "
-        "fixed-length 48-byte fields plus an explicit length, because this "
-        "HDF5 1.10 Fortran module does not export a variable-length string type."
+        "array data set: one contiguous float64 dataset named grid, on the "
+        "core virtual file driver with backing store off. The byte size is "
+        "the flushed file image. grid_window reads an interior hyperslab. "
+        "The row does not time the five suite types."
     ),
     "netcdf-fortran": (
         "netcdf-fortran is the official NetCDF Fortran API. NF90_DISKLESS "
         "discards the file on close, so there is no buffer and no honest size. "
-        "This row times a real NetCDF-4 file. The CSV mode is stream, StreamMode "
-        "is native, and the size is the file size. It is published through "
-        "config/file-only.txt."
+        "This row times one NF90_DOUBLE variable named grid in a real NetCDF-4 "
+        "file. grid_window reads with a 1-based start and count. The CSV mode "
+        "is stream, StreamMode is native, and the size is the file size. It is "
+        "published through config/file-only.txt. The row does not time the five "
+        "suite types."
     ),
     "adios2": (
         "adios2 is the official ADIOS2 Fortran binding over the C++ core. The "
         "build is serial, MPI is off, and the engine is BP5. BP5 writes a "
-        "directory and the API has no bytes buffer. This row times that "
-        "directory. The CSV mode is stream, StreamMode is native, and the size "
-        "is the sum of the file sizes. It is published through config/file-only.txt."
+        "directory and the API has no bytes buffer. This row times one float64 "
+        "variable named grid. grid_window sets a 0-based selection before get. "
+        "The CSV mode is stream, StreamMode is native, and the size is the sum "
+        "of the file sizes. It is published through config/file-only.txt. The "
+        "row does not time the five suite types."
     ),
     "jonquil": (
         "Jonquil is a JSON library for Fortran, built on TOML Fortran. It "

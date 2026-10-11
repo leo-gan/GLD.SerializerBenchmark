@@ -122,7 +122,7 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 ## Test data
 
-Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event` are the row matrix. Dashboard `all@all` averages those five only. `table`, `table_project`, `nested_table`, and `signal` are separate data types, timed by `config/library/columnar.yaml` and appended to the published snapshot by `dashboard/scripts/splice-columnar-stats.py`. `graph` is its own data set and data type (shared nodes and one reference cycle), timed by `config/library/graph.yaml`. Tree codecs skip it.
+Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event` are the row matrix. Dashboard `all@all` averages those five only. `table`, `table_project`, `nested_table`, and `signal` are separate data types, timed by `config/library/columnar.yaml` and appended to the published snapshot by `dashboard/scripts/splice-columnar-stats.py`. `graph` is its own data set and data type (shared nodes and one reference cycle), timed by `config/library/graph.yaml`. Tree codecs skip it. `grid` and `grid_window` are the array data set (one dense float64 grid, and a window of that grid), timed by `config/library/array.yaml`. Fortran HDF5, NetCDF, and ADIOS2 use that set.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
 Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).

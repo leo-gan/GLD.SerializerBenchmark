@@ -35,3 +35,8 @@ main = "compliance.f90"
 name = "roundtrip"
 source-dir = "test"
 main = "test_roundtrip.f90"
+
+[[test]]
+name = "grid"
+source-dir = "test"
+main = "test_grid.f90"
