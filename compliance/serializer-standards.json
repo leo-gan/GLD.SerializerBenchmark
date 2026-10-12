@@ -170,7 +170,8 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "fory": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -246,7 +247,8 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "fory": []
     },
     "go": {
       "encoding/json": [
@@ -326,7 +328,8 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "fory": []
     },
     "java": {
       "jackson": [
@@ -611,7 +614,8 @@
       "PureHDF": [
         "hdf5"
       ],
-      "Jil": []
+      "Jil": [],
+      "fory": []
     },
     "rust": {
       "serde_json": [
@@ -674,7 +678,8 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "fory": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -777,7 +782,8 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "fory": []
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -830,7 +836,8 @@
       ],
       "gld-ion": [
         "ion"
-      ]
+      ],
+      "fory": []
     },
     "php": {
       "json": [

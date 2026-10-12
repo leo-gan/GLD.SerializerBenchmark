@@ -59,6 +59,7 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 | [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Frozen nodes, `<T>FrozenGraph`; same call path as dagr-regular |
 | [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Frozen+packed nodes, `<T>FrozenPackedGraph`; same call path as dagr-packed (direct builder) |
 | [FlatBuffers](https://github.com/google/flatbuffers) | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
+| [fory](https://github.com/apache/fory) | Binary | apache/fory | adapted | `ForyStruct` on suite value types; registration outside timing |
 | [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) | JSON | Foundation | adapted | Compact |
 | [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native | Foundation | adapted | Binary plist |
 | [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | JSON | IkigaJSON | adapted | Server JSON |
@@ -105,6 +106,10 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses ForyStruct macro-generated serializers on Swift value types.
+
 #### [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) · `Foundation`
 
 Foundation's JSONEncoder/JSONDecoder are Apple's standard Codable JSON codecs. They exist so Swift can speak JSON with the language's Codable model. On Linux this is swift-corelibs-foundation, not the Apple OS binary.
@@ -123,11 +128,11 @@ SwiftAvroCore implements Apache Avro for Swift. Avro exists for compact, schema-
 
 #### [gld-avro](https://github.com/leo-gan/gld-avro-swift) · `0.2.0`
 
-gld-avro-swift is a from-scratch Apache Avro library for Swift. Avro exists for compact, schema-driven records. This row parses the suite schema once, then times encodeGeneric and decodeGeneric.
+gld-avro is a registered serializer in the swift suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [gld-ion](https://github.com/leo-gan/gld-ion-swift) · `0.2.0`
 
-gld-ion-swift is a from-scratch Amazon Ion library for Swift. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decodeBinary on the five suite types.
+gld-ion is a registered serializer in the swift suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [SwiftBSON](https://github.com/mongodb/swift-bson) · `3.1.0`
 

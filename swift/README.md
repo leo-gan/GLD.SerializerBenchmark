@@ -7,7 +7,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 - **Codable wrappers** under `Serializers/` only see the type-erased `Fixture` API.
 - **Schema codecs** (Protobuf, FlatBuffers, Avro, Cap’n Proto, Dagr) use a domain↔native bridge in prepare / post-decode (same idea as Go protobuf / Rust prost). Conversion is not the “optimal hot path”; timed work is the library encode/decode.
 
-## Serializers (20)
+## Serializers (21)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -15,6 +15,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | IkigaJSON | JSON | IkigaJSON | Server-side JSON |
 | Foundation.PropertyListEncoder | Native | Foundation | Binary plist |
 | **BinaryCodable** | Binary | christophhagen/BinaryCodable | Pure-Swift binary Codable |
+| fory | Binary | apache/fory | Registered structs; `serialize` / `deserialize` |
 | SwiftMsgpack | Binary | swift-msgpack | MessagePack |
 | SwiftCbor | Binary | swift-cbor | CBOR |
 | SwiftBSON | Binary | swift-bson | BSON document root wrap for N>1 |

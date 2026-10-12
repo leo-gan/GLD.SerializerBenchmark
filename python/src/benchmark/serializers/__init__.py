@@ -22,6 +22,7 @@ from .schema_flatbuffers import FlatBuffersSerializer
 from .schema_dagr import DagrSerializer
 from .human_yaml import PyYamlSerializer
 from .native_pickle import PickleSerializer
+from .native_fory import ForySerializer
 from .native_cloudpickle import CloudpickleSerializer
 from .native_dill import DillSerializer
 from .array_scientific import Adios2Serializer, H5pySerializer, NetCdf4Serializer
@@ -45,6 +46,7 @@ __all__ = [
     "DagrSerializer",
     "PyYamlSerializer",
     "PickleSerializer",
+    "ForySerializer",
     "CloudpickleSerializer",
     "DillSerializer",
     "H5pySerializer",

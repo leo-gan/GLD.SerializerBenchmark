@@ -391,6 +391,13 @@ export const CATALOG = [
   { language: "cpp", name: "dagr-regular", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "cpp", name: "dagr-frozen", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "cpp", name: "dagr-frozen-packed", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "python", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "javascript", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "go", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "csharp", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "rust", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "cpp", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "swift", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

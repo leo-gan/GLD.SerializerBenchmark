@@ -55,12 +55,12 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| [arrow-ipc](https://github.com/apache/arrow-java) | Columnar | arrow-vector | ArrowStreamWriter | adapted | IPC stream bytes, not the Arrow file format. `table_project` loads `f_float_0` only |
+| [arrow-ipc](https://arrow.apache.org/docs/java/) | Columnar | arrow-vector | ArrowStreamWriter | adapted | IPC stream bytes, not the Arrow file format. `table_project` loads `f_float_0` only |
 | [avro](https://github.com/apache/avro) | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
 | [avro4k](https://github.com/avro-kotlin/avro4k) | Schema | avro4k-core | encodeToByteArray | adapted | kotlinx Avro |
 | [capnproto](https://github.com/capnproto/capnproto-java) | Schema | org.capnproto:runtime | Serialize.write/read | adapted | Generated suite schema |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers-java | FlatBufferBuilder | adapted | Generated tables; builder reuse |
-| [fory](https://github.com/apache/fory) | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [fory](https://github.com/apache/fory) | Binary | fory-kotlin 1.7.4 | serialize/deserialize | adapted | Apache Fory Kotlin module; register types before freeze |
 | [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
 | [jackson](https://github.com/FasterXML/jackson-module-kotlin) | JSON | jackson-module-kotlin | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
 | [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR + Kotlin module |
@@ -78,10 +78,10 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 | [moshi-reflect](https://github.com/square/moshi) | JSON | moshi-kotlin | KotlinJsonAdapterFactory | native | Reflection; factory added first |
 | [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java + Kotlin module |
 | [obor](https://github.com/orandja/obor) | CBOR | obor | encodeToByteArray | adapted | kotlinx CBOR alternative |
-| [orc](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | No `compress()` call. ORC 2.3.1 default is ZSTD. `blockPadding(false)` |
-| [orc-uncompressed](https://github.com/apache/orc) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | `CompressionKind.NONE`. `blockPadding(false)` |
-| [parquet](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | Snappy. parquet-java 1.18.1 defaults to UNCOMPRESSED, so this row sets the codec |
-| [parquet-uncompressed](https://github.com/apache/parquet-java) | Columnar | parquet-avro | AvroParquetWriter | adapted | `CompressionCodecName.UNCOMPRESSED` |
+| [orc](https://orc.apache.org/specification/ORCv1/) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | No `compress()` call. ORC 2.3.1 default is ZSTD. `blockPadding(false)` |
+| [orc-uncompressed](https://orc.apache.org/specification/ORCv1/) | Columnar | orc-core `nohive` | OrcFile.Writer | adapted | `CompressionKind.NONE`. `blockPadding(false)` |
+| [parquet](https://parquet.apache.org/docs/file-format/) | Columnar | parquet-avro | AvroParquetWriter | adapted | Snappy. parquet-java 1.18.1 defaults to UNCOMPRESSED, so this row sets the codec |
+| [parquet-uncompressed](https://parquet.apache.org/docs/file-format/) | Columnar | parquet-avro | AvroParquetWriter | adapted | `CompressionCodecName.UNCOMPRESSED` |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Java `newBuilder()` |
 | [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-kotlin | Kotlin DSL + wire | native | `message { }` builders |
 | [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
@@ -93,7 +93,7 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
 
-#### [arrow-ipc](https://github.com/apache/arrow-java) · `19.0.0`
+#### [arrow-ipc](https://arrow.apache.org/docs/java/) · `19.0.0`
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This Kotlin row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serialize. table_project loads f_float_0 only. No compliance decoder.
 
@@ -115,7 +115,7 @@ FlatBuffers was created at Google so games and clients could access serialized d
 
 #### [fory](https://github.com/apache/fory) · `1.3.0`
 
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes.
 
 #### [gson](https://github.com/google/gson) · `2.14.0`
 
@@ -151,7 +151,7 @@ Amazon Ion was created as a rich, self-describing superset of JSON (text and bin
 
 #### [gld-ion](https://github.com/leo-gan/gld-ion-kotlin) · `0.2.0`
 
-gld-ion-kotlin is a from-scratch Amazon Ion library for Kotlin. It is vendored because it is not on Maven Central. This row builds an IonDoc inside the timed call and uses binary encode and decode. The existing kotlinx-ion row stays on ion-java.
+gld-ion is a registered serializer in the kotlin suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
 
@@ -185,19 +185,19 @@ msgpack-java is the official MessagePack library for the JVM. MessagePack exists
 
 obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one.
 
-#### [orc](https://github.com/apache/orc) · `2.3.1`
+#### [orc](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
 
 Apache ORC was created as a columnar file with stripe indexes for scans. This Kotlin row times orc-core 2.3.1 (classifier nohive) and orc-format 1.1.1 nohive. OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder.
 
-#### [orc-uncompressed](https://github.com/apache/orc) · `2.3.1`
+#### [orc-uncompressed](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
 
 This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder.
 
-#### [parquet](https://github.com/apache/parquet-java) · `1.18.1`
+#### [parquet](https://parquet.apache.org/docs/file-format/) · `1.18.1`
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This Kotlin row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder.
 
-#### [parquet-uncompressed](https://github.com/apache/parquet-java) · `1.18.1`
+#### [parquet-uncompressed](https://parquet.apache.org/docs/file-format/) · `1.18.1`
 
 This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder.
 

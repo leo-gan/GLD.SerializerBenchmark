@@ -22,7 +22,7 @@ The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompr
 | msgpack | MessagePack | jackson-dataformat-msgpack | Official msgpack-java Jackson binding |
 | obor | CBOR | net.orandja.obor | kotlinx.serialization CBOR alternative |
 | kryo | Binary | kryo | Reuse Kryo + Output/Input; `writeClassAndObject` |
-| fory | Binary | fory-core | Apache Fory JIT; register types once |
+| fory | Binary | fory-kotlin 1.7.4 | Apache Fory Kotlin module; register types once |
 | protostuff | Binary | protostuff-runtime | `RuntimeSchema` + `LinkedBuffer` |
 | kbson | BSON | com.github.jershell:kbson | kotlinx BSON `dump` / `load` |
 | kotlinx-ion | Ion | ion-java | Amazon Ion binary via kotlinx encoder + ion-java |

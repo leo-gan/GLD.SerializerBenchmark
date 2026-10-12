@@ -38,6 +38,7 @@ mod columnar;
 mod hdf5_metno;
 mod dagr_ser;
 mod direct;
+mod fory_ser;
 mod json;
 mod kinded;
 mod prost_ser;
@@ -189,6 +190,7 @@ pub trait BenchSerializer: Send {
 
 pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
     vec![
+        Box::new(fory_ser::ForySer::default()),
         // JSON
         Box::new(SerdeJson::default()),
         Box::new(SimdJson::default()),
@@ -264,7 +266,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 27);
+        assert_eq!(all.len(), 28);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -272,8 +274,8 @@ mod tests {
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        // The four columnar rows do not support message. serde_yaml and the four Dagr rows do.
-        assert_eq!(ok, 22);
+        // Columnar rows do not support message. Fory, serde_yaml, and the four Dagr rows do.
+        assert_eq!(ok, 23);
     }
 
     #[test]

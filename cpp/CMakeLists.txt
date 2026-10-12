@@ -24,6 +24,14 @@ else()
 endif()
 
 include(FetchContent)
+FetchContent_Declare(fory
+  GIT_REPOSITORY https://github.com/apache/fory.git
+  GIT_TAG v1.7.4
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR cpp
+)
+set(FORY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(fory)
 set(FETCHCONTENT_QUIET OFF)
 set(CPP_TP "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 set(FETCHCONTENT_BASE_DIR "${CPP_TP}/_fetch")
@@ -216,6 +224,7 @@ set(BENCH_SOURCES
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
+  src/serializers/ser_fory.cpp
   src/serializers/ser_nlohmann_bin.cpp
   src/serializers/ser_yas.cpp
   src/serializers/ser_cista.cpp
@@ -317,7 +326,8 @@ set_source_files_properties(src/serializers/ser_sbe.cpp PROPERTIES COMPILE_OPTIO
 
 target_include_directories(serializer_benchmark_cpp PRIVATE ${DAGR_GEN_INCLUDE})
 target_compile_definitions(serializer_benchmark_cpp PRIVATE DAGR_TOOL_VERSION="${DAGR_TOOL_VERSION}")
-target_include_directories(serializer_benchmark_cpp PRIVATE
+target_include_directories(serializer_benchmark_cpp BEFORE PRIVATE
+  ${CPP_TP}/flatbuffers/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/gen/sbe
   ${CPP_TP}/rapidjson/include
@@ -334,6 +344,7 @@ if(BENCH_HAS_HIGHFIVE)
 endif()
 
 target_link_libraries(serializer_benchmark_cpp PRIVATE
+  fory::serialization
   nlohmann_json::nlohmann_json
   glaze::glaze
   simdjson
@@ -398,6 +409,7 @@ set(TEST_SOURCES
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
+  src/serializers/ser_fory.cpp
   src/serializers/ser_nlohmann_bin.cpp
   src/serializers/ser_yas.cpp
   src/serializers/ser_cista.cpp
@@ -423,7 +435,8 @@ endif()
 add_executable(cpp_serializer_tests ${TEST_SOURCES})
 target_include_directories(cpp_serializer_tests PRIVATE ${DAGR_GEN_INCLUDE})
 target_compile_definitions(cpp_serializer_tests PRIVATE DAGR_TOOL_VERSION="${DAGR_TOOL_VERSION}")
-target_include_directories(cpp_serializer_tests PRIVATE
+target_include_directories(cpp_serializer_tests BEFORE PRIVATE
+  ${CPP_TP}/flatbuffers/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/gen/sbe
   ${CPP_TP}/rapidjson/include
@@ -432,6 +445,7 @@ target_include_directories(cpp_serializer_tests PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 target_link_libraries(cpp_serializer_tests PRIVATE
+  fory::serialization
   nlohmann_json::nlohmann_json
   glaze::glaze
   simdjson

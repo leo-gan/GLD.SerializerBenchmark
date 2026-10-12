@@ -54,7 +54,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
-- **50 serializers** in `Program.cs` (was 47). Added `arrow-ipc`, `parquet`, `parquet-uncompressed`.
+- **52 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `fory`.
 - **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar fixtures](#columnar-fixtures)); ORC; ParquetSharp
 
 ## Serializers
@@ -70,6 +70,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer) | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | [fastJson](https://github.com/mgholam/fastJSON) | JSON | FastJson |
 | [FlatSharp](https://github.com/jamescourtney/FlatSharp) | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
+| [fory](https://github.com/apache/fory) | Binary | Apache.Fory source-generated serializers on `[ForyStruct]` domain types; string mode is Base64; stream is adapted |
 | [FsPickler](https://github.com/mbraceproject/FsPickler) | Binary | FsPickler binary |
 | [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | JSON | FsPickler JSON |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
@@ -180,6 +181,10 @@ fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON 
 #### [FlatSharp](https://github.com/jamescourtney/FlatSharp) · `7.5.1`
 
 FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables. Columnar fixtures use hand-written `[FlatBufferTable]` types in `FlatSharpModels.cs` with the same slot order as the Python FlatBuffers schema. Shared `.fbs` files are not loaded. `table_project` deserialize returns `FFloat0` after a full decode.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted.
 
 #### [FsPickler](https://github.com/mbraceproject/FsPickler) · `5.3.2`
 

@@ -51,14 +51,14 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 - Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
 - Apache Arrow 25.0.1: optional prebuilt prefix (`-DARROW_ROOT=` or `ARROW_ROOT`). Same feature set as the jammy apt packages `libarrow-dev` and `libparquet-dev` 25.0.1-1. Not FetchContent. ORC is inside `libarrow`. A missing prefix skips the Arrow rows and still builds the other serializers.
 - SBE 1.40.2: header-only codecs vendored in `cpp/gen/sbe/` from `schemas/v2/sbe/signal.xml`
-- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **39** codecs (**33** existing rows, the four Dagr rows included, plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
+- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **40** codecs (**34** existing rows, Fory and the four Dagr rows included, plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
 
 ## Serializers
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
 | [arduinojson](https://github.com/bblanchon/ArduinoJson) | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
-| [arrow-ipc](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `ipc::MakeStreamWriter` into a buffer | Uncompressed IPC stream. Row→column conversion is inside timed `serialize_bytes`. `table_project` uses `included_fields`. Stream **adapted**. Optional (`ARROW_ROOT`). No compliance decoder. |
+| [arrow-ipc](https://arrow.apache.org/docs/cpp/ipc.html) | Columnar | Apache Arrow 25.0.1 | `ipc::MakeStreamWriter` into a buffer | Uncompressed IPC stream. Row→column conversion is inside timed `serialize_bytes`. `table_project` uses `included_fields`. Stream **adapted**. Optional (`ARROW_ROOT`). No compliance decoder. |
 | [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | [avro_c](https://github.com/apache/avro) | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
 | [bitsery](https://github.com/fraillt/bitsery) | Binary | bitsery | serializer `object`/`container` | Explicit schema |
@@ -74,6 +74,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
 | [glaze](https://github.com/stephenberry/glaze) | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
+| [fory](https://github.com/apache/fory) | Binary | apache/fory 1.7.4 | `serialize` / `deserialize` on registered structs | Native mode. Suite types only. Stream adapted |
 | [jsoncons_bson](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
 | [jsoncons_cbor](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `cbor::encode/decode` on domain structs | CBOR; **native stream** |
 | [jsoncons_msgpack](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `msgpack::encode/decode` on domain structs | MessagePack; **native stream** |
@@ -83,10 +84,10 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [nlohmann_json](https://github.com/nlohmann/json) | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
 | [nlohmann_msgpack](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
 | [nlohmann_ubjson](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
-| [orc](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = GZIP` | Adapter default is UNCOMPRESSED. This row sets Arrow `GZIP`, which the adapter stores as ORC ZLIB. Stream **adapted**. Optional. No compliance decoder. |
-| [orc-uncompressed](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = UNCOMPRESSED` | Explicit uncompressed ORC. |
-| [parquet](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::SNAPPY` | Writer default on 25.0.1 is UNCOMPRESSED, so this row sets Snappy. Stream **adapted**. Optional. No compliance decoder. |
-| [parquet-uncompressed](https://github.com/apache/arrow) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::UNCOMPRESSED` | Explicit uncompressed Parquet. |
+| [orc](https://arrow.apache.org/docs/cpp/orc.html) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = GZIP` | Adapter default is UNCOMPRESSED. This row sets Arrow `GZIP`, which the adapter stores as ORC ZLIB. Stream **adapted**. Optional. No compliance decoder. |
+| [orc-uncompressed](https://arrow.apache.org/docs/cpp/orc.html) | Columnar | Apache Arrow 25.0.1 ORC adapter | `WriteOptions.compression = UNCOMPRESSED` | Explicit uncompressed ORC. |
+| [parquet](https://arrow.apache.org/docs/cpp/parquet.html) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::SNAPPY` | Writer default on 25.0.1 is UNCOMPRESSED, so this row sets Snappy. Stream **adapted**. Optional. No compliance decoder. |
+| [parquet-uncompressed](https://arrow.apache.org/docs/cpp/parquet.html) | Columnar | Apache Arrow 25.0.1 | `WriteTable` + `Compression::UNCOMPRESSED` | Explicit uncompressed Parquet. |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
 | [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp) | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
 | [rapidjson](https://github.com/Tencent/rapidjson) | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
@@ -105,9 +106,9 @@ Why each library exists, what problem it was written to solve, and how. Names li
 
 ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model.
 
-#### [arrow-ipc](https://github.com/apache/arrow) · `25.0.1`
+#### [arrow-ipc](https://arrow.apache.org/docs/cpp/ipc.html) · `25.0.1`
 
-Apache Arrow IPC writes a columnar record batch stream. This row uses `arrow::ipc::MakeStreamWriter` into a memory buffer (the stream writer, not the file writer) with no compression. Domain rows are converted to an Arrow table inside timed `serialize_bytes`. `table_project` deserialize sets `IpcReadOptions.included_fields` to the `f_float_0` column instead of reading every column and slicing. Stream calls are adapted to the bytes path. The row is omitted when `ARROW_ROOT` is unset. There is no compliance decoder.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter into a buffer: the IPC stream inside the bytes API, not the Arrow file format. The record batch is built inside serialize_bytes. table_project sets IpcReadOptions.included_fields to f_float_0. The row is omitted when ARROW_ROOT is unset. No compliance decoder.
 
 #### [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `binary-1.11`
 
@@ -141,19 +142,19 @@ Cista++ serializes C++ object graphs as offset-based, pointer-free images. The p
 
 This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
@@ -168,6 +169,10 @@ glaze was created for extremely fast, reflection-based JSON (and other formats) 
 #### [flexbuffers](https://github.com/google/flatbuffers) · `flatbuffers-flex`
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses FORY_STRUCT with registered C++ structs and vectors in native mode.
 
 #### [jsoncons_bson](https://github.com/danielaparker/jsoncons) · `0.177.0`
 
@@ -205,21 +210,21 @@ nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ cou
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`.
 
-#### [orc](https://github.com/apache/arrow) · `25.0.1`
+#### [orc](https://arrow.apache.org/docs/cpp/orc.html) · `25.0.1`
 
-`orc` writes with `arrow::adapters::orc::ORCFileWriter`. On Arrow 25.0.1 the adapter `WriteOptions` default is **UNCOMPRESSED**, so this row sets `Compression::GZIP`. The adapter stores that value as ORC ZLIB. `orc-uncompressed` sets `Compression::UNCOMPRESSED`. `table_project` calls `Read({"f_float_0"})`. Row→column conversion is inside timed `serialize_bytes`. Stream is adapted. No compliance decoder.
+Apache ORC was created as a columnar file with stripe indexes for scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row sets Compression::GZIP. The adapter stores that value as ORC ZLIB. table_project calls Read of f_float_0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder.
 
-#### [orc-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+#### [orc-uncompressed](https://arrow.apache.org/docs/cpp/orc.html) · `25.0.1`
 
-Same ORC writer as `orc`, with `WriteOptions.compression` set to `arrow::Compression::UNCOMPRESSED`. The name is the override.
+This is the same Arrow C++ ORC adapter as orc, with WriteOptions.compression set to UNCOMPRESSED. The name is the override. No compliance decoder.
 
-#### [parquet](https://github.com/apache/arrow) · `25.0.1`
+#### [parquet](https://arrow.apache.org/docs/cpp/parquet.html) · `25.0.1`
 
-`parquet` calls `parquet::arrow::WriteTable` with `Compression::SNAPPY`. Arrow C++ `WriterProperties` default on 25.0.1 is **UNCOMPRESSED**, so the suite name sets Snappy explicitly. `parquet-uncompressed` passes `Compression::UNCOMPRESSED`. `table_project` uses `ReadTable` with leaf column `{0}` (`f_float_0`). Conversion is inside timed `serialize_bytes`. Stream is adapted. No compliance decoder.
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Arrow C++ 25.0.1 parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project reads leaf column 0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder.
 
-#### [parquet-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+#### [parquet-uncompressed](https://arrow.apache.org/docs/cpp/parquet.html) · `25.0.1`
 
-Same Parquet writer as `parquet`, with `WriterProperties::Builder::compression(UNCOMPRESSED)`. The name is the override.
+This is the same Arrow C++ Parquet writer as parquet, with WriterProperties compression set to UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder.
 
 #### [protobuf](https://github.com/protocolbuffers/protobuf) · `3.12.4`
 
@@ -235,7 +240,7 @@ RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and D
 
 #### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
 
-Simple Binary Encoding is a flyweight codec: the generated C++ headers read and write fields at fixed offsets in a caller-owned buffer. This row vendors sbe-tool 1.40.2 output for `schemas/v2/sbe/signal.xml` (`table` and `signal` only; `nested_table` is not in the schema). `wrapAndApplyHeader` and the field stores run inside timed `serialize_bytes`. Stream is adapted. There is no compliance decoder.
+SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside serialize_bytes. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
 #### [simdjson](https://github.com/simdjson/simdjson) · `3.10.1`
 

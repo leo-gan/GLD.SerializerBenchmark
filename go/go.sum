@@ -4,6 +4,8 @@ github.com/andybalholm/brotli v1.2.3 h1:8H1qwOkl2LPfjf3YezB90JnCliZb6SInJ/OJkEbA
 github.com/andybalholm/brotli v1.2.3/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/apache/arrow-go/v18 v18.8.0 h1:BLOzbPv7bxMPgXPacAg6HQjnxupYsZzC4tf+FkqPU/M=
 github.com/apache/arrow-go/v18 v18.8.0/go.mod h1:uJCFfCwq0KsxCmsCfQg4ft+LsW+iHYzAXiSDh5ug/8U=
+github.com/apache/fory/go/fory v1.7.4 h1:PnIoUKr4w0JpPOysOeLuum35e0vXIaN+pjJf9cZC2xw=
+github.com/apache/fory/go/fory v1.7.4/go.mod h1:dfJ6PR6x0XY+kJmU1xyoPhd77zhQiRk4CsQ2W3VIp9E=
 github.com/apache/thrift v0.24.0 h1:zy31L1a49QTNB2bG1BBfMXol3yJrTH975G3pPubQVLQ=
 github.com/apache/thrift v0.24.0/go.mod h1:zPt6WxgvTOM6hF92y8C+MkEM5LMxZuk4JcQOiU4Esvs=
 github.com/bytedance/gopkg v0.1.4 h1:oZnQwnX82KAIWb7033bEwtxvTqXcYMxDBaQxo5JJHWM=

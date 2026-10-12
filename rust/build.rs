@@ -67,6 +67,7 @@ fn write_dep_versions(manifest: &std::path::Path) -> Result<(), Box<dyn std::err
     }
 
     let wanted = [
+        "fory",
         "serde_json",
         "serde_yaml",
         "simd-json",

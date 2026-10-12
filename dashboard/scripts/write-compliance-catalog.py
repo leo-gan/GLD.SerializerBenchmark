@@ -138,6 +138,9 @@ add("python", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
 add("python", "orc-uncompressed", ["orc"], "https://arrow.apache.org/docs/python/orc.html",
     "Same pyarrow ORC writer as orc, with compression set to uncompressed. Validity cases live in compliance/data/orc/. This library's own reader decodes them.")
 
+add("python", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- JavaScript ---
 add("javascript", "JSON.stringify", ["json"], "https://tc39.es/ecma262/#sec-json.stringify",
     "ECMA-262 JSON.stringify / JSON.parse.")
@@ -192,6 +195,9 @@ add("javascript", "parquet-uncompressed", ["parquet"], "https://github.com/hypar
 add("javascript", "h5wasm", ["hdf5"], "https://github.com/usnistgov/h5wasm",
     "h5wasm: HDF5 compiled to WebAssembly. This row uses a dataset slice.")
 
+add("javascript", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
     "Go stdlib encoding/json: RFC 7159 JSON.")
@@ -245,6 +251,9 @@ add("go", "parquet-uncompressed", ["parquet"], "https://github.com/apache/arrow-
     "Same arrow-go Parquet writer as parquet, with uncompressed pages. Validity cases live in compliance/data/parquet/. This library's own reader decodes them.")
 add("go", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
     "sbe-tool 1.40.2 generated Go codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
+
+add("go", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- Java ---
 add("java", "jackson", ["json"], "https://github.com/FasterXML/jackson-databind",
@@ -474,6 +483,9 @@ add("csharp", "parquet-uncompressed", ["parquet"], "https://github.com/aloneguid
 add("csharp", "PureHDF", ["hdf5"], "https://github.com/Apollo3zehn/PureHDF",
     "PureHDF: managed HDF5 reader and writer. This row uses a hyperslab selection.")
 
+add("csharp", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Rust ---
 add("rust", "serde_json", ["json"], "https://docs.rs/serde_json",
     "serde_json: JSON for Serde.")
@@ -521,6 +533,9 @@ add("rust", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding"
     "sbe-tool 1.40.2 generated Rust codec. nested_table is not an SBE body. Validity cases live in compliance/data/sbe/. This library's own reader decodes them.")
 add("rust", "hdf5-metno", ["hdf5"], "https://github.com/metno/hdf5-rust",
     "hdf5-metno: Rust bindings for HDF5. This row reads a hyperslab.")
+
+add("rust", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- C++ ---
 add("cpp", "nlohmann_json", ["json"], "https://json.nlohmann.me/",
@@ -598,6 +613,9 @@ add("cpp", "sbe", ["sbe"], "https://github.com/aeron-io/simple-binary-encoding",
 add("cpp", "highfive", ["hdf5"], "https://github.com/highfive-devs/highfive",
     "HighFive: header-only C++ HDF5 API. This row reads a hyperslab.")
 
+add("cpp", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Swift ---
 add("swift", "Foundation.JSONEncoder", ["json"], "https://developer.apple.com/documentation/foundation/jsonencoder",
     "Foundation JSONEncoder/JSONDecoder: JSON.")
@@ -633,6 +651,9 @@ add("swift", "XMLCoder", [], "https://github.com/CoreOffice/XMLCoder",
     "XMLCoder: XML; XML is out of catalog scope.")
 add("swift", "BinaryCodable", [], "https://github.com/jverkoey/BinaryCodable",
     "BinaryCodable: Swift-only binary Codable.")
+
+add("swift", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- PHP ---
 add("php", "json", ["json"], "https://www.php.net/manual/en/book.json.php",
