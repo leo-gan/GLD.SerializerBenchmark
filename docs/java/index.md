@@ -61,7 +61,7 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 | [bson](https://github.com/mongodb/mongo-java-driver) | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
 | [dsl-json](https://github.com/ngs-doo/dsl-json) | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
 | [fastjson2](https://github.com/alibaba/fastjson2) | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
-| [fory](https://github.com/apache/fory) | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [fory](https://github.com/apache/fory) | Binary | fory-core 1.7.4 | serialize/deserialize | adapted | Apache Fory; register types before freeze |
 | [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
 | [hessian](https://github.com/ebourg/hessian) | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
 | [ion](https://github.com/amazon-ion/ion-java) | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |

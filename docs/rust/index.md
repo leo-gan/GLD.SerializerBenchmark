@@ -54,17 +54,18 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
-| [arrow-ipc](https://github.com/apache/arrow-rs) | Columnar | `arrow` 60.0.0 | IPC stream `RecordBatch` built in serialize | adapted | Bytes API is the IPC stream, not the file format. `table_project` uses `StreamReader::try_new(_, Some(vec![0]))`. No compliance decoder. |
+| [arrow-ipc](https://docs.rs/arrow) | Columnar | `arrow` 60.0.0 | IPC stream `RecordBatch` built in serialize | adapted | Bytes API is the IPC stream, not the file format. `table_project` uses `StreamReader::try_new(_, Some(vec![0]))`. No compliance decoder. |
 | [bincode](https://github.com/bincode-org/bincode) | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
 | [bitcode](https://github.com/SoftbearStudios/bitcode) | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | [bson](https://github.com/mongodb/bson-rust) | Document | `bson` | Serde | adapted | Document DB interop |
 | [ciborium](https://github.com/enarx/ciborium) | CBOR | `ciborium` | Serde | native | Reused write buffer |
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
+| [fory](https://github.com/apache/fory) | Binary | `fory` | `ForyStruct` derive; native mode | adapted | Reused output buffer; suite types only |
 | [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
 | [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
-| [parquet](https://github.com/apache/arrow-rs) | Columnar | `parquet` 60.0.0 | `RecordBatch` in serialize; props in `prepare` | adapted | Snappy page codec. Encodings not overridden. `table_project`: `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
-| [parquet-uncompressed](https://github.com/apache/arrow-rs) | Columnar | `parquet` 60.0.0 | Same writer, compression off | adapted | `Compression::UNCOMPRESSED` only. |
+| [parquet](https://docs.rs/parquet) | Columnar | `parquet` 60.0.0 | `RecordBatch` in serialize; props in `prepare` | adapted | Snappy page codec. Encodings not overridden. `table_project`: `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
+| [parquet-uncompressed](https://docs.rs/parquet) | Columnar | `parquet` 60.0.0 | Same writer, compression off | adapted | `Compression::UNCOMPRESSED` only. |
 | [postcard](https://github.com/jamesmunns/postcard) | Binary | `postcard` | Serde | adapted | no_std-friendly format |
 | [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
@@ -84,9 +85,9 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
 
-#### [arrow-ipc](https://github.com/apache/arrow-rs) · `60.0.0`
+#### [arrow-ipc](https://docs.rs/arrow) · `60.0.0`
 
-Apache Arrow shares columnar batches without a private copy at each boundary. This row times the arrow-rs IPC stream writer and reader inside the suite bytes API, not the Arrow file format. The schema is chosen in prepare. The `RecordBatch` is built inside serialize. `table_project` passes field index 0 to `StreamReader::try_new`. There is no compliance decoder.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-rs 60.0.0 IPC stream writer and reader inside the bytes API, not the Arrow file format. The schema is chosen in prepare. The RecordBatch is built inside serialize. table_project passes field index 0 to StreamReader::try_new. No compliance decoder.
 
 #### [bincode](https://github.com/bincode-org/bincode) · `2.0.1`
 
@@ -108,9 +109,13 @@ ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSO
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer.
+
 #### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.0.1`
 
-Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (`to_binary` / `from_ion`). The public serde API allocates, so the stream column is adapted.
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion).
 
 #### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
 
@@ -120,13 +125,13 @@ minicbor is a compact, often no_std CBOR codec with its own Encode/Decode traits
 
 nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path.
 
-#### [parquet](https://github.com/apache/arrow-rs) · `60.0.0`
+#### [parquet](https://docs.rs/parquet) · `60.0.0`
 
-Apache Parquet is a columnar file for scans that touch a few fields. This row times arrow-rs `ArrowWriter` / `ParquetRecordBatchReaderBuilder`. Writer properties are built in prepare. The `RecordBatch` is built inside serialize. Page compression is Snappy; encodings are left at the builder default. arrow-rs 60's `DEFAULT_COMPRESSION` is UNCOMPRESSED, so this row sets Snappy explicitly. `table_project` uses `ProjectionMask::columns` on `f_float_0`. There is no compliance decoder.
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-rs 60 ArrowWriter. arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets Compression::SNAPPY. Encodings stay at the builder default. table_project uses ProjectionMask::columns on f_float_0. No compliance decoder.
 
-#### [parquet-uncompressed](https://github.com/apache/arrow-rs) · `60.0.0`
+#### [parquet-uncompressed](https://docs.rs/parquet) · `60.0.0`
 
-Same Parquet writer as `parquet`, with `Compression::UNCOMPRESSED` and no encoding overrides. Use this size when the question is layout rather than Snappy.
+This is the same arrow-rs Parquet writer as parquet, with Compression::UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder.
 
 #### [postcard](https://github.com/jamesmunns/postcard) · `1.1.3`
 
@@ -144,25 +149,25 @@ rkyv is a zero-copy deserialization framework for Rust. The problem was that eve
 
 rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
 #### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
 
-Simple Binary Encoding is a fixed-layout binary codec aimed at low-latency messaging. This row times the Rust flyweights from sbe-tool 1.40.2 (vendored; the generated crate version 0.1.0 is not the logged version). Filling the flyweight is inside serialize. `nested_table` is not a body. There is no compliance decoder.
+SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight inside serialize. The logged version is the generator, not the vendored crate 0.1.0. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
 #### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) · `2.1.1`
 

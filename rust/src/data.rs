@@ -40,6 +40,7 @@ pub const BASE_TS_MS: i64 = 1_704_067_200_000;
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct Message {
     #[n(0)]
     pub f_bool: bool,
@@ -76,6 +77,7 @@ pub struct Message {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct DocumentMeta {
     #[n(0)]
     pub region: String,
@@ -100,6 +102,7 @@ pub struct DocumentMeta {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct DocumentItem {
     #[n(0)]
     pub sku: String,
@@ -126,6 +129,7 @@ pub struct DocumentItem {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct Document {
     #[n(0)]
     pub id: String,
@@ -154,6 +158,7 @@ pub struct Document {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct Telemetry {
     #[n(0)]
     pub source: String,
@@ -182,6 +187,7 @@ pub struct Telemetry {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct Strings {
     #[n(0)]
     pub items: Vec<String>,
@@ -204,6 +210,7 @@ pub struct Strings {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct EventAttr {
     #[n(0)]
     pub key: String,
@@ -228,6 +235,7 @@ pub struct EventAttr {
     Writable,
 )]
 #[rkyv(derive(Debug))]
+#[derive(fory::ForyStruct)]
 pub struct Event {
     #[n(0)]
     pub event_id: String,

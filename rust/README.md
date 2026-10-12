@@ -11,6 +11,7 @@ rust/src/serializers/
   json.rs          # serde_json, simd-json, sonic-rs
   binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson, ion-rs
   direct.rs        # minicbor, rkyv, nanoserde, speedy
+  fory_ser.rs      # Apache Fory registered structs
   prost_ser.rs     # prost + fixture conversion
   avro_ser.rs      # serde_avro_fast (Avro binary datum)
   columnar.rs      # arrow-ipc, parquet, parquet-uncompressed
@@ -18,9 +19,9 @@ rust/src/serializers/
   sbe_ser.rs       # sbe-tool 1.40.2 flyweights (vendored rust/gen/sbe)
 ```
 
-## Serializers (26)
+## Serializers (28)
 
-`all_serializers()` registers 26 rows, the four Dagr layout rows included. The previous heading said 17 and did not list `serde_yaml`, which was already registered (18). The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
+`all_serializers()` registers 28 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -32,6 +33,7 @@ rust/src/serializers/
 | bincode | Binary | config reused in `prepare` |
 | postcard | Binary | `to_allocvec` / `from_bytes` |
 | bitcode | Binary | `serialize` / `deserialize` |
+| fory | Binary | registered structs; `serialize_to` reuses the output buffer; `deserialize` |
 | flexbuffers | FlexBuffers | Serde flexbuffers path |
 | bson | Document binary | `bson::to_vec` / `from_slice` |
 | ion-rs | Binary | `experimental-serde` `to_binary` / `from_ion` (allocating; stream adapted) |

@@ -349,8 +349,8 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 48 serializers registered (Program.cs); ShapeShift.Taml skips the strings fixture.
-    # PureHDF times grid and grid_window only.
+    # 52 serializers registered (Program.cs); ShapeShift.Taml skips the strings fixture.
+    # PureHDF times grid and grid_window only. Fory is the suite types only.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
     # Added: System.Text.Json, Apache.Avro. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
@@ -363,6 +363,11 @@ languages:
     time_unit: nanoseconds
     docs_dir: docs/python
     serializers:
+      - name: fory
+        category: binary
+        package: pyfory
+        version: "1.7.4"
+        optimal_api: "Fory(xlang=False); registered dataclasses"
       - name: orjson
         category: json
         package: orjson
@@ -450,6 +455,11 @@ languages:
     docs_dir: docs/rust
     cargo_package: serializer-benchmark-rust
     serializers:
+      - name: fory
+        category: binary
+        crate: fory
+        version: "1.7.4"
+        optimal_api: "ForyStruct; serialize_to / deserialize in native mode"
       - name: serde_json
         category: json
         crate: serde_json
@@ -685,6 +695,11 @@ languages:
     # B-6: timed path is identical for bytes and stream labels — do not claim stream.
     stream_policy: bytes_only
     serializers:
+      - name: fory
+        category: binary
+        package: "@apache-fory/core"
+        version: "1.7.4"
+        optimal_api: "registered Type.struct / Type.list codecs"
       - name: JSON.stringify
         category: json
         package: builtin
@@ -826,6 +841,11 @@ languages:
     docs_dir: docs/go
     min_go_version: "1.27"
     serializers:
+      - name: fory
+        category: binary
+        package: github.com/apache/fory/go/fory
+        version: "1.7.4"
+        optimal_api: "registered native structs; Serialize / Deserialize"
       - name: encoding/json
         category: json
         package: stdlib
@@ -1011,7 +1031,8 @@ languages:
         category: binary
         package: org.apache.fory:fory-core
         rationale: "Apache Fory (ex-Fury) JIT binary — top modern Java serializer"
-        optimal_api: "Fory.builder Language.JAVA + codegen; serialize/deserialize"
+        version: "1.7.4"
+        optimal_api: "Fory.builder().withXlang(false); serialize/deserialize"
       - name: protostuff
         category: binary
         package: io.protostuff:protostuff-runtime
@@ -1141,9 +1162,10 @@ languages:
         optimal_api: "reuse Kryo + Output/Input; writeClassAndObject"
       - name: fory
         category: binary
-        package: org.apache.fory:fory-core
+        package: org.apache.fory:fory-kotlin
         rationale: "Apache Fory JIT binary — top modern JVM serializer"
-        optimal_api: "Fory.builder Language.JAVA + codegen; serialize/deserialize"
+        version: "1.7.4"
+        optimal_api: "ForyKotlin.builder().withXlang(false); serialize/deserialize"
       - name: protostuff
         category: binary
         package: io.protostuff:protostuff-runtime
@@ -1588,6 +1610,11 @@ languages:
     build_system: cmake
     min_cxx_standard: "20"
     serializers:
+      - name: fory
+        category: binary
+        library: apache/fory
+        version: "1.7.4"
+        optimal_api: "FORY_STRUCT; registered native structs and vectors"
       - name: nlohmann_json
         category: json
         library: nlohmann/json
@@ -1769,6 +1796,11 @@ languages:
     time_unit: nanoseconds
     docs_dir: docs/swift
     serializers:
+      - name: fory
+        category: binary
+        package: apache/fory
+        version: "1.7.4"
+        optimal_api: "ForyStruct macro; serialize / deserialize"
       - name: Foundation.JSONEncoder
         category: json
         package: Foundation

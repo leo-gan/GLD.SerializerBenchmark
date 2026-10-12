@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (30)
+## Serializers (31)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -20,6 +20,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | fxamacker/cbor | CBOR | `github.com/fxamacker/cbor/v2` | reused `EncMode`/`DecMode` |
 | ugorji/cbor | CBOR | `github.com/ugorji/go/codec` | `CborHandle` + EncoderBytes reuse |
 | kelindar/binary | Binary | `github.com/kelindar/binary` | reused `Encoder.Reset`; Go-only wire |
+| fory | Native binary | `github.com/apache/fory/go/fory` | registered structs; `Serialize`/`Deserialize`; **stream adapted** |
 | encoding/gob | Native binary | stdlib | types registered once; buffer `Reset` |
 | mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; stream length-prefixed doc |
 | ion-go | Binary | `github.com/amazon-ion/ion-go` | `MarshalBinary` / `Unmarshal`; native binary encoder stream. Suite structs have no `ion` tags, so wire names are the Go field names |

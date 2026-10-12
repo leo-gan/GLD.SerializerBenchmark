@@ -14,8 +14,10 @@ import { yamlSerializers } from './yaml.js';
 import { dagrSerializers } from './dagr.js';
 import { columnarSerializers } from './columnar.js';
 import { hdf5Serializers } from './hdf5.js';
+import { forySer } from './fory.js';
 
 export const ALL_SERIALIZERS = [
+  forySer,
   ...jsonSerializers(),
   ...binarySerializers(),
   ...schemaSerializers(),

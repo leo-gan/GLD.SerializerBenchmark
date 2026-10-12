@@ -60,7 +60,7 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
 | [amazon-ion](https://github.com/amazon-ion/ion-python) | Binary | `amazon-ion` | dict | native | Official Ion binary `simpleion` dump/load |
-| [arrow-ipc](https://github.com/apache/arrow) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | IPC stream in the bytes API. `table_project` reads `f_float_0` only |
+| [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | IPC stream in the bytes API. `table_project` reads `f_float_0` only |
 | [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Pure-Python reflective runtime (eager `to_bytes` / `restore`); ~35–390× slower than protobuf (upb), size ≈ protobuf. See [caveat](#why-dagr-opss-look-low) |
 | [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Same runtime and call path as `dagr-packed`; regular (vtable) nodes — evolvable, larger than `packed`. See [layouts](#dagr-node-layouts) |
@@ -70,16 +70,17 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
+| [fory](https://github.com/apache/fory) | Binary | `pyfory` | dataclass | adapted | Native mode; types registered before timing |
 | [json](https://github.com/python/cpython/tree/main/Lib/json) | JSON | stdlib | dict | adapted | Baseline text JSON |
 | [mashumaro](https://github.com/Fatal1ty/mashumaro) | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
 | [msgpack](https://github.com/msgpack/msgpack-python) | Binary | `msgpack` | dict | native | Reference MessagePack |
 | [msgspec](https://github.com/jcrist/msgspec) | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
 | [msgspec-msgpack](https://github.com/jcrist/msgspec) | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
-| [orc](https://github.com/apache/arrow) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | `write_table` default is uncompressed on pyarrow |
-| [orc-uncompressed](https://github.com/apache/arrow) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="uncompressed"` |
+| [orc](https://arrow.apache.org/docs/python/orc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | `write_table` default is uncompressed on pyarrow |
+| [orc-uncompressed](https://arrow.apache.org/docs/python/orc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="uncompressed"` |
 | [orjson](https://github.com/ijl/orjson) | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
-| [parquet](https://github.com/apache/arrow) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Default page compression is Snappy. `table_project` reads one column |
-| [parquet-uncompressed](https://github.com/apache/arrow) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="NONE"` |
+| [parquet](https://arrow.apache.org/docs/python/parquet.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Default page compression is Snappy. `table_project` reads one column |
+| [parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="NONE"` |
 | [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | `protobuf` | Message | adapted | From suite protobuf schemas under `schemas/v2/` / language generated modules |
 | [pydantic](https://github.com/pydantic/pydantic) | JSON | `pydantic` | BaseModel | adapted | Validation-oriented API models |
@@ -93,29 +94,29 @@ Why each library exists, what problem it was written to solve, and how. Names li
 
 #### [amazon-ion](https://github.com/amazon-ion/ion-python) · `0.15.0`
 
-Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation. This row times binary `simpleion` dump/load on the dict from `prepare_data`, including a native `BytesIO` stream.
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation.
 
-#### [arrow-ipc](https://github.com/apache/arrow) · `25.0.1`
+#### [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) · `25.0.1`
 
-Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader. The payload is that stream inside the suite's bytes mode, not the Arrow file format. There is no compliance decoder.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only.
 
 #### [avro](https://github.com/fastavro/fastavro) · `1.12.2`
 
 fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
+#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
@@ -134,6 +135,10 @@ dill extends pickle further for scientific Python: graphs, lambdas, and interpre
 #### [flatbuffers](https://github.com/google/flatbuffers) · `25.12.19`
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
 
 #### [json](https://github.com/python/cpython/tree/main/Lib/json) · `python-3.14.0`
 
@@ -155,25 +160,25 @@ msgspec was created as a high-performance serialization library for Python with 
 
 msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack). This row times the MessagePack encoder/decoder on the same Struct types.
 
-#### [orc](https://github.com/apache/arrow) · `25.0.1`
+#### [orc](https://arrow.apache.org/docs/python/orc.html) · `25.0.1`
 
-Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times `pyarrow.orc.write_table` and `read_table` with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. There is no compliance decoder.
+Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times pyarrow.orc.write_table and read_table with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. table_project passes columns=['f_float_0'] on read.
 
-#### [orc-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+#### [orc-uncompressed](https://arrow.apache.org/docs/python/orc.html) · `25.0.1`
 
-Same pyarrow ORC writer as `orc`, with `compression="uncompressed"`. On pyarrow 25 that codec is also the default, so the bytes match `orc`. The name stays so the allow-list matches languages whose ORC default is Zlib.
+This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib.
 
 #### [orjson](https://github.com/ijl/orjson) · `3.12.0`
 
 orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types.
 
-#### [parquet](https://github.com/apache/arrow) · `25.0.1`
+#### [parquet](https://arrow.apache.org/docs/python/parquet.html) · `25.0.1`
 
-Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times `pyarrow.parquet.write_table` and `read_table` with pyarrow's default page compression, Snappy. Encodings stay at the library default. There is no compliance decoder.
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times pyarrow.parquet.write_table and read_table with pyarrow's default page compression, Snappy. Encodings stay at the library default. table_project passes columns=['f_float_0'] on read.
 
-#### [parquet-uncompressed](https://github.com/apache/arrow) · `25.0.1`
+#### [parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html) · `25.0.1`
 
-Same pyarrow Parquet writer as `parquet`, with `compression="NONE"`. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy.
+This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy.
 
 #### [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) · `python-3.14.0`
 
@@ -197,7 +202,7 @@ serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The probl
 
 #### [yaml](https://github.com/yaml/pyyaml) · `6.0.3`
 
-PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load. This row times `safe_dump` / `safe_load` on the dict from `prepare_data`.
+PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load.
 
 ### Call-path contract (fair timing)
 

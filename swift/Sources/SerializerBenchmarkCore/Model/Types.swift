@@ -2,7 +2,9 @@
 // Serializers must NOT import concrete payload types — only Fixture (type-erased).
 
 import Foundation
+import Fory
 
+@ForyStruct
 public struct Message: Codable, Equatable, Sendable {
     public var f_bool: Bool
     public var f_int32: Int32
@@ -28,6 +30,7 @@ public struct Message: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct DocumentMeta: Codable, Equatable, Sendable {
     public var region: String
     public var version: Int32
@@ -37,6 +40,7 @@ public struct DocumentMeta: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct DocumentItem: Codable, Equatable, Sendable {
     public var sku: String
     public var qty: Int32
@@ -48,6 +52,7 @@ public struct DocumentItem: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct Document: Codable, Equatable, Sendable {
     public var id: String
     public var status: Int32
@@ -61,6 +66,7 @@ public struct Document: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct Telemetry: Codable, Equatable, Sendable {
     public var source: String
     public var ts: Int64
@@ -74,11 +80,13 @@ public struct Telemetry: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct Strings: Codable, Equatable, Sendable {
     public var items: [String]
     public init(items: [String]) { self.items = items }
 }
 
+@ForyStruct
 public struct EventAttr: Codable, Equatable, Sendable {
     public var key: String
     public var value: String
@@ -88,6 +96,7 @@ public struct EventAttr: Codable, Equatable, Sendable {
     }
 }
 
+@ForyStruct
 public struct Event: Codable, Equatable, Sendable {
     public var event_id: String
     public var event_type: String

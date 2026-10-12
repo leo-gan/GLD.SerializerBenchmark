@@ -9,9 +9,14 @@ go 1.27.0
 
 toolchain go1.27.1
 
+replace dagrv2 => ./gen/dagrv2
+
 require (
+	// Dagr: generated code (schemas/v2/dagr → `dagr build`) is its own module under gen/.
+	dagrv2 v0.0.0
 	github.com/amazon-ion/ion-go v1.5.0
 	github.com/apache/arrow-go/v18 v18.8.0
+	github.com/apache/fory/go/fory v1.7.4
 	github.com/bytedance/sonic v1.15.4
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/goccy/go-json v0.10.6
@@ -30,11 +35,6 @@ require (
 	go.mongodb.org/mongo-driver v1.17.9
 	google.golang.org/protobuf v1.36.12
 )
-
-// Dagr: generated code (schemas/v2/dagr → `dagr build`) is its own module under gen/.
-require dagrv2 v0.0.0
-
-replace dagrv2 => ./gen/dagrv2
 
 require (
 	github.com/andybalholm/brotli v1.2.3 // indirect
