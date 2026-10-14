@@ -167,6 +167,70 @@ export function sortRows(rows) {
   });
 }
 
+/** Show menu for the write/read charts. Top is fastest, bottom is slowest. */
+export const SHOW_VALUES = ['top 5', 'top 10', 'top 25', 'bottom 5', 'bottom 10', 'bottom 25', 'all'];
+
+export function normalizeShow(value) {
+  const s = String(value ?? '').trim().toLowerCase();
+  return SHOW_VALUES.includes(s) ? s : 'all';
+}
+
+/**
+ * Write and Read chart sort. Both series on sorts by write + read.
+ * Only one series sorts by that series. Smaller is faster.
+ * Accepts `{ write, read }` or the UI shape `{ writeOn, readOn }`.
+ */
+export function splitSortKey(flags = {}) {
+  const write = 'write' in flags ? Boolean(flags.write) : flags.writeOn !== false;
+  const read = 'read' in flags ? Boolean(flags.read) : flags.readOn !== false;
+  if (write && read) return 'total_median_ns';
+  if (write) return 'write_median_ns';
+  if (read) return 'read_median_ns';
+  return 'total_median_ns';
+}
+
+/** Keep at least one of Write or Read on. `which` is 'write' or 'read'. */
+export function toggleSeries(writeOn, readOn, which) {
+  let nextWrite = !!writeOn;
+  let nextRead = !!readOn;
+  if (which === 'write') nextWrite = !nextWrite;
+  else if (which === 'read') nextRead = !nextRead;
+  if (!nextWrite && !nextRead) return { writeOn: !!writeOn, readOn: !!readOn };
+  return { writeOn: nextWrite, readOn: nextRead };
+}
+
+function metricNumber(row, key) {
+  const n = Number(row?.[key]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Ascending time. Shape-skips and missing values sort last. */
+export function sortRowsByMetric(rows, key) {
+  return [...(rows || [])].sort((a, b) => {
+    const as = isShapeSkip(a) ? 1 : 0;
+    const bs = isShapeSkip(b) ? 1 : 0;
+    if (as !== bs) return as - bs;
+    const av = metricNumber(a, key);
+    const bv = metricNumber(b, key);
+    return (av == null ? 1e18 : av) - (bv == null ? 1e18 : bv);
+  });
+}
+
+/**
+ * Filter chart rows by the Show menu.
+ * Top/bottom use only rows with a finite metric. All keeps skips at the end.
+ */
+export function rowsForShow(rows, show, sortKey) {
+  const list = rows || [];
+  const mode = normalizeShow(show);
+  if (mode === 'all') return sortRowsByMetric(list, sortKey);
+  const ranked = list.filter((r) => !isShapeSkip(r) && metricNumber(r, sortKey) != null);
+  const sorted = sortRowsByMetric(ranked, sortKey);
+  const n = Number(mode.split(' ')[1]);
+  if (mode.startsWith('top')) return sorted.slice(0, n);
+  return sorted.slice(Math.max(0, sorted.length - n));
+}
+
 export function exportStem({ id, lang, io, extra } = {}) {
   return [id, lang, io, extra].filter((t) => t != null && String(t) !== '').join('-');
 }

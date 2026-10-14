@@ -23,6 +23,7 @@ import {
   mixedLanguages,
   peerRows,
   rowsToDelimited,
+  toggleSeries,
   totalStdUs,
 } from './exp-export.js';
 import { formatExperimentsHash, parseExperimentsHash } from './dash-hash.js';
@@ -191,6 +192,11 @@ let ui = {
   n: '',
   io: '',
 };
+let graphUi = {
+  show: 'all',
+  writeOn: true,
+  readOn: true,
+};
 
 async function loadCatalog() {
   if (catalog || catalogError) return;
@@ -326,6 +332,8 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
             ? '<li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>.</li>'
             : ''
         }
+        <li><strong>Show</strong> keeps the fastest rows (top), the slowest rows (bottom), or every row.</li>
+        <li><strong>Write and Read</strong> can show write, read, or both. It sorts by the series that is on. With both on, it sorts by write + read.</li>
         <li>Some experiments add a size, compression, or rank chart when that is the question.</li>
         <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
       </ul>
@@ -555,6 +563,22 @@ function setExpStatus(root, msg) {
   if (el) el.textContent = msg || '';
 }
 
+function bindGraphControls(root) {
+  root.querySelector('#exp-show')?.addEventListener('change', (e) => {
+    graphUi.show = e.target.value;
+    render();
+  });
+  const toggle = (which) => () => {
+    const next = toggleSeries(graphUi.writeOn, graphUi.readOn, which);
+    if (next.writeOn === graphUi.writeOn && next.readOn === graphUi.readOn) return;
+    graphUi.writeOn = next.writeOn;
+    graphUi.readOn = next.readOn;
+    render();
+  };
+  root.querySelector('#exp-toggle-write')?.addEventListener('click', toggle('write'));
+  root.querySelector('#exp-toggle-read')?.addEventListener('click', toggle('read'));
+}
+
 function wireExportControls(root, ctx) {
   const stem = (extra) => exportStem({ id: ctx.id, lang: ctx.lang, io: ctx.io, extra });
   root.querySelector('#exp-dl-csv')?.addEventListener('click', () => {
@@ -758,8 +782,12 @@ async function renderDetail(root, id, locLang = '') {
       kind: filters.kind || ui.kind,
       n: filters.n || ui.n,
       crossLang,
+      show: graphUi.show,
+      writeOn: graphUi.writeOn,
+      readOn: graphUi.readOn,
     });
     wireExportControls(root, exportCtx);
+    bindGraphControls(root);
   }
   root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
   root.querySelectorAll('[data-exp-lang]').forEach((btn) => {

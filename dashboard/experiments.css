@@ -287,6 +287,61 @@ tr.exp-row-skip {
   width: 100%;
 }
 
+.exp-figure-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin: 0 0 0.75rem;
+}
+
+.exp-figure-tools-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.exp-figure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.exp-series-toggles {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.exp-series-toggles .tab-btn[aria-pressed='false'] {
+  opacity: 0.45;
+}
+
+#exp-toggle-write.active,
+#compare-toggle-write.active {
+  box-shadow: inset 0 -2px 0 #1565c0;
+}
+
+#exp-toggle-read.active,
+#compare-toggle-read.active {
+  box-shadow: inset 0 -2px 0 #4a148c;
+}
+
+.compare-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.compare-figures-lead {
+  margin: 0;
+}
+
+.exp-figure-scroll {
+  max-height: 70vh;
+  overflow: auto;
+}
+
 .exp-size-callout {
   font-size: 0.85rem;
   color: var(--text-secondary);

@@ -25,7 +25,8 @@ for arg in "$@"; do
   esac
 done
 
-LANGS=(c cpp csharp go java javascript python rust swift)
+# fortran/kotlin/mojo/php/zig use the same stem layout as the original nine.
+LANGS=(c cpp csharp go java javascript python rust swift kotlin php zig mojo fortran)
 run() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "[dry-run] $*"
@@ -91,6 +92,11 @@ else
       [[ -e "$f" ]] || continue
       base=$(basename "$f")
       if [[ "$base" == "$latest"* ]]; then
+        continue
+      fi
+      # Publication CSVs (columnar/dagr/graph/array) share a date prefix but are
+      # not YYYY-MM-DD-HHMMSS stems. splice-*-stats.py still reads those paths.
+      if [[ ! "$base" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6} ]]; then
         continue
       fi
       if [[ "$DRY_RUN" -eq 1 ]]; then

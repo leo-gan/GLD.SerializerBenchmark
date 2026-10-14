@@ -60,6 +60,8 @@ import { registeredEntries } from './compliance-classify.js';
 import { NO_SPEC_LABEL, scoredFormatIds, standardMenuLabel } from './compliance-groups.js';
 import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 import { foldIoGroups } from './fold-io.js';
+import { compareFigurePng, mountCompareLatency, resizeCompareFigures } from './exp-charts.js';
+import { normalizeShow, toggleSeries } from './exp-export.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -227,6 +229,10 @@ let state = {
   selectedMetrics: [...DEFAULT_SELECTED_METRICS],
   compareBaseline: '',
   compareScope: 'same', // 'same' | 'cross'
+  /** Compare charts: which rows to draw, and which Write and Read series are on. */
+  compareShow: 'all',
+  compareWriteOn: true,
+  compareReadOn: true,
 
   /** @type {Record<string, Record<string, object[]>>} lang → policy → groups */
   crossLangGroupsByLangPolicy: {},
@@ -717,6 +723,8 @@ function applyDashView() {
   }
   if (view === 'overview') {
     requestAnimationFrame(() => resizeCharts());
+  } else if (view === 'compare') {
+    requestAnimationFrame(() => resizeCompareFigures());
   }
 }
 
@@ -726,6 +734,29 @@ function closeRunPanel() {
 }
 
 function setupEventListeners() {
+  const compareRoot = document.getElementById('compare');
+  compareRoot?.addEventListener('change', (e) => {
+    if (e.target?.id !== 'compare-show') return;
+    state.compareShow = normalizeShow(e.target.value);
+    renderCompareFigures();
+  });
+  compareRoot?.addEventListener('click', (e) => {
+    const id = e.target?.id;
+    if (id === 'compare-png-latency' || id === 'compare-png-split') {
+      const which = id === 'compare-png-latency' ? 'latency' : 'split';
+      const url = compareFigurePng(which);
+      if (url) downloadDataUrl(url, `compare-${which}.png`);
+      return;
+    }
+    if (id !== 'compare-toggle-write' && id !== 'compare-toggle-read') return;
+    const which = id === 'compare-toggle-write' ? 'write' : 'read';
+    const next = toggleSeries(state.compareWriteOn, state.compareReadOn, which);
+    if (next.writeOn === state.compareWriteOn && next.readOn === state.compareReadOn) return;
+    state.compareWriteOn = next.writeOn;
+    state.compareReadOn = next.readOn;
+    renderCompareFigures();
+  });
+
   document.getElementById('filter-policy-select')?.addEventListener('change', (e) => {
     setFilterPolicy(e.target.value);
   });
@@ -2611,6 +2642,7 @@ function filterAndRefresh() {
   renderMetricsChecklist();
   renderTable();
   renderCompareMatrix();
+  renderCompareFigures();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
   updateSortIndicators();
   updateCompareStatusLine();
@@ -3884,6 +3916,67 @@ function renderChildRow(child, metricKeys, scales, baselineGroup) {
     tr.appendChild(td);
   });
   return tr;
+}
+
+function finiteMetric(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Map a dashboard group onto the experiment chart row shape. */
+function compareChartRows(groups) {
+  const allLangs = isAllLanguages();
+  return (groups || [])
+    .map((g) => {
+      const write = finiteMetric(g.ser_median_ns ?? g.avg_time_ser_ns);
+      const read = finiteMetric(g.deser_median_ns ?? g.avg_time_deser_ns);
+      let total = finiteMetric(g.total_median_ns ?? g.avg_time_total_ns);
+      if (total == null && write != null && read != null) total = write + read;
+      const name = g.serializer || '';
+      return {
+        library: name,
+        label: allLangs ? g.chart_label || name : '',
+        language: allLangs ? g.language || '' : '',
+        version: g.serializer_version || '',
+        write_median_ns: write,
+        read_median_ns: read,
+        total_median_ns: total,
+        total_std_ns: g.total_std_ns,
+        total_ci_low_ns: g.total_ci_low_ns,
+        total_ci_high_ns: g.total_ci_high_ns,
+        runs: g.runs,
+        runs_raw: g.runs_raw,
+        size_bytes: g.median_size_bytes,
+        in_comparison: true,
+      };
+    })
+    .filter((r) => r.total_median_ns != null || r.write_median_ns != null || r.read_median_ns != null);
+}
+
+function renderCompareFigures() {
+  const mount = document.getElementById('compare-figures');
+  if (!mount) return;
+  const rows = compareChartRows(state.filteredGroups);
+  const cross = isAllLanguages() || new Set(rows.map((r) => r.language).filter(Boolean)).size > 1;
+  const lead = isAllLanguages()
+    ? 'Every measured serializer in this standard, data set, and data type. The table below is only the serializers you added.'
+    : 'Every measured serializer for this language, standard, data set, and data type. The table below is only the serializers you added.';
+  mountCompareLatency(mount, rows, {
+    show: state.compareShow,
+    writeOn: state.compareWriteOn,
+    readOn: state.compareReadOn,
+    selectId: 'compare-show',
+    togglePrefix: 'compare-toggle',
+    pngLatency: 'compare-png-latency',
+    pngSplit: 'compare-png-split',
+    scroll: true,
+    crossLang: cross,
+    lang: cross ? 'every language' : languageLabel(state.currentLanguage),
+    lead,
+  });
+  if (document.body.classList.contains('dash-view-compare')) {
+    requestAnimationFrame(() => resizeCompareFigures());
+  }
 }
 
 function renderCompareMatrix() {
