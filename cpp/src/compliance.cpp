@@ -20,6 +20,11 @@
 #include <arrow/ipc/api.h>
 #include <parquet/arrow/reader.h>
 #endif
+#if defined(COMPLIANCE_WITH_HDF5)
+#include <hdf5.h>
+#include <cstdlib>
+#include <unistd.h>
+#endif
 #include "Signal.h"
 static bool too_deep(const std::vector<uint8_t>& raw) {
   if (raw.size() > 200000) return true;
@@ -231,6 +236,41 @@ static json decode_orc(const std::vector<uint8_t>& raw, const std::string&) {
 }
 #endif
 
+#if defined(COMPLIANCE_WITH_HDF5)
+// highfive has no signature API. This row calls H5Fis_hdf5 from the libhdf5
+// HighFive links. It does not open the file with H5Fopen.
+static std::string hdf5_version() {
+  unsigned maj = 0, min = 0, rel = 0;
+  if (H5get_libversion(&maj, &min, &rel) < 0) return {};
+  return std::to_string(maj) + "." + std::to_string(min) + "." + std::to_string(rel);
+}
+
+static json decode_hdf5(const std::vector<uint8_t>& raw, const std::string&) {
+  char path[] = "/tmp/gld-cmp-cpp-h5XXXXXX";
+  const int fd = mkstemp(path);
+  if (fd < 0) throw std::runtime_error("highfive: mkstemp failed");
+  size_t off = 0;
+  while (off < raw.size()) {
+    const ssize_t wrote = ::write(fd, raw.data() + off, raw.size() - off);
+    if (wrote < 0) {
+      ::close(fd);
+      ::unlink(path);
+      throw std::runtime_error("highfive: write failed");
+    }
+    off += static_cast<size_t>(wrote);
+  }
+  if (::close(fd) != 0) {
+    ::unlink(path);
+    throw std::runtime_error("highfive: close failed");
+  }
+  H5Eset_auto2(H5E_DEFAULT, nullptr, nullptr);
+  const htri_t st = H5Fis_hdf5(path);
+  ::unlink(path);
+  if (st <= 0) throw std::runtime_error("H5Fis_hdf5 rejected the file");
+  return json(true);
+}
+#endif
+
 static json decode_sbe(const std::vector<uint8_t>& raw, const std::string&) {
   if (raw.size() < benchmark::v2::MessageHeader::encodedLength()) {
     throw std::runtime_error("sbe: short header");
@@ -419,6 +459,10 @@ int main(int argc, char** argv) {
 #endif
       } else if (fmt == "sbe") {
         ads.push_back({"sbe", decode_sbe, "1.40.2"});
+#if defined(COMPLIANCE_WITH_HDF5)
+      } else if (fmt == "hdf5") {
+        ads.push_back({"highfive", decode_hdf5, hdf5_version()});
+#endif
       }
       {
         std::vector<Ad> keep;

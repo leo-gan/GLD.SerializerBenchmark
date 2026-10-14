@@ -105,6 +105,21 @@ def test_columnar_corpus_is_scored_by_the_pyarrow_adapters():
     assert any("json" in e for e in report.adapter_errors)
 
 
+def test_scientific_corpus_is_scored_by_the_python_libraries():
+    from compliance.runner import run_suites
+
+    scored = run_suites(formats=["hdf5", "netcdf", "adios2"])
+    assert scored.catalog_errors == []
+    assert scored.adapter_errors == []
+    failed = [row for row in scored.results if row.outcome != "pass"]
+    assert not failed, "\n".join(row.failure_block() for row in failed)
+    by_name = {}
+    for row in scored.results:
+        by_name.setdefault(row.adapter, 0)
+        by_name[row.adapter] += 1
+    assert by_name == {"h5py": 4, "netCDF4": 4, "adios2": 3}
+
+
 def test_forbidden_split_names_are_gone_from_python_adapters():
     from compliance.adapters import builtin_adapters
 

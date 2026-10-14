@@ -44,18 +44,22 @@ import {
   dataSetForFixture,
   dataSetLabel,
   discoverFixtureOptions,
+  groupMatchesDataSet,
   pickPreferredFixture,
   resolveStandardDataSet,
 } from './fixture-types.js';
 import {
   applyDimensionLabels,
   benchmarkStandardMenu,
+  languagesForStandard,
   matchesStandard,
   missingRegisteredRows,
+  NO_SERIALIZERS_SEP_ID,
 } from './dimension-labels.js';
 import { registeredEntries } from './compliance-classify.js';
 import { NO_SPEC_LABEL, scoredFormatIds, standardMenuLabel } from './compliance-groups.js';
 import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
+import { foldIoGroups } from './fold-io.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -115,6 +119,8 @@ function fixtureKey(g) {
   }
   return base;
 }
+
+const ALL_LANG = 'all';
 
 const LANGUAGE_CATALOG = [
   { id: 'c', label: 'C' },
@@ -241,50 +247,85 @@ let state = {
   crossLangLoaded: false,
 };
 
+let languageLoadToken = 0;
+let languageStatsPromise = null;
+
 function languageLabel(langId) {
+  if (langId === ALL_LANG) return 'ALL';
   return LANGUAGE_CATALOG.find((l) => l.id === langId)?.label || langId;
 }
 
-function populateLanguageSelect() {
-  const sels = [
-    document.getElementById('lang-select'),
-    document.getElementById('same-lang-select'),
-  ].filter(Boolean);
-  if (!sels.length) return;
-  const prev = state.currentLanguage;
-  sels.forEach((sel) => {
-    sel.innerHTML = '';
-    for (const lang of LANGUAGE_CATALOG) {
-      const opt = document.createElement('option');
-      opt.value = lang.id;
-      opt.textContent = lang.label;
-      sel.appendChild(opt);
-    }
-    if ([...sel.options].some((o) => o.value === prev)) {
-      sel.value = prev;
-    } else if (sel.options.length) {
-      sel.value = sel.options[0].value;
-    }
-  });
-  if (sels[0] && ![...sels[0].options].some((o) => o.value === state.currentLanguage)) {
-    state.currentLanguage = sels[0].value;
-  }
+function isAllLanguages() {
+  return state.currentLanguage === ALL_LANG;
 }
 
-/** Keep toolbar + Compare same-language filters in sync. */
+function knownLanguage(langId) {
+  return langId === ALL_LANG || LANGUAGE_CATALOG.some((lang) => lang.id === langId);
+}
+
+function catalogLanguageIds() {
+  return LANGUAGE_CATALOG.map((lang) => lang.id);
+}
+
+/** Language implements this standard (labels, plus any loaded rows). ALL always matches. */
+function languageImplementsStandard(lang, standard) {
+  if (!standard || standard === 'all' || !lang || lang === ALL_LANG) return true;
+  const langs = languagesForStandard({
+    standard,
+    labels: dimensionLabels,
+    catalog: catalogLanguageIds(),
+    groups: state.allGroups,
+  });
+  return langs.includes(lang);
+}
+
+function renderLanguageTabs() {
+  const host = document.getElementById('lang-tabs');
+  if (!host) return;
+  const ids = [...catalogLanguageIds(), ALL_LANG];
+  if (!knownLanguage(state.currentLanguage)) state.currentLanguage = ids[0] || ALL_LANG;
+  host.innerHTML = ids
+    .map((id) => {
+      const active = id === state.currentLanguage ? ' active' : '';
+      const all = id === ALL_LANG ? ' lang-tab-all' : '';
+      const selected = id === state.currentLanguage ? 'true' : 'false';
+      return `<button type="button" class="tab-btn${all}${active}" role="tab" aria-selected="${selected}" data-lang="${id}">${languageLabel(id)}</button>`;
+    })
+    .join('');
+  host.querySelectorAll('[data-lang]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = btn.getAttribute('data-lang') || '';
+      if (next) setLanguage(next);
+    });
+  });
+}
+
 function syncLanguageSelects() {
-  ['lang-select', 'same-lang-select'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el && [...el.options].some((o) => o.value === state.currentLanguage)) {
-      el.value = state.currentLanguage;
-    }
-  });
+  renderLanguageTabs();
 }
 
-function syncDatasetSelect() {
-  const el = document.getElementById('dataset-value');
-  if (!el) return;
-  el.textContent = dataSetLabel(state.currentDataSet);
+function syncDatasetSelect(sets) {
+  const sel = document.getElementById('dataset-select');
+  if (!sel) return;
+  const available = Array.isArray(sets) && sets.length ? sets : [state.currentDataSet || 'suite'];
+  sel.innerHTML = '';
+  for (const id of available) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = dataSetLabel(id);
+    sel.appendChild(opt);
+  }
+  if (!available.includes(state.currentDataSet)) state.currentDataSet = available[0];
+  sel.value = state.currentDataSet;
+  sel.disabled = available.length <= 1;
+}
+
+async function setLanguage(lang) {
+  if (!knownLanguage(lang) || lang === state.currentLanguage) return;
+  state.currentLanguage = lang;
+  renderLanguageTabs();
+  saveSettings();
+  await loadLanguageData(lang);
 }
 
 function refreshCrossLangForSharedFilters() {
@@ -292,6 +333,7 @@ function refreshCrossLangForSharedFilters() {
   state.xlTestData = state.currentTestData;
   if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
   else pruneCrossLangSelection();
+  populateXlLanguageSelect();
   refreshCrossLangAddSerializerOptions();
   renderCrossLangSelection();
   updateXlBaselineSelect();
@@ -315,7 +357,7 @@ function syncFixtureModeSelects() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  populateLanguageSelect();
+  renderLanguageTabs();
   applySavedSettings(loadSettings());
   applyUrlParams();
   setupEventListeners();
@@ -407,7 +449,7 @@ function saveSettings() {
 
 function applySavedSettings(saved) {
   if (!saved || typeof saved !== 'object') return;
-  if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
+  if (typeof saved.currentLanguage === 'string' && knownLanguage(saved.currentLanguage)) {
     state.currentLanguage = saved.currentLanguage;
   }
   if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar' || saved.currentDataSet === 'graph' || saved.currentDataSet === 'array')) {
@@ -476,7 +518,7 @@ function applySavedSettings(saved) {
 
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
-  if (p.has('lang')) state.currentLanguage = p.get('lang');
+  if (p.has('lang') && knownLanguage(p.get('lang'))) state.currentLanguage = p.get('lang');
   if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar' || p.get('dataset') === 'graph' || p.get('dataset') === 'array')) {
     state.currentDataSet = p.get('dataset');
   }
@@ -530,10 +572,7 @@ function syncUrlFromState() {
 }
 
 function applyUiFromState() {
-  const langSel = document.getElementById('lang-select');
-  if (langSel && [...langSel.options].some((o) => o.value === state.currentLanguage)) {
-    langSel.value = state.currentLanguage;
-  }
+  renderLanguageTabs();
 
   document.getElementById('btn-ops-sec')?.classList.toggle('active', state.displayMetric === 'ops');
   document.getElementById('btn-time-ns')?.classList.toggle('active', state.displayMetric === 'time');
@@ -708,19 +747,9 @@ function setupEventListeners() {
     navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
-  const onLanguageChange = async (e) => {
-    state.currentLanguage = e.target.value;
-    syncLanguageSelects();
-    saveSettings();
-    await loadLanguageData(state.currentLanguage);
-  };
-  document.getElementById('lang-select')?.addEventListener('change', onLanguageChange);
-  document.getElementById('same-lang-select')?.addEventListener('change', onLanguageChange);
-
   const onDataChange = (e) => {
     state.currentTestData = e.target.value;
     state.currentDataSet = dataSetForFixture(state.currentTestData);
-    syncDatasetSelect();
     syncFixtureModeSelects();
     saveSettings();
     filterAndRefresh();
@@ -728,10 +757,42 @@ function setupEventListeners() {
   };
   document.getElementById('data-select')?.addEventListener('change', onDataChange);
 
-  document.getElementById('standard-select')?.addEventListener('change', (e) => {
-    state.currentStandard = e.target.value || 'all';
+  document.getElementById('dataset-select')?.addEventListener('change', (e) => {
+    state.currentDataSet = e.target.value || state.currentDataSet;
+    const resolved = resolveStandardDataSet({
+      groups: state.allGroups,
+      standard: state.currentStandard,
+      testData: state.currentTestData,
+      dataSet: state.currentDataSet,
+    });
+    if (!resolved.keepType) {
+      state.currentDataSet = resolved.dataSet;
+      state.currentTestData = resolved.testData;
+      populateFixtureSelect(resolved.keys, { previous: resolved.testData });
+      syncDatasetSelect(resolved.sets);
+    }
+    const modeOptions = modeOptionsForSlice();
+    populateSelect('mode-select', modeOptions, modeDisplayLabel);
+    populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
+    if (!modeOptions.includes(state.currentMode)) state.currentMode = modeOptions[0] || '';
+    syncFixtureModeSelects();
+    saveSettings();
+    filterAndRefresh();
+    refreshCrossLangForSharedFilters();
+  });
+
+  document.getElementById('standard-select')?.addEventListener('change', async (e) => {
+    const next = e.target.value || 'all';
+    if (next === NO_SERIALIZERS_SEP_ID) return;
+    state.currentStandard = next;
+    if (!languageImplementsStandard(state.currentLanguage, state.currentStandard)) {
+      state.currentLanguage = ALL_LANG;
+      renderLanguageTabs();
+      await loadLanguageData(ALL_LANG, { preferPrimaryDataSet: true });
+      return;
+    }
+    renderLanguageTabs();
     applyFilterPolicyToAllGroups({ refreshSelectors: true, preferPrimaryDataSet: true });
-    syncDatasetSelect();
     syncFixtureModeSelects();
     saveSettings();
     filterAndRefresh();
@@ -1210,7 +1271,20 @@ async function loadStatsObjectForLanguage(lang, gzStats) {
   return gzStats || { groups: [] };
 }
 
-async function loadLanguageData(lang) {
+async function loadLanguageData(lang, options = {}) {
+  const token = ++languageLoadToken;
+  if (lang === ALL_LANG) {
+    showNotification('Loading all languages…', 'info');
+    try {
+      await ensureLanguageStatsLoaded();
+      if (token !== languageLoadToken) return;
+      installAllLanguageGroups(options);
+    } catch (error) {
+      console.error(error);
+      if (token === languageLoadToken) showNotification('Error loading all-language stats.', 'error');
+    }
+    return;
+  }
   const url = `data/${lang}_latest.json.gz`;
   try {
     const response = await fetch(url);
@@ -1224,6 +1298,7 @@ async function loadLanguageData(lang) {
       const text = await new Response(response.body.pipeThrough(ds)).text();
       payload = JSON.parse(text);
     }
+    if (token !== languageLoadToken) return;
 
     state.currentRunId = payload.run_id;
     state.currentRunConfigs = payload.configs || {};
@@ -1231,16 +1306,18 @@ async function loadLanguageData(lang) {
     state.currentRunCsv = payload.csv_data || '';
 
     const statsObj = await loadStatsObjectForLanguage(lang, payload.stats);
-    processStatsData(statsObj);
+    if (token !== languageLoadToken) return;
+    processStatsData(statsObj, options);
     updateRunMeta();
     updateHistoryUIForLanguage();
   } catch (error) {
     console.error(error);
+    if (token !== languageLoadToken) return;
     // Last resort: stats-only file without gz package
     try {
       const statsObj = await loadStatsObjectForLanguage(lang, null);
       if (statsObj.groups?.length || statsObj.groups_by_policy) {
-        processStatsData(statsObj);
+        processStatsData(statsObj, options);
         updateRunMeta();
         updateHistoryUIForLanguage();
         return;
@@ -1265,6 +1342,15 @@ function updateRunMeta() {
   const el = document.getElementById('run-meta');
   const text = document.getElementById('run-meta-text');
   if (!el || !text) return;
+  const picker = document.getElementById('run-picker-toggle');
+  if (isAllLanguages()) {
+    if (picker) picker.hidden = true;
+    text.textContent = 'All languages · published snapshot for each language';
+    el.hidden = false;
+    updateRunConfigPanel();
+    return;
+  }
+  if (picker) picker.hidden = false;
   const cfg = state.currentRunConfigs || {};
   const env = cfg.environment || cfg; // packed env sometimes flat
   const cpu = env.cpu || {};
@@ -1600,12 +1686,23 @@ function expandVariantGroups(slimGroups, catalog) {
   return byPolicy;
 }
 
+function groupsWithLanguage(list, languageHint, docLanguage) {
+  const fallback = languageHint || docLanguage || '';
+  if (!fallback) return Array.isArray(list) ? list : [];
+  return (Array.isArray(list) ? list : []).map((group) => {
+    if (!group || group.language) return group;
+    return { ...group, language: fallback };
+  });
+}
+
 /**
  * Normalize a stats export (schema 2.0 / 2.1 / 2.2) into groupsByPolicy.
+ * Bytes and stream peers are folded into one parent before the roster and charts.
  * @param {object} statsObj
+ * @param {string} [languageHint] used when a group has no language of its own
  * @returns {{ groupsByPolicy: Record<string, object[]>, defaultPolicy: string, catalog: object }}
  */
-function normalizeStatsPayload(statsObj) {
+function normalizeStatsPayload(statsObj, languageHint = '') {
   const raw = statsObj || {};
   const catalog = {
     ...FILTER_POLICY_FALLBACK,
@@ -1618,8 +1715,10 @@ function normalizeStatsPayload(statsObj) {
       ? raw.default_filter_policy
       : DEFAULT_FILTER_POLICY;
 
+  const foldList = (list) => foldIoGroups(groupsWithLanguage(list, languageHint, raw.language));
+
   const mapGroups = (list) =>
-    (Array.isArray(list) ? list : []).map((g) => ({
+    foldList(list).map((g) => ({
       ...g,
       test_data: fixtureKey(g),
     }));
@@ -1634,7 +1733,7 @@ function normalizeStatsPayload(statsObj) {
     rawGroups.some((g) => g && typeof g === 'object' && g.variants && typeof g.variants === 'object');
 
   if (isSlimVariants) {
-    groupsByPolicy = expandVariantGroups(rawGroups, catalog);
+    groupsByPolicy = expandVariantGroups(foldList(rawGroups), catalog);
   } else if (raw.groups_by_policy && typeof raw.groups_by_policy === 'object') {
     // Schema 2.1
     for (const [pid, list] of Object.entries(raw.groups_by_policy)) {
@@ -1652,11 +1751,24 @@ function normalizeStatsPayload(statsObj) {
   return { groupsByPolicy, defaultPolicy, catalog };
 }
 
-function processStatsData(statsObj) {
-  const { groupsByPolicy, defaultPolicy, catalog } = normalizeStatsPayload(statsObj);
+function stampLanguageOnGroups(lang) {
+  if (!lang || lang === ALL_LANG) return;
+  for (const list of Object.values(state.groupsByPolicy || {})) {
+    for (const group of list || []) {
+      if (group && !group.language) group.language = lang;
+    }
+  }
+}
+
+function processStatsData(statsObj, options = {}) {
+  const languageHint = state.currentLanguage && state.currentLanguage !== ALL_LANG
+    ? state.currentLanguage
+    : '';
+  const { groupsByPolicy, defaultPolicy, catalog } = normalizeStatsPayload(statsObj, languageHint);
   state.groupsByPolicy = groupsByPolicy;
   state.defaultFilterPolicy = defaultPolicy;
   state.filterPolicies = catalog;
+  stampLanguageOnGroups(state.currentLanguage);
 
   // Keep selection if still available; else fall back to export default
   const available = Object.keys(groupsByPolicy);
@@ -1666,12 +1778,50 @@ function processStatsData(statsObj) {
       : available[0] || DEFAULT_FILTER_POLICY;
   }
 
-  applyFilterPolicyToAllGroups({ refreshSelectors: true });
+  applyFilterPolicyToAllGroups({
+    refreshSelectors: true,
+    preferPrimaryDataSet: !!options.preferPrimaryDataSet,
+  });
   populateFilterPolicySelect();
   syncLanguageSelects();
   syncFixtureModeSelects();
   discoverMetricKeys(state.allGroups);
   filterAndRefresh();
+}
+
+function installAllLanguageGroups(options = {}) {
+  const byPolicy = {};
+  for (const lang of LANGUAGE_CATALOG) {
+    const policies = state.crossLangGroupsByLangPolicy[lang.id] || {};
+    for (const [pid, list] of Object.entries(policies)) {
+      if (!byPolicy[pid]) byPolicy[pid] = [];
+      for (const group of list || []) {
+        byPolicy[pid].push({ ...group, language: group.language || lang.id });
+      }
+    }
+  }
+  state.groupsByPolicy = byPolicy;
+  state.currentRunId = '';
+  state.currentRunConfigs = {};
+  state.currentRunErrors = '';
+  state.currentRunCsv = '';
+  const available = Object.keys(byPolicy);
+  if (!available.includes(state.filterPolicy)) {
+    state.filterPolicy = available.includes(state.defaultFilterPolicy)
+      ? state.defaultFilterPolicy
+      : available[0] || DEFAULT_FILTER_POLICY;
+  }
+  applyFilterPolicyToAllGroups({
+    refreshSelectors: true,
+    preferPrimaryDataSet: !!options.preferPrimaryDataSet,
+  });
+  populateFilterPolicySelect();
+  syncLanguageSelects();
+  syncFixtureModeSelects();
+  discoverMetricKeys(state.allGroups);
+  filterAndRefresh();
+  updateRunMeta();
+  updateHistoryUIForLanguage();
 }
 
 /** Bind state.allGroups from the active filter policy. */
@@ -1690,6 +1840,7 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false, preferPrimaryD
       groups: state.allGroups,
       standard: state.currentStandard,
       testData: state.currentTestData,
+      dataSet: state.currentDataSet,
       preferPrimary: preferPrimaryDataSet,
     });
     if (resolved.keepType) {
@@ -1700,27 +1851,25 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false, preferPrimaryD
           groups: state.allGroups,
           standard: 'all',
           testData: state.currentTestData,
+          dataSet: state.currentDataSet,
         });
         if (!languageMenu.keepType) {
-          populateFixtureSelect(languageMenu.keys, {
-            groupByDataSet: languageMenu.sets.length > 1,
-            previous: state.currentTestData,
-          });
+          state.currentDataSet = languageMenu.dataSet;
+          state.currentTestData = languageMenu.testData;
+          populateFixtureSelect(languageMenu.keys, { previous: languageMenu.testData });
+          syncDatasetSelect(languageMenu.sets);
         }
+      } else {
+        syncDatasetSelect([state.currentDataSet]);
       }
     } else {
       state.currentDataSet = resolved.dataSet;
       state.currentTestData = resolved.testData;
-      populateFixtureSelect(resolved.keys, {
-        groupByDataSet: resolved.sets.length > 1,
-        previous: state.currentTestData,
-      });
+      populateFixtureSelect(resolved.keys, { previous: resolved.testData });
+      syncDatasetSelect(resolved.sets);
     }
-    const modeOptions = [
-      ...new Set(state.allGroups.map((g) => normalizeMode(g.mode)).filter(Boolean)),
-    ];
+    const modeOptions = modeOptionsForSlice();
 
-    syncDatasetSelect();
     populateSelect('mode-select', modeOptions, modeDisplayLabel);
     populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
     const wantMode = normalizeMode(state.currentMode) || state.currentMode;
@@ -1730,6 +1879,17 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false, preferPrimaryD
       state.currentMode = modeOptions[0] || '';
     }
   }
+}
+
+function modeOptionsForSlice() {
+  return [
+    ...new Set(
+      (state.allGroups || [])
+        .filter((group) => groupMatchesDataSet(group, state.currentDataSet))
+        .map((group) => normalizeMode(group.mode))
+        .filter(Boolean),
+    ),
+  ];
 }
 
 function populateFilterPolicySelect() {
@@ -1901,7 +2061,7 @@ function populateStandardSelect() {
   const items = benchmarkStandardMenu({
     groups: state.allGroups,
     labels: dimensionLabels,
-    language: state.currentLanguage,
+    language: isAllLanguages() ? ALL_LANG : state.currentLanguage,
     allStandardIds: scoredFormatIds(),
     labelOf: standardMenuLabel,
   });
@@ -1911,7 +2071,7 @@ function populateStandardSelect() {
   for (const item of items) {
     const opt = document.createElement('option');
     opt.value = item.id;
-    opt.textContent = item.label;
+    opt.textContent = item.id === 'all' ? 'ALL' : item.label;
     opt.disabled = !!item.disabled;
     if (item.id === 'all') opt.classList.add('std-opt-all');
     else if (item.id === 'custom') opt.classList.add('std-opt-nospec');
@@ -2107,6 +2267,23 @@ function averageGroupsForSerializer(serializer, entries, meta) {
   return row;
 }
 
+/** One bucket per language × serializer so All languages does not average across runtimes. */
+function groupRowsByLanguageSerializer(rows) {
+  const bySer = new Map();
+  for (const g of rows || []) {
+    const key = `${g?.language || ''}\0${g?.serializer || ''}`;
+    if (!bySer.has(key)) bySer.set(key, []);
+    bySer.get(key).push(g);
+  }
+  return bySer;
+}
+
+function compareGroupNames(a, b) {
+  const byLang = String(a?.language || '').localeCompare(String(b?.language || ''));
+  if (byLang) return byLang;
+  return String(a?.serializer || '').localeCompare(String(b?.serializer || ''));
+}
+
 /**
  * Build compounded rows: for each serializer, mean of n=A and n=B groups
  * for the same base type + mode.
@@ -2119,15 +2296,12 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
     return n != null && want.has(n);
   });
 
-  const bySer = new Map();
-  for (const g of matched) {
-    if (!bySer.has(g.serializer)) bySer.set(g.serializer, []);
-    bySer.get(g.serializer).push(g);
-  }
+  const bySer = groupRowsByLanguageSerializer(matched);
 
   const test_data = compoundFixtureKey(base, nA, nB);
   const out = [];
-  for (const [serializer, entries] of bySer) {
+  for (const entries of bySer.values()) {
+    const serializer = entries[0]?.serializer || '';
     // Prefer serializers that have both batch sizes
     const ns = new Set(entries.map(instanceCount).filter((x) => x != null));
     if (!ns.has(nA) || !ns.has(nB)) continue;
@@ -2162,7 +2336,7 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
       })
     );
   }
-  return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
+  return out.sort(compareGroupNames);
 }
 
 /**
@@ -2175,15 +2349,12 @@ function buildAllTypesAtNGroups(allGroups, n, mode) {
     return instanceCount(g) === n;
   });
 
-  const bySer = new Map();
-  for (const g of matched) {
-    if (!bySer.has(g.serializer)) bySer.set(g.serializer, []);
-    bySer.get(g.serializer).push(g);
-  }
+  const bySer = groupRowsByLanguageSerializer(matched);
 
   const test_data = `all@${n}`;
   const out = [];
-  for (const [serializer, entries] of bySer) {
+  for (const entries of bySer.values()) {
+    const serializer = entries[0]?.serializer || '';
     // One value per base type, then mean across types
     const byBase = new Map();
     for (const e of entries) {
@@ -2218,7 +2389,7 @@ function buildAllTypesAtNGroups(allGroups, n, mode) {
       })
     );
   }
-  return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
+  return out.sort(compareGroupNames);
 }
 
 /**
@@ -2231,14 +2402,11 @@ function buildAllAllGroups(allGroups, mode) {
     return true;
   });
 
-  const bySer = new Map();
-  for (const g of matched) {
-    if (!bySer.has(g.serializer)) bySer.set(g.serializer, []);
-    bySer.get(g.serializer).push(g);
-  }
+  const bySer = groupRowsByLanguageSerializer(matched);
 
   const out = [];
-  for (const [serializer, entries] of bySer) {
+  for (const entries of bySer.values()) {
+    const serializer = entries[0]?.serializer || '';
     const byCell = new Map(); // base@n -> groups
     for (const e of entries) {
       const n = instanceCount(e);
@@ -2273,7 +2441,7 @@ function buildAllAllGroups(allGroups, mode) {
       })
     );
   }
-  return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
+  return out.sort(compareGroupNames);
 }
 
 function fixtureOptionLabel(key) {
@@ -2294,10 +2462,15 @@ function groupsMatchingStandard(groups) {
   return (groups || []).filter((g) => matchesStandard(g, state.currentStandard));
 }
 
+/** Standard and data set together. Charts, the roster, and Compare use this slice only. */
+function groupsInView(groups) {
+  return groupsMatchingStandard(groups).filter((group) => groupMatchesDataSet(group, state.currentDataSet));
+}
+
 function resolveFixtureGroups() {
   const sel = parseFixtureSelection(state.currentTestData);
   const mode = state.currentMode;
-  const allGroups = groupsMatchingStandard(state.allGroups);
+  const allGroups = groupsInView(state.allGroups);
   if (sel.kind === 'batch_compound') {
     return buildCompoundedFixtureGroups(
       allGroups,
@@ -2325,7 +2498,8 @@ function resolveFixtureGroups() {
  * data type is not repeated here as "not measured".
  */
 function overviewUnmeasuredGroups() {
-  if (!state.currentTestData || dataSetForFixture(state.currentTestData) !== 'suite') return [];
+  if (isAllLanguages()) return [];
+  if (!state.currentTestData || state.currentDataSet !== 'suite') return [];
   const language = state.currentLanguage || '';
   const labelMap = dimensionLabels?.standards?.[language] || {};
   const registrations = registeredEntries(language)
@@ -2344,23 +2518,60 @@ function overviewUnmeasuredGroups() {
   });
 }
 
+function groupKey(g) {
+  if (!g) return '';
+  if (g.chart_key) return g.chart_key;
+  if (isAllLanguages()) return `${g.language || ''}|${g.serializer || ''}`;
+  return g.serializer || '';
+}
+
+function stampChartFields(groups) {
+  for (const g of groups || []) {
+    if (!g) continue;
+    g.chart_key = isAllLanguages() ? `${g.language || ''}|${g.serializer || ''}` : (g.serializer || '');
+    g.chart_label = isAllLanguages()
+      ? `${languageLabel(g.language)} / ${g.serializer || ''}`
+      : (g.serializer || '');
+  }
+}
+
+function rowMatchesQuery(g, query) {
+  if (!query) return true;
+  const hay = [g?.serializer, g?.language, g?.language ? languageLabel(g.language) : '', g?.chart_label]
+    .join(' ')
+    .toLowerCase();
+  return hay.includes(query);
+}
+
+function optionLabelForKey(key) {
+  const g = groupForSerializer(key);
+  if (!g) return key;
+  const peers = (state.filteredGroups || [])
+    .filter((row) => !isAllLanguages() || row.language === g.language)
+    .map((row) => row.serializer);
+  const label = serializerSelectLabel(g.serializer, g.serializer_version || '', peers);
+  return isAllLanguages() ? `${languageLabel(g.language)} / ${label}` : label;
+}
+
 /** Serializer names that have a measured row in the current Overview filter. */
 function namesWithMeasurements() {
-  const measured = new Set(state.filteredGroups.map((g) => g.serializer));
+  const measured = new Set(state.filteredGroups.map((g) => groupKey(g)));
   return state.serializerNames.filter((name) => measured.has(name));
 }
 
 function filterAndRefresh() {
   state.filteredGroups = resolveFixtureGroups();
   state.unmeasuredGroups = overviewUnmeasuredGroups();
+  stampChartFields(state.filteredGroups);
+  stampChartFields(state.unmeasuredGroups);
 
   const measuredNames = [
-    ...new Set(state.filteredGroups.map((g) => g.serializer)),
+    ...new Set(state.filteredGroups.map((g) => groupKey(g))),
   ];
   state.serializerNames = [
     ...new Set([
       ...measuredNames,
-      ...state.unmeasuredGroups.map((g) => g.serializer),
+      ...state.unmeasuredGroups.map((g) => groupKey(g)),
     ]),
   ].sort((a, b) => a.localeCompare(b));
 
@@ -2571,7 +2782,7 @@ function calculateParetoFrontier() {
   state.paretoSerializerNames = paretoOptimalGroups(
     state.filteredGroups,
     state.displayMetric
-  ).map((g) => g.serializer);
+  ).map((g) => groupKey(g));
 }
 
 // ---------- Cross-language ----------
@@ -2627,7 +2838,7 @@ function summarizeStreamHonesty(groups) {
 function updateStreamHonestyChip() {
   const chip = document.getElementById('stream-honesty-chip');
   if (!chip) return;
-  const { streamRows, counts } = summarizeStreamHonesty(state.allGroups);
+  const { streamRows, counts } = summarizeStreamHonesty(groupsInView(state.allGroups));
   if (streamRows <= 0) {
     chip.hidden = true;
     chip.textContent = '';
@@ -2674,7 +2885,7 @@ async function fetchStatsGroupsByPolicy(langId) {
         payload.groups || payload.groups_by_policy || payload.default_filter_policy
           ? payload
           : payload.stats || payload;
-      const { groupsByPolicy, defaultPolicy } = normalizeStatsPayload(statsObj);
+      const { groupsByPolicy, defaultPolicy, catalog } = normalizeStatsPayload(statsObj, langId);
       if (!Object.keys(groupsByPolicy).length) continue;
       const stamped = {};
       for (const [pid, list] of Object.entries(groupsByPolicy)) {
@@ -2691,12 +2902,42 @@ async function fetchStatsGroupsByPolicy(langId) {
           test_data: fixtureKey(g),
         }));
       }
-      return stamped;
+      return { groupsByPolicy: stamped, defaultPolicy, catalog };
     } catch (e) {
       console.warn(`Cross-lang load failed for ${langId} via ${url}:`, e);
     }
   }
-  return {};
+  return { groupsByPolicy: {}, defaultPolicy: DEFAULT_FILTER_POLICY, catalog: null };
+}
+
+async function ensureLanguageStatsLoaded() {
+  if (state.crossLangLoaded) return;
+  if (!languageStatsPromise) {
+    languageStatsPromise = (async () => {
+      try {
+        const entries = await Promise.all(
+          LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroupsByPolicy(lang.id)]),
+        );
+        const byLang = {};
+        let catalog = null;
+        let defaultPolicy = state.defaultFilterPolicy || DEFAULT_FILTER_POLICY;
+        for (const [id, payload] of entries) {
+          byLang[id] = payload.groupsByPolicy || {};
+          if (!catalog && payload.catalog) {
+            catalog = payload.catalog;
+            defaultPolicy = payload.defaultPolicy || defaultPolicy;
+          }
+        }
+        state.crossLangGroupsByLangPolicy = byLang;
+        state.defaultFilterPolicy = defaultPolicy;
+        if (catalog) state.filterPolicies = { ...FILTER_POLICY_FALLBACK, ...catalog };
+        state.crossLangLoaded = true;
+      } finally {
+        languageStatsPromise = null;
+      }
+    })();
+  }
+  await languageStatsPromise;
 }
 
 function rebuildCrossLangForPolicy() {
@@ -2720,19 +2961,12 @@ function rebuildCrossLangForPolicy() {
 }
 
 async function ensureCrossLangLoaded() {
-  if (state.crossLangLoaded) {
-    rebuildCrossLangForPolicy();
-    initCrossLangControls();
-    return;
-  }
-  showNotification('Loading cross-language stats…', 'info');
-  const entries = await Promise.all(
-    LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroupsByPolicy(lang.id)])
-  );
-  state.crossLangGroupsByLangPolicy = Object.fromEntries(entries);
-  state.crossLangLoaded = true;
+  const fresh = !state.crossLangLoaded;
+  if (fresh) showNotification('Loading cross-language stats…', 'info');
+  await ensureLanguageStatsLoaded();
   rebuildCrossLangForPolicy();
   initCrossLangControls();
+  if (!fresh) return;
   if (state.xlSelectionMode === 'pareto' || state.xlSelected.length === 0) {
     applyCrossLangParetoSelection();
   } else {
@@ -2776,17 +3010,35 @@ function initCrossLangControls() {
   const xm = document.getElementById('xl-mode-select');
   if (xm) xm.value = state.xlMode;
 
-  const langSel = document.getElementById('xl-add-lang');
-  if (langSel) {
-    langSel.innerHTML = '';
-    LANGUAGE_CATALOG.forEach((l) => {
-      const opt = document.createElement('option');
-      opt.value = l.id;
-      opt.textContent = l.label;
-      langSel.appendChild(opt);
-    });
-  }
+  populateXlLanguageSelect();
   refreshCrossLangAddSerializerOptions();
+}
+
+function populateXlLanguageSelect() {
+  const langSel = document.getElementById('xl-add-lang');
+  if (!langSel) return;
+  const prev = langSel.value;
+  let ids = languagesForStandard({
+    standard: state.currentStandard,
+    labels: dimensionLabels,
+    catalog: catalogLanguageIds(),
+    groups: allCrossLangGroups(),
+  });
+  if (state.crossLangLoaded) {
+    const withRows = ids.filter(
+      (id) => filterGroupsForCrossLang(state.crossLangGroupsByLang[id] || []).length > 0,
+    );
+    if (withRows.length) ids = withRows;
+  }
+  langSel.innerHTML = '';
+  for (const id of ids) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = languageLabel(id);
+    langSel.appendChild(opt);
+  }
+  if (ids.includes(prev)) langSel.value = prev;
+  else if (!isAllLanguages() && ids.includes(state.currentLanguage)) langSel.value = state.currentLanguage;
 }
 
 /**
@@ -2795,7 +3047,7 @@ function initCrossLangControls() {
  */
 function filterGroupsForCrossLang(groups) {
   const modeNorm = 'published';
-  const modeGroups = groupsMatchingStandard(groups || []);
+  const modeGroups = groupsInView(groups || []);
   // Normalize mode field so builders can match with exact equality
   const normalized = modeGroups.map((g) => ({ ...g, mode: modeNorm }));
 
@@ -3017,7 +3269,7 @@ function populateSameSerAddSelect() {
     const g = groupForSerializer(n);
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', state.serializerNames);
+    opt.textContent = optionLabelForKey(n);
     opt.title = g ? serializerLabelFromGroup(g) : n;
     sel.appendChild(opt);
   });
@@ -3053,12 +3305,15 @@ function renderSameSelectionChips() {
   const chips = names.map((name) => {
     const g = groupForSerializer(name);
     const full = g ? serializerLabelFromGroup(g) : name;
+    const short = isAllLanguages() && g
+      ? `${languageLabel(g.language)} / ${full.split(':')[0]}`
+      : full.split(':')[0];
     return makeChip({
       fullLabel: full,
-      shortLabel: full.split(':')[0],
+      shortLabel: short,
       title: full,
-      language: state.currentLanguage,
-      serializer: name,
+      language: g?.language || state.currentLanguage,
+      serializer: g?.serializer || name,
       isBaseline: name === state.compareBaseline,
       onRemove: () => {
         state.detailSerializers = state.detailSerializers.filter((s) => s !== name);
@@ -3130,6 +3385,11 @@ function updateKPIs() {
   const total = state.filteredGroups.length;
   const unpublished = (state.unmeasuredGroups || []).length;
   document.getElementById('kpi-total').textContent = formatIntGrouped(total + unpublished);
+  const countDesc = document.querySelector('.kpi-card-count .kpi-desc');
+  if (countDesc) {
+    const lang = isAllLanguages() ? 'All languages' : languageLabel(state.currentLanguage);
+    countDesc.textContent = `${lang} · ${dataSetLabel(state.currentDataSet)} · this data type`;
+  }
   setChartEmptyVisible(total === 0);
 
   if (total === 0) {
@@ -3151,7 +3411,9 @@ function updateKPIs() {
     .filter((g) => latencyKey(g) != null && Number.isFinite(latencyKey(g)))
     .sort((a, b) => latencyKey(a) - latencyKey(b))[0];
   if (fastest) {
-    document.getElementById('kpi-fastest').textContent = fastest.serializer;
+    document.getElementById('kpi-fastest').textContent = isAllLanguages()
+      ? `${languageLabel(fastest.language)} / ${fastest.serializer}`
+      : fastest.serializer;
     const lat = latencyKey(fastest);
     const suffix = fastest.compounded ? ` · ${state.currentTestData}` : '';
     document.getElementById('kpi-fastest-val').textContent =
@@ -3162,7 +3424,9 @@ function updateKPIs() {
     .filter((g) => g.median_size_bytes != null)
     .sort((a, b) => a.median_size_bytes - b.median_size_bytes)[0];
   if (compact) {
-    document.getElementById('kpi-compact').textContent = compact.serializer;
+    document.getElementById('kpi-compact').textContent = isAllLanguages()
+      ? `${languageLabel(compact.language)} / ${compact.serializer}`
+      : compact.serializer;
     const suffix = compact.compounded ? ` · ${state.currentTestData}` : '';
     document.getElementById('kpi-compact-val').textContent =
       `${formatIntGrouped(compact.median_size_bytes)} bytes${suffix}`;
@@ -3181,8 +3445,8 @@ function updateKPIs() {
 
 function groupForSerializer(name) {
   return (
-    state.filteredGroups.find((g) => g.serializer === name) ||
-    (state.unmeasuredGroups || []).find((g) => g.serializer === name) ||
+    state.filteredGroups.find((g) => groupKey(g) === name) ||
+    (state.unmeasuredGroups || []).find((g) => groupKey(g) === name) ||
     null
   );
 }
@@ -3208,11 +3472,10 @@ function populateBaselineSelect() {
       const opt = document.createElement('option');
       opt.value = name;
       const g = groupForSerializer(name);
-      const ver = g?.serializer_version || '';
-      const label = serializerSelectLabel(name, ver, state.serializerNames);
+      const label = optionLabelForKey(name);
       opt.textContent = label + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
       const full = g ? serializerLabelFromGroup(g) : name;
-      const href = serializerSourceUrl(state.currentLanguage, name);
+      const href = serializerSourceUrl(g?.language || state.currentLanguage, g?.serializer || name);
       opt.title = href ? `${full} · ${href}` : full;
       sel.appendChild(opt);
     });
@@ -3399,7 +3662,7 @@ function renderTable() {
     ...state.filteredGroups,
     ...(state.unmeasuredGroups || []),
   ]
-    .filter((g) => (g.serializer || '').toLowerCase().includes(query))
+    .filter((g) => rowMatchesQuery(g, query))
     .map(withOpsDerivedStats);
 
   rows.sort((a, b) => {
@@ -3453,14 +3716,15 @@ function renderTable() {
   setTh('th-lat-p99', `P99 (${u})`);
 
   const baselineRaw =
-    state.filteredGroups.find((g) => g.serializer === state.compareBaseline) || null;
+    state.filteredGroups.find((g) => groupKey(g) === state.compareBaseline) || null;
   const baselineGroup = baselineRaw ? withOpsDerivedStats(baselineRaw) : null;
 
   const help = document.getElementById('detailed-analytics-help');
   if (help) {
     const scope = parseFixtureSelection(state.currentTestData);
     const unpublished = rows.filter((r) => r.unmeasured).length;
-    let scopeNote = ' Full roster for the current language, data type, and standard.';
+    const langNote = isAllLanguages() ? 'all languages' : languageLabel(state.currentLanguage);
+    let scopeNote = ` Full roster for ${langNote}, ${dataSetLabel(state.currentDataSet)}, this data type, and standard.`;
     if (unpublished) {
       scopeNote +=
         ' Registered serializers with no published run are marked not measured and left out of the charts.';
@@ -3503,8 +3767,8 @@ function renderTable() {
 
   rows.forEach((r) => {
     const tr = document.createElement('tr');
-    const isBaseline = baselineGroup && r.serializer === baselineGroup.serializer;
-    const isOptimal = state.paretoSerializerNames.includes(r.serializer);
+    const isBaseline = baselineGroup && groupKey(r) === state.compareBaseline;
+    const isOptimal = state.paretoSerializerNames.includes(groupKey(r));
     if (isBaseline) tr.classList.add('roster-baseline-row');
     if (isOptimal) tr.classList.add('roster-pareto-row');
 
@@ -3513,6 +3777,9 @@ function renderTable() {
     const displayName = serializerLabelFromGroup(r);
     const lang = r.language || state.currentLanguage || '';
     let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
+    if (isAllLanguages() && lang && lang !== ALL_LANG) {
+      nameHtml = `${escapeHtml(languageLabel(lang))} · ${nameHtml}`;
+    }
     if (r.standard) {
       const nospec = r.standard === 'custom';
       const standardText = nospec ? NO_SPEC_LABEL : r.standard;
@@ -3640,11 +3907,14 @@ function renderCompareMatrix() {
       if (!ordered.includes(n)) ordered.push(n);
     });
     columns = ordered.map((name) => {
-      const group = state.filteredGroups.find((g) => g.serializer === name) || null;
+      const group = groupForSerializer(name);
+      const serLabel = group ? serializerLabelFromGroup(group) : name;
+      const label = isAllLanguages() && group
+        ? `${languageLabel(group.language)} / ${serLabel}`
+        : serLabel;
       return {
         key: name,
-        // Docs Summary style: name:version
-        label: group ? serializerLabelFromGroup(group) : name,
+        label,
         group,
         isBaseline: name === state.compareBaseline,
       };
@@ -3843,10 +4113,12 @@ function copyRosterMarkdown() {
     ops: opsVals.length ? chooseOpsUnit(opsVals) : { divisor: 1, header: 'Ops/s' },
   };
   const baselineRaw =
-    state.filteredGroups.find((g) => g.serializer === state.compareBaseline) || null;
+    state.filteredGroups.find((g) => groupKey(g) === state.compareBaseline) || null;
   const baselineGroup = baselineRaw ? withOpsDerivedStats(baselineRaw) : null;
   const baseLabel = baselineGroup
-    ? serializerLabelFromGroup(baselineGroup)
+    ? (isAllLanguages()
+      ? `${languageLabel(baselineGroup.language)} / ${serializerLabelFromGroup(baselineGroup)}`
+      : serializerLabelFromGroup(baselineGroup))
     : state.compareBaseline || '—';
   const u = scales.latency.header;
   const oHdr = scales.ops.header;
@@ -3875,15 +4147,15 @@ function copyRosterMarkdown() {
       if (s.kind === 'all_all') {
         return `Scope: all@all (five row data types × all n) · mode ${state.currentMode}`;
       }
-      return `Scope: data type ${state.currentTestData} · mode ${state.currentMode}`;
+      return `Scope: ${dataSetLabel(state.currentDataSet)} · data type ${state.currentTestData} · mode ${state.currentMode}`;
     })(),
     ``,
     `| ${headers.join(' | ')} |`,
     `|${headers.map((h, i) => (i === 0 || h === 'Pareto' || h === 'Honesty' ? '---' : '---:')).join('|')}|`,
   ];
   rows.forEach((r) => {
-    const opt = state.paretoSerializerNames.includes(r.serializer) ? 'yes' : '';
-    const isBaseline = baselineGroup && r.serializer === baselineGroup.serializer;
+    const opt = state.paretoSerializerNames.includes(groupKey(r)) ? 'yes' : '';
+    const isBaseline = baselineGroup && groupKey(r) === state.compareBaseline;
     const cells = metricSpecs.map(({ key, higherIsBetter }) => {
       const v = r[key];
       if (v === null || v === undefined) return '—';
@@ -3898,6 +4170,7 @@ function copyRosterMarkdown() {
       return cell.text;
     });
     const name =
+      (isAllLanguages() && r.language ? `${languageLabel(r.language)} / ` : '') +
       serializerLabelFromGroup(r) +
       (isBaseline ? ' (baseline)' : '') +
       (r.unmeasured ? ' (not measured)' : '');

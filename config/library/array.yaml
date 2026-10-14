@@ -9,7 +9,9 @@
 #   hdf5-metno
 #   PureHDF
 #   h5wasm
+#   gld-hdf5
 # Runners skip every other serializer on these type ids.
+# The Mojo filter is a substring. An empty filter is safe: only gld-hdf5 runs these cells.
 # N stays 1. The array shape is the type config, not the instance count.
 id: array
 description: "grid and grid_window at N=1; bytes sidecar; no post-compression"

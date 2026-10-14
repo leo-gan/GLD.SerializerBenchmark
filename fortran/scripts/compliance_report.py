@@ -22,10 +22,20 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "compliance" / "data"
 FORTRAN = ROOT / "fortran"
 
-ADAPTERS = {
-    "json": ("json-fortran", "9.3.1"),
-    "toml": ("toml-f", "0.5.2"),
-}
+# probe id, corpus format, serializer name, version.
+# json-fortran, jonquil, and rojff share the JSON corpus. Each calls its own parser.
+PROBES = (
+    ("json", "json", "json-fortran", "9.3.1"),
+    ("jonquil", "json", "jonquil", "0.3.2"),
+    ("rojff", "json", "rojff", "9f68e5aa4c12"),
+    ("toml", "toml", "toml-f", "0.5.2"),
+    ("msgpack", "msgpack", "fortran-messagepack", "0.3.1"),
+    ("hdf5", "hdf5", "hdf5-fortran", "1.10.7"),
+    ("netcdf", "netcdf", "netcdf-fortran", "4.8.1"),
+    ("adios2", "adios2", "adios2", "2.10.2"),
+)
+# An empty ADIOS2 directory can sit in an engine open. Kill that and split.
+SCIENTIFIC_TIMEOUT_S = 45
 
 
 def values_equal(expected, observed) -> bool:
@@ -52,31 +62,35 @@ def values_equal(expected, observed) -> bool:
     return expected == observed
 
 
-def load_suites(formats: set[str]) -> list[tuple[dict, list[dict]]]:
+def load_corpus(fmt: str) -> list[tuple[dict, list[dict]]]:
+    folder = DATA / fmt
+    if not folder.is_dir():
+        return []
     out = []
-    for fmt in ("json", "toml"):
-        if formats and fmt not in formats:
+    for path in sorted(folder.glob("*.json")):
+        if path.name.startswith("_"):
             continue
-        folder = DATA / fmt
-        if not folder.is_dir():
-            continue
-        for path in sorted(folder.glob("*.json")):
-            if path.name.startswith("_"):
-                continue
-            doc = json.loads(path.read_text(encoding="utf-8"))
-            cases = list(doc.get("cases") or [])
-            out.append((doc, cases))
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        cases = list(doc.get("cases") or [])
+        out.append((doc, cases))
     return out
+
+
+def case_payload(case: dict) -> bytes:
+    raw = case.get("input")
+    if not isinstance(raw, str):
+        raw = "" if raw is None else str(raw)
+    if (case.get("input_encoding") or "utf-8") == "hex":
+        compact = "".join(raw.split())
+        return bytes.fromhex(compact) if compact else b""
+    return raw.encode("utf-8")
 
 
 def pack_cases(cases: list[dict], dest: Path) -> None:
     blob = bytearray()
     blob += struct.pack("<i", len(cases))
     for case in cases:
-        raw = case.get("input")
-        if not isinstance(raw, str):
-            raw = "" if raw is None else str(raw)
-        data = raw.encode("utf-8")
+        data = case_payload(case)
         blob += struct.pack("<i", len(data))
         blob += data
     dest.write_bytes(blob)
@@ -86,7 +100,11 @@ def run_probe(exe: Path, fmt: str, cases: list[dict], work: Path, tag: str) -> t
     cases_path = work / f"{tag}.bin"
     out_path = work / f"{tag}.out"
     pack_cases(cases, cases_path)
-    proc = subprocess.run([str(exe), fmt, str(cases_path), str(out_path)], cwd=FORTRAN)
+    timeout = SCIENTIFIC_TIMEOUT_S if fmt in {"hdf5", "netcdf", "adios2"} else None
+    try:
+        proc = subprocess.run([str(exe), fmt, str(cases_path), str(out_path)], cwd=FORTRAN, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return 124, None
     if proc.returncode != 0 or not out_path.is_file():
         return proc.returncode, None
     try:
@@ -139,14 +157,16 @@ def score(case: dict, ok: int, dumped: str, fmt: str) -> tuple[str, str, str]:
         return "fail", f"accepted as {dumped[:180]}", "parser accepted input the spec requires to be rejected"
     if not parsed:
         return "fail", "rejected", "parser rejected input the spec requires to accept"
-    if "decoded" in case:
+    if "decoded" in case and fmt in ("json", "toml"):
         try:
             if fmt == "json":
-                observed = json.loads(dumped)
+                observed = json.loads(dumped) if dumped else None
             else:
                 import tomllib
 
-                observed = tomllib.loads(dumped)
+                observed = tomllib.loads(dumped) if dumped else None
+            if observed is None:
+                return "fail", "empty re-serialization", "parser accepted the text but did not re-serialize it"
         except Exception as exc:  # noqa: BLE001 - the library text is the observation
             return "fail", f"{type(exc).__name__}: {exc}", "re-serialized text could not be loaded for comparison"
         if not values_equal(case["decoded"], observed):
@@ -217,27 +237,25 @@ def main() -> int:
     args = parser.parse_args()
     formats = set(args.format)
     wanted = set(args.serializer)
-    suites = load_suites(formats)
-    if not suites:
+    selected = [
+        probe for probe in PROBES
+        if (not formats or probe[1] in formats) and (not wanted or probe[2] in wanted)
+    ]
+    if not selected:
         print("no fortran compliance suites selected", file=sys.stderr)
         return 0
     exe = binary_path()
     work = args.work
     work.mkdir(parents=True, exist_ok=True)
     rows: list[dict] = []
-    for suite, cases in suites:
-        fmt = str(suite.get("format") or "")
-        name, version = ADAPTERS.get(fmt, ("", ""))
-        if not name:
-            continue
-        if wanted and name not in wanted:
-            continue
-        tag = f"{fmt}-{suite.get('version')}"
-        outcomes = probe_cases(exe, fmt, cases, work, tag)
-        for case, (ok, dumped) in zip(cases, outcomes):
-            outcome, observed, detail = score(case, ok, dumped, fmt)
-            rows.append(result_row(suite, case, name, version, outcome, observed, detail))
-        print(f"  {fmt} {suite.get('version')}: {len(cases)} cases", flush=True)
+    for probe, fmt, name, version in selected:
+        for suite, cases in load_corpus(fmt):
+            tag = f"{probe}-{suite.get('version')}"
+            outcomes = probe_cases(exe, probe, cases, work, tag)
+            for case, (ok, dumped) in zip(cases, outcomes):
+                outcome, observed, detail = score(case, ok, dumped, fmt)
+                rows.append(result_row(suite, case, name, version, outcome, observed, detail))
+            print(f"  {name} {fmt} {suite.get('version')}: {len(cases)} cases", flush=True)
     passed = sum(1 for r in rows if r["outcome"] == "pass")
     failed = sum(1 for r in rows if r["outcome"] == "fail")
     skipped = sum(1 for r in rows if r["outcome"] == "skip")

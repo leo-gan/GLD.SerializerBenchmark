@@ -1374,7 +1374,7 @@
       "gld-hdf5": {
         "source_url": "https://github.com/leo-gan/gld-hdf5",
         "version": "0.2.0",
-        "specifics": "gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row writes i32, i64, f64, and uint8 datasets for a suite value and reads them back with read_hdf5. It does not link libhdf5."
+        "specifics": "gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row times one contiguous float64 dataset named grid. The first dimension is x and the second is y. grid_window copies the interior window after read_hdf5 returns the whole file, because this library has no hyperslab. It does not link libhdf5 and does not time the five suite types."
       },
       "gld-netcdf": {
         "source_url": "https://github.com/leo-gan/gld-hdf5",

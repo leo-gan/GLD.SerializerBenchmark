@@ -300,7 +300,7 @@ function selectHtml(id, label, values, current, labelFn) {
   const standardMenu = id === 'cmp-filter-standard';
   const opts = [
     standardMenu
-      ? '<option value="" class="std-opt-all">All</option>'
+      ? '<option value="" class="std-opt-all">ALL</option>'
       : '<option value="">All</option>',
   ];
   for (const v of values) {
@@ -554,11 +554,13 @@ function kpisFrom(rows) {
 function renderLangTabs(tabIds) {
   if (!tabIds.length) return '';
   return `
-    <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
+    <div class="exp-lang-tabs lang-tabs tabs" role="tablist" aria-label="Language">
       ${tabIds
         .map((id) => {
           const active = id === ui.lang ? ' active' : '';
-          return `<button type="button" class="tab-btn${active}" data-cmp-lang="${escapeHtml(id)}">${escapeHtml(langLabel(id))}</button>`;
+          const all = id === ALL_LANG ? ' lang-tab-all' : '';
+          const label = id === ALL_LANG ? 'ALL' : langLabel(id);
+          return `<button type="button" class="tab-btn${all}${active}" data-cmp-lang="${escapeHtml(id)}">${escapeHtml(label)}</button>`;
         })
         .join('')}
     </div>`;

@@ -1,4 +1,4 @@
-from std.collections import List
+from std.collections import List, Span
 from bench.data import (
     Book,
     Document,
@@ -33,6 +33,7 @@ from bench.bson_ser import BsonSer
 from bench.ion_ser import IonSer
 from bench.smile_ser import SmileSer
 from bench.hdf5_ser import AdiosSer, Hdf5Ser, NcSer
+from hdf5 import DT_F64, read_hdf5
 from bench.arrow_ser import ArrowIpcSer
 from bench.parquet_ser import ParquetSer
 from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
@@ -408,6 +409,72 @@ def _gld_sci_batch(type_id: String) raises:
         raise Error("gld-adios2 fidelity n=3 " + type_id)
 
 
+def _f64_le(data: List[Byte], index: Int) raises -> Float64:
+    var o = index * 8
+    var u = UInt64(0)
+    var s = 0
+    while s < 8:
+        u = u | (UInt64(Int(data[o + s])) << UInt64(s * 8))
+        s += 1
+    return Float64(from_bits=u)
+
+
+def _grid_roundtrip() raises:
+    """File dims are x then y. Window decode is the interior slice only."""
+    var cfg = TypeConfig()
+    cfg.nx = 2
+    cfg.ny = 2
+    cfg.x0 = 1
+    cfg.y0 = 0
+    cfg.wx = 1
+    cfg.wy = 2
+    var grid = make_cell("grid", cfg, UInt64(7), 1, "g")
+    grid.grids[0].values[0] = 1.0
+    grid.grids[0].values[1] = 2.0
+    grid.grids[0].values[2] = 3.0
+    grid.grids[0].values[3] = Float64(from_bits=UInt64(0xBFF0000000000000))
+    var h5 = Hdf5Ser()
+    var raw = h5.serialize_bytes(grid)
+    if not h5.check(grid, raw):
+        raise Error("gld-hdf5 grid fidelity")
+    var doc = read_hdf5(Span(raw))
+    var id = -1
+    var i = 0
+    while i < len(doc.d_name):
+        if doc.d_name[i] == "grid":
+            id = i
+        i += 1
+    if id < 0 or doc.d_rank[id] != 2 or doc.d_dtype[id] != DT_F64:
+        raise Error("gld-hdf5 grid dataset")
+    if doc.d_n0[id] != 2 or doc.d_n1[id] != 2:
+        raise Error("gld-hdf5 grid dims")
+    # values[y * nx + x] lands at file index x * ny + y.
+    var payload = doc.d_data[id].copy()
+    if _f64_le(payload, 0) != 1.0 or _f64_le(payload, 1) != 3.0:
+        raise Error("gld-hdf5 file order x=0")
+    if _f64_le(payload, 2) != 2.0:
+        raise Error("gld-hdf5 file order x=1 y=0")
+    if _f64_le(payload, 3) != -1.0:
+        raise Error("gld-hdf5 file order x=1 y=1")
+    var window = make_cell("grid_window", cfg, UInt64(7), 1, "w")
+    window.grids[0].values[0] = 1.0
+    window.grids[0].values[1] = 2.0
+    window.grids[0].values[2] = 3.0
+    window.grids[0].values[3] = -1.0
+    var win = h5.serialize_bytes(window)
+    if len(win) != len(raw):
+        raise Error("grid_window wrote a different file from grid")
+    var back = h5.deserialize_bytes(window, win)
+    if len(back.grids) != 1 or back.grids[0].nx != 1 or back.grids[0].ny != 2:
+        raise Error("gld-hdf5 grid_window shape")
+    if len(back.grids[0].values) != 2:
+        raise Error("gld-hdf5 grid_window length")
+    if back.grids[0].values[0] != 2.0 or back.grids[0].values[1] != -1.0:
+        raise Error("gld-hdf5 grid_window values")
+    if not h5.check(window, win):
+        raise Error("gld-hdf5 grid_window fidelity")
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
@@ -439,4 +506,5 @@ def main() raises:
     _graph_shape()
     _graph_dagr()
     _columnar_scale()
+    _grid_roundtrip()
     print("ok")

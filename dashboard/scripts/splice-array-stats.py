@@ -312,6 +312,7 @@ def _select_language(language: str) -> None:
         "javascript": (("h5wasm",), {"h5wasm": "hdf5"}, "bytes"),
         # The C# runner labels the in-memory row "string". Analysis publishes it as bytes.
         "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "string"),
+        "mojo": (("gld-hdf5",), {"gld-hdf5": "hdf5"}, "bytes"),
     }
     if language not in profiles:
         raise SystemExit(f"unsupported language {language}")
@@ -329,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--language",
         default="fortran",
-        choices=("fortran", "python", "c", "cpp", "rust", "javascript", "csharp"),
+        choices=("fortran", "python", "c", "cpp", "rust", "javascript", "csharp", "mojo"),
     )
     parser.add_argument("--csv", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
@@ -343,6 +344,7 @@ def main(argv: list[str] | None = None) -> int:
         "rust": REPO / "logs/rust/2026-10-11-rust-hdf5-array.csv",
         "javascript": REPO / "logs/javascript/2026-10-11-js-hdf5-array.csv",
         "csharp": REPO / "logs/csharp/2026-10-11-csharp-hdf5-array.csv",
+        "mojo": REPO / "logs/mojo/2026-10-13-mojo-hdf5-array.csv",
     }
     csv_path = args.csv or defaults[args.language]
     if not csv_path.is_absolute():

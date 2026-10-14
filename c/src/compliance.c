@@ -34,6 +34,9 @@
 #ifdef HAS_AVRO_C
 #include <avro.h>
 #endif
+#ifdef HAS_HDF5
+#include <hdf5.h>
+#endif
 
 typedef int (*decode_fn)(const unsigned char *data, size_t n, const cJSON *schema);
 
@@ -88,6 +91,34 @@ static size_t hex_decode(const char *hex, unsigned char *buf, size_t cap) {
   }
   return n;
 }
+
+#ifdef HAS_HDF5
+/* hdf5 row. HighFive is the C++ wrapper; this adapter is libhdf5's H5Fis_hdf5. */
+static int dec_hdf5(const unsigned char *data, size_t n, const cJSON *schema) {
+  (void)schema;
+  char path[] = "/tmp/gld-cmp-h5XXXXXX";
+  int fd = mkstemp(path);
+  if (fd < 0) return -1;
+  size_t off = 0;
+  while (off < n) {
+    ssize_t wrote = write(fd, data + off, n - off);
+    if (wrote < 0) {
+      close(fd);
+      unlink(path);
+      return -1;
+    }
+    off += (size_t)wrote;
+  }
+  if (close(fd) != 0) {
+    unlink(path);
+    return -1;
+  }
+  H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+  htri_t st = H5Fis_hdf5(path);
+  unlink(path);
+  return st > 0 ? 0 : -1;
+}
+#endif
 
 static int dec_cjson(const unsigned char *data, size_t n, const cJSON *schema) {
   (void)schema;
@@ -626,7 +657,7 @@ int main(int argc, char **argv) {
   cJSON *lang_map = mapping ? cJSON_GetObjectItem(cJSON_GetObjectItem(mapping, "languages"), "c") : NULL;
   if (!lang_map) fprintf(stderr, "warning: no C slice in serializer-standards.json — running built-in adapters\n");
 
-  adapter_t built[32];
+  adapter_t built[40];
   int nbuilt = 0;
 #define ADD(nm, fmt, fn) do { built[nbuilt++] = (adapter_t){nm, fmt, fn}; } while (0)
   ADD("cJSON", "json", dec_cjson);
@@ -690,9 +721,12 @@ int main(int argc, char **argv) {
 #ifdef HAS_LIBPROTOBUF
   ADD("protobuf", "protobuf", dec_protobuf_wire);
 #endif
+#ifdef HAS_HDF5
+  ADD("hdf5", "hdf5", dec_hdf5);
+#endif
 #undef ADD
 
-  adapter_t adapters[32];
+  adapter_t adapters[40];
   int nad = 0;
   char missing[2048];
   missing[0] = 0;
@@ -746,7 +780,7 @@ int main(int argc, char **argv) {
     const char *format = ent->d_name;
     if (only_fmt && strcmp(only_fmt, format) != 0) continue;
 
-    adapter_t *use[32];
+    adapter_t *use[40];
     int nuse = 0;
     for (int i = 0; i < nad; i++) {
       if (strcmp(adapters[i].format, format) == 0) use[nuse++] = &adapters[i];

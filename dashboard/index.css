@@ -297,13 +297,8 @@ body.dash-view-compare .charts-grid,
 body.dash-view-compare #detailed-analytics,
 body.dash-view-compare #orientation-banner,
 body.dash-view-compare #run-meta,
-body.dash-view-compare .toolbar > .tabs {
+body.dash-view-compare .toolbar > .tabs:not(.lang-tabs) {
   display: none !important;
-}
-
-/* Language is the shared filter. Compare does not repeat it. */
-#compare-same-panel .same-lang-wrap {
-  display: none;
 }
 
 /* Main Container Layout (High Density) */
@@ -427,45 +422,51 @@ body.dash-view-compare .toolbar > .tabs {
   background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
 }
 
-/* Standards menus only. All is a meta choice, not a named standard like JSON.
-   No public spec is the unscored bucket (Overview id custom, Compliance id no-spec). */
+/* Standards menus only. ALL is the meta choice. Named standards stay plain.
+   No public spec is bold and the same color as those names. */
+.filter-group-primary .select-wrapper select option,
+.cmp-filter select option {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
 .filter-group-primary .select-wrapper select.std-select-all,
 .cmp-filter select.std-select-all,
+.filter-group-primary .select-wrapper select option.std-opt-all,
+.cmp-filter select option.std-opt-all,
 option.std-opt-all {
-  font-style: italic;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--color-brand-indigo);
+}
+
+select.std-select-all option,
+select.std-select-nospec option {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+select.std-select-all option.std-opt-all {
   font-weight: 700;
   color: var(--color-brand-indigo);
 }
 
 .filter-group-primary .select-wrapper select.std-select-nospec,
 .cmp-filter select.std-select-nospec,
+.filter-group-primary .select-wrapper select option.std-opt-nospec,
+.cmp-filter select option.std-opt-nospec,
 option.std-opt-nospec {
-  font-style: italic;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-style: normal;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 option.std-opt-sep {
   color: var(--text-muted);
   font-style: normal;
   font-weight: 600;
-}
-
-/* Data set follows the standard. Same box as a primary select, no chevron. */
-.filter-group-primary .dataset-value {
-  display: inline-flex;
-  align-items: center;
-  font-weight: 500;
-  font-family: var(--font-family);
-  font-size: 0.85rem;
-  line-height: 1.2;
-  color: var(--text-primary);
-  border: 1px solid #c5cae9;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #fff 0%, var(--bg-brand-indigo-light) 160%);
-  padding: 0.3rem 0.6rem;
-  cursor: default;
-  user-select: none;
 }
 
 .filter-group-secondary {
@@ -620,6 +621,35 @@ select:focus {
   background-color: var(--bg-blue-light);
   color: var(--color-blue);
   font-weight: 500;
+}
+
+/* Language tabs. Only ALL is colored. Other languages use the normal tab colors. */
+.lang-tabs {
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.lang-tabs .tab-btn {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.lang-tabs .tab-btn.active {
+  background-color: var(--bg-blue-light);
+  color: var(--color-blue);
+  font-weight: 500;
+}
+
+.lang-tabs .tab-btn.lang-tab-all {
+  color: var(--color-brand-indigo);
+  font-weight: 700;
+}
+
+.lang-tabs .tab-btn.lang-tab-all.active {
+  background-color: var(--bg-brand-indigo-light);
+  color: var(--color-brand-indigo);
+  font-weight: 700;
 }
 
 /* KPI Cards Layout (Horizontal Row & Small) */
@@ -2309,18 +2339,6 @@ tr.roster-baseline-row td.num.baseline-col {
   flex-wrap: nowrap;
   width: auto;
   align-items: center;
-}
-
-#compare-same-panel .same-lang-wrap {
-  flex: 0 0 auto;
-}
-
-#compare-same-panel #same-lang-select {
-  width: 5.5rem;
-  max-width: 5.5rem;
-  min-width: 5.5rem;
-  font-size: 0.78rem;
-  padding: 0.25rem 1.35rem 0.25rem 0.4rem;
 }
 
 #compare-same-filters .select-wrapper select {

@@ -166,8 +166,29 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
                 cfg.int_max = Int(ir["max"].int())
             except:
                 pass
+            try:
+                cfg.nx = Int(tc["nx"].int())
+            except:
+                pass
+            try:
+                cfg.ny = Int(tc["ny"].int())
+            except:
+                pass
+            try:
+                var win = tc["window"].object().copy()
+                cfg.x0 = Int(win["x0"].int())
+                cfg.y0 = Int(win["y0"].int())
+                cfg.wx = Int(win["wx"].int())
+                cfg.wy = Int(win["wy"].int())
+            except:
+                pass
         except:
             pass
+        if type_id == "grid_window" and (cfg.wx < 1 or cfg.wy < 1):
+            cfg.x0 = 128
+            cfg.y0 = 64
+            cfg.wx = 256
+            cfg.wy = 128
         cells.append(Cell(type_id, n, hash, cfg))
         i += 1
     var modes = List[String]()
@@ -197,6 +218,14 @@ def _columnar_id(type_id: String) -> Bool:
 
 def _columnar_name(name: String) -> Bool:
     return name == "arrow-ipc" or name == "parquet" or name == "parquet-uncompressed"
+
+
+def _array_id(type_id: String) -> Bool:
+    return type_id == "grid" or type_id == "grid_window"
+
+
+def _array_name(name: String) -> Bool:
+    return name == "gld-hdf5"
 
 
 def run() raises:
@@ -328,6 +357,10 @@ def run() raises:
         while ri < len(names):
             var nm = names[ri]
             if _columnar_id(fx.type_id) != _columnar_name(nm):
+                ri += 1
+                continue
+            # grid is gld-hdf5 only. That name does not time the five suite types.
+            if _array_id(fx.type_id) != _array_name(nm):
                 ri += 1
                 continue
             # Shared regions and the person ring. Only regular and frozen Dagr.
@@ -721,6 +754,9 @@ def run() raises:
                         var stream_mode = ""
                         if _columnar_name(nm):
                             native_kind = "table"
+                            stream_mode = "adapted"
+                        elif _array_name(nm):
+                            native_kind = "grid"
                             stream_mode = "adapted"
                         lines += (
                             "mojo,"

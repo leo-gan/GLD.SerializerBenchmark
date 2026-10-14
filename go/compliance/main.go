@@ -379,6 +379,7 @@ func builtin() []adapter {
 		{"ugorji/cbor", "cbor", moduleVer("github.com/ugorji/go/codec"), ugorjiCBOR},
 		{"vmihailenco/msgpack", "msgpack", moduleVer("github.com/vmihailenco/msgpack/v5"), jsonDec(vmsgpack.Unmarshal)},
 		{"shamaton/msgpack", "msgpack", moduleVer("github.com/shamaton/msgpack/v3"), jsonDec(msgpack.Unmarshal)},
+		{"shamaton/msgpack (array)", "msgpack", moduleVer("github.com/shamaton/msgpack/v3"), jsonDec(msgpack.UnmarshalAsArray)},
 		{"ugorji/msgpack", "msgpack", moduleVer("github.com/ugorji/go/codec"), ugorjiMP},
 		{"ion-go", "ion", moduleVer("github.com/amazon-ion/ion-go"), decodeIon},
 		{"mongo-bson", "bson", moduleVer("go.mongodb.org/mongo-driver"), func(b []byte, _ string) (any, error) {

@@ -150,6 +150,9 @@ let package = Package(
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "FlatBuffers", package: "flatbuffers"),
                 .product(name: "SwiftAvroCore", package: "SwiftAvroCore"),
+                .product(name: "Avro", package: "gld-avro-swift"),
+                .product(name: "Ion", package: "gld-ion-swift"),
+                .product(name: "TOML", package: "swift-toml"),
             ],
             path: "Sources/Compliance"
         ),

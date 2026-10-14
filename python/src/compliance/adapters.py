@@ -288,6 +288,95 @@ def _orc_decode(data: bytes) -> Any:
     return orc.read_table(pa.BufferReader(data)).to_pylist()
 
 
+def _write_temp(data: bytes, suffix: str) -> str:
+    import os
+    import tempfile
+
+    fd, path = tempfile.mkstemp(prefix="gld-cmp-", suffix=suffix)
+    os.close(fd)
+    try:
+        with open(path, "wb") as handle:
+            handle.write(data)
+    except Exception:
+        os.unlink(path)
+        raise
+    return path
+
+
+def _h5py_decode(data: bytes) -> Any:
+    """Accept only what h5py.is_hdf5 accepts. Not a hand-rolled magic check."""
+    import os
+
+    import h5py
+
+    path = _write_temp(data, ".h5")
+    try:
+        if not h5py.is_hdf5(path):
+            raise ValueError("h5py.is_hdf5 rejected the file")
+        return True
+    finally:
+        os.unlink(path)
+
+
+def _netcdf4_decode(data: bytes) -> Any:
+    """Open the bytes with netCDF4.Dataset. A short header is not a file."""
+    import os
+
+    import netCDF4
+
+    path = _write_temp(data, ".nc")
+    dataset = None
+    try:
+        dataset = netCDF4.Dataset(path, "r")
+        return str(dataset.data_model)
+    finally:
+        if dataset is not None:
+            dataset.close()
+        os.unlink(path)
+
+
+def _adios2_decode(data: bytes) -> Any:
+    """Score adios2.Stream on a directory, not another library's BP5 bytes.
+
+    The catalog input is a directory entry name. An empty name is an empty
+    directory, which this library must refuse. Any other name must be a file
+    this library writes in a one-step BP5 directory, and this library must
+    read that directory back. Official BP5 is not opened with gld-adios2.
+    """
+    import os
+    import shutil
+    import tempfile
+
+    import adios2
+
+    marker = data.decode("utf-8")
+    if marker == "":
+        path = tempfile.mkdtemp(prefix="gld-cmp-adios-empty-")
+        try:
+            with adios2.Stream(path, "r") as stream:
+                return {"steps": sum(1 for _ in stream.steps())}
+        finally:
+            shutil.rmtree(path, ignore_errors=True)
+    if marker != os.path.basename(marker) or marker in {".", ".."}:
+        raise ValueError("adios2 marker must be one file name")
+    root = tempfile.mkdtemp(prefix="gld-cmp-adios-")
+    try:
+        with adios2.Stream(root, "w") as stream:
+            stream.write("grid", [1.0])
+        if not os.path.isfile(os.path.join(root, marker)):
+            raise ValueError(f"adios2 did not write {marker}")
+        got = None
+        with adios2.Stream(root, "r") as stream:
+            for _ in stream.steps():
+                got = stream.read("grid")
+                break
+        if got is None:
+            raise ValueError("adios2 read produced no step")
+        return marker
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def builtin_adapters() -> list[Adapter]:
     """Adapters that can be constructed; missing optional imports are skipped."""
     specs: list[tuple[str, str, DecodeFn, EncodeFn | None, str, str]] = [
@@ -338,6 +427,9 @@ def builtin_adapters() -> list[Adapter]:
         ("parquet-uncompressed", "parquet", _parquet_decode, None, "pyarrow Parquet reader", "pyarrow"),
         ("orc", "orc", _orc_decode, None, "pyarrow ORC reader", "pyarrow"),
         ("orc-uncompressed", "orc", _orc_decode, None, "pyarrow ORC reader", "pyarrow"),
+        ("h5py", "hdf5", _h5py_decode, None, "h5py.is_hdf5", "h5py"),
+        ("netCDF4", "netcdf", _netcdf4_decode, None, "netCDF4.Dataset open", "netCDF4"),
+        ("adios2", "adios2", _adios2_decode, None, "adios2.Stream BP5 write then read", "adios2"),
     ]
     out: list[Adapter] = []
     for name, fmt, dec, enc, notes, package in specs:

@@ -49,6 +49,7 @@ DEFAULT_CSVS = {
     "rust": REPO / "logs/rust/2026-10-02-rust-columnar-full.csv",
     "javascript": REPO / "logs/javascript/2026-10-03-js-columnar-full.csv",
     "kotlin": REPO / "logs/kotlin/2026-10-03-kt-columnar-full.csv",
+    "mojo": REPO / "logs/mojo/2026-10-13-mojo-columnar-full.csv",
 }
 CORE = ("python", "cpp", "csharp", "go", "java", "rust")
 

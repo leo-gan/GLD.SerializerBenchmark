@@ -8,7 +8,12 @@ The next byte is the superblock version. The format is specified by
 There is no official OSI-licensed parse corpus in this suite. The cases
 under `compliance/data/hdf5/` are original. They check the signature and
 a versioned superblock prefix. They are not a full HDF5 conformance suite.
-No adapter is required to score them. An empty cell stays empty.
+Each mapped row calls that library. libhdf5 bindings call `H5Fis_hdf5`
+(or `h5py.is_hdf5`, or `h5fis_hdf5_f`). PureHDF opens with `H5File.Open`.
+h5wasm opens with `h5wasm.File` and treats a negative `file_id` as a
+reject, because that build does not export `H5Fis_hdf5`. gld-hdf5 calls
+`read_hdf5`, which requires a superblock version 0 file of at least 96
+bytes, so the 9-byte accepts fail. An empty cell is a missing adapter.
 
 ## Versions
 
@@ -29,4 +34,5 @@ Catalog: `compliance/data/hdf5/`. Inputs are hex.
 
 `hdf5-fortran` times the official Fortran API on the array data set
 (`grid` and `grid_window`): one float64 dataset, core virtual file driver.
-That row is a benchmark measurement. It does not decode this corpus.
+That row is a benchmark measurement. Its compliance cell calls
+`h5fis_hdf5_f` on the same corpus.
