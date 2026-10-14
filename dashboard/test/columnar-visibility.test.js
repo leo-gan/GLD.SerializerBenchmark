@@ -227,7 +227,7 @@ test('published compliance matrix scores Arrow, Parquet, ORC v1, and SBE', () =>
   const cells = doc.matrix.filter((cell) =>
     ['arrow', 'parquet', 'orc', 'sbe'].includes(cell.format),
   );
-  assert.equal(cells.length, 37);
+  assert.equal(cells.length, 42);
   assert.ok(cells.every((cell) => cell.passed === cell.total && cell.failed === 0));
   const orcStandards = [...new Set(cells.filter((cell) => cell.format === 'orc').map((cell) => cell.standard))];
   assert.deepEqual(orcStandards, ['ORC v1']);

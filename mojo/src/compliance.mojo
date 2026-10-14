@@ -1,6 +1,7 @@
 """Mojo compliance runner — same catalog as the other languages."""
 
 from std.collections import List, Span
+from std.os.process import Process
 from std.sys import argv
 from emberjson import parse, to_string
 from ehsanmok_json import loads as ehsan_loads
@@ -34,6 +35,8 @@ from fb_flex.reader import FlexTree, flex_loads
 from fb_wire.verify import verify_file_identifier, verify_root
 from arrow_wire.ipc import decode_ipc_stream
 from parquet_wire.decode import decode_table
+from hdf5 import VERSION, read_bp5, read_cdf1, read_hdf5, read_nc4, write_bp5
+from hdf5_runtime.doc import BpStep
 
 
 
@@ -193,6 +196,64 @@ def _try_arrow(buf: List[Byte]) raises:
 
 def _try_parquet(buf: List[Byte]) raises:
     _ = decode_table(Span(buf))
+
+
+def _try_hdf5(buf: List[Byte]) raises:
+    _ = read_hdf5(Span(buf))
+
+
+def _try_netcdf(buf: List[Byte]) raises:
+    # Magic only picks which gld reader to call. Success is that reader returning.
+    if len(buf) >= 4 and Int(buf[0]) == 67 and Int(buf[1]) == 68 and Int(buf[2]) == 70 and Int(buf[3]) == 1:
+        _ = read_cdf1(Span(buf))
+        return
+    if len(buf) >= 4 and Int(buf[0]) == 67 and Int(buf[1]) == 68 and Int(buf[2]) == 70 and Int(buf[3]) == 2:
+        raise Error("gld-netcdf has no CDF-2 reader")
+    if len(buf) >= 4 and Int(buf[0]) == 0x89 and Int(buf[1]) == 72 and Int(buf[2]) == 68 and Int(buf[3]) == 70:
+        _ = read_nc4(Span(buf))
+        return
+    raise Error("not a NetCDF file")
+
+
+def _rm_rf(path: String) raises:
+    var args = List[String]()
+    args.append(String("-rf"))
+    args.append(path)
+    var proc = Process.run(String("rm"), args^)
+    _ = proc.wait()
+
+
+def _mkdir_p(path: String) raises:
+    var args = List[String]()
+    args.append(String("-p"))
+    args.append(path)
+    var proc = Process.run(String("mkdir"), args^)
+    _ = proc.wait()
+
+
+def _try_adios2(marker: String) raises:
+    # The catalog names a directory entry. gld writes its own BP5 directory and
+    # reads it back. It does not open an official ADIOS2 directory.
+    if marker.byte_length() == 0:
+        var empty = String("/tmp/gld-cmp-adios-empty")
+        _rm_rf(empty)
+        _mkdir_p(empty)
+        _ = read_bp5(empty)
+        return
+    var root = String("/tmp/gld-cmp-adios-bp5")
+    _rm_rf(root)
+    var step = BpStep()
+    step.var_name = String("grid")
+    step.values.append(Float64(1.0))
+    step.attr_name = String("unit")
+    step.attr_text = String("1")
+    write_bp5(root, step)
+    var handle = open(root + String("/") + marker, "r")
+    var data = handle.read_bytes()
+    handle.close()
+    if len(data) == 0:
+        raise Error("BP5 entry is empty")
+    _ = read_bp5(root)
 
 
 def _try_ion(buf: List[Byte]) raises:
@@ -541,6 +602,12 @@ def _run_one(
                 has_decoded,
                 decoded_json,
             )
+        elif fmt == "hdf5":
+            _try_hdf5(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "netcdf":
+            _try_netcdf(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "adios2":
+            _try_adios2(input_text)
         else:
             raise Error("no adapter")
         ok = True
@@ -746,6 +813,15 @@ def main() raises:
                 vers.append("0.2.0")
                 sers.append("parquet-uncompressed")
                 vers.append("0.2.0")
+            elif fmt == "hdf5":
+                sers.append("gld-hdf5")
+                vers.append(String(VERSION))
+            elif fmt == "netcdf":
+                sers.append("gld-netcdf")
+                vers.append(String(VERSION))
+            elif fmt == "adios2":
+                sers.append("gld-adios2")
+                vers.append(String(VERSION))
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False

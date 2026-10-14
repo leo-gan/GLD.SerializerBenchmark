@@ -215,7 +215,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
         "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
-        "arrow-ipc" "parquet" "parquet-uncompressed"
+        "arrow-ipc" "parquet" "parquet-uncompressed" "PureHDF"
     )
     # NetJSON hangs on some catalog cases; keep it out of the unattended loop.
     export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
@@ -311,6 +311,12 @@ if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/s
         CPP_LIBS+=("$ARROW_LIBDIR/libparquet.so" "$ARROW_LIBDIR/libarrow.so" "$ARROW_LIBDIR/libthrift.so")
         CPP_DEFS+=(-DCOMPLIANCE_WITH_ARROW=1)
         CPP_LINK+=(-pthread -Wl,--disable-new-dtags "-Wl,-rpath,$ARROW_LIBDIR")
+    fi
+    if pkg-config --exists hdf5; then
+        # highfive's compliance row calls H5Fis_hdf5. HighFive has no signature API.
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_HDF5=1)
+        CPP_INC+=($(pkg-config --cflags hdf5))
+        CPP_LIBS+=($(pkg-config --libs hdf5))
     fi
     for d in rapidjson/include glaze/include ArduinoJson/src jsoncons/include msgpack-c/include flatbuffers/include yaml-cpp/include; do
         if [[ -d "$PROJECT_ROOT/cpp/third_party/$d" ]]; then

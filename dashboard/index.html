@@ -74,33 +74,21 @@
     
     <!-- Controls/Filters Toolbar -->
     <section class="glass-panel toolbar">
+      <div id="lang-tabs" class="lang-tabs tabs" role="tablist" aria-label="Language"></div>
       <div class="filter-group filter-group-primary" aria-label="Primary filters">
-        <span class="filter-label filter-label-primary">Language:</span>
-        <div class="select-wrapper">
-          <select id="lang-select" aria-label="Select Language">
-            <!-- Options filled from LANGUAGE_CATALOG in main.js; static fallback: -->
-            <option value="c">C</option>
-            <option value="csharp">C#</option>
-            <option value="cpp">C++</option>
-            <option value="go">Go</option>
-            <option value="java">Java</option>
-            <option value="javascript">JavaScript</option>
-            <option value="kotlin">Kotlin</option>
-            <option value="python">Python</option>
-            <option value="rust">Rust</option>
-            <option value="swift">Swift</option>
-          </select>
-        </div>
-
-        <span class="filter-label filter-label-primary" title="Compliance standard. All lists every serializer.">Standard:</span>
+        <span class="filter-label filter-label-primary" title="Compliance standard. ALL lists every serializer for the selected languages.">Standard:</span>
         <div class="select-wrapper">
           <select id="standard-select" aria-label="Select standard">
-            <option value="all">All</option>
+            <option value="all" class="std-opt-all">ALL</option>
           </select>
         </div>
 
-        <span class="filter-label filter-label-primary" id="dataset-label">Data set:</span>
-        <span id="dataset-value" class="dataset-value" role="status" aria-live="polite" aria-labelledby="dataset-label" title="Follows the selected standard. Suite is message, document, telemetry, strings, and event. Columnar is table, table_project, nested_table, and signal. Graph is the graph data type.">Suite</span>
+        <span class="filter-label filter-label-primary" id="dataset-label" title="Results and serializers stay in this data set. Suite, Columnar, Graph, and Array are separate.">Data set:</span>
+        <div class="select-wrapper">
+          <select id="dataset-select" aria-labelledby="dataset-label" title="One data set. Data types and serializers come only from this set.">
+            <option value="suite">Suite</option>
+          </select>
+        </div>
 
         <span class="filter-label filter-label-primary" title="Data types measured for the selected standard">Data type:</span>
         <div class="select-wrapper">
@@ -156,7 +144,7 @@
     <aside id="orientation-banner" class="orientation-banner glass-panel" role="note">
       <div class="orientation-body">
         <p class="orientation-lead">
-          <strong>Start here:</strong> pick a <strong>language</strong> and <strong>data type</strong>, then read the scatter (speed vs size) and ranking.
+          <strong>Start here:</strong> pick a <strong>language</strong> (or <strong>ALL</strong>), a <strong>data set</strong>, and a <strong>data type</strong>, then read the scatter (speed vs size) and ranking.
           Compare libraries <strong>within one language</strong> — cross-language times are directional only.
         </p>
         <p class="orientation-gloss section-help">
@@ -175,7 +163,7 @@
       <div class="glass-panel kpi-card kpi-card-count">
         <span class="kpi-title">Libraries</span>
         <span class="kpi-value" id="kpi-total">Loading…</span>
-        <span class="kpi-desc">In this language · data type · mode</span>
+        <span class="kpi-desc">In this language · data set · data type</span>
       </div>
       <div class="glass-panel kpi-card featured">
         <span class="kpi-title">Fastest</span>
@@ -322,9 +310,6 @@
 
         <div class="compare-ctrl-row compare-ctrl-row-selected">
           <div id="compare-same-panel" class="compare-inline-add">
-            <div class="select-wrapper same-lang-wrap">
-              <select id="same-lang-select" aria-label="Language for comparison"></select>
-            </div>
             <input type="search" id="same-ser-search" class="compare-search-input" placeholder="Filter…" aria-label="Filter serializers to add" autocomplete="off">
             <div class="select-wrapper compare-add-select-wrap">
               <select id="same-ser-add-select" aria-label="Serializer to add"></select>

@@ -187,7 +187,39 @@ function builtinAdapters(): array
             return decodeProtobuf($b, (string) $schema);
         }];
     }
+    if (class_exists(\Gld\Arrow\Arrow::class)) {
+        $out[] = ['name' => 'gld-arrow', 'format' => 'arrow', 'version' => packageVersion('leo-gan/gld-arrow-php'), 'decode' => function (string $b) {
+            $col = \Gld\Arrow\Arrow::readStream($b);
+            if ($col->batches === []) {
+                throw new RuntimeException('gld-arrow: no record batch');
+            }
+            $rows = [];
+            foreach ($col->batches as $bi => $batch) {
+                for ($i = 0; $i < $batch->length; $i++) {
+                    $rows[] = \Gld\Arrow\Runtime\Values::row($col, $bi, $i);
+                }
+            }
+            return $rows;
+        }];
+    }
+    if (function_exists('Gld\\Ion\\decode')) {
+        $out[] = ['name' => 'gld-ion', 'format' => 'ion', 'version' => packageVersion('leo-gan/gld-ion-php'), 'decode' => function (string $b) {
+            return \Gld\Ion\decode($b);
+        }];
+    }
     return $out;
+}
+
+function packageVersion(string $name): string
+{
+    if (!class_exists(\Composer\InstalledVersions::class)) {
+        return '';
+    }
+    try {
+        return \Composer\InstalledVersions::getPrettyVersion($name) ?? '';
+    } catch (Throwable) {
+        return '';
+    }
 }
 
 function decodeProtobuf(string $data, string $schema): array

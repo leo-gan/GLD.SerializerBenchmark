@@ -46,7 +46,44 @@ function compareStandardLabels(a, b, labelOf) {
 }
 
 /**
- * Standard dropdown for one language.
+ * Language ids that implement `standard`, in catalog order.
+ * `all` (and an empty standard) returns the whole catalog.
+ * Before labels or rows exist, the catalog is returned unchanged.
+ * `language: 'all'` on the standard menu unions every language's standards.
+ *
+ * @param {{ standard?: string, labels?: object|null, catalog?: string[], groups?: object[] }} args
+ */
+export function languagesForStandard({
+  standard = 'all',
+  labels = null,
+  catalog = [],
+  groups = [],
+} = {}) {
+  const ids = [];
+  const seen = new Set();
+  for (const item of catalog || []) {
+    const id = typeof item === 'string' ? item : item?.id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  if (!standard || standard === 'all') return ids;
+  const maps = (labels && labels.standards) || null;
+  if (!maps && !(groups || []).length) return ids;
+  const have = new Set();
+  for (const lang of ids) {
+    const values = maps && maps[lang] ? Object.values(maps[lang]) : [];
+    if (values.includes(standard)) have.add(lang);
+  }
+  for (const group of groups || []) {
+    if (!group || group.standard !== standard || !group.language) continue;
+    if (seen.has(group.language)) have.add(group.language);
+  }
+  return ids.filter((id) => have.has(id));
+}
+
+/**
+ * Standard dropdown for one language, or every language when language is `all`.
  * All, then standards that have a serializer here (sorted), then No public spec
  * (`custom`), then a disabled separator, then standards that have none here (sorted).
  * No public spec stays in that slot even when this language has no such rows.
@@ -66,13 +103,16 @@ export function benchmarkStandardMenu({
   labelOf = (id) => id,
 } = {}) {
   const present = new Set();
-  const langMap = (labels && labels.standards && labels.standards[language]) || {};
-  for (const standard of Object.values(langMap)) {
-    if (standard) present.add(standard);
+  const maps = (labels && labels.standards) || {};
+  const langIds = !language || language === 'all' ? Object.keys(maps) : [language];
+  for (const id of langIds) {
+    for (const standard of Object.values(maps[id] || {})) {
+      if (standard) present.add(standard);
+    }
   }
   for (const group of groups || []) {
     if (!group || !group.standard) continue;
-    if (language && group.language && group.language !== language) continue;
+    if (language && language !== 'all' && group.language && group.language !== language) continue;
     present.add(group.standard);
   }
 

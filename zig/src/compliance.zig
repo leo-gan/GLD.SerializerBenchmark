@@ -5,6 +5,8 @@ const zbor = @import("zbor");
 const zig_msgpack = @import("zig_msgpack");
 const msgpack_l = @import("msgpack_lalinsky");
 const json_l = @import("json_lalinsky");
+const arrow = @import("arrow");
+const avro = @import("avro");
 
 pub fn main(init: std.process.Init) !void {
     const alloc = init.gpa;
@@ -69,7 +71,14 @@ pub fn main(init: std.process.Init) !void {
         null;
     defer if (mapping_parsed) |*parsed_map| parsed_map.deinit();
 
-    const json_sers_all = [_][]const u8{ "std.json", "std.json.scanner", "serde.json", "json.zig" };
+    const json_sers_all = [_][]const u8{
+        "std.json",
+        "std.json.borrowed",
+        "std.json.scanner",
+        "serde.json",
+        "serde.json.borrowed",
+        "json.zig",
+    };
     var json_sers: std.ArrayList([]const u8) = .empty;
     defer json_sers.deinit(alloc);
     for (json_sers_all) |name| {
@@ -221,6 +230,8 @@ pub fn main(init: std.process.Init) !void {
     const extras = [_]Extra{
         .{ .dir = "yaml", .sers = &.{"serde.yaml"} },
         .{ .dir = "toml", .sers = &.{"serde.toml"} },
+        .{ .dir = "arrow", .sers = &.{"gld-arrow"} },
+        .{ .dir = "avro", .sers = &.{"gld-avro"} },
         // serde.msgpack is absent on purpose: serde.zig 1.2.2 decodes only into
         // a known type, so there is no entry point that can answer "is this
         // wire image valid MessagePack?". The row it used to fill was the
@@ -267,7 +278,8 @@ pub fn main(init: std.process.Init) !void {
                     var observed: []const u8 = "ok";
                     var arena = std.heap.ArenaAllocator.init(alloc);
                     defer arena.deinit();
-                    if (decodeExtra(arena.allocator(), ser, bytes)) |_| {
+                    const schema = caseSchema(arena.allocator(), c.object.get("schema")) catch "";
+                    if (decodeExtra(arena.allocator(), ser, bytes, schema)) |_| {
                         if (std.mem.eql(u8, expect, "reject")) {
                             outcome = "fail";
                             observed = "accepted";
@@ -324,10 +336,19 @@ fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !voi
         json_l.validateFromSlice(input) catch return error.InvalidJson;
         return;
     }
-    if (std.mem.eql(u8, ser, "serde.json")) {
-        // serde.zig 1.2.2 has no bytes-to-value entry point, so drive the same
-        // scanner `serde.json.fromSlice` uses: it tokenizes, validates escapes,
-        // UTF-8 and control characters, and enforces the depth limit.
+    if (std.mem.eql(u8, ser, "std.json.borrowed")) {
+        // Same parser as std.json. alloc_if_needed is the borrowed fixture mode:
+        // unescaped strings view the input instead of copying it.
+        _ = try std.json.parseFromSliceLeaky(std.json.Value, alloc, input, .{
+            .allocate = .alloc_if_needed,
+        });
+        return;
+    }
+    if (std.mem.eql(u8, ser, "serde.json") or std.mem.eql(u8, ser, "serde.json.borrowed")) {
+        // serde.zig 1.2.2 has no dynamic bytes-to-value entry point. fromSlice
+        // and fromSliceBorrowed share this scanner: it tokenizes, validates
+        // escapes, UTF-8 and control characters, and enforces the depth limit.
+        // Borrowed only changes who owns the decoded strings.
         var de = serde.json.Deserializer.init(input);
         try de.scanner.skipValue();
         de.scanner.skipWhitespace();
@@ -345,7 +366,22 @@ fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !voi
     parsed.deinit();
 }
 
-fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8) !void {
+fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8, schema: []const u8) !void {
+    if (std.mem.eql(u8, ser, "gld-arrow")) {
+        var col = try arrow.decodeStream(alloc, bytes);
+        defer col.deinit();
+        if (col.batches.items.len == 0) return error.NoBatch;
+        return;
+    }
+    if (std.mem.eql(u8, ser, "gld-avro")) {
+        const text = try avroSchemaJson(alloc, schema);
+        defer alloc.free(text);
+        var pool = try avro.parseAvsc(alloc, text);
+        defer pool.deinit();
+        var datum = try avro.decodeBin(alloc, &pool, pool.root, bytes);
+        defer datum.deinit();
+        return;
+    }
     if (std.mem.eql(u8, ser, "serde.yaml")) {
         _ = try serde.yaml.parseValue(alloc, bytes);
         return;
@@ -384,6 +420,22 @@ fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8) !vo
         return;
     }
     return error.UnknownSerializer;
+}
+
+fn caseSchema(alloc: std.mem.Allocator, value: ?std.json.Value) ![]u8 {
+    const v = value orelse return alloc.dupe(u8, "");
+    return switch (v) {
+        .string => |text| alloc.dupe(u8, text),
+        else => std.json.Stringify.valueAlloc(alloc, v, .{}),
+    };
+}
+
+fn avroSchemaJson(alloc: std.mem.Allocator, schema: []const u8) ![]u8 {
+    const trimmed = std.mem.trim(u8, schema, " \t\r\n");
+    if (trimmed.len == 0) return error.NoSchema;
+    const c = trimmed[0];
+    if (c == '{' or c == '[' or c == '"') return alloc.dupe(u8, trimmed);
+    return std.fmt.allocPrint(alloc, "\"{s}\"", .{trimmed});
 }
 
 fn decodeStdZon(alloc: std.mem.Allocator, bytes: []const u8) !void {

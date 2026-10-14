@@ -15,8 +15,9 @@ NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already ti
 | JavaScript | `h5wasm` | | |
 | Python | `h5py` | `netCDF4` | `adios2` |
 | Rust | `hdf5-metno` | | |
+| Mojo | `gld-hdf5` | | |
 
-`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the C# string path carries the file bytes as Latin-1 so the size is the file length. Every window read is a hyperslab, a slice, or a selection. These rows do not time the five suite types. Fortran also times `gld-arrow` on the same grid: Arrow C Data Interface numeric buffers, not an HDF5 file.
+`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the C# string path carries the file bytes as Latin-1 so the size is the file length. `gld-hdf5` is a from-scratch Mojo writer, not libhdf5. It writes one contiguous float64 dataset. `grid_window` copies the interior window after `read_hdf5` returns the whole file, because that library has no hyperslab. The other window reads are a hyperslab, a slice, or a selection. These rows do not time the five suite types. Fortran also times `gld-arrow` on the same grid: Arrow C Data Interface numeric buffers, not an HDF5 file. Mojo `gld-netcdf` and `gld-adios2` are not array rows.
 
 ## Not registered
 
@@ -25,7 +26,6 @@ NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already ti
 | Go | `gonum.org/v1/hdf5` is archived. There is no maintained writer for the array contract. |
 | Java | The HDF Group Java binding is a native installer, not a Maven dependency this runner can build. JHDF is read-focused. |
 | Kotlin | A Kotlin row would call the Java libraries. Those are not registered. |
-| Mojo | `gld-hdf5` times the five suite types. It does not write the array data set. |
 | PHP | No maintained writer. |
 | Swift | No maintained writer. A C import would time libhdf5 plus an FFI crossing this suite did not write a library for. |
 | Zig | No maintained writer. The same FFI crossing applies. |

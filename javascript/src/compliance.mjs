@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import { toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
 import { tableFromIPC } from 'apache-arrow';
 import { parquetReadObjects } from 'hyparquet';
+import h5wasm from 'h5wasm';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -301,6 +302,7 @@ function makeAdapters() {
     );
   } catch { /* optional */ }
   add('arrow-ipc', 'arrow', (buf) => arrowRows(tableFromIPC(buf)), 'apache-arrow tableFromIPC', 'apache-arrow');
+  add('h5wasm', 'hdf5', (buf) => decodeH5wasm(buf), 'h5wasm.File open', 'h5wasm');
   add('parquet', 'parquet', (buf) => parquetRows(buf), 'hyparquet parquetReadObjects', 'hyparquet');
   add('parquet-uncompressed', 'parquet', (buf) => parquetRows(buf), 'hyparquet parquetReadObjects', 'hyparquet');
   try {
@@ -336,6 +338,37 @@ function parquetFile(buf) {
   const u8 = buf instanceof Uint8Array ? buf : Buffer.from(buf);
   if (u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength) return u8.buffer;
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+}
+
+function h5FileAccepted(file) {
+  const id = file && file.file_id;
+  if (typeof id === 'bigint') return id >= 0n;
+  if (typeof id === 'number') return Number.isFinite(id) && id >= 0;
+  return false;
+}
+
+// h5wasm 0.10.3 does not export H5Fis_hdf5. File() returns file_id -1n instead
+// of throwing, so a negative id is a reject. Do not score this row with the host library.
+async function decodeH5wasm(buf) {
+  const ready = await h5wasm.ready;
+  const FS = (ready && ready.FS) || h5wasm.FS;
+  const Module = h5wasm.Module;
+  if (Module && typeof Module.deactivate_throwing_error_handler === 'function') {
+    try { Module.deactivate_throwing_error_handler(); } catch { /* diagnostics only */ }
+  }
+  const name = `gld-cmp-${Date.now()}-${Math.random().toString(16).slice(2)}.h5`;
+  let file = null;
+  try {
+    FS.writeFile(name, buf);
+    file = new h5wasm.File(name, 'r');
+    if (!h5FileAccepted(file)) throw new Error('h5wasm.File rejected the file');
+    return true;
+  } finally {
+    if (file) {
+      try { file.close(); } catch { /* failed open is not a file id */ }
+    }
+    try { FS.unlink(name); } catch { /* already gone */ }
+  }
 }
 
 async function parquetRows(buf) {

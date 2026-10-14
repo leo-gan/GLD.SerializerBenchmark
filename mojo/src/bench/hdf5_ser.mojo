@@ -1,10 +1,12 @@
-"""gld-hdf5, gld-netcdf, and gld-adios2 on the five suite types.
+"""gld-hdf5 on the array data set. gld-netcdf and gld-adios2 stay on the suite.
 
-HDF5 writes typed datasets (i32, i64, f64, uint8 text). NetCDF-4 writes the
-same numbers as float64 variables and the text blob as float64 bit patterns,
-because this library's NetCDF variables are float64. ADIOS2 BP5 here is one
-float64 variable plus one string attribute, so the record is packed into that
-variable and the directory is framed as the byte size. Graph is not a grid.
+gld-hdf5 writes one contiguous float64 dataset named grid. The first dimension
+is x and the second is y. File index ``x * ny + y`` is catalog
+``values[y * nx + x]``. grid_window copies the interior window after
+read_hdf5 returns the whole file. This library has no hyperslab. The suite
+pack (i32, i64, f64, uint8 text) remains for direct calls. NetCDF-4 writes
+those numbers as float64 variables. ADIOS2 BP5 packs the suite record into
+one float64 variable. The runner does not time gld-hdf5 on the suite.
 """
 
 from std.collections import List, Span
@@ -19,6 +21,7 @@ from bench.data import (
     Event,
     EventAttr,
     Fixture,
+    Grid,
     Message,
     Strings,
     Telemetry,
@@ -467,6 +470,96 @@ def _read_text(doc: H5Doc) -> List[Byte]:
     return out^
 
 
+def _array_type(type_id: String) -> Bool:
+    return type_id == "grid" or type_id == "grid_window"
+
+
+def _file_order(g: Grid) -> List[Float64]:
+    """C order for dims (x, y). Index ``x * ny + y`` is ``values[y * nx + x]``."""
+    var n = g.nx * g.ny
+    var out = List[Float64]()
+    out.reserve(n)
+    var x = 0
+    while x < g.nx:
+        var y = 0
+        while y < g.ny:
+            out.append(g.values[y * g.nx + x])
+            y += 1
+        x += 1
+    return out^
+
+
+def _f64_at(doc: H5Doc, id: Int, index: Int) raises -> Float64:
+    var o = index * 8
+    if o < 0 or o + 8 > len(doc.d_data[id]):
+        raise Error("grid value is outside the dataset")
+    var u = UInt64(0)
+    var s = 0
+    while s < 8:
+        u = u | (UInt64(Int(doc.d_data[id][o + s])) << UInt64(s * 8))
+        s += 1
+    return Float64(from_bits=u)
+
+
+def _emit_grid(fx: Fixture) raises -> List[Byte]:
+    if len(fx.grids) != 1:
+        raise Error("gld-hdf5 grid expects one array")
+    var nx = fx.grids[0].nx
+    var ny = fx.grids[0].ny
+    var doc = H5Doc()
+    var root = doc.add_group(-1, String(""))
+    var ordered = _file_order(fx.grids[0])
+    _ = doc.add_f64_2d(root, String("grid"), nx, ny, ordered^, 0, 0, 0)
+    return write_hdf5(doc)
+
+
+def _load_grid(fx: Fixture, raw: List[Byte]) raises -> Fixture:
+    if len(fx.grids) != 1:
+        raise Error("gld-hdf5 grid expects one array")
+    var nx = fx.grids[0].nx
+    var ny = fx.grids[0].ny
+    var x0 = fx.grids[0].x0
+    var y0 = fx.grids[0].y0
+    var wx = fx.grids[0].wx
+    var wy = fx.grids[0].wy
+    var parsed = read_hdf5(Span(raw))
+    var id = _find_ds(parsed, String("grid"))
+    if id < 0:
+        raise Error("grid dataset missing")
+    if parsed.d_rank[id] != 2 or parsed.d_dtype[id] != DT_F64:
+        raise Error("grid dataset type")
+    if parsed.d_n0[id] != nx or parsed.d_n1[id] != ny:
+        raise Error("grid shape")
+    if len(parsed.d_data[id]) != nx * ny * 8:
+        raise Error("grid payload length")
+    var out = _blank(fx)
+    if fx.type_id == "grid_window":
+        var values = List[Float64]()
+        values.reserve(wx * wy)
+        var y = y0
+        var y_end = y0 + wy
+        while y < y_end:
+            var x = x0
+            var x_end = x0 + wx
+            while x < x_end:
+                values.append(_f64_at(parsed, id, x * ny + y))
+                x += 1
+            y += 1
+        out.grids.append(Grid(wx, wy, values^, 0, 0, 0, 0))
+        return out^
+    var values = List[Float64]()
+    values.reserve(nx * ny)
+    var y = 0
+    while y < ny:
+        var x = 0
+        while x < nx:
+            values.append(_f64_at(parsed, id, x * ny + y))
+            x += 1
+        y += 1
+    out.grids.append(Grid(nx, ny, values^, 0, 0, 0, 0))
+    return out^
+
+
 def _emit_h5(src: RawDoc) raises -> List[Byte]:
     var doc = H5Doc()
     var root = doc.add_group(-1, String(""))
@@ -794,10 +887,14 @@ struct Hdf5Ser:
         return "gld-hdf5"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
+        if _array_type(fx.type_id):
+            return _emit_grid(fx)
         var doc = _pack(fx)
         return _emit_h5(doc^)
 
     def deserialize_bytes(self, fx: Fixture, data: List[Byte]) raises -> Fixture:
+        if _array_type(fx.type_id):
+            return _load_grid(fx, data)
         var doc = _load_h5(data)
         return _unpack(fx, doc^)
 

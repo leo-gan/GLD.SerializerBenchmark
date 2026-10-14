@@ -10,6 +10,7 @@ import {
   missingRegisteredRows,
   standardForSerializer,
   benchmarkStandardMenu,
+  languagesForStandard,
   NO_SERIALIZERS_SEP,
   NO_SERIALIZERS_SEP_ID,
   standardSelectOptions,
@@ -91,6 +92,40 @@ test('Standard menu is All, populated standards, then standards with no serializ
   assert.ok(empty.includes('avro'));
   const emptyLabels = items.slice(sep + 1).map((item) => item.label);
   assert.deepEqual(emptyLabels, [...emptyLabels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+});
+
+test('All languages unions standards, and a standard lists only its languages', () => {
+  const labelOf = (id) => ({ json: 'JSON', arrow: 'Arrow IPC', toml: 'TOML', parquet: 'Parquet', avro: 'Avro', custom: 'No public spec' }[id] || id);
+  const items = benchmarkStandardMenu({
+    language: 'all',
+    labels,
+    allStandardIds: ['json', 'arrow', 'toml', 'parquet', 'avro'],
+    labelOf,
+  });
+  const ids = items.map((item) => item.id);
+  const customAt = ids.indexOf('custom');
+  assert.deepEqual(ids.slice(1, customAt), ['json', 'parquet']);
+  assert.deepEqual(
+    languagesForStandard({ standard: 'json', labels, catalog: ['c', 'csharp', 'python', 'go'] }),
+    ['c', 'csharp'],
+  );
+  assert.deepEqual(
+    languagesForStandard({ standard: 'custom', labels, catalog: ['c', 'csharp', 'python'] }),
+    ['c'],
+  );
+  assert.deepEqual(
+    languagesForStandard({ standard: 'all', labels, catalog: ['c', 'python'] }),
+    ['c', 'python'],
+  );
+  assert.deepEqual(
+    languagesForStandard({
+      standard: 'toml',
+      labels,
+      catalog: ['c', 'go'],
+      groups: [{ language: 'go', standard: 'toml' }],
+    }),
+    ['go'],
+  );
 });
 
 test('No public spec stays pinned when this language has custom rows', () => {

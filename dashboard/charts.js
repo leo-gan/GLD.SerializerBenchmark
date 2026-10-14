@@ -12,6 +12,14 @@ function openSerializerSource(language, name) {
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+function rowKey(g) {
+  return g?.chart_key || g?.serializer;
+}
+
+function rowLabel(g) {
+  return g?.chart_label || g?.serializer;
+}
+
 let scatterChartInstance = null;
 let barChartInstance = null;
 
@@ -121,11 +129,12 @@ function updateScatterChart(groups, paretoNames, metric) {
     const point = {
       x: xVal,
       y: yVal,
-      label: g.serializer,
+      label: rowLabel(g),
+      serializer: g.serializer,
       language: g.language,
       ops: g.avg_ops_per_sec,
       time: g.avg_time_total_ns,
-      onFrontier: paretoNames.includes(g.serializer),
+      onFrontier: paretoNames.includes(rowKey(g)),
     };
     if (point.onFrontier) paretoPoints.push(point);
     else standardPoints.push(point);
@@ -203,7 +212,7 @@ function updateScatterChart(groups, paretoNames, metric) {
         const el = elements && elements[0];
         if (!el) return;
         const p = scatterChartInstance?.data?.datasets?.[el.datasetIndex]?.data?.[el.index];
-        if (p?.label) openSerializerSource(p.language, p.label);
+        if (p?.serializer || p?.label) openSerializerSource(p.language, p.serializer || p.label);
       },
       plugins: {
         legend: {
@@ -335,7 +344,7 @@ function updateBarChart(groups, paretoNames, metric) {
     })
     .slice(0, 15);
 
-  const labels = sortedGroups.map((g) => g.serializer);
+  const labels = sortedGroups.map((g) => rowLabel(g));
   const primaryRaw = sortedGroups.map((g) =>
     isOps ? g.avg_ops_per_sec : g.avg_time_total_ns
   );
@@ -353,10 +362,10 @@ function updateBarChart(groups, paretoNames, metric) {
   );
 
   const speedColors = sortedGroups.map((g) =>
-    paretoNames.includes(g.serializer) ? 'rgba(26, 115, 232, 0.9)' : 'rgba(26, 115, 232, 0.28)'
+    paretoNames.includes(rowKey(g)) ? 'rgba(26, 115, 232, 0.9)' : 'rgba(26, 115, 232, 0.28)'
   );
   const sizeColors = sortedGroups.map((g) =>
-    paretoNames.includes(g.serializer) ? 'rgba(30, 142, 62, 0.9)' : 'rgba(30, 142, 62, 0.28)'
+    paretoNames.includes(rowKey(g)) ? 'rgba(30, 142, 62, 0.9)' : 'rgba(30, 142, 62, 0.28)'
   );
 
   barChartInstance = new Chart(canvas.getContext('2d'), {
@@ -370,7 +379,7 @@ function updateBarChart(groups, paretoNames, metric) {
           data: sizeNorm,
           backgroundColor: sizeColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(g.serializer) ? '#1e8e3e' : 'rgba(30, 142, 62, 0.45)'
+            paretoNames.includes(rowKey(g)) ? '#1e8e3e' : 'rgba(30, 142, 62, 0.45)'
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -382,7 +391,7 @@ function updateBarChart(groups, paretoNames, metric) {
           data: speedNorm,
           backgroundColor: speedColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(g.serializer) ? '#1a73e8' : 'rgba(26, 115, 232, 0.45)'
+            paretoNames.includes(rowKey(g)) ? '#1a73e8' : 'rgba(26, 115, 232, 0.45)'
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -443,7 +452,7 @@ function updateBarChart(groups, paretoNames, metric) {
               const g = sortedGroups[items[0]?.dataIndex];
               if (!g) return [];
               return [
-                paretoNames.includes(g.serializer)
+                paretoNames.includes(rowKey(g))
                   ? 'Pareto optimal'
                   : isOps
                     ? 'Dominated on ops/s and size'

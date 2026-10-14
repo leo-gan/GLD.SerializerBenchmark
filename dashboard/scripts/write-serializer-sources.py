@@ -460,6 +460,14 @@ SPECIFICS: dict[str, str] = {
         "uncompressed. Apache ORC's own C++ and Java writers default to Zlib; "
         "this binding does not. table_project passes columns=['f_float_0'] on read."
     ),
+    "gld-hdf5": (
+        "gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to "
+        "store typed arrays in a portable file. This row times one contiguous "
+        "float64 dataset named grid. The first dimension is x and the second "
+        "is y. grid_window copies the interior window after read_hdf5 returns "
+        "the whole file, because this library has no hyperslab. It does not "
+        "link libhdf5 and does not time the five suite types."
+    ),
     "hdf5-c": (
         "The HDF5 C API is the baseline the other bindings call. This row "
         "times one contiguous float64 dataset named grid on the core virtual "
@@ -1993,6 +2001,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "pydantic"): "pydantic",
     ("python", "mashumaro"): "mashumaro",
     ("python", "serpyco-rs"): "serpyco-rs",
+    ("mojo", "gld-hdf5"): "gld-hdf5",
     ("c", "hdf5"): "hdf5-c",
     ("cpp", "highfive"): "highfive",
     ("csharp", "PureHDF"): "PureHDF",

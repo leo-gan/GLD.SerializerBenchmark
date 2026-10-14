@@ -20,7 +20,7 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources) |
 | mojo-ion | Binary | leo-gan/gld-ion 0.2.0 | Ion 1.0 binary `encode` / `decode` on a document (vendored sources) |
 | mojo-smile | Binary | leo-gan/gld-smile 0.2.0 | Smile `encode_doc` / `decode_bytes` on a document (vendored sources) |
-| gld-hdf5 | Binary | leo-gan/gld-hdf5 0.2.0 | HDF5 datasets for the five suite types (vendored sources; no libhdf5) |
+| gld-hdf5 | Binary | leo-gan/gld-hdf5 0.2.0 | One contiguous float64 `grid` dataset. The window is a slice of the decoded file (vendored sources; no libhdf5) |
 | gld-netcdf | Binary | leo-gan/gld-hdf5 0.2.0 | NetCDF-4 float64 variables for the five suite types |
 | gld-adios2 | Binary | leo-gan/gld-hdf5 0.2.0 | BP5 directory framed as bytes; one float64 variable |
 | dagr-packed | Schema | dagr 2026.10.1 (generator) | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`: generated direct builder into one reused `Builder` (`write_{root}_graph_direct`), lazy reader decode (`read_{root}_root`) |

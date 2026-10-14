@@ -36,6 +36,20 @@ Each language decodes with its own reader: pyarrow, Arrow C++, arrow-rs, arrow-g
 
 Python and C# record `mapped serializer has no <format> adapter` once `compliance/data/<format>/` exists. Do not score one library with another library’s decoder.
 
+## HDF5, NetCDF, and ADIOS2
+
+These corpora are original and small. A published standard name is not a score. Each cell calls the library named on that row.
+
+| Format id | File | What a case checks |
+| --- | --- | --- |
+| `hdf5` | `compliance/data/hdf5/superblock.json` | Signature plus superblock version 0, the same signature plus version 2, a truncated signature, and a bad magic |
+| `netcdf` | `compliance/data/netcdf/signatures.json` | Minimal classic, 64-bit-offset, and NetCDF-4 files frozen from netCDF4 1.7.4, plus a two-byte truncated header |
+| `adios2` | `compliance/data/adios2/bp5.json` | Directory entry names `md.idx` and `md.0`, and an empty name for a directory with no index |
+
+HDF5 rows that link libhdf5 call `H5Fis_hdf5`, `h5py.is_hdf5`, or `h5fis_hdf5_f`. The C++ `highfive` row calls `H5Fis_hdf5` because HighFive has no separate signature function. PureHDF calls `H5File.Open`. h5wasm calls `h5wasm.File` and rejects a negative `file_id`. gld-hdf5 calls `read_hdf5`.
+
+NetCDF rows call `netCDF4.Dataset`, `nf90_open`, or gld-netcdf (`read_cdf1` / `read_nc4`). ADIOS2 rows write one value with that library's BP5 engine, require the named file, and read it back. An empty ADIOS2 input must make that same library refuse an empty directory.
+
 ## Python
 
 Package: `python/src/compliance/`.
@@ -46,7 +60,8 @@ compliance.adapters    json / orjson / msgspec / rapidjson / pydantic /
                        mashumaro / serpyco-rs / yaml / tomllib / cbor2 /
                        msgpack / protobuf / fastavro / bson / flexbuffers /
                        amazon-ion / py-ubjson / newsmile / plistlib /
-                       pyarrow (Arrow IPC, Parquet, ORC)
+                       pyarrow (Arrow IPC, Parquet, ORC) /
+                       h5py / netCDF4 / adios2
 
 JavaScript: `javascript/src/compliance.mjs`. Other languages have a
 `compliance` entry next to the bench runner (`go/compliance`,

@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native XML library in this wave. Columnar rows are separate from the five suite types. `arrow-ipc` is gld-arrow 0.2.0 (IPC stream). `parquet` and `parquet-uncompressed` are gld-parquet 0.2.0 (Snappy, and the same writer with compression off). TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
+There is no native XML library in this wave. Columnar rows are separate from the five suite types. `arrow-ipc` is gld-arrow 0.2.0 (IPC stream). `parquet` and `parquet-uncompressed` are gld-parquet 0.2.0 (Snappy, and the same writer with compression off). `gld-hdf5` times the array data set (`grid` and `grid_window`), not the five suite types. `gld-netcdf` and `gld-adios2` stay on those suite types. TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
 
 These times cannot be ranked against another language.
 
@@ -70,7 +70,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 | [mojo-ion](https://github.com/leo-gan/gld-ion) | Binary | leo-gan/gld-ion 0.2.0 | bytes only | Ion 1.0 binary document encode / decode |
 | [mojo-smile](https://github.com/leo-gan/gld-smile) | Binary | leo-gan/gld-smile 0.2.0 | bytes only | Smile document encode / decode |
-| [gld-hdf5](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | HDF5 datasets for the five suite types. No libhdf5 |
+| [gld-hdf5](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | One contiguous float64 dataset named `grid`. The window is a slice of the decoded file |
 | [gld-netcdf](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | NetCDF-4 float64 variables. Dimension names differ from variable names |
 | [gld-adios2](https://github.com/leo-gan/gld-hdf5) | Binary | leo-gan/gld-hdf5 0.2.0 | bytes only | BP5 directory framed as bytes. One float64 variable |
 | [arrow-ipc](https://github.com/leo-gan/gld-arrow) | Columnar | leo-gan/gld-arrow 0.2.0 | bytes only | IPC stream on `table`, `table_project`, `nested_table`, and `signal` |
@@ -155,7 +155,7 @@ gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a co
 
 #### [gld-hdf5](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
 
-gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row writes i32, i64, f64, and uint8 datasets for a suite value and reads them back with read_hdf5. It does not link libhdf5.
+gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row times one contiguous float64 dataset named grid. The first dimension is x and the second is y. grid_window copies the interior window after read_hdf5 returns the whole file, because this library has no hyperslab. It does not link libhdf5 and does not time the five suite types.
 
 #### [gld-netcdf](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
 

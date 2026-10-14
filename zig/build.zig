@@ -124,6 +124,8 @@ pub fn build(b: *std.Build) void {
         .{ .name = "zbor", .module = zbor_dep.module("zbor") },
         .{ .name = "msgpack_lalinsky", .module = msgpack_l_dep.module("msgpack") },
         .{ .name = "json_lalinsky", .module = json_l_dep.module("json") },
+        .{ .name = "arrow", .module = arrow_dep.module("arrow") },
+        .{ .name = "avro", .module = avro_dep.module("avro") },
     };
     const compliance_root = b.createModule(.{
         .root_source_file = b.path("src/compliance.zig"),

@@ -4,6 +4,7 @@ import {
   dataSetForFixture,
   discoverFixtureOptions,
   fixturesForDataSet,
+  groupMatchesDataSet,
   pickPreferredFixture,
   resolveStandardDataSet,
 } from '../fixture-types.js';
@@ -146,8 +147,10 @@ test('JSON keeps both sets and the current suite type', () => {
   assert.deepEqual(resolved.sets, ['suite', 'columnar']);
   assert.equal(resolved.dataSet, 'suite');
   assert.equal(resolved.testData, 'message@n=1');
-  assert.equal(resolved.keys.includes('table@n=1'), true);
+  assert.equal(resolved.keys.includes('table@n=1'), false);
+  assert.equal(resolved.keys.includes('message@n=1'), true);
   assert.equal(resolved.keys.includes('all@100'), true);
+  assert.equal(resolved.keys.every((key) => dataSetForFixture(key) === 'suite'), true);
 });
 
 test('MessagePack forces Suite', () => {
@@ -184,7 +187,8 @@ test('a standard measured on both sets keeps a columnar type until the standard 
   assert.deepEqual(kept.sets, ['suite', 'columnar']);
   assert.equal(kept.dataSet, 'columnar');
   assert.equal(kept.testData, 'table@n=1');
-  assert.equal(kept.keys.includes('message@n=1'), true);
+  assert.equal(kept.keys.includes('message@n=1'), false);
+  assert.equal(kept.keys.every((key) => dataSetForFixture(key) === 'columnar'), true);
 });
 
 test('changing to Avro, JSON, Protocol Buffers, or FlatBuffers opens Suite', () => {
@@ -197,8 +201,10 @@ test('changing to Avro, JSON, Protocol Buffers, or FlatBuffers opens Suite', () 
     });
     assert.equal(resolved.dataSet, 'suite', standard);
     assert.equal(resolved.testData, 'message@n=1', standard);
-    assert.equal(resolved.keys.includes('table@n=1'), true, standard);
-    assert.equal(resolved.keys.includes('nested_table@n=1'), true, standard);
+    assert.equal(resolved.keys.includes('table@n=1'), false, standard);
+    assert.equal(resolved.keys.includes('nested_table@n=1'), false, standard);
+    assert.equal(resolved.keys.includes('message@n=1'), true, standard);
+    assert.equal(resolved.sets.includes('columnar'), true, standard);
   }
 });
 
@@ -243,6 +249,92 @@ test('All keeps the current columnar type when the standard changes to All', () 
   });
   assert.equal(resolved.dataSet, 'columnar');
   assert.equal(resolved.testData, 'signal@n=100');
+});
+
+test('an explicit data set keeps keys and the data type inside that set', () => {
+  const resolved = resolveStandardDataSet({
+    groups: [...rows('json', SUITE), ...rows('json', COLUMNAR)],
+    standard: 'json',
+    testData: 'message@n=1',
+    dataSet: 'columnar',
+  });
+  assert.equal(resolved.dataSet, 'columnar');
+  assert.equal(resolved.testData, 'table@n=1');
+  assert.equal(resolved.keys.includes('message@n=1'), false);
+  assert.equal(resolved.keys.every((key) => dataSetForFixture(key) === 'columnar'), true);
+});
+
+test('a standard change opens Suite even when Columnar was the selected set', () => {
+  const resolved = resolveStandardDataSet({
+    groups: [...rows('avro', SUITE), ...rows('avro', COLUMNAR)],
+    standard: 'avro',
+    testData: 'table@n=1',
+    dataSet: 'columnar',
+    preferPrimary: true,
+  });
+  assert.equal(resolved.dataSet, 'suite');
+  assert.equal(resolved.testData, 'message@n=1');
+  assert.equal(resolved.keys.includes('table@n=1'), false);
+});
+
+test('HDF5, NetCDF, and ADIOS2 open Array and leave suite-typed rows out of Suite', () => {
+  const arrayRow = (standard, serializer) => ({
+    standard,
+    serializer,
+    data_set: 'array',
+    test_data: 'grid@n=1',
+    data_type_instance_count: 1,
+  });
+  const suiteRow = (standard, serializer) => ({
+    standard,
+    serializer,
+    language: 'mojo',
+    data_set: 'suite',
+    test_data: 'message@n=1',
+    data_type_instance_count: 1,
+  });
+  for (const [standard, arrayName, suiteName] of [
+    ['hdf5', 'h5py', 'gld-hdf5'],
+    ['netcdf', 'netCDF4', 'gld-netcdf'],
+    ['adios2', 'adios2', 'gld-adios2'],
+  ]) {
+    const groups = [
+      arrayRow(standard, arrayName),
+      { ...arrayRow(standard, arrayName), test_data: 'grid_window@n=1' },
+      suiteRow(standard, suiteName),
+      { standard: 'json', serializer: 'mojo-json', data_set: 'suite', test_data: 'message@n=1', data_type_instance_count: 1 },
+    ];
+    const resolved = resolveStandardDataSet({
+      groups,
+      standard,
+      testData: 'message@n=1',
+      dataSet: 'suite',
+      preferPrimary: true,
+    });
+    assert.deepEqual(resolved.sets, ['array'], standard);
+    assert.equal(resolved.dataSet, 'array', standard);
+    assert.equal(resolved.testData, 'grid@n=1', standard);
+    assert.equal(resolved.keys.includes('message@n=1'), false, standard);
+    assert.equal(groupMatchesDataSet(suiteRow(standard, suiteName), 'suite'), false, standard);
+    assert.equal(groupMatchesDataSet(suiteRow(standard, suiteName), 'array'), false, standard);
+    assert.equal(groupMatchesDataSet(arrayRow(standard, arrayName), 'array'), true, standard);
+  }
+
+  const mojoOnly = resolveStandardDataSet({
+    groups: [{
+      standard: 'hdf5',
+      serializer: 'gld-hdf5',
+      data_set: 'suite',
+      test_data: 'message@n=1',
+      data_type_instance_count: 1,
+    }],
+    standard: 'hdf5',
+    testData: 'message@n=1',
+    preferPrimary: true,
+  });
+  assert.deepEqual(mojoOnly.sets, ['array']);
+  assert.equal(mojoOnly.dataSet, 'array');
+  assert.deepEqual(mojoOnly.keys, []);
 });
 
 test('a standard with no rows does not change the data type', () => {

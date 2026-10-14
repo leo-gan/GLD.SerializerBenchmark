@@ -329,7 +329,56 @@ fn builtin() -> Vec<Adapter> {
             version: "1.40.2".to_string(),
             decode: decode_sbe,
         },
+        Adapter {
+            name: "hdf5-metno",
+            format: "hdf5",
+            version: crate_version("hdf5-metno").to_string(),
+            decode: decode_hdf5_metno,
+        },
     ]
+}
+
+/// hdf5-metno 0.15 has no safe is_hdf5. The crate already links libhdf5, so
+/// this row calls H5Fis_hdf5. H5Fopen on a 9-byte prefix fails both accepts.
+fn decode_hdf5_metno(bytes: &[u8], _: &str) -> Result<Value> {
+    use std::io::Write;
+    use std::os::raw::c_char;
+
+    // hdf5-metno-sys links libhdf5 for the bench. This bin calls the C
+    // symbols directly, so name the library here as well.
+    #[link(name = "hdf5")]
+    extern "C" {
+        fn H5Fis_hdf5(name: *const c_char) -> i32;
+        fn H5Eset_auto2(
+            estack_id: i64,
+            func: *const std::ffi::c_void,
+            client_data: *mut std::ffi::c_void,
+        ) -> i32;
+    }
+
+    let path = std::env::temp_dir().join(format!(
+        "gld-cmp-h5-{}-{}.h5",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    ));
+    {
+        let mut file = std::fs::File::create(&path)?;
+        file.write_all(bytes)?;
+    }
+    let c_path = std::ffi::CString::new(path.to_string_lossy().as_bytes()).map_err(|e| anyhow::anyhow!("{e}"))?;
+    let status = unsafe {
+        let _ = H5Eset_auto2(0, std::ptr::null(), std::ptr::null_mut());
+        H5Fis_hdf5(c_path.as_ptr())
+    };
+    let _ = std::fs::remove_file(&path);
+    if status > 0 {
+        Ok(Value::Bool(true))
+    } else {
+        anyhow::bail!("H5Fis_hdf5 rejected the file")
+    }
 }
 
 fn decode_arrow_ipc(b: &[u8], _: &str) -> Result<Value> {

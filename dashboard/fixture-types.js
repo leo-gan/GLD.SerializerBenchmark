@@ -13,6 +13,11 @@ export const ARRAY_TYPE_IDS = ['grid', 'grid_window'];
 export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS, ...GRAPH_TYPE_IDS, ...ARRAY_TYPE_IDS];
 export const DATA_SET_ORDER = ['suite', 'columnar', 'graph', 'array'];
 export const DATA_SET_LABELS = { suite: 'Suite', columnar: 'Columnar', graph: 'Graph', array: 'Array' };
+/**
+ * These standards are the array data set. A suite-typed row (Mojo gld-hdf5,
+ * gld-netcdf, gld-adios2) is not a Suite comparison and does not open Suite.
+ */
+const ARRAY_ONLY_STANDARDS = new Set(['hdf5', 'netcdf', 'adios2']);
 
 export function dataSetLabel(id) {
   return DATA_SET_LABELS[id] || 'Suite';
@@ -142,6 +147,20 @@ function groupDataSet(group) {
   return dataSetForFixture(group.test_data);
 }
 
+/** Suite-typed HDF5, NetCDF, and ADIOS2 rows are not an Overview comparison. */
+function countsTowardDataSets(group) {
+  if (!group) return false;
+  if (ARRAY_ONLY_STANDARDS.has(group.standard) && groupDataSet(group) !== 'array') return false;
+  return true;
+}
+
+/** True when the row belongs to the selected data set. Empty dataSet matches every visible row. */
+export function groupMatchesDataSet(group, dataSet) {
+  if (!countsTowardDataSets(group)) return false;
+  if (!dataSet) return true;
+  return groupDataSet(group) === dataSet;
+}
+
 function isNaturalFixtureKey(key) {
   const s = String(key || '');
   if (!s || s === 'all@all' || /^all@/i.test(s)) return false;
@@ -151,50 +170,65 @@ function isNaturalFixtureKey(key) {
 /**
  * Data set and data-type menu for one standard.
  * No rows: keep the current type (`keepType`) and leave the menu alone.
- * One data set: use it, and replace the type when it is outside that set.
- * Both: keep the current type when it is still present. The label follows the type.
+ * `sets` lists every data set that has rows. `keys` lists data types for the
+ * chosen set only, so Suite and Columnar are never one comparison.
  * preferPrimary is a Standard change. A standard that has Suite rows opens on
  * Suite, even when that library was also measured on Columnar types. Columnar-only
- * standards (no Suite rows) stay Columnar. All keeps the current type.
- * The returned keys still list every type, so Columnar stays in the data-type menu.
+ * standards (no Suite rows) stay Columnar. HDF5, NetCDF, and ADIOS2 open Array
+ * only; their suite-typed rows stay out of Suite. All keeps the current type and set.
+ * Pass `dataSet` when the user picks a set. The type is replaced when it is
+ * outside that set.
  *
- * @param {{ groups?: object[], standard?: string, testData?: string, preferPrimary?: boolean }} args
+ * @param {{ groups?: object[], standard?: string, testData?: string, dataSet?: string, preferPrimary?: boolean }} args
  */
 export function resolveStandardDataSet({
   groups = [],
   standard = 'all',
   testData = '',
+  dataSet = '',
   preferPrimary = false,
 } = {}) {
   const selected = standard || 'all';
-  const matching = selected === 'all'
+  const matching = (selected === 'all'
     ? (groups || [])
-    : (groups || []).filter((group) => group && group.standard === selected);
+    : (groups || []).filter((group) => group && group.standard === selected)
+  ).filter(countsTowardDataSets);
   const present = new Set();
   for (const group of matching) {
-    const dataSet = groupDataSet(group);
-    if (dataSet) present.add(dataSet);
+    const id = groupDataSet(group);
+    if (id) present.add(id);
   }
   const sets = DATA_SET_ORDER.filter((id) => present.has(id));
   if (!sets.length) {
+    if (ARRAY_ONLY_STANDARDS.has(selected)) {
+      return {
+        keepType: false,
+        dataSet: 'array',
+        testData: '',
+        keys: [],
+        sets: ['array'],
+      };
+    }
     return {
       keepType: true,
-      dataSet: dataSetForFixture(testData) || 'suite',
+      dataSet: dataSetForFixture(testData) || dataSet || 'suite',
       testData: testData || '',
       keys: [],
       sets: [],
     };
   }
-  const keys = discoverFixtureOptions(matching).all;
   const primary = sets.includes('suite') ? 'suite' : sets[0];
   const snapToPrimary = !!preferPrimary && selected !== 'all' && sets.length > 1;
+  let chosen = '';
+  if (snapToPrimary) chosen = primary;
+  else if (dataSet && sets.includes(dataSet)) chosen = dataSet;
+  else if (sets.includes(dataSetForFixture(testData))) chosen = dataSetForFixture(testData);
+  else chosen = primary;
+  const keys = fixturesForDataSet(discoverFixtureOptions(matching).all, chosen);
   let next = testData || '';
-  if (snapToPrimary && dataSetForFixture(next) !== primary) next = '';
-  if (!keys.includes(next)) {
-    const pool = snapToPrimary ? keys.filter((key) => dataSetForFixture(key) === primary) : keys;
-    const natural = pool.filter(isNaturalFixtureKey);
-    next = pickPreferredFixture(natural) || pool[0] || keys[0] || '';
+  if (dataSetForFixture(next) !== chosen || !keys.includes(next)) {
+    const natural = keys.filter(isNaturalFixtureKey);
+    next = pickPreferredFixture(natural) || keys[0] || '';
   }
-  const dataSet = sets.length === 1 ? sets[0] : (dataSetForFixture(next) || primary);
-  return { keepType: false, dataSet, testData: next, keys, sets };
+  return { keepType: false, dataSet: chosen, testData: next, keys, sets };
 }

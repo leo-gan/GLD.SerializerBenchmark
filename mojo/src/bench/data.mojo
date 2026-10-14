@@ -5,6 +5,7 @@ languages. RNG is xorshift64* with the same golden-ratio mix as Python.
 """
 
 from std.collections import List
+from std.memory import bitcast
 from cbor import (
     CborDatum,
     DecodeError as CborDecodeError,
@@ -1161,6 +1162,12 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
     var order_count: Int
     var region_count: Int
     var ring_size: Int
+    var nx: Int
+    var ny: Int
+    var x0: Int
+    var y0: Int
+    var wx: Int
+    var wy: Int
 
     def __init__(out self):
         self.children = 8
@@ -1175,6 +1182,12 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
         self.order_count = 32
         self.region_count = 4
         self.ring_size = 8
+        self.nx = 512
+        self.ny = 512
+        self.x0 = 0
+        self.y0 = 0
+        self.wx = 0
+        self.wy = 0
 
 
 @fieldwise_init
@@ -1225,6 +1238,40 @@ struct SignalRow(Copyable, Movable):
 
 
 @fieldwise_init
+struct Grid(Copyable, Movable):
+    """One dense float64 array. ``values`` is y outer, x inner: ``y * nx + x``.
+
+    ``grid`` leaves the window at 0. ``grid_window`` sets the interior window.
+    A deserialized window is the slice only: ``nx == wx``, ``ny == wy``, window 0.
+    """
+
+    var nx: Int
+    var ny: Int
+    var values: List[Float64]
+    var x0: Int
+    var y0: Int
+    var wx: Int
+    var wy: Int
+
+    def window_values(self) -> List[Float64]:
+        var out = List[Float64]()
+        var n = self.wx * self.wy
+        if n > 0:
+            out.reserve(n)
+        var y = self.y0
+        var y_end = self.y0 + self.wy
+        while y < y_end:
+            var x = self.x0
+            var x_end = self.x0 + self.wx
+            var row = y * self.nx
+            while x < x_end:
+                out.append(self.values[row + x])
+                x += 1
+            y += 1
+        return out^
+
+
+@fieldwise_init
 struct Cell(Copyable, Movable):
     var type_id: String
     var n: Int
@@ -1247,6 +1294,7 @@ struct Fixture(Copyable, Movable):
     var signals: List[SignalRow]
     var projected: List[Float64]
     var books: List[Book]
+    var grids: List[Grid]
 
     def __init__(
         out self,
@@ -1272,6 +1320,7 @@ struct Fixture(Copyable, Movable):
         self.signals = List[SignalRow]()
         self.projected = List[Float64]()
         self.books = List[Book]()
+        self.grids = List[Grid]()
 
 
 def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises -> Fixture:
@@ -1427,9 +1476,41 @@ def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises ->
         )
     elif type_id == "graph":
         fx.books.append(_make_graph(rng, cfg))
+    elif type_id == "grid" or type_id == "grid_window":
+        fx.grids.append(_make_grid(rng, cfg, type_id == "grid_window"))
     else:
         raise Error("unknown type_id: " + type_id)
     return fx^
+
+
+def _make_grid(mut rng: Rng, cfg: TypeConfig, window: Bool) raises -> Grid:
+    """Fill y outer, x inner. Values are unscaled ``next_f64`` results."""
+    var nx = cfg.nx
+    var ny = cfg.ny
+    if nx < 1 or ny < 1:
+        raise Error("grid shape")
+    var n = nx * ny
+    var values = List[Float64]()
+    values.reserve(n)
+    var y = 0
+    while y < ny:
+        var x = 0
+        while x < nx:
+            values.append(rng.next_f64())
+            x += 1
+        y += 1
+    var x0 = 0
+    var y0 = 0
+    var wx = 0
+    var wy = 0
+    if window:
+        x0 = cfg.x0
+        y0 = cfg.y0
+        wx = cfg.wx
+        wy = cfg.wy
+        if wx < 1 or wy < 1 or x0 < 0 or y0 < 0 or x0 + wx > nx or y0 + wy > ny:
+            raise Error("grid window")
+    return Grid(nx, ny, values^, x0, y0, wx, wy)
 
 
 def _make_graph(mut rng: Rng, cfg: TypeConfig) raises -> Book:
@@ -1514,10 +1595,16 @@ def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: Stri
             fx.signals.append(one.signals[0].copy())
         elif type_id == "graph":
             fx.books.append(one.books[0].copy())
+        elif type_id == "grid" or type_id == "grid_window":
+            fx.grids.append(one.grids[0].copy())
         else:
             raise Error("unknown type_id: " + type_id)
         i += 1
     return fx^
+
+
+def _same_f64(a: Float64, b: Float64) -> Bool:
+    return Int(bitcast[DType.uint64](a)) == Int(bitcast[DType.uint64](b))
 
 
 def _close(a: Float64, b: Float64) -> Bool:
@@ -1770,6 +1857,32 @@ def fidelity(a: Fixture, b: Fixture) -> Bool:
         while i < len(a.books):
             if not fidelity_book(a.books[i], b.books[i]):
                 return False
+            i += 1
+        return True
+    if a.type_id == "grid" or a.type_id == "grid_window":
+        if len(a.grids) != len(b.grids):
+            return False
+        var i = 0
+        while i < len(a.grids):
+            if a.type_id == "grid_window":
+                var expect = a.grids[i].window_values()
+                if len(expect) != len(b.grids[i].values):
+                    return False
+                var j = 0
+                while j < len(expect):
+                    if not _same_f64(expect[j], b.grids[i].values[j]):
+                        return False
+                    j += 1
+            else:
+                if a.grids[i].nx != b.grids[i].nx or a.grids[i].ny != b.grids[i].ny:
+                    return False
+                if len(a.grids[i].values) != len(b.grids[i].values):
+                    return False
+                var j = 0
+                while j < len(a.grids[i].values):
+                    if not _same_f64(a.grids[i].values[j], b.grids[i].values[j]):
+                        return False
+                    j += 1
             i += 1
         return True
     if len(a.events) != len(b.events):

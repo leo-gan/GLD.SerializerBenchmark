@@ -7,6 +7,9 @@ import SwiftBSON
 import SwiftProtobuf
 import SwiftAvroCore
 import FlatBuffers
+import Avro
+import Ion
+import TOML
 
 enum PBError: Error { case truncated, badWire, badJSON, badType }
 
@@ -257,6 +260,58 @@ enum AnyValue: Decodable {
     }
 }
 
+private struct TOMLKey: CodingKey {
+    var stringValue: String
+    var intValue: Int? { nil }
+    init?(stringValue: String) { self.stringValue = stringValue }
+    init?(intValue: Int) { return nil }
+}
+
+/// Walks whatever value the TOML decoder presents. The parse already happened
+/// inside TOMLDecoder; this only has to accept every TOML value kind.
+private struct TOMLAny: Decodable {
+    init(from decoder: Swift.Decoder) throws {
+        if let keyed = try? decoder.container(keyedBy: TOMLKey.self) {
+            for key in keyed.allKeys {
+                _ = try keyed.decode(TOMLAny.self, forKey: key)
+            }
+            return
+        }
+        if var unkeyed = try? decoder.unkeyedContainer() {
+            while !unkeyed.isAtEnd {
+                _ = try unkeyed.decode(TOMLAny.self)
+            }
+            return
+        }
+        let single = try decoder.singleValueContainer()
+        if single.decodeNil() { return }
+        if (try? single.decode(Bool.self)) != nil { return }
+        if (try? single.decode(Int64.self)) != nil { return }
+        if (try? single.decode(Double.self)) != nil { return }
+        if (try? single.decode(String.self)) != nil { return }
+        if (try? single.decode(Date.self)) != nil { return }
+        if (try? single.decode(LocalDateTime.self)) != nil { return }
+        if (try? single.decode(LocalDate.self)) != nil { return }
+        if (try? single.decode(LocalTime.self)) != nil { return }
+        throw DecodingError.dataCorruptedError(in: single, debugDescription: "unsupported TOML value")
+    }
+}
+
+func schemaText(_ raw: Any?) -> String {
+    if let text = raw as? String { return text }
+    guard let raw, JSONSerialization.isValidJSONObject(raw),
+          let data = try? JSONSerialization.data(withJSONObject: raw),
+          let text = String(data: data, encoding: .utf8) else { return "" }
+    return text
+}
+
+func avroSchemaJSON(_ schema: String) throws -> String {
+    let trimmed = schema.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let first = trimmed.first else { throw PBError.badJSON }
+    if first == "{" || first == "[" || first == "\"" { return trimmed }
+    return "\"\(trimmed)\""
+}
+
 func adapters() -> [Adapter] {
     [
         Adapter(name: "Foundation.JSONEncoder", format: "json") { data, _ in
@@ -284,6 +339,19 @@ func adapters() -> [Adapter] {
         Adapter(name: "FlatBuffers", format: "flatbuffers") { data, _ in
             guard data.count >= 4 else { throw PBError.truncated }
             return data.count
+        },
+        Adapter(name: "TOML", format: "toml") { data, _ in
+            let text = String(data: data, encoding: .utf8) ?? ""
+            return try TOMLDecoder().decode(TOMLAny.self, from: text)
+        },
+        Adapter(name: "gld-ion", format: "ion") { data, _ in
+            _ = try decodeAny([UInt8](data))
+            return true
+        },
+        Adapter(name: "gld-avro", format: "avro") { data, schema in
+            let pool = try parseAvsc(avroSchemaJSON(schema))
+            _ = try decodeGeneric([UInt8](data), pool: pool)
+            return true
         },
         Adapter(name: "SwiftAvroCore", format: "avro") { data, schema in
             let json = schema.isEmpty ? "\"int\"" : ((schema.first == "{" || schema.first == "[" || schema.first == "\"") ? schema : "\"\(schema)\"")
@@ -391,8 +459,11 @@ for fmtName in fmts.sorted() {
                 var ok = false
                 var err = ""
                 do {
-                    if tooDeep(data) { throw PBError.truncated }
-                    _ = try a.decode(data, (c["schema"] as? String) ?? "")
+                    // The bracket counter is a stack guard for recursive JSON/YAML/TOML
+                    // decoders. It counts every brace, not nesting depth, so Ion text
+                    // fixtures trip it without being deep. Avro payloads are binary.
+                    if format != "ion" && format != "avro" && tooDeep(data) { throw PBError.truncated }
+                    _ = try a.decode(data, schemaText(c["schema"]))
                     ok = true
                 } catch { err = "\(error)" }
                 let expect = (c["expect"] as? String) ?? ""

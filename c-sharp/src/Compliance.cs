@@ -15,6 +15,7 @@ using Apache.Arrow;
 using Apache.Arrow.Ipc;
 using Parquet;
 using Parquet.Schema;
+using PureHDF;
 
 namespace GLD.SerializerBenchmark
 {
@@ -262,7 +263,17 @@ namespace GLD.SerializerBenchmark
                 new("arrow-ipc", "arrow", SerializerVersionRegistry.Resolve("arrow-ipc"), DecodeArrowIpc),
                 new("parquet", "parquet", SerializerVersionRegistry.Resolve("parquet"), DecodeParquet),
                 new("parquet-uncompressed", "parquet", SerializerVersionRegistry.Resolve("parquet-uncompressed"), DecodeParquet),
+                new("PureHDF", "hdf5", SerializerVersionRegistry.Resolve("PureHDF"), DecodePureHdf),
             };
+        }
+
+        // PureHDF has Open/OpenRead only. A 9-byte signature is not a file it can open.
+        private static object DecodePureHdf(byte[] data, string _)
+        {
+            using var stream = new MemoryStream(data ?? System.Array.Empty<byte>(), writable: false);
+            var file = H5File.Open(stream, leaveOpen: true);
+            if (file == null) throw new InvalidDataException("PureHDF rejected the file");
+            return true;
         }
 
         private static object DecodeArrowIpc(byte[] data, string schema)

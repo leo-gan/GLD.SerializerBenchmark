@@ -17,6 +17,8 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import net.peanuuutz.tomlkt.Toml
 import benchmark.serializers.Versions
+import ion.Catalog
+import ion.decode
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
@@ -134,6 +136,10 @@ private fun adapters(): List<Adapter> {
                 reader.next()
                 reader.type != null
             }
+        },
+        Adapter("gld-ion", "ion", "0.2.0") { b, _ ->
+            decode(b, Catalog())
+            true
         },
         Adapter("kotlinx-hocon", "hocon", Versions.of("com.typesafe.config.ConfigFactory")) { b, _ ->
             com.typesafe.config.ConfigFactory.parseString(b.decodeToString())
