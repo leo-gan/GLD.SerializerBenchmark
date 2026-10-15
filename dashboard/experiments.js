@@ -322,7 +322,7 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
       <summary>How to read these graphs</summary>
       <ul>
         <li>The <strong>bar</strong> is the middle time (median), in microseconds. Smaller is faster.</li>
-        <li>The <strong>whisker</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
+        <li>The <strong>whisker</strong> on <strong>Write + read</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
         <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
         <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
         <li>On the <strong>All</strong> tab the bars use the same <strong>microsecond</strong> axis as a language tab, so you can compare languages. Color and “Vs fastest” stay vs that language’s fastest.</li>
@@ -333,7 +333,7 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
             : ''
         }
         <li><strong>Show</strong> keeps the fastest rows (top), the slowest rows (bottom), or every row.</li>
-        <li><strong>Write and Read</strong> can show write, read, or both. It sorts by the series that is on. With both on, it sorts by write + read.</li>
+        <li><strong>Write and Read</strong> can show write, read, or both. It sorts by the series that is on. With both on, it sorts by write + read. Each bar has the same whisker as Write + read: the spread of that write or that read.</li>
         <li>Some experiments add a size, compression, or rank chart when that is the question.</li>
         <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
       </ul>

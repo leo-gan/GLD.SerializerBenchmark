@@ -15,6 +15,7 @@ import {
   sortRows,
   splitSortKey,
   toggleSeries,
+  seriesStdUs,
   totalStdUs,
 } from '../exp-export.js';
 import { SPLIT_CHART_TITLE, figureTypesFor, sizeTreatment, usesExperimentGraphs, wrapYTick } from '../exp-charts.js';
@@ -44,6 +45,29 @@ test('totalStdUs prefers published total_std_ns', () => {
 test('totalStdUs is null without std or usable CI', () => {
   assert.equal(totalStdUs({ runs: 1, total_ci_low_ns: 1, total_ci_high_ns: 2 }), null);
   assert.equal(totalStdUs({}), null);
+});
+
+test('seriesStdUs uses that bar’s spread, then its mean CI', () => {
+  assert.equal(seriesStdUs({ write_std_ns: 2500, ser_std_ns: 9000 }, 'write'), 2.5);
+  assert.equal(seriesStdUs({ ser_std_ns: 1000 }, 'write'), 1);
+  assert.equal(seriesStdUs({ read_std_ns: 0, deser_std_ns: 4000 }, 'read'), 0);
+  assert.equal(seriesStdUs({ deser_std_ns: 500 }, 'read'), 0.5);
+  const fromCi = seriesStdUs({
+    write_ci_low_ns: 3788,
+    write_ci_high_ns: 4088,
+    runs: 92,
+  }, 'write');
+  assert.ok(fromCi != null);
+  assert.ok(Math.abs(fromCi - 0.734) < 0.002);
+  assert.equal(seriesStdUs({
+    read_ci_low_ns: 3788,
+    read_ci_high_ns: 4088,
+    runs: 92,
+  }, 'read') != null, true);
+  assert.equal(seriesStdUs({ deser_ci_low_ns: 3788, deser_ci_high_ns: 4088, runs: 92 }, 'read') != null, true);
+  assert.equal(seriesStdUs({ runs: 1, write_ci_low_ns: 1, write_ci_high_ns: 2 }, 'write'), null);
+  assert.equal(seriesStdUs({}, 'write'), null);
+  assert.equal(seriesStdUs({}, 'read'), null);
 });
 
 test('sizeTreatment Python memory is S0 with gzip and msgspec', () => {

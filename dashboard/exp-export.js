@@ -144,18 +144,39 @@ export function compareLabel(row, rows) {
   return COMPARE_LABEL[key] || COMPARE_LABEL[row.cliffs_label] || '—';
 }
 
-/** Sample std in µs, or reconstructed from the published mean CI. */
-export function totalStdUs(row) {
-  let ns = row.total_std_ns;
-  if (ns == null) {
-    const lo = Number(row.total_ci_low_ns);
-    const hi = Number(row.total_ci_high_ns);
-    const n = Number(row.runs);
+/** Sample std in µs, or the same mean-CI reconstruction totalStdUs uses. */
+function spreadUs(stdNs, ciLowNs, ciHighNs, runs) {
+  let ns = stdNs;
+  if (ns == null || !Number.isFinite(Number(ns))) {
+    const lo = Number(ciLowNs);
+    const hi = Number(ciHighNs);
+    const n = Number(runs);
     if (!Number.isFinite(lo) || !Number.isFinite(hi) || !n || n < 2) return null;
     ns = ((hi - lo) / (2 * 1.96)) * Math.sqrt(n);
   }
   if (!Number.isFinite(Number(ns))) return null;
   return Number(ns) / 1000;
+}
+
+/** Sample std in µs, or reconstructed from the published mean CI. */
+export function totalStdUs(row) {
+  if (!row) return null;
+  return spreadUs(row.total_std_ns, row.total_ci_low_ns, row.total_ci_high_ns, row.runs);
+}
+
+/**
+ * Spread of one Write or Read bar, in µs.
+ * Prefers that series’ sample std, then its mean CI, using the same reconstruction as totalStdUs.
+ * @param {object} row
+ * @param {'write'|'read'} kind
+ */
+export function seriesStdUs(row, kind) {
+  if (!row) return null;
+  const read = kind === 'read';
+  const std = read ? (row.read_std_ns ?? row.deser_std_ns) : (row.write_std_ns ?? row.ser_std_ns);
+  const lo = read ? (row.read_ci_low_ns ?? row.deser_ci_low_ns) : (row.write_ci_low_ns ?? row.ser_ci_low_ns);
+  const hi = read ? (row.read_ci_high_ns ?? row.deser_ci_high_ns) : (row.write_ci_high_ns ?? row.ser_ci_high_ns);
+  return spreadUs(std, lo, hi, row.runs);
 }
 
 export function sortRows(rows) {

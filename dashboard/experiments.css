@@ -331,6 +331,7 @@ tr.exp-row-skip {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .compare-figures-lead {

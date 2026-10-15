@@ -12,6 +12,7 @@ import {
   normalizeShow,
   peerRows,
   rowsForShow,
+  seriesStdUs,
   SHOW_VALUES,
   skipReason,
   sortRows,
@@ -382,42 +383,125 @@ function parsedX(el) {
   return null;
 }
 
+const WHISKER_INK = 'rgba(32, 33, 36, 0.72)';
+/** Light stroke used where a dark bar would hide the usual gray whisker. */
+const WHISKER_ON_DARK = '#ffffff';
+
+function colorLuminance(color) {
+  const s = String(color || '').trim();
+  const hex = s.match(/^#([0-9a-f]{6})$/i);
+  const rgb = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  let r;
+  let g;
+  let b;
+  let a = 1;
+  if (hex) {
+    const n = parseInt(hex[1], 16);
+    r = (n >> 16) & 255;
+    g = (n >> 8) & 255;
+    b = n & 255;
+  } else if (rgb) {
+    r = Number(rgb[1]);
+    g = Number(rgb[2]);
+    b = Number(rgb[3]);
+    if (rgb[4] != null) a = Number(rgb[4]);
+  } else {
+    return 1;
+  }
+  r = r * a + 255 * (1 - a);
+  g = g * a + 255 * (1 - a);
+  b = b * a + 255 * (1 - a);
+  const lin = (c) => {
+    const x = c / 255;
+    return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function barFillColor(dataset, index) {
+  const bg = dataset?.backgroundColor;
+  if (Array.isArray(bg)) return bg[index];
+  return typeof bg === 'string' ? bg : '';
+}
+
+function strokeWhiskerPath(ctx, x0, x1, y, cap) {
+  ctx.beginPath();
+  ctx.moveTo(x0, y);
+  ctx.lineTo(x1, y);
+  ctx.moveTo(x0, y - cap);
+  ctx.lineTo(x0, y + cap);
+  ctx.moveTo(x1, y - cap);
+  ctx.lineTo(x1, y + cap);
+  ctx.stroke();
+}
+
+function strokeErrorBars(chart, stds, datasetIndex) {
+  const { ctx } = chart;
+  const meta = chart.getDatasetMeta(datasetIndex);
+  if (!meta?.data) return;
+  const xScale = chart.scales.x;
+  if (!xScale) return;
+  const dataset = chart.data.datasets[datasetIndex];
+  const values = dataset?.data || [];
+  const area = chart.chartArea;
+  ctx.save();
+  ctx.lineCap = 'butt';
+  meta.data.forEach((el, i) => {
+    const std = stds[i];
+    if (std == null || !Number.isFinite(std)) return;
+    // Grouped bars do not keep .parsed after layout. The dataset value is the median.
+    const fromElement = parsedX(el);
+    const median = Number.isFinite(fromElement) ? fromElement : Number(values[i]);
+    if (!Number.isFinite(median)) return;
+    let x0 = xScale.getPixelForValue(Math.max(0, median - std));
+    let x1 = xScale.getPixelForValue(median + std);
+    if (Math.abs(x1 - x0) < 4) {
+      const mid = xScale.getPixelForValue(median);
+      x0 = mid - 2;
+      x1 = mid + 2;
+    }
+    const cap = 3.5;
+    const y = el.y;
+    const dark = colorLuminance(barFillColor(dataset, i)) < 0.12;
+    if (!dark || !area || !Number.isFinite(el.x)) {
+      ctx.strokeStyle = WHISKER_INK;
+      ctx.lineWidth = 1.5;
+      strokeWhiskerPath(ctx, x0, x1, y, cap);
+      return;
+    }
+    // On a dark bar the gray whisker disappears. Paint the on-bar half light
+    // and keep the tail on the white plot in the same gray as Write + read.
+    const tip = el.x;
+    const bandTop = y - cap - 3;
+    const bandHeight = cap * 2 + 6;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(area.left, bandTop, Math.max(0, tip - area.left), bandHeight);
+    ctx.clip();
+    ctx.strokeStyle = WHISKER_ON_DARK;
+    ctx.lineWidth = 2.25;
+    strokeWhiskerPath(ctx, x0, x1, y, cap);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tip, bandTop, Math.max(0, area.right - tip), bandHeight);
+    ctx.clip();
+    ctx.strokeStyle = WHISKER_INK;
+    ctx.lineWidth = 1.5;
+    strokeWhiskerPath(ctx, x0, x1, y, cap);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
 function makeErrorBarsPlugin(stds, datasetIndex = 0) {
+  const layers = Array.isArray(datasetIndex)
+    ? datasetIndex.map((index, i) => ({ stds: stds[i] || [], index }))
+    : [{ stds, index: datasetIndex }];
   return {
     id: 'expErrorBars',
     afterDatasetsDraw(chart) {
-      const { ctx } = chart;
-      const meta = chart.getDatasetMeta(datasetIndex);
-      if (!meta?.data) return;
-      const xScale = chart.scales.x;
-      if (!xScale) return;
-      ctx.save();
-      ctx.strokeStyle = 'rgba(32, 33, 36, 0.72)';
-      ctx.lineWidth = 1.5;
-      meta.data.forEach((el, i) => {
-        const std = stds[i];
-        if (std == null || !Number.isFinite(std)) return;
-        const median = parsedX(el);
-        if (!Number.isFinite(median)) return;
-        let x0 = xScale.getPixelForValue(Math.max(0, median - std));
-        let x1 = xScale.getPixelForValue(median + std);
-        if (Math.abs(x1 - x0) < 4) {
-          const mid = xScale.getPixelForValue(median);
-          x0 = mid - 2;
-          x1 = mid + 2;
-        }
-        const cap = 3.5;
-        const y = el.y;
-        ctx.beginPath();
-        ctx.moveTo(x0, y);
-        ctx.lineTo(x1, y);
-        ctx.moveTo(x0, y - cap);
-        ctx.lineTo(x0, y + cap);
-        ctx.moveTo(x1, y - cap);
-        ctx.lineTo(x1, y + cap);
-        ctx.stroke();
-      });
-      ctx.restore();
+      layers.forEach((layer) => strokeErrorBars(chart, layer.stds, layer.index));
     },
   };
 }
@@ -720,44 +804,62 @@ function mountLatency(canvas, rows, lang) {
   );
 }
 
+function seriesValuesUs(rows, key) {
+  return rows.map((r) => {
+    const n = Number(r[key]);
+    return Number.isFinite(n) ? n / 1000 : null;
+  });
+}
+
 function mountSplit(canvas, rows, { write = true, read = true } = {}) {
   const grouped = write && read;
   const barPercentage = grouped ? 0.9 : 0.72;
   const categoryPercentage = grouped ? 0.65 : 0.8;
   const datasets = [];
-  if (write) {
+  const stdLayers = [];
+  const stdIndexes = [];
+  const scaleValues = [];
+  const scaleStds = [];
+  const pushSeries = (label, key, kind, style) => {
+    const values = seriesValuesUs(rows, key);
+    const stds = rows.map((r) => seriesStdUs(r, kind));
     datasets.push({
-      label: 'Write',
-      data: rows.map((r) => {
-        const n = Number(r.write_median_ns);
-        return Number.isFinite(n) ? n / 1000 : null;
-      }),
+      label,
+      data: values,
+      ...style,
+      borderRadius: 3,
+      barPercentage,
+      categoryPercentage,
+    });
+    stdLayers.push(stds);
+    stdIndexes.push(datasets.length - 1);
+    values.forEach((v, i) => {
+      scaleValues.push(v);
+      scaleStds.push(stds[i]);
+    });
+  };
+  if (write) {
+    pushSeries('Write', 'write_median_ns', 'write', {
       backgroundColor: SERIES_WRITE,
       borderColor: '#1565c0',
       borderWidth: 1,
-      borderRadius: 3,
-      barPercentage,
-      categoryPercentage,
     });
   }
   if (read) {
-    datasets.push({
-      label: 'Read',
-      data: rows.map((r) => {
-        const n = Number(r.read_median_ns);
-        return Number.isFinite(n) ? n / 1000 : null;
-      }),
+    pushSeries('Read', 'read_median_ns', 'read', {
       backgroundColor: SERIES_READ,
-      borderRadius: 3,
-      barPercentage,
-      categoryPercentage,
     });
   }
   if (!datasets.length) return null;
+  const stdByLabel = {};
+  datasets.forEach((dataset, i) => {
+    stdByLabel[dataset.label] = stdLayers[i];
+  });
   return makeBarChart(
     canvas,
     {
     type: 'bar',
+    plugins: [makeErrorBarsPlugin(stdLayers, stdIndexes)],
     data: {
       labels: rows.map((r) => seriesLabel(r)),
       datasets,
@@ -777,13 +879,20 @@ function mountSplit(canvas, rows, { write = true, read = true } = {}) {
             label: (item) => {
               const name = item.dataset.label;
               const v = item.parsed.x;
-              return `${name}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`;
+              const lines = [`${name}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`];
+              const std = (stdByLabel[name] || [])[item.dataIndex];
+              if (std != null && Number.isFinite(std)) lines.push(`Spread (std)  ${formatSig(std)} µs`);
+              return lines;
             },
           },
         },
       },
       scales: {
-        x: { ...commonScaleX('µs', formatSig), stacked: false },
+        x: {
+          ...commonScaleX('µs', formatSig),
+          stacked: false,
+          suggestedMax: suggestedMax(scaleValues, scaleStds),
+        },
         y: { ...commonScaleY(rows), stacked: false },
       },
     },
@@ -1158,7 +1267,7 @@ function splitHelp(writeOn, readOn) {
   if (readOn) chips.push(seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5'));
   const sort =
     writeOn && readOn ? 'Sorted by write + read.' : writeOn ? 'Sorted by write.' : 'Sorted by read.';
-  return `${chips.join(' ')} ${sort}`;
+  return `${chips.join(' ')} ${sort} The whisker is the spread of that bar, drawn the same way as on Write + read.`;
 }
 
 function emptyFigure(title) {
@@ -1231,7 +1340,7 @@ function appendWriteRead(parts, builders, cfg) {
           helpHtml: splitHelp(writeOn, readOn),
           pngId: pngSplit,
           height: plotHeight(Math.max(w1Rows.length, 4), crossLang),
-          canvasLabel: `Bar chart of ${what} in microseconds for ${lang}`,
+          canvasLabel: `Bar chart of ${what} in microseconds for ${lang}, whiskers show spread`,
           toolbarHtml: togglePrefix ? seriesToggleHtml(togglePrefix, writeOn, readOn) : '',
           scroll,
         })
