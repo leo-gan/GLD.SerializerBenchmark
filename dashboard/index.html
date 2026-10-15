@@ -280,62 +280,38 @@
 
     <!-- Unified Compare lab -->
     <section class="glass-panel comparison-section" id="compare">
-      <!-- Dense 2-row toolbar + optional metrics panel -->
+      <div id="compare-figures" class="compare-figures" aria-label="Write and read charts"></div>
+
+      <!-- Table-only: which serializers are columns, and which metrics. -->
       <div class="compare-controls-compact">
         <div class="compare-ctrl-row compare-ctrl-row-main">
           <h2 class="chart-title compare-h2">Compare</h2>
-          <div class="compare-scope-tabs tabs" role="tablist">
-            <button type="button" class="tab-btn active" id="btn-compare-same" data-scope="same">Same language</button>
-            <button type="button" class="tab-btn" id="btn-compare-xl" data-scope="cross">Cross-language</button>
-          </div>
-          <span class="badge badge-slate" id="compare-scope-badge" hidden>Same language</span>
-
-          <div class="filter-group compare-lab-filters-inline" id="compare-same-filters">
-            <span class="filter-label">Baseline</span>
-            <div class="select-wrapper">
-              <select id="compare-baseline-select" aria-label="Baseline serializer"></select>
-            </div>
-          </div>
-
-          <div class="filter-group compare-lab-filters-inline" id="compare-xl-filters" hidden>
-            <span class="filter-label">Baseline</span>
-            <div class="select-wrapper">
-              <select id="compare-xl-baseline-select" aria-label="Cross-language baseline"></select>
-            </div>
-          </div>
-
-          <span class="compare-status-line" id="compare-status-line">0 serializers · 0 metrics</span>
+          <span class="compare-status-line" id="compare-status-line">0 of 8 · 0 metrics</span>
           <button type="button" id="btn-copy-compare-md" class="tab-btn chart-tool-btn compare-copy-btn">Copy Markdown</button>
         </div>
 
-        <div class="compare-ctrl-row compare-ctrl-row-selected">
-          <div id="compare-same-panel" class="compare-inline-add">
-            <input type="search" id="same-ser-search" class="compare-search-input" placeholder="Filter…" aria-label="Filter serializers to add" autocomplete="off">
-            <div class="select-wrapper compare-add-select-wrap">
-              <select id="same-ser-add-select" aria-label="Serializer to add"></select>
-            </div>
-            <button type="button" id="same-ser-add-btn" class="tab-btn chart-tool-btn">Add</button>
-          </div>
-
-          <div id="xl-add-panel" class="compare-inline-add xl-add-panel" hidden>
-            <div class="select-wrapper xl-lang-wrap">
-              <select id="xl-add-lang" aria-label="Language to add"></select>
-            </div>
-            <div class="select-wrapper xl-add-ser-wrap">
-              <select id="xl-add-serializer" aria-label="Serializer to add"></select>
-            </div>
-            <button type="button" id="xl-add-btn" class="tab-btn chart-tool-btn">Add</button>
-          </div>
-
-          <div id="same-selection-chips" class="chip-groups chip-groups-compact" aria-label="Selected serializers"></div>
-          <div id="xl-selection-chips" class="chip-groups chip-groups-compact" hidden aria-label="Selected serializers for comparison"></div>
-
-          <div class="metrics-checklist-actions compare-sel-actions">
-            <button type="button" id="xl-reset-pareto" class="link-btn" hidden title="Up to 2 Pareto-optimal per language">Pareto</button>
-            <button type="button" id="detail-ser-select-none" class="link-btn">Clear</button>
-            <button type="button" id="detail-ser-select-all" class="link-btn">All</button>
+        <div class="compare-ctrl-row compare-pick-row">
+          <div class="compare-pick" id="compare-pick">
+            <input type="search" id="compare-pick-search" class="compare-pick-search" role="combobox"
+              placeholder="Search by language or serializer…"
+              aria-label="Search by language or serializer"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="compare-pick-list"
+              autocomplete="off"
+              spellcheck="false">
+            <div id="compare-pick-list" class="compare-pick-list" role="listbox" hidden></div>
           </div>
         </div>
+
+        <div class="compare-ctrl-row compare-chip-row">
+          <div id="compare-pick-chips" class="chip-groups chip-groups-compact" aria-label="Selected serializers"></div>
+          <button type="button" id="compare-pick-clear" class="link-btn" hidden>Clear</button>
+        </div>
+        <p id="compare-pick-hidden" class="compare-pick-note" hidden></p>
+        <p id="compare-xl-disclaimer" class="compare-xl-hint" hidden title="Runtimes, GCs, and hosts differ">
+          Times across languages are directional only.
+        </p>
 
         <div class="compare-ctrl-row compare-ctrl-row-metrics">
           <span class="filter-label">Metrics</span>
@@ -355,12 +331,6 @@
         <div id="metrics-panel-body" class="metrics-panel-body" hidden>
           <div id="metrics-checklist" class="metrics-checklist metrics-checklist-accordion" role="group" aria-label="Metric checklist by group"></div>
         </div>
-
-        <p id="compare-xl-disclaimer" class="compare-xl-hint" hidden title="Runtimes, GCs, and hosts differ">
-          Cross-lang times are directional only
-        </p>
-
-        <div id="detail-serializer-checklist" hidden></div>
       </div>
 
       <div class="table-container xl-table-wrap compare-table-wrap">

@@ -2369,6 +2369,151 @@ tr.roster-baseline-row td.num.baseline-col {
   line-height: 1.2;
 }
 
+.compare-controls-compact {
+  overflow: visible;
+}
+
+.compare-pick-row {
+  position: relative;
+  z-index: 6;
+}
+
+.compare-pick {
+  position: relative;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.compare-pick-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.4rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.compare-pick-search:focus {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 1px;
+  border-color: var(--color-blue);
+}
+
+.compare-pick-list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 18rem;
+  overflow: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(32, 33, 36, 0.16);
+  padding: 0.2rem 0;
+}
+
+.compare-pick-lang {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.35rem 0.7rem 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: #f8f9fa;
+}
+
+.compare-pick-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.38rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.compare-pick-option.is-active {
+  background: #e8f0fe;
+}
+
+.compare-pick-option.is-added,
+.compare-pick-option.is-disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.compare-pick-mark,
+.compare-pick-empty,
+.compare-pick-cap {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.compare-pick-empty,
+.compare-pick-cap {
+  padding: 0.4rem 0.7rem;
+}
+
+.compare-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.compare-chip-row .chip-groups-compact {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  width: auto;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+  gap: 0.35rem;
+}
+
+.compare-chip-row .xl-chip {
+  max-width: 18rem;
+  flex-shrink: 0;
+}
+
+.compare-chip-row .xl-chip-label {
+  max-width: 13rem;
+}
+
+.compare-chip-star {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.12rem 0.05rem 0.12rem 0;
+  flex: 0 0 auto;
+}
+
+.xl-chip.chip-baseline .compare-chip-star,
+.compare-chip-star:hover,
+.compare-chip-star:focus-visible {
+  color: var(--color-blue);
+}
+
+.compare-pick-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 #xl-add-panel #xl-add-lang {
   max-width: 5.5rem;
   min-width: 4rem;

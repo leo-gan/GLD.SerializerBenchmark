@@ -9,9 +9,14 @@ import {
   displayTier,
   isShapeSkip,
   mixedLanguages,
+  normalizeShow,
   peerRows,
+  rowsForShow,
+  seriesStdUs,
+  SHOW_VALUES,
   skipReason,
   sortRows,
+  splitSortKey,
   totalStdUs,
 } from './exp-export.js';
 
@@ -93,7 +98,13 @@ const L1_CAPTION =
 const chartInstances = [];
 /** @type {Record<string, import('chart.js').Chart>} */
 const chartsByKey = {};
+const experimentBag = { list: chartInstances, keys: chartsByKey };
+const compareBag = { list: [], keys: {} };
+let activeBag = experimentBag;
 let hatchPattern = null;
+
+/** User-facing title of the grouped write/read chart. */
+export const SPLIT_CHART_TITLE = 'Write and Read';
 
 export function usesExperimentGraphs(id) {
   return GRAPH_PROTOTYPE_IDS.has(id);
@@ -372,42 +383,125 @@ function parsedX(el) {
   return null;
 }
 
+const WHISKER_INK = 'rgba(32, 33, 36, 0.72)';
+/** Light stroke used where a dark bar would hide the usual gray whisker. */
+const WHISKER_ON_DARK = '#ffffff';
+
+function colorLuminance(color) {
+  const s = String(color || '').trim();
+  const hex = s.match(/^#([0-9a-f]{6})$/i);
+  const rgb = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  let r;
+  let g;
+  let b;
+  let a = 1;
+  if (hex) {
+    const n = parseInt(hex[1], 16);
+    r = (n >> 16) & 255;
+    g = (n >> 8) & 255;
+    b = n & 255;
+  } else if (rgb) {
+    r = Number(rgb[1]);
+    g = Number(rgb[2]);
+    b = Number(rgb[3]);
+    if (rgb[4] != null) a = Number(rgb[4]);
+  } else {
+    return 1;
+  }
+  r = r * a + 255 * (1 - a);
+  g = g * a + 255 * (1 - a);
+  b = b * a + 255 * (1 - a);
+  const lin = (c) => {
+    const x = c / 255;
+    return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function barFillColor(dataset, index) {
+  const bg = dataset?.backgroundColor;
+  if (Array.isArray(bg)) return bg[index];
+  return typeof bg === 'string' ? bg : '';
+}
+
+function strokeWhiskerPath(ctx, x0, x1, y, cap) {
+  ctx.beginPath();
+  ctx.moveTo(x0, y);
+  ctx.lineTo(x1, y);
+  ctx.moveTo(x0, y - cap);
+  ctx.lineTo(x0, y + cap);
+  ctx.moveTo(x1, y - cap);
+  ctx.lineTo(x1, y + cap);
+  ctx.stroke();
+}
+
+function strokeErrorBars(chart, stds, datasetIndex) {
+  const { ctx } = chart;
+  const meta = chart.getDatasetMeta(datasetIndex);
+  if (!meta?.data) return;
+  const xScale = chart.scales.x;
+  if (!xScale) return;
+  const dataset = chart.data.datasets[datasetIndex];
+  const values = dataset?.data || [];
+  const area = chart.chartArea;
+  ctx.save();
+  ctx.lineCap = 'butt';
+  meta.data.forEach((el, i) => {
+    const std = stds[i];
+    if (std == null || !Number.isFinite(std)) return;
+    // Grouped bars do not keep .parsed after layout. The dataset value is the median.
+    const fromElement = parsedX(el);
+    const median = Number.isFinite(fromElement) ? fromElement : Number(values[i]);
+    if (!Number.isFinite(median)) return;
+    let x0 = xScale.getPixelForValue(Math.max(0, median - std));
+    let x1 = xScale.getPixelForValue(median + std);
+    if (Math.abs(x1 - x0) < 4) {
+      const mid = xScale.getPixelForValue(median);
+      x0 = mid - 2;
+      x1 = mid + 2;
+    }
+    const cap = 3.5;
+    const y = el.y;
+    const dark = colorLuminance(barFillColor(dataset, i)) < 0.12;
+    if (!dark || !area || !Number.isFinite(el.x)) {
+      ctx.strokeStyle = WHISKER_INK;
+      ctx.lineWidth = 1.5;
+      strokeWhiskerPath(ctx, x0, x1, y, cap);
+      return;
+    }
+    // On a dark bar the gray whisker disappears. Paint the on-bar half light
+    // and keep the tail on the white plot in the same gray as Write + read.
+    const tip = el.x;
+    const bandTop = y - cap - 3;
+    const bandHeight = cap * 2 + 6;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(area.left, bandTop, Math.max(0, tip - area.left), bandHeight);
+    ctx.clip();
+    ctx.strokeStyle = WHISKER_ON_DARK;
+    ctx.lineWidth = 2.25;
+    strokeWhiskerPath(ctx, x0, x1, y, cap);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tip, bandTop, Math.max(0, area.right - tip), bandHeight);
+    ctx.clip();
+    ctx.strokeStyle = WHISKER_INK;
+    ctx.lineWidth = 1.5;
+    strokeWhiskerPath(ctx, x0, x1, y, cap);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
 function makeErrorBarsPlugin(stds, datasetIndex = 0) {
+  const layers = Array.isArray(datasetIndex)
+    ? datasetIndex.map((index, i) => ({ stds: stds[i] || [], index }))
+    : [{ stds, index: datasetIndex }];
   return {
     id: 'expErrorBars',
     afterDatasetsDraw(chart) {
-      const { ctx } = chart;
-      const meta = chart.getDatasetMeta(datasetIndex);
-      if (!meta?.data) return;
-      const xScale = chart.scales.x;
-      if (!xScale) return;
-      ctx.save();
-      ctx.strokeStyle = 'rgba(32, 33, 36, 0.72)';
-      ctx.lineWidth = 1.5;
-      meta.data.forEach((el, i) => {
-        const std = stds[i];
-        if (std == null || !Number.isFinite(std)) return;
-        const median = parsedX(el);
-        if (!Number.isFinite(median)) return;
-        let x0 = xScale.getPixelForValue(Math.max(0, median - std));
-        let x1 = xScale.getPixelForValue(median + std);
-        if (Math.abs(x1 - x0) < 4) {
-          const mid = xScale.getPixelForValue(median);
-          x0 = mid - 2;
-          x1 = mid + 2;
-        }
-        const cap = 3.5;
-        const y = el.y;
-        ctx.beginPath();
-        ctx.moveTo(x0, y);
-        ctx.lineTo(x1, y);
-        ctx.moveTo(x0, y - cap);
-        ctx.lineTo(x0, y + cap);
-        ctx.moveTo(x1, y - cap);
-        ctx.lineTo(x1, y + cap);
-        ctx.stroke();
-      });
-      ctx.restore();
+      layers.forEach((layer) => strokeErrorBars(chart, layer.stds, layer.index));
     },
   };
 }
@@ -458,17 +552,21 @@ function makeValueLabelsPlugin({ rows = [], stds = [], format = formatSig, datas
   };
 }
 
-function figureHtml({ title, helpHtml, pngId, height, canvasLabel }) {
+function figureHtml({ title, helpHtml, pngId, height, canvasLabel, toolbarHtml = '', scroll = false }) {
+  const plot = `<div class="exp-figure-plot" style="height:${height}px">
+        <canvas role="img" aria-label="${escapeHtml(canvasLabel)}"></canvas>
+      </div>`;
   return `
     <section class="exp-figure glass-panel">
       <div class="chart-header">
         <h3 class="chart-title">${escapeHtml(title)}</h3>
-        ${pngId ? `<button type="button" class="tab-btn chart-tool-btn" id="${pngId}" title="Download PNG">PNG</button>` : ''}
+        <div class="exp-figure-actions">
+          ${toolbarHtml}
+          ${pngId ? `<button type="button" class="tab-btn chart-tool-btn" id="${pngId}" title="Download PNG">PNG</button>` : ''}
+        </div>
       </div>
       <p class="exp-figure-help">${helpHtml}</p>
-      <div class="exp-figure-plot" style="height:${height}px">
-        <canvas role="img" aria-label="${escapeHtml(canvasLabel)}"></canvas>
-      </div>
+      ${scroll ? `<div class="exp-figure-scroll">${plot}</div>` : plot}
     </section>`;
 }
 
@@ -574,8 +672,8 @@ function l1TooltipLines(row, bestTotal, rows) {
 function makeBarChart(canvas, config, key) {
   const ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
   const chart = new globalThis.Chart(ctx, config);
-  chartInstances.push(chart);
-  if (key) chartsByKey[key] = chart;
+  activeBag.list.push(chart);
+  if (key) activeBag.keys[key] = chart;
   return chart;
 }
 
@@ -706,33 +804,65 @@ function mountLatency(canvas, rows, lang) {
   );
 }
 
-function mountSplit(canvas, rows) {
+function seriesValuesUs(rows, key) {
+  return rows.map((r) => {
+    const n = Number(r[key]);
+    return Number.isFinite(n) ? n / 1000 : null;
+  });
+}
+
+function mountSplit(canvas, rows, { write = true, read = true } = {}) {
+  const grouped = write && read;
+  const barPercentage = grouped ? 0.9 : 0.72;
+  const categoryPercentage = grouped ? 0.65 : 0.8;
+  const datasets = [];
+  const stdLayers = [];
+  const stdIndexes = [];
+  const scaleValues = [];
+  const scaleStds = [];
+  const pushSeries = (label, key, kind, style) => {
+    const values = seriesValuesUs(rows, key);
+    const stds = rows.map((r) => seriesStdUs(r, kind));
+    datasets.push({
+      label,
+      data: values,
+      ...style,
+      borderRadius: 3,
+      barPercentage,
+      categoryPercentage,
+    });
+    stdLayers.push(stds);
+    stdIndexes.push(datasets.length - 1);
+    values.forEach((v, i) => {
+      scaleValues.push(v);
+      scaleStds.push(stds[i]);
+    });
+  };
+  if (write) {
+    pushSeries('Write', 'write_median_ns', 'write', {
+      backgroundColor: SERIES_WRITE,
+      borderColor: '#1565c0',
+      borderWidth: 1,
+    });
+  }
+  if (read) {
+    pushSeries('Read', 'read_median_ns', 'read', {
+      backgroundColor: SERIES_READ,
+    });
+  }
+  if (!datasets.length) return null;
+  const stdByLabel = {};
+  datasets.forEach((dataset, i) => {
+    stdByLabel[dataset.label] = stdLayers[i];
+  });
   return makeBarChart(
     canvas,
     {
     type: 'bar',
+    plugins: [makeErrorBarsPlugin(stdLayers, stdIndexes)],
     data: {
       labels: rows.map((r) => seriesLabel(r)),
-      datasets: [
-        {
-          label: 'Write',
-          data: rows.map((r) => Number(r.write_median_ns) / 1000),
-          backgroundColor: SERIES_WRITE,
-          borderColor: '#1565c0',
-          borderWidth: 1,
-          borderRadius: 3,
-          barPercentage: 0.9,
-          categoryPercentage: 0.65,
-        },
-        {
-          label: 'Read',
-          data: rows.map((r) => Number(r.read_median_ns) / 1000),
-          backgroundColor: SERIES_READ,
-          borderRadius: 3,
-          barPercentage: 0.9,
-          categoryPercentage: 0.65,
-        },
-      ],
+      datasets,
     },
     options: {
       indexAxis: 'y',
@@ -749,13 +879,20 @@ function mountSplit(canvas, rows) {
             label: (item) => {
               const name = item.dataset.label;
               const v = item.parsed.x;
-              return `${name}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`;
+              const lines = [`${name}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`];
+              const std = (stdByLabel[name] || [])[item.dataIndex];
+              if (std != null && Number.isFinite(std)) lines.push(`Spread (std)  ${formatSig(std)} µs`);
+              return lines;
             },
           },
         },
       },
       scales: {
-        x: { ...commonScaleX('µs', formatSig), stacked: false },
+        x: {
+          ...commonScaleX('µs', formatSig),
+          stacked: false,
+          suggestedMax: suggestedMax(scaleValues, scaleStds),
+        },
         y: { ...commonScaleY(rows), stacked: false },
       },
     },
@@ -1101,9 +1238,121 @@ function mountRankSlope(canvas, rows) {
   );
 }
 
+function showToolsHtml(selectId, show) {
+  const cur = normalizeShow(show);
+  const options = SHOW_VALUES
+    .map((v) => `<option value="${escapeHtml(v)}"${v === cur ? ' selected' : ''}>${escapeHtml(v)}</option>`)
+    .join('');
+  return `<div class="exp-figure-tools">
+    <label class="filter-label" for="${selectId}">Show</label>
+    <div class="select-wrapper">
+      <select id="${selectId}" aria-label="Show">${options}</select>
+    </div>
+    <span class="exp-figure-tools-note">Top is fastest. Bottom is slowest.</span>
+  </div>`;
+}
+
+function seriesToggleHtml(prefix, writeOn, readOn) {
+  const button = (suffix, on, label) => {
+    const pressed = on ? 'true' : 'false';
+    const active = on ? ' active' : '';
+    return `<button type="button" class="tab-btn chart-tool-btn${active}" id="${prefix}-${suffix}" aria-pressed="${pressed}">${label}</button>`;
+  };
+  return `<div class="exp-series-toggles" role="group" aria-label="Write and Read">${button('write', writeOn, 'Write')}${button('read', readOn, 'Read')}</div>`;
+}
+
+function splitHelp(writeOn, readOn) {
+  const chips = [];
+  if (writeOn) chips.push(seriesChip('Write', SERIES_WRITE, '#1565c0', '#e3f2fd'));
+  if (readOn) chips.push(seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5'));
+  const sort =
+    writeOn && readOn ? 'Sorted by write + read.' : writeOn ? 'Sorted by write.' : 'Sorted by read.';
+  return `${chips.join(' ')} ${sort} The whisker is the spread of that bar, drawn the same way as on Write + read.`;
+}
+
+function emptyFigure(title) {
+  return `<section class="exp-figure glass-panel"><h3 class="chart-title">${escapeHtml(title)}</h3><p class="chart-empty">No rows for this Show value.</p></section>`;
+}
+
+function visibleSeries(writeOn, readOn) {
+  const write = writeOn !== false;
+  const read = readOn !== false;
+  if (!write && !read) return { writeOn: true, readOn: true };
+  return { writeOn: write, readOn: read };
+}
+
+/**
+ * Write + read and Write and Read. Inserted where the first of those figures belongs.
+ * @param {string[]} parts
+ * @param {Function[]} builders
+ */
+function appendWriteRead(parts, builders, cfg) {
+  const {
+    l1Rows,
+    w1Rows,
+    showL1,
+    showW1,
+    writeOn,
+    readOn,
+    crossLang,
+    lang,
+    pngLatency,
+    pngSplit,
+    togglePrefix,
+    scroll,
+    toolsSelectId,
+    show,
+    lead,
+    caption,
+  } = cfg;
+  if (lead) parts.push(`<p class="section-help compare-figures-lead">${lead}</p>`);
+  if (toolsSelectId) parts.push(showToolsHtml(toolsSelectId, show));
+  const allAxisNote = crossLang
+    ? ' Every language shares this <strong>microsecond</strong> axis, so you can compare runtimes. Color is still vs that language’s fastest.'
+    : '';
+  if (showL1) {
+    if (!l1Rows.length) {
+      parts.push(emptyFigure('Write + read (µs)'));
+    } else {
+      const allSkipped = competingRows(l1Rows).length === 0;
+      parts.push(
+        figureHtml({
+          title: 'Write + read (µs)',
+          helpHtml: `${caption || L1_CAPTION}${allAxisNote}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
+          pngId: pngLatency,
+          height: plotHeight(Math.max(l1Rows.length, 4), crossLang),
+          canvasLabel: `Horizontal bar chart of write-plus-read time in microseconds for ${lang}, whiskers show spread`,
+          scroll,
+        })
+      );
+      parts.push(legendHtml(l1Rows));
+      builders.push((canvas) => mountLatency(canvas, l1Rows, lang));
+    }
+  }
+  if (showW1) {
+    if (!w1Rows.length) {
+      parts.push(emptyFigure(SPLIT_CHART_TITLE));
+    } else {
+      const what = writeOn && readOn ? 'write time and read time' : writeOn ? 'write time' : 'read time';
+      parts.push(
+        figureHtml({
+          title: SPLIT_CHART_TITLE,
+          helpHtml: splitHelp(writeOn, readOn),
+          pngId: pngSplit,
+          height: plotHeight(Math.max(w1Rows.length, 4), crossLang),
+          canvasLabel: `Bar chart of ${what} in microseconds for ${lang}, whiskers show spread`,
+          toolbarHtml: togglePrefix ? seriesToggleHtml(togglePrefix, writeOn, readOn) : '',
+          scroll,
+        })
+      );
+      builders.push((canvas) => mountSplit(canvas, w1Rows, { write: writeOn, read: readOn }));
+    }
+  }
+}
+
 /**
  * @param {HTMLElement} mount
- * @param {{ id: string, meta: object, lang: string, io: string, kind: string, n: string, rows: object[], allRows?: object[], crossLang?: boolean }} ctx
+ * @param {{ id: string, meta: object, lang: string, io: string, kind: string, n: string, rows: object[], allRows?: object[], crossLang?: boolean, show?: string, writeOn?: boolean, readOn?: boolean }} ctx
  */
 export function mountExperimentFigures(mount, ctx) {
   if (!mount) return;
@@ -1133,50 +1382,53 @@ export function mountExperimentFigures(mount, ctx) {
   const h = plotHeight(Math.max(rows.length, 4), crossLang);
   const parts = [];
   const builders = [];
-
-  const writeReadHelp = `${seriesChip('Write', SERIES_WRITE, '#1565c0', '#e3f2fd')} ${seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5')}`;
-  const allAxisNote = crossLang
-    ? ' Every language shares this <strong>microsecond</strong> axis, so you can compare runtimes. Color is still vs that language’s fastest.'
-    : '';
+  const series = visibleSeries(ctx.writeOn, ctx.readOn);
+  const show = normalizeShow(ctx.show);
+  const l1Rows = rowsForShow(rows, show, 'total_median_ns');
+  const w1Rows = rowsForShow(rows, show, splitSortKey(series));
+  const sizeRows = types.includes('L1') ? l1Rows : w1Rows;
+  let latencyPlaced = false;
+  let sizePlaced = false;
 
   for (const type of types) {
-    if (type === 'L1') {
-      const allSkipped = competingRows(rows).length === 0;
-      parts.push(
-        figureHtml({
-          title: 'Write + read (µs)',
-          helpHtml: `${L1_CAPTION}${allAxisNote}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
-          pngId: 'exp-png-latency',
-          height: h,
-          canvasLabel: `Horizontal bar chart of write-plus-read time in microseconds for ${lang}, whiskers show spread`,
-        })
-      );
-      parts.push(legendHtml(rows));
-      builders.push((canvas) => mountLatency(canvas, rows, lang));
-    } else if (type === 'W1') {
-      parts.push(
-        figureHtml({
-          title: 'Write and read, separately',
-          helpHtml: writeReadHelp,
-          pngId: 'exp-png-split',
-          height: h,
-          canvasLabel: `Grouped bar chart of write time and read time in microseconds for ${lang}`,
-        })
-      );
-      builders.push((canvas) => mountSplit(canvas, rows));
-    } else if (type === 'S0') {
-      parts.push(`<p class="exp-size-callout">${escapeHtml(sizeTreatment(rows).text)}</p>`);
-    } else if (type === 'S1') {
-      parts.push(
-        figureHtml({
-          title: 'Size (bytes)',
-          helpHtml: 'Smaller is more compact.',
-          pngId: 'exp-png-size',
-          height: h,
-          canvasLabel: `Horizontal bar chart of payload size in bytes for ${lang}`,
-        })
-      );
-      builders.push((canvas) => mountSize(canvas, rows));
+    if (type === 'L1' || type === 'W1') {
+      if (!latencyPlaced) {
+        latencyPlaced = true;
+        appendWriteRead(parts, builders, {
+          l1Rows,
+          w1Rows,
+          showL1: types.includes('L1'),
+          showW1: types.includes('W1'),
+          writeOn: series.writeOn,
+          readOn: series.readOn,
+          crossLang,
+          lang,
+          pngLatency: 'exp-png-latency',
+          pngSplit: 'exp-png-split',
+          togglePrefix: 'exp-toggle',
+          scroll: false,
+          toolsSelectId: 'exp-show',
+          show,
+        });
+      }
+    } else if (type === 'S0' || type === 'S1') {
+      if (sizePlaced) continue;
+      sizePlaced = true;
+      const treatment = sizeTreatment(sizeRows);
+      if (treatment.kind === 'S0') {
+        parts.push(`<p class="exp-size-callout">${escapeHtml(treatment.text)}</p>`);
+      } else if (treatment.kind === 'S1') {
+        parts.push(
+          figureHtml({
+            title: 'Size (bytes)',
+            helpHtml: 'Smaller is more compact.',
+            pngId: 'exp-png-size',
+            height: plotHeight(Math.max(sizeRows.length, 4), crossLang),
+            canvasLabel: `Horizontal bar chart of payload size in bytes for ${lang}`,
+          })
+        );
+        builders.push((canvas) => mountSize(canvas, sizeRows));
+      }
     } else if (type === 'S2') {
       parts.push(
         figureHtml({
@@ -1256,5 +1508,101 @@ export function mountExperimentFigures(mount, ctx) {
       plot.appendChild(p);
     }
     console.warn('experiment figures', err);
+  }
+}
+
+function clearBag(bag) {
+  for (const chart of bag.list) {
+    try {
+      chart.destroy();
+    } catch (_) {
+      /* already gone */
+    }
+  }
+  bag.list.length = 0;
+  for (const k of Object.keys(bag.keys)) delete bag.keys[k];
+}
+
+export function destroyCompareFigures() {
+  clearBag(compareBag);
+}
+
+export function resizeCompareFigures() {
+  for (const chart of compareBag.list) {
+    try {
+      chart.resize();
+    } catch (_) {
+      /* hidden or already gone */
+    }
+  }
+}
+
+export function compareFigurePng(which) {
+  const chart = compareBag.keys[which];
+  if (!chart) return null;
+  return chart.toBase64Image('image/png', 1);
+}
+
+/**
+ * Compare page: the same Write + read and Write and Read charts as Experiment 1.
+ * `rows` use the experiment row shape (write_median_ns, read_median_ns, total_median_ns).
+ */
+export function mountCompareLatency(mount, rows, opts = {}) {
+  destroyCompareFigures();
+  if (!mount) return;
+  const list = rows || [];
+  const series = visibleSeries(opts.writeOn, opts.readOn);
+  const show = normalizeShow(opts.show);
+  const crossLang = Boolean(opts.crossLang);
+  const lang = opts.lang || (crossLang ? 'every language' : 'this language');
+  if (typeof globalThis.Chart === 'undefined') {
+    mount.innerHTML = `
+      <div class="exp-figure glass-panel" style="position:relative;min-height:8rem">
+        <p class="chart-empty">Graphs need Chart.js (CDN).</p>
+      </div>`;
+    return;
+  }
+  const parts = [];
+  const builders = [];
+  if (!list.length) {
+    if (opts.lead) parts.push(`<p class="section-help compare-figures-lead">${opts.lead}</p>`);
+    parts.push(showToolsHtml(opts.selectId || 'compare-show', show));
+    parts.push(`<div class="exp-figure glass-panel"><p class="chart-empty">No measured serializers in this filter.</p></div>`);
+    mount.innerHTML = parts.join('');
+    return;
+  }
+  const prev = activeBag;
+  activeBag = compareBag;
+  try {
+    appendWriteRead(parts, builders, {
+      l1Rows: rowsForShow(list, show, 'total_median_ns'),
+      w1Rows: rowsForShow(list, show, splitSortKey(series)),
+      showL1: true,
+      showW1: true,
+      writeOn: series.writeOn,
+      readOn: series.readOn,
+      crossLang,
+      lang,
+      pngLatency: opts.pngLatency || 'compare-png-latency',
+      pngSplit: opts.pngSplit || 'compare-png-split',
+      togglePrefix: opts.togglePrefix || 'compare-toggle',
+      scroll: opts.scroll !== false,
+      toolsSelectId: opts.selectId || 'compare-show',
+      show,
+      lead: opts.lead || '',
+      caption:
+        'The bar is the <strong>middle</strong> time (median). The whisker is the <strong>spread</strong> (standard deviation) of the trials kept by Samples. A short whisker means a stable number.',
+    });
+    mount.innerHTML = parts.join('');
+    const canvases = [...mount.querySelectorAll('canvas')];
+    builders.forEach((build, i) => build(canvases[i]));
+  } catch (err) {
+    console.warn('compare figures', err);
+    const p = document.createElement('p');
+    p.className = 'exp-figure-help';
+    p.textContent = `Chart failed: ${err.message}`;
+    mount.appendChild(p);
+  } finally {
+    activeBag = prev;
   }
 }

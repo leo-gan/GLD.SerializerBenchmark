@@ -7,13 +7,18 @@ import {
   flattenLanguageRows,
   isAllLang,
   mixedLanguages,
+  normalizeShow,
   peerRows,
+  rowsForShow,
   rowsToDelimited,
   skipReason,
   sortRows,
+  splitSortKey,
+  toggleSeries,
+  seriesStdUs,
   totalStdUs,
 } from '../exp-export.js';
-import { figureTypesFor, sizeTreatment, usesExperimentGraphs, wrapYTick } from '../exp-charts.js';
+import { SPLIT_CHART_TITLE, figureTypesFor, sizeTreatment, usesExperimentGraphs, wrapYTick } from '../exp-charts.js';
 
 test('totalStdUs reconstructs from mean CI', () => {
   const std = totalStdUs({
@@ -40,6 +45,29 @@ test('totalStdUs prefers published total_std_ns', () => {
 test('totalStdUs is null without std or usable CI', () => {
   assert.equal(totalStdUs({ runs: 1, total_ci_low_ns: 1, total_ci_high_ns: 2 }), null);
   assert.equal(totalStdUs({}), null);
+});
+
+test('seriesStdUs uses that bar’s spread, then its mean CI', () => {
+  assert.equal(seriesStdUs({ write_std_ns: 2500, ser_std_ns: 9000 }, 'write'), 2.5);
+  assert.equal(seriesStdUs({ ser_std_ns: 1000 }, 'write'), 1);
+  assert.equal(seriesStdUs({ read_std_ns: 0, deser_std_ns: 4000 }, 'read'), 0);
+  assert.equal(seriesStdUs({ deser_std_ns: 500 }, 'read'), 0.5);
+  const fromCi = seriesStdUs({
+    write_ci_low_ns: 3788,
+    write_ci_high_ns: 4088,
+    runs: 92,
+  }, 'write');
+  assert.ok(fromCi != null);
+  assert.ok(Math.abs(fromCi - 0.734) < 0.002);
+  assert.equal(seriesStdUs({
+    read_ci_low_ns: 3788,
+    read_ci_high_ns: 4088,
+    runs: 92,
+  }, 'read') != null, true);
+  assert.equal(seriesStdUs({ deser_ci_low_ns: 3788, deser_ci_high_ns: 4088, runs: 92 }, 'read') != null, true);
+  assert.equal(seriesStdUs({ runs: 1, write_ci_low_ns: 1, write_ci_high_ns: 2 }, 'write'), null);
+  assert.equal(seriesStdUs({}, 'write'), null);
+  assert.equal(seriesStdUs({}, 'read'), null);
 });
 
 test('sizeTreatment Python memory is S0 with gzip and msgspec', () => {
@@ -277,6 +305,54 @@ test('figureTypesFor All tab uses the same microsecond figures as a language tab
   assert.deepEqual(figureTypesFor('09-compression-size', timed, timed, { crossLang: true }), ['S2']);
   assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('C2'));
   assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('L1'));
+});
+
+test('show keeps the fastest or slowest rows and write/read toggles pick the sort', () => {
+  const rows = [];
+  for (let i = 0; i < 6; i++) {
+    rows.push({
+      library: `t${i}`,
+      write_median_ns: i + 1,
+      read_median_ns: 100 - i,
+      total_median_ns: (i + 1) * 10,
+      in_comparison: true,
+    });
+  }
+  rows.push({ library: 'skip', writes_named_fields: false, total_median_ns: 1, in_comparison: false });
+  rows.push({ library: 'no-read', write_median_ns: 3, total_median_ns: 4, in_comparison: true });
+  assert.equal(SPLIT_CHART_TITLE, 'Write and Read');
+  assert.equal(normalizeShow('Top 5'), 'top 5');
+  assert.equal(normalizeShow('nope'), 'all');
+  assert.equal(splitSortKey({ write: true, read: true }), 'total_median_ns');
+  assert.equal(splitSortKey({ write: true, read: false }), 'write_median_ns');
+  assert.equal(splitSortKey({ write: false, read: true }), 'read_median_ns');
+  assert.equal(splitSortKey({ writeOn: false, readOn: true }), 'read_median_ns');
+  assert.equal(splitSortKey({ writeOn: true, readOn: false }), 'write_median_ns');
+  assert.equal(splitSortKey({ writeOn: true, readOn: true }), 'total_median_ns');
+  assert.deepEqual(toggleSeries(true, true, 'read'), { writeOn: true, readOn: false });
+  assert.deepEqual(toggleSeries(true, true, 'write'), { writeOn: false, readOn: true });
+  assert.deepEqual(toggleSeries(false, true, 'read'), { writeOn: false, readOn: true });
+  assert.deepEqual(toggleSeries(true, false, 'write'), { writeOn: true, readOn: false });
+  assert.equal(rowsForShow(rows, 'all', 'total_median_ns').at(-1).library, 'skip');
+  assert.deepEqual(
+    rowsForShow(rows, 'top 5', 'total_median_ns').map((r) => r.library),
+    ['no-read', 't0', 't1', 't2', 't3']
+  );
+  assert.deepEqual(
+    rowsForShow(rows, 'bottom 5', 'total_median_ns').map((r) => r.library),
+    ['t1', 't2', 't3', 't4', 't5']
+  );
+  assert.equal(
+    rowsForShow(rows, 'top 5', splitSortKey({ write: false, read: true }))[0].library,
+    't5'
+  );
+  assert.equal(
+    rowsForShow(rows, 'top 5', splitSortKey({ write: true, read: false }))[0].library,
+    't0'
+  );
+  assert.ok(
+    !rowsForShow(rows, 'top 5', 'read_median_ns').some((r) => r.library === 'no-read' || r.library === 'skip')
+  );
 });
 
 test('figureTypesFor picks a story-specific hero', () => {

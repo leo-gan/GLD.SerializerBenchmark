@@ -144,18 +144,39 @@ export function compareLabel(row, rows) {
   return COMPARE_LABEL[key] || COMPARE_LABEL[row.cliffs_label] || '—';
 }
 
-/** Sample std in µs, or reconstructed from the published mean CI. */
-export function totalStdUs(row) {
-  let ns = row.total_std_ns;
-  if (ns == null) {
-    const lo = Number(row.total_ci_low_ns);
-    const hi = Number(row.total_ci_high_ns);
-    const n = Number(row.runs);
+/** Sample std in µs, or the same mean-CI reconstruction totalStdUs uses. */
+function spreadUs(stdNs, ciLowNs, ciHighNs, runs) {
+  let ns = stdNs;
+  if (ns == null || !Number.isFinite(Number(ns))) {
+    const lo = Number(ciLowNs);
+    const hi = Number(ciHighNs);
+    const n = Number(runs);
     if (!Number.isFinite(lo) || !Number.isFinite(hi) || !n || n < 2) return null;
     ns = ((hi - lo) / (2 * 1.96)) * Math.sqrt(n);
   }
   if (!Number.isFinite(Number(ns))) return null;
   return Number(ns) / 1000;
+}
+
+/** Sample std in µs, or reconstructed from the published mean CI. */
+export function totalStdUs(row) {
+  if (!row) return null;
+  return spreadUs(row.total_std_ns, row.total_ci_low_ns, row.total_ci_high_ns, row.runs);
+}
+
+/**
+ * Spread of one Write or Read bar, in µs.
+ * Prefers that series’ sample std, then its mean CI, using the same reconstruction as totalStdUs.
+ * @param {object} row
+ * @param {'write'|'read'} kind
+ */
+export function seriesStdUs(row, kind) {
+  if (!row) return null;
+  const read = kind === 'read';
+  const std = read ? (row.read_std_ns ?? row.deser_std_ns) : (row.write_std_ns ?? row.ser_std_ns);
+  const lo = read ? (row.read_ci_low_ns ?? row.deser_ci_low_ns) : (row.write_ci_low_ns ?? row.ser_ci_low_ns);
+  const hi = read ? (row.read_ci_high_ns ?? row.deser_ci_high_ns) : (row.write_ci_high_ns ?? row.ser_ci_high_ns);
+  return spreadUs(std, lo, hi, row.runs);
 }
 
 export function sortRows(rows) {
@@ -165,6 +186,70 @@ export function sortRows(rows) {
     if (as !== bs) return as - bs;
     return (Number(a.total_median_ns) || 1e18) - (Number(b.total_median_ns) || 1e18);
   });
+}
+
+/** Show menu for the write/read charts. Top is fastest, bottom is slowest. */
+export const SHOW_VALUES = ['top 5', 'top 10', 'top 25', 'bottom 5', 'bottom 10', 'bottom 25', 'all'];
+
+export function normalizeShow(value) {
+  const s = String(value ?? '').trim().toLowerCase();
+  return SHOW_VALUES.includes(s) ? s : 'all';
+}
+
+/**
+ * Write and Read chart sort. Both series on sorts by write + read.
+ * Only one series sorts by that series. Smaller is faster.
+ * Accepts `{ write, read }` or the UI shape `{ writeOn, readOn }`.
+ */
+export function splitSortKey(flags = {}) {
+  const write = 'write' in flags ? Boolean(flags.write) : flags.writeOn !== false;
+  const read = 'read' in flags ? Boolean(flags.read) : flags.readOn !== false;
+  if (write && read) return 'total_median_ns';
+  if (write) return 'write_median_ns';
+  if (read) return 'read_median_ns';
+  return 'total_median_ns';
+}
+
+/** Keep at least one of Write or Read on. `which` is 'write' or 'read'. */
+export function toggleSeries(writeOn, readOn, which) {
+  let nextWrite = !!writeOn;
+  let nextRead = !!readOn;
+  if (which === 'write') nextWrite = !nextWrite;
+  else if (which === 'read') nextRead = !nextRead;
+  if (!nextWrite && !nextRead) return { writeOn: !!writeOn, readOn: !!readOn };
+  return { writeOn: nextWrite, readOn: nextRead };
+}
+
+function metricNumber(row, key) {
+  const n = Number(row?.[key]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Ascending time. Shape-skips and missing values sort last. */
+export function sortRowsByMetric(rows, key) {
+  return [...(rows || [])].sort((a, b) => {
+    const as = isShapeSkip(a) ? 1 : 0;
+    const bs = isShapeSkip(b) ? 1 : 0;
+    if (as !== bs) return as - bs;
+    const av = metricNumber(a, key);
+    const bv = metricNumber(b, key);
+    return (av == null ? 1e18 : av) - (bv == null ? 1e18 : bv);
+  });
+}
+
+/**
+ * Filter chart rows by the Show menu.
+ * Top/bottom use only rows with a finite metric. All keeps skips at the end.
+ */
+export function rowsForShow(rows, show, sortKey) {
+  const list = rows || [];
+  const mode = normalizeShow(show);
+  if (mode === 'all') return sortRowsByMetric(list, sortKey);
+  const ranked = list.filter((r) => !isShapeSkip(r) && metricNumber(r, sortKey) != null);
+  const sorted = sortRowsByMetric(ranked, sortKey);
+  const n = Number(mode.split(' ')[1]);
+  if (mode.startsWith('top')) return sorted.slice(0, n);
+  return sorted.slice(Math.max(0, sorted.length - n));
 }
 
 export function exportStem({ id, lang, io, extra } = {}) {

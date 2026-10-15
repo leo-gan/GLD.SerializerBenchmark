@@ -79,15 +79,18 @@ Do **not** delete `logs/<lang>/` wholesale.
 
 ### 4. Keep only latest stem per language
 
-Languages: `c` `cpp` `csharp` `go` `java` `javascript` `python` `rust` `swift`.
+Languages: `c` `cpp` `csharp` `go` `java` `javascript` `python` `rust` `swift` `kotlin` `php` `zig` `mojo` `fortran`.
 
 For each `logs/<lang>/`:
 
 1. Find latest CSV matching `^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}\.csv$` (sort reverse).
 2. Stem = filename without `.csv`.
-3. Delete every file in that dir whose name does **not** start with `stem`.
+3. Delete other files whose names **start with** `YYYY-MM-DD-HHMMSS` and do not start with that stem.
 
-Keep all siblings for the stem: `.csv`, `.configs.json`, `.environment.json`, `.errors.csv`, etc.
+Keep:
+
+- Siblings of the latest stem: `.csv`, `.configs.json`, `.environment.json`, `.errors.csv`, `.resolved.json`.
+- Publication files that are not a pure stem (`*-columnar-*`, `*-dagr-*`, `*-graph-*`, `*-array-*`, `*-hdf5-*`, smokes). `dashboard/scripts/splice-*-stats.py` reads those paths.
 
 Dashboard / sync-data use **newest** timestamped CSV per language; older stems are only for history download when present.
 
@@ -118,7 +121,8 @@ Hard fail only if sync exits non-zero and the user needed a dashboard refresh.
 | Path | Why |
 |------|-----|
 | `.git/logs` | Git internals |
-| `logs/` contents that are the sole latest stem | Needed for re-analysis / dashboard |
+| `logs/` latest stem and publication CSVs (`*-columnar-*`, `*-dagr-*`, `*-graph-*`, `*-array-*`) | Needed for re-analysis, splice scripts, dashboard |
+| `logs/compliance/latest.json` and `logs/compliance/latest-<lang>.json` | Compliance dashboard inputs |
 | `docs/dashboard/logs` / `dashboard/public/logs` if **symlink** to `logs/` | Same tree |
 | Forced `git add` of raw CSVs | Usually gitignored |
 

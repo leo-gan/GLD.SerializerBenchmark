@@ -255,6 +255,8 @@ def summarize_language(language: str, csv_path: Path, catalog: dict, analysis: d
             "total_p99_ns": _ns(g.get("total_p99_ns")),
             "total_ci_low_ns": _ns(g.get("total_ci_low_ns")),
             "total_ci_high_ns": _ns(g.get("total_ci_high_ns")),
+            "write_std_ns": _ns(g.get("ser_std_ns")),
+            "read_std_ns": _ns(g.get("deser_std_ns")),
             "size_bytes": _ns(g.get("median_size_bytes")),
             "size_gzip_bytes": _median_extra(kept, name, mode, "SizeGzip"),
             "fidelity": g.get("mean_fidelity"),
