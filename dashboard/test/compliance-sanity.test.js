@@ -19,6 +19,7 @@ import {
   auditComplianceGroups,
   benchMapFromGroups,
   canonicalSerializer,
+  complianceHeatmap,
   entriesFromRegistered,
   formatLabel,
   formatSubset,
@@ -593,6 +594,24 @@ test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
   assert.equal(placeholders.some((row) => row.serializer === 'gld-kiln' || row.serializer === 'kiln'), false);
   const listed = payload.configs.serializers.items.find((item) => item.name === 'gld-kiln');
   assert.deepEqual(listed, { name: 'gld-kiln', version: '0.2.0' });
+});
+
+test('live mojo gld-kiln has a scored Kiln wire v0 cell', () => {
+  const compliance = loadJsonGz('compliance.json.gz');
+  const cells = compliance.matrix.filter(
+    (row) => row.language === 'mojo' && row.serializer === 'gld-kiln' && row.format === 'kiln',
+  );
+  assert.equal(cells.length, 1);
+  assert.equal(cells[0].standard, 'Kiln wire v0');
+  assert.equal(cells[0].version, 'v0');
+  assert.equal(cells[0].serializer_version, '0.2.0');
+  assert.equal(cells[0].passed, 45);
+  assert.equal(cells[0].failed, 0);
+  assert.equal(cells[0].total, 45);
+  const heat = complianceHeatmap(compliance.matrix, { format: 'kiln', language: 'mojo' });
+  assert.deepEqual(heat.columns.map((column) => column.standard), ['Kiln wire v0']);
+  assert.equal(heat.columns[0].unscored, undefined);
+  assert.ok(heat.rows.some((row) => row.serializer === 'gld-kiln'));
 });
 
 test('alias table only remaps known split names', () => {

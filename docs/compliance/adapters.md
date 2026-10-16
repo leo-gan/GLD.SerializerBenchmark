@@ -50,6 +50,14 @@ HDF5 rows that link libhdf5 call `H5Fis_hdf5`, `h5py.is_hdf5`, or `h5fis_hdf5_f`
 
 NetCDF rows call `netCDF4.Dataset`, `nf90_open`, or gld-netcdf (`read_cdf1` / `read_nc4`). ADIOS2 rows write one value with that library's BP5 engine, require the named file, and read it back. An empty ADIOS2 input must make that same library refuse an empty directory.
 
+## Kiln
+
+| Format id | File | What a case checks |
+| --- | --- | --- |
+| `kiln` | `compliance/data/kiln/v0.json` | Frozen values, the `KLN0` frame, and the `KLNT` tensor: accept the bytes the spec requires, reject a bad tag, a bad UTF-8 byte, a length past the buffer, depth 65, a trailing byte, a wrong frame, and a short tensor |
+
+`gld-kiln` calls `decode_value` for a Frozen value, `decode_framed` for a frame, and `read_f64` for a tensor. The bytes were frozen from the Kiln reference codec. A language with no Kiln library has no cell.
+
 ## Python
 
 Package: `python/src/compliance/`.
