@@ -12,6 +12,7 @@ from kiln.codec import (
 )
 from kiln.error import KilnError
 from kiln.schema import schema_from_json
+from kiln.tensor import read_f64, write_f64
 from kiln.value import Value, decode_value, encode_value, encode_value_bytes
 from kiln.wire import (
     MAX_DEPTH,

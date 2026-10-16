@@ -44,15 +44,18 @@ struct Writer(Movable):
         self.length = 0
         self.depth = 0
 
+    @always_inline
     def enter(mut self) raises KilnError:
         if self.depth >= self.max_depth:
             raise KilnError(KilnError.DEPTH, self.length)
         self.depth += 1
 
+    @always_inline
     def leave(mut self):
         if self.depth > 0:
             self.depth -= 1
 
+    @always_inline
     def ensure(mut self, extra: Int):
         """Grow so `length + extra` bytes fit. Does not advance `length`."""
         var need = self.length + extra
@@ -82,37 +85,53 @@ struct Writer(Movable):
 
     @always_inline
     def put_u8(mut self, v: UInt8):
-        var i = self.reserve(1)
+        var i = self.length
+        if i + 1 > len(self.buf):
+            self.ensure(1)
+            i = self.length
         self.buf.unsafe_ptr()[unsafe_offset=i] = v
+        self.length = i + 1
 
     @always_inline
     def put_u16(mut self, v: UInt16):
-        var i = self.reserve(2)
-        var p = self.buf.unsafe_ptr().unsafe_offset(i)
-        p[unsafe_offset=0] = UInt8(v)
-        p[unsafe_offset=1] = UInt8(v >> 8)
+        var i = self.length
+        if i + 2 > len(self.buf):
+            self.ensure(2)
+            i = self.length
+        var p = self.buf.unsafe_ptr()
+        p[unsafe_offset=i] = UInt8(v)
+        p[unsafe_offset=i + 1] = UInt8(v >> 8)
+        self.length = i + 2
 
     @always_inline
     def put_u32(mut self, v: UInt32):
-        var i = self.reserve(4)
-        var p = self.buf.unsafe_ptr().unsafe_offset(i)
-        p[unsafe_offset=0] = UInt8(v)
-        p[unsafe_offset=1] = UInt8(v >> 8)
-        p[unsafe_offset=2] = UInt8(v >> 16)
-        p[unsafe_offset=3] = UInt8(v >> 24)
+        var i = self.length
+        if i + 4 > len(self.buf):
+            self.ensure(4)
+            i = self.length
+        var p = self.buf.unsafe_ptr()
+        p[unsafe_offset=i] = UInt8(v)
+        p[unsafe_offset=i + 1] = UInt8(v >> 8)
+        p[unsafe_offset=i + 2] = UInt8(v >> 16)
+        p[unsafe_offset=i + 3] = UInt8(v >> 24)
+        self.length = i + 4
 
     @always_inline
     def put_u64(mut self, v: UInt64):
-        var i = self.reserve(8)
-        var p = self.buf.unsafe_ptr().unsafe_offset(i)
-        p[unsafe_offset=0] = UInt8(v)
-        p[unsafe_offset=1] = UInt8(v >> 8)
-        p[unsafe_offset=2] = UInt8(v >> 16)
-        p[unsafe_offset=3] = UInt8(v >> 24)
-        p[unsafe_offset=4] = UInt8(v >> 32)
-        p[unsafe_offset=5] = UInt8(v >> 40)
-        p[unsafe_offset=6] = UInt8(v >> 48)
-        p[unsafe_offset=7] = UInt8(v >> 56)
+        var i = self.length
+        if i + 8 > len(self.buf):
+            self.ensure(8)
+            i = self.length
+        var p = self.buf.unsafe_ptr()
+        p[unsafe_offset=i] = UInt8(v)
+        p[unsafe_offset=i + 1] = UInt8(v >> 8)
+        p[unsafe_offset=i + 2] = UInt8(v >> 16)
+        p[unsafe_offset=i + 3] = UInt8(v >> 24)
+        p[unsafe_offset=i + 4] = UInt8(v >> 32)
+        p[unsafe_offset=i + 5] = UInt8(v >> 40)
+        p[unsafe_offset=i + 6] = UInt8(v >> 48)
+        p[unsafe_offset=i + 7] = UInt8(v >> 56)
+        self.length = i + 8
 
     @always_inline
     def put_i32(mut self, v: Int32):
@@ -130,16 +149,21 @@ struct Writer(Movable):
     def put_f64(mut self, v: Float64):
         self.put_u64(UInt64(v.to_bits()))
 
+    @always_inline
     def put_span[origin: ImmOrigin](mut self, sp: Span[UInt8, origin]):
         var n = len(sp)
         if n == 0:
             return
-        var i = self.reserve(n)
+        var i = self.length
+        if i + n > len(self.buf):
+            self.ensure(n)
+            i = self.length
         unsafe_memcpy(
             dest=self.buf.unsafe_ptr().unsafe_offset(i),
             src=sp.unsafe_ptr(),
             count=n,
         )
+        self.length = i + n
 
     def copy_bytes(self) -> List[UInt8]:
         """A list whose length is the number of bytes written."""
@@ -178,11 +202,13 @@ struct Reader[origin: ImmOrigin](Movable):
     def remaining(self) -> Int:
         return len(self.data) - self.pos
 
+    @always_inline
     def enter(mut self) raises KilnError:
         if self.depth >= self.max_depth:
             raise KilnError(KilnError.DEPTH, self.pos)
         self.depth += 1
 
+    @always_inline
     def leave(mut self):
         if self.depth > 0:
             self.depth -= 1
@@ -228,64 +254,74 @@ struct Reader[origin: ImmOrigin](Movable):
         self.pos += n
         return StringSpan(unsafe_from_utf8=self.data[start:self.pos])
 
+    @always_inline
     def u8(mut self) raises KilnError -> UInt8:
-        if self.pos >= len(self.data):
-            raise KilnError(KilnError.EOF, self.pos)
-        var b = self.data[self.pos]
-        self.pos += 1
+        var i = self.pos
+        if i >= len(self.data):
+            raise KilnError(KilnError.EOF, i)
+        var b = self.data.unsafe_ptr()[unsafe_offset=i]
+        self.pos = i + 1
         return b
 
+    @always_inline
     def u16(mut self) raises KilnError -> UInt16:
         var i = self.pos
         if i + 2 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var d = self.data
-        var v = UInt16(d[i]) | (UInt16(d[i + 1]) << 8)
+        var p = self.data.unsafe_ptr()
+        var v = UInt16(p[unsafe_offset=i]) | (UInt16(p[unsafe_offset=i + 1]) << 8)
         self.pos = i + 2
         return v
 
+    @always_inline
     def u32(mut self) raises KilnError -> UInt32:
         var i = self.pos
         if i + 4 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var d = self.data
+        var p = self.data.unsafe_ptr()
         var v = (
-            UInt32(d[i])
-            | (UInt32(d[i + 1]) << 8)
-            | (UInt32(d[i + 2]) << 16)
-            | (UInt32(d[i + 3]) << 24)
+            UInt32(p[unsafe_offset=i])
+            | (UInt32(p[unsafe_offset=i + 1]) << 8)
+            | (UInt32(p[unsafe_offset=i + 2]) << 16)
+            | (UInt32(p[unsafe_offset=i + 3]) << 24)
         )
         self.pos = i + 4
         return v
 
+    @always_inline
     def u64(mut self) raises KilnError -> UInt64:
         var i = self.pos
         if i + 8 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var d = self.data
-        var v = UInt64(d[i])
-        v = v | (UInt64(d[i + 1]) << 8)
-        v = v | (UInt64(d[i + 2]) << 16)
-        v = v | (UInt64(d[i + 3]) << 24)
-        v = v | (UInt64(d[i + 4]) << 32)
-        v = v | (UInt64(d[i + 5]) << 40)
-        v = v | (UInt64(d[i + 6]) << 48)
-        v = v | (UInt64(d[i + 7]) << 56)
+        var p = self.data.unsafe_ptr()
+        var v = UInt64(p[unsafe_offset=i])
+        v = v | (UInt64(p[unsafe_offset=i + 1]) << 8)
+        v = v | (UInt64(p[unsafe_offset=i + 2]) << 16)
+        v = v | (UInt64(p[unsafe_offset=i + 3]) << 24)
+        v = v | (UInt64(p[unsafe_offset=i + 4]) << 32)
+        v = v | (UInt64(p[unsafe_offset=i + 5]) << 40)
+        v = v | (UInt64(p[unsafe_offset=i + 6]) << 48)
+        v = v | (UInt64(p[unsafe_offset=i + 7]) << 56)
         self.pos = i + 8
         return v
 
+    @always_inline
     def i32(mut self) raises KilnError -> Int32:
         return Int32(from_bits=self.u32())
 
+    @always_inline
     def i64(mut self) raises KilnError -> Int64:
         return Int64(from_bits=self.u64())
 
+    @always_inline
     def f32(mut self) raises KilnError -> Float32:
         return Float32(from_bits=self.u32())
 
+    @always_inline
     def f64(mut self) raises KilnError -> Float64:
         return Float64(from_bits=self.u64())
 
+    @always_inline
     def boolean(mut self) raises KilnError -> Bool:
         var b = Int(self.u8())
         if b == 0:
@@ -309,6 +345,7 @@ struct Reader[origin: ImmOrigin](Movable):
         self.pos += n
         return self.data[start:self.pos]
 
+    @always_inline
     def read_string(mut self) raises KilnError -> String:
         var n = self.count()
         var start = self.pos

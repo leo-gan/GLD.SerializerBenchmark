@@ -3,6 +3,7 @@ from std.collections import Span
 from kiln.error import KilnError
 
 
+@always_inline
 def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
     """Return true when `span` is well-formed UTF-8.
 
@@ -49,6 +50,7 @@ def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
     return True
 
 
+@always_inline
 def string_from_span[origin: ImmOrigin](
     span: Span[UInt8, origin], offset: Int, check: Bool
 ) raises KilnError -> String:

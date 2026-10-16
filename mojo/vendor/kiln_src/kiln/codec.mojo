@@ -213,6 +213,157 @@ def _sort_idx(keys: List[String], mut idx: List[Int]):
         i += 1
 
 
+def _poke_type[T: AnyType]() -> Bool:
+    """Scalars and strings have a width known before any nested walk."""
+    comptime if (
+        T == Bool
+        or T == Int8
+        or T == Int16
+        or T == Int32
+        or T == Int64
+        or T == Int
+        or T == UInt8
+        or T == UInt16
+        or T == UInt32
+        or T == UInt64
+        or T == UInt
+        or T == Float32
+        or T == Float64
+        or T == String
+    ):
+        return True
+    return False
+
+
+def _fields_poke[T: AnyType]() -> Bool:
+    """True when every field is a scalar or a string, up to 16 fields.
+
+    Wider structs use the checked writer. Recursing on the field index
+    crashed the Mojo 1.1 compiler, so the limit is unrolled.
+    """
+    comptime n = reflect[T].field_count()
+    comptime types = reflect[T].field_types()
+    comptime if n > 16:
+        return False
+    comptime if n > 0 and not _poke_type[types[0]]():
+        return False
+    comptime if n > 1 and not _poke_type[types[1]]():
+        return False
+    comptime if n > 2 and not _poke_type[types[2]]():
+        return False
+    comptime if n > 3 and not _poke_type[types[3]]():
+        return False
+    comptime if n > 4 and not _poke_type[types[4]]():
+        return False
+    comptime if n > 5 and not _poke_type[types[5]]():
+        return False
+    comptime if n > 6 and not _poke_type[types[6]]():
+        return False
+    comptime if n > 7 and not _poke_type[types[7]]():
+        return False
+    comptime if n > 8 and not _poke_type[types[8]]():
+        return False
+    comptime if n > 9 and not _poke_type[types[9]]():
+        return False
+    comptime if n > 10 and not _poke_type[types[10]]():
+        return False
+    comptime if n > 11 and not _poke_type[types[11]]():
+        return False
+    comptime if n > 12 and not _poke_type[types[12]]():
+        return False
+    comptime if n > 13 and not _poke_type[types[13]]():
+        return False
+    comptime if n > 14 and not _poke_type[types[14]]():
+        return False
+    comptime if n > 15 and not _poke_type[types[15]]():
+        return False
+    return True
+
+
+@always_inline
+def _store_u16[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt16):
+    p[unsafe_offset=i] = UInt8(v)
+    p[unsafe_offset=i + 1] = UInt8(v >> 8)
+
+
+@always_inline
+def _store_u32[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt32):
+    p[unsafe_offset=i] = UInt8(v)
+    p[unsafe_offset=i + 1] = UInt8(v >> 8)
+    p[unsafe_offset=i + 2] = UInt8(v >> 16)
+    p[unsafe_offset=i + 3] = UInt8(v >> 24)
+
+
+@always_inline
+def _store_u64[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt64):
+    p[unsafe_offset=i] = UInt8(v)
+    p[unsafe_offset=i + 1] = UInt8(v >> 8)
+    p[unsafe_offset=i + 2] = UInt8(v >> 16)
+    p[unsafe_offset=i + 3] = UInt8(v >> 24)
+    p[unsafe_offset=i + 4] = UInt8(v >> 32)
+    p[unsafe_offset=i + 5] = UInt8(v >> 40)
+    p[unsafe_offset=i + 6] = UInt8(v >> 48)
+    p[unsafe_offset=i + 7] = UInt8(v >> 56)
+
+
+@always_inline
+def _poke[T: AnyType, o: MutOrigin](p: Pointer[UInt8, o], mut i: Int, value: T):
+    """Store one scalar or string. The caller has already reserved the bytes."""
+    comptime if T == Bool:
+        if rebind[Bool](value):
+            p[unsafe_offset=i] = UInt8(1)
+        else:
+            p[unsafe_offset=i] = UInt8(0)
+        i += 1
+    elif T == Int8:
+        p[unsafe_offset=i] = UInt8(rebind[Int8](value).to_bits())
+        i += 1
+    elif T == Int16:
+        _store_u16(p, i, UInt16(rebind[Int16](value).to_bits()))
+        i += 2
+    elif T == Int32:
+        _store_u32(p, i, UInt32(rebind[Int32](value).to_bits()))
+        i += 4
+    elif T == Int64:
+        _store_u64(p, i, UInt64(rebind[Int64](value).to_bits()))
+        i += 8
+    elif T == Int:
+        _store_u64(p, i, UInt64(Int64(rebind[Int](value)).to_bits()))
+        i += 8
+    elif T == UInt8:
+        p[unsafe_offset=i] = rebind[UInt8](value)
+        i += 1
+    elif T == UInt16:
+        _store_u16(p, i, rebind[UInt16](value))
+        i += 2
+    elif T == UInt32:
+        _store_u32(p, i, rebind[UInt32](value))
+        i += 4
+    elif T == UInt64:
+        _store_u64(p, i, rebind[UInt64](value))
+        i += 8
+    elif T == UInt:
+        _store_u64(p, i, UInt64(rebind[UInt](value)))
+        i += 8
+    elif T == Float32:
+        _store_u32(p, i, UInt32(rebind[Float32](value).to_bits()))
+        i += 4
+    elif T == Float64:
+        _store_u64(p, i, UInt64(rebind[Float64](value).to_bits()))
+        i += 8
+    elif T == String:
+        var sp = rebind[String](value).as_bytes()
+        var n = len(sp)
+        _store_u32(p, i, UInt32(n))
+        i += 4
+        if n > 0:
+            unsafe_memcpy(dest=p.unsafe_offset(i), src=sp.unsafe_ptr(), count=n)
+            i += n
+    else:
+        comptime assert False, "kiln: poke is only for scalars and strings"
+
+
+@always_inline
 def encoded_size[T: AnyType](value: T) -> Int:
     comptime if T == Bool or T == Int8 or T == UInt8:
         return 1
@@ -235,6 +386,7 @@ def encoded_size[T: AnyType](value: T) -> Int:
         return 0
 
 
+@always_inline
 def _size_struct[T: AnyType](value: T) -> Int:
     comptime types = reflect[T].field_types()
     comptime nfields = reflect[T].field_count()
@@ -246,6 +398,7 @@ def _size_struct[T: AnyType](value: T) -> Int:
     return n
 
 
+@always_inline
 def _write[T: AnyType](mut w: Writer, value: T) raises KilnError:
     comptime if T == Bool:
         if rebind[Bool](value):
@@ -293,17 +446,35 @@ def _write[T: AnyType](mut w: Writer, value: T) raises KilnError:
         comptime assert False, "kiln: unsupported type " + reflect[T].name()
 
 
+@always_inline
 def _write_struct[T: AnyType](mut w: Writer, value: T) raises KilnError:
     w.enter()
     comptime types = reflect[T].field_types()
     comptime nfields = reflect[T].field_count()
-    comptime for idx in range(nfields):
-        comptime ft = types[idx]
-        ref field = reflect[T].field_ref[idx](value)
-        _write[ft](w, rebind[ft](field))
+    # One capacity check for a leaf struct, then straight-line stores.
+    # A nested list or struct keeps the checked writer so a short field
+    # cannot reserve past the bytes this value actually owns.
+    comptime if _fields_poke[T]():
+        var need = _size_struct[T](value)
+        if need > MAX_BYTES:
+            raise KilnError(KilnError.LIMIT, w.length)
+        w.ensure(need)
+        var i = w.length
+        var p = w.buf.unsafe_ptr()
+        comptime for idx in range(nfields):
+            comptime ft = types[idx]
+            ref field = reflect[T].field_ref[idx](value)
+            _poke[ft](p, i, rebind[ft](field))
+        w.length = i
+    else:
+        comptime for idx in range(nfields):
+            comptime ft = types[idx]
+            ref field = reflect[T].field_ref[idx](value)
+            _write[ft](w, rebind[ft](field))
     w.leave()
 
 
+@always_inline
 def _fill[T: AnyType, o: ImmOrigin, po: MutOrigin](
     mut r: Reader[o], ptr: Pointer[T, po]
 ) raises KilnError:
@@ -366,6 +537,7 @@ def _fill[T: AnyType, o: ImmOrigin, po: MutOrigin](
         comptime assert False, "kiln: unsupported type " + reflect[T].name()
 
 
+@always_inline
 def _fill_struct[T: AnyType, o: ImmOrigin, po: MutOrigin](
     mut r: Reader[o], ptr: Pointer[T, po]
 ) raises KilnError:

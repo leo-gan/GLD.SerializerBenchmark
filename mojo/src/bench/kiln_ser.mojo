@@ -3,11 +3,6 @@
 from std.collections import List, Span
 
 from bench.data import (
-    BatchDocument,
-    BatchEvent,
-    BatchMessage,
-    BatchStrings,
-    BatchTelemetry,
     Document,
     Event,
     Fixture,
@@ -38,31 +33,33 @@ struct KilnSer:
         return False
 
     def serialize_bytes(mut self, fx: Fixture) raises -> List[UInt8]:
+        # A batch struct is one list field, so the list bytes are the batch
+        # bytes. Encoding the fixture list avoids copying every record first.
         if fx.type_id == "message":
             if fx.n == 1:
                 encode(fx.messages[0], self.buf)
             else:
-                encode(BatchMessage(fx.messages.copy()), self.buf)
+                encode(fx.messages, self.buf)
         elif fx.type_id == "document":
             if fx.n == 1:
                 encode(fx.documents[0], self.buf)
             else:
-                encode(BatchDocument(fx.documents.copy()), self.buf)
+                encode(fx.documents, self.buf)
         elif fx.type_id == "telemetry":
             if fx.n == 1:
                 encode(fx.telemetries[0], self.buf)
             else:
-                encode(BatchTelemetry(fx.telemetries.copy()), self.buf)
+                encode(fx.telemetries, self.buf)
         elif fx.type_id == "strings":
             if fx.n == 1:
                 encode(fx.strings[0], self.buf)
             else:
-                encode(BatchStrings(fx.strings.copy()), self.buf)
+                encode(fx.strings, self.buf)
         else:
             if fx.n == 1:
                 encode(fx.events[0], self.buf)
             else:
-                encode(BatchEvent(fx.events.copy()), self.buf)
+                encode(fx.events, self.buf)
         return self.buf.copy_bytes()
 
     def deserialize_bytes(self, fx: Fixture, data: List[UInt8]) raises -> Fixture:
@@ -74,38 +71,33 @@ struct KilnSer:
                 one.append(decode[Message](raw))
                 out.messages = one^
             else:
-                var batch = decode[BatchMessage](raw)
-                out.messages = batch.items.copy()
+                out.messages = decode[List[Message]](raw)
         elif fx.type_id == "document":
             if fx.n == 1:
                 var one = List[Document]()
                 one.append(decode[Document](raw))
                 out.documents = one^
             else:
-                var batch = decode[BatchDocument](raw)
-                out.documents = batch.items.copy()
+                out.documents = decode[List[Document]](raw)
         elif fx.type_id == "telemetry":
             if fx.n == 1:
                 var one = List[Telemetry]()
                 one.append(decode[Telemetry](raw))
                 out.telemetries = one^
             else:
-                var batch = decode[BatchTelemetry](raw)
-                out.telemetries = batch.items.copy()
+                out.telemetries = decode[List[Telemetry]](raw)
         elif fx.type_id == "strings":
             if fx.n == 1:
                 var one = List[Strings]()
                 one.append(decode[Strings](raw))
                 out.strings = one^
             else:
-                var batch = decode[BatchStrings](raw)
-                out.strings = batch.items.copy()
+                out.strings = decode[List[Strings]](raw)
         else:
             if fx.n == 1:
                 var one = List[Event]()
                 one.append(decode[Event](raw))
                 out.events = one^
             else:
-                var batch = decode[BatchEvent](raw)
-                out.events = batch.items.copy()
+                out.events = decode[List[Event]](raw)
         return out^
