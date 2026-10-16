@@ -7,6 +7,8 @@ import { gunzipSync } from 'node:zlib';
 import { heatmapFromMatrix, parseRowIdentity } from '../compliance-matrix.js';
 import { CATALOG } from '../compliance-catalog.js';
 import { catalogMissing, classifyByName, classifySerializer, registeredEntries } from '../compliance-classify.js';
+import { serializerDisplayName } from '../format.js';
+import { missingRegisteredRows } from '../dimension-labels.js';
 import {
   EMPTY_STANDARDS_SEP,
   EMPTY_STANDARDS_SEP_ID,
@@ -534,6 +536,63 @@ test('registeredEntries lists Dagr with an empty format list', () => {
     assert.deepEqual(rows.map((row) => row.serializer).sort(), [...DAGR_NAMES].sort(), lang);
     for (const row of rows) assert.deepEqual(row.formats, [], `${lang}/${row.serializer}`);
   }
+});
+
+test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
+  const stats = loadJsonGz('stats_mojo_latest.json.gz');
+  const payload = loadJsonGz('mojo_latest.json.gz');
+  assert.deepEqual(stats.groups, payload.stats.groups);
+  const names = new Set(stats.groups.map((g) => g.serializer));
+  assert.equal(names.has('kiln'), false);
+  assert.equal(names.has('gld-kiln'), true);
+  const rows = stats.groups.filter((g) => g.serializer === 'gld-kiln');
+  assert.equal(rows.length, 10);
+  const seen = new Set();
+  for (const row of rows) {
+    assert.equal(row.serializer_version, '0.2.0');
+    assert.equal(row.language, 'mojo');
+    assert.equal(row.standard, 'kiln');
+    assert.equal(row.data_set, 'suite');
+    assert.equal(serializerDisplayName(row.serializer, row.serializer_version), 'gld-kiln:0.2.0');
+    const metrics = row.variants['iqr_1.5'];
+    assert.ok(metrics.ser_median_ns > 0);
+    assert.ok(metrics.deser_median_ns > 0);
+    assert.ok(metrics.median_size_bytes > 0);
+    seen.add(`${row.test_data}@${row.data_type_instance_count}`);
+  }
+  assert.deepEqual(
+    [...seen].sort(),
+    [
+      'document@1',
+      'document@100',
+      'event@1',
+      'event@100',
+      'message@1',
+      'message@100',
+      'strings@1',
+      'strings@100',
+      'telemetry@1',
+      'telemetry@100',
+    ],
+  );
+  const message = rows.find((g) => g.test_data === 'message' && g.data_type_instance_count === 1);
+  const messageMetrics = message.variants['iqr_1.5'];
+  assert.equal(messageMetrics.median_size_bytes, 57);
+  assert.equal(formatLabel('kiln'), 'Kiln');
+  assert.deepEqual(classifySerializer('mojo', 'gld-kiln'), ['kiln']);
+  assert.equal(catalogMissing('mojo', 'gld-kiln'), false);
+  assert.equal(catalogMissing('mojo', 'kiln'), true);
+  const registered = registeredEntries('mojo').find((row) => row.serializer === 'gld-kiln');
+  assert.deepEqual(registered.formats, ['kiln']);
+  const placeholders = missingRegisteredRows({
+    language: 'mojo',
+    measuredNames: [...names],
+    registrations: registeredEntries('mojo').filter((row) => !row.formats.length),
+    testData: 'message@n=1',
+  });
+  assert.equal(placeholders.some((row) => row.serializer === 'gld-kiln' || row.serializer === 'kiln'), false);
+  const listed = payload.configs.serializers.items.find((item) => item.name === 'gld-kiln');
+  assert.deepEqual(listed, { name: 'gld-kiln', version: '0.2.0' });
 });
 
 test('alias table only remaps known split names', () => {

@@ -1480,7 +1480,7 @@ languages:
         package: leo-gan/gld-cbor
         rationale: "Pure-Mojo CBOR (RFC 8949) via CborDatum encode / decode"
         optimal_api: "cbor.encode / cbor.decode on CborDatum types"
-      - name: kiln
+      - name: gld-kiln
         category: binary
         package: leo-gan/gld-kiln
         rationale: "Positional little-endian codec generated from the Mojo struct at compile time"
