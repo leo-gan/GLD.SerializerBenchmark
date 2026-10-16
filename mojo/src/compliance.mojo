@@ -36,6 +36,40 @@ from fb_wire.verify import verify_file_identifier, verify_root
 from arrow_wire.ipc import decode_ipc_stream
 from parquet_wire.decode import decode_table
 from hdf5 import VERSION, read_bp5, read_cdf1, read_hdf5, read_nc4, write_bp5
+from kiln import decode_framed, decode_value, read_f64, schema_from_json
+from kiln.error import KilnError
+from kiln.schema import (
+    TY_BOOL,
+    TY_BYTES,
+    TY_DICT,
+    TY_F32,
+    TY_F64,
+    TY_I16,
+    TY_I32,
+    TY_I64,
+    TY_I8,
+    TY_LIST,
+    TY_OPT,
+    TY_STR,
+    TY_STRUCT,
+    TY_U16,
+    TY_U32,
+    TY_U64,
+    TY_U8,
+    Schema,
+)
+from kiln.value import VK_NONE, Value as KilnValue
+
+
+struct KilnPoint(Defaultable, Movable):
+    """Destination type for the Kiln frame cases. Fields are i32 x then i32 y."""
+
+    var x: Int32
+    var y: Int32
+
+    def __init__(out self):
+        self.x = 0
+        self.y = 0
 from hdf5_runtime.doc import BpStep
 
 
@@ -466,6 +500,231 @@ def _pb_varint(data: List[Byte], start: Int) raises -> Tuple[UInt64, Int]:
     raise Error("truncated varint")
 
 
+def _word_eq_hex(v: UInt64, nbytes: Int, hextext: String) -> Bool:
+    var want = _hex_bytes(hextext)
+    if len(want) != nbytes:
+        return False
+    var i = 0
+    while i < nbytes:
+        var shift = UInt64(i) * 8
+        var b = UInt8((v >> shift) & UInt64(255))
+        if b != want[i]:
+            return False
+        i += 1
+    return True
+
+
+def _expect_i64(expected: Value) raises -> Int64:
+    if expected.is_int() or expected.is_uint():
+        return expected.int()
+    if expected.is_float():
+        return Int64(expected.float())
+    raise Error("expected an integer")
+
+
+def _kiln_bits_marker(expected: Value, key: String) raises -> String:
+    if not expected.is_object() or len(expected.object()) != 1:
+        return String("")
+    try:
+        return String(expected.object()[key].string())
+    except:
+        return String("")
+
+
+def _kiln_eq(
+    schema: Schema,
+    sid: Int,
+    value: KilnValue,
+    nid: Int,
+    expected: Value,
+) raises -> Bool:
+    var sk = schema.kind[sid]
+    if sk == TY_OPT:
+        if expected.is_null():
+            return value.nodes[nid].kind == VK_NONE
+        return _kiln_eq(schema, schema.aux[sid], value, nid, expected)
+    if sk == TY_BOOL:
+        if not expected.is_bool():
+            return False
+        var on = value.nodes[nid].a != 0
+        return on == expected.bool()
+    if sk == TY_I8 or sk == TY_I16 or sk == TY_I32 or sk == TY_I64:
+        var got = Int64(from_bits=value.words[value.nodes[nid].a])
+        return got == _expect_i64(expected)
+    if sk == TY_U8 or sk == TY_U16 or sk == TY_U32 or sk == TY_U64:
+        var got = value.words[value.nodes[nid].a]
+        var want = _expect_i64(expected)
+        if want < 0:
+            return False
+        return got == UInt64(want)
+    if sk == TY_F32 or sk == TY_F64:
+        var marker = String("$f32bits")
+        if sk == TY_F64:
+            marker = String("$f64bits")
+        var bits_hex = _kiln_bits_marker(expected, marker)
+        if bits_hex.byte_length() > 0:
+            var width = 8 if sk == TY_F64 else 4
+            return _word_eq_hex(value.words[value.nodes[nid].a], width, bits_hex)
+        var got = Float64(from_bits=value.words[value.nodes[nid].a])
+        if sk == TY_F32:
+            got = Float64(Float32(from_bits=UInt32(value.words[value.nodes[nid].a])))
+        if expected.is_float():
+            return got == expected.float()
+        if expected.is_int() or expected.is_uint():
+            return got == Float64(expected.int())
+        return False
+    if sk == TY_STR:
+        if not expected.is_string():
+            return False
+        return value.texts[value.nodes[nid].a] == expected.string()
+    if sk == TY_BYTES:
+        var hextext = _kiln_bits_marker(expected, String("$hex"))
+        if hextext.byte_length() == 0:
+            return False
+        var slot = value.nodes[nid].a
+        var at = value.blob_at[slot]
+        var n = value.blob_n[slot]
+        var tmp = List[Byte]()
+        var i = 0
+        while i < n:
+            tmp.append(value.blob[at + i])
+            i += 1
+        return _hex_eq(tmp, hextext)
+    if sk == TY_LIST:
+        if not expected.is_array():
+            return False
+        if value.nodes[nid].nchild != len(expected.array()):
+            return False
+        var i = 0
+        while i < value.nodes[nid].nchild:
+            if not _kiln_eq(
+                schema,
+                schema.aux[sid],
+                value,
+                value.child(nid, i),
+                expected.array()[i],
+            ):
+                return False
+            i += 1
+        return True
+    if sk == TY_DICT:
+        if not expected.is_object():
+            return False
+        if value.nodes[nid].nchild != len(expected.object()):
+            return False
+        for key in expected.object().keys():
+            var name = String(key)
+            var found = False
+            var i = 0
+            while i < value.nodes[nid].nchild:
+                if value.child_key(nid, i) == name:
+                    if not _kiln_eq(
+                        schema,
+                        schema.aux[sid],
+                        value,
+                        value.child(nid, i),
+                        expected.object()[name],
+                    ):
+                        return False
+                    found = True
+                    break
+                i += 1
+            if not found:
+                return False
+        return True
+    if sk == TY_STRUCT:
+        if not expected.is_object():
+            return False
+        var n = schema.field_n[sid]
+        if len(expected.object()) != n:
+            return False
+        var i = 0
+        while i < n:
+            var name = schema.field_name[schema.field_start[sid] + i]
+            var ft = schema.field_type[schema.field_start[sid] + i]
+            try:
+                if not _kiln_eq(schema, ft, value, value.child(nid, i), expected.object()[name]):
+                    return False
+            except:
+                return False
+            i += 1
+        return True
+    return False
+
+
+def _raise_kiln(e: KilnError) raises:
+    var text = String("KilnError(kind=")
+    text += String(e.kind)
+    text += ", offset="
+    text += String(e.offset)
+    text += ")"
+    raise Error(text)
+
+
+def _try_kiln_tensor(buf: List[Byte], has_decoded: Bool, decoded_json: String) raises:
+    var got = List[Float64]()
+    try:
+        got = read_f64(Span(buf))
+    except e:
+        _raise_kiln(e)
+    if not has_decoded:
+        return
+    var expected = parse(decoded_json)
+    if not expected.is_array() or len(got) != len(expected.array()):
+        raise Error("decoded value does not match")
+    var i = 0
+    while i < len(got):
+        var want = expected.array()[i].copy()
+        var same = False
+        if want.is_float():
+            same = got[i] == want.float()
+        elif want.is_int() or want.is_uint():
+            same = got[i] == Float64(want.int())
+        if not same:
+            raise Error("decoded value does not match")
+        i += 1
+
+
+def _try_kiln_frame(buf: List[Byte], has_decoded: Bool, decoded_json: String) raises:
+    var point = KilnPoint()
+    try:
+        point = decode_framed[KilnPoint](Span(buf))
+    except e:
+        _raise_kiln(e)
+    if not has_decoded:
+        return
+    var expected = parse(decoded_json)
+    if not expected.is_object():
+        raise Error("decoded value does not match")
+    if Int64(point.x) != expected.object()["x"].int() or Int64(point.y) != expected.object()["y"].int():
+        raise Error("decoded value does not match")
+
+
+def _try_kiln_value(buf: List[Byte], schema_json: String, has_decoded: Bool, decoded_json: String) raises:
+    var sch = Schema()
+    var decoded = KilnValue()
+    try:
+        sch = schema_from_json(schema_json)
+        decoded = decode_value(sch, Span(buf))
+    except e:
+        _raise_kiln(e)
+    if not has_decoded:
+        return
+    var expected = parse(decoded_json)
+    if not _kiln_eq(sch, sch.root, decoded, decoded.root, expected):
+        raise Error("decoded value does not match")
+
+
+def _try_kiln(buf: List[Byte], schema: String, has_decoded: Bool, decoded_json: String) raises:
+    if schema == "\"tensor\"":
+        _try_kiln_tensor(buf, has_decoded, decoded_json)
+        return
+    if schema == "\"frame\"":
+        _try_kiln_frame(buf, has_decoded, decoded_json)
+        return
+    _try_kiln_value(buf, schema, has_decoded, decoded_json)
+
+
 def _row(
     id: String,
     ser: String,
@@ -608,6 +867,13 @@ def _run_one(
             _try_netcdf(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "adios2":
             _try_adios2(input_text)
+        elif fmt == "kiln":
+            _try_kiln(
+                _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
+                schema,
+                has_decoded,
+                decoded_json,
+            )
         else:
             raise Error("no adapter")
         ok = True
@@ -822,6 +1088,9 @@ def main() raises:
             elif fmt == "adios2":
                 sers.append("gld-adios2")
                 vers.append(String(VERSION))
+            elif fmt == "kiln":
+                sers.append("gld-kiln")
+                vers.append("0.2.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False

@@ -31,7 +31,7 @@ This is the spec-quality counterpart to run-all-benchmarks.sh: same libraries,
 cited RFC/spec sections, no timings.
 
 OPTIONS:
-    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile
+    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile kiln
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
     -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c fortran
     -d, --detailed        Print every case, not only the summary and failures
@@ -448,6 +448,7 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
             -I vendor/emberjson_src -I vendor/bson_src \
             -I vendor/ion_src -I vendor/smile_src -I vendor/gldtoml_src \
             -I vendor/arrow_src -I vendor/parquet_src -I vendor/hdf5_src \
+            -I vendor/kiln_src \
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then
