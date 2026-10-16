@@ -60,6 +60,7 @@ pub fn build(b: *std.Build) void {
     const flatbuffers_dep = b.dependency("flatbuffers", .{ .target = target, .optimize = optimize });
     const avro_dep = b.dependency("gld_avro_zig", .{ .target = target, .optimize = optimize });
     const arrow_dep = b.dependency("gld_arrow_zig", .{ .target = target, .optimize = optimize });
+    const jsonz_dep = b.dependency("jsonz", .{ .target = target, .optimize = optimize });
 
     const gen_proto = b.step("gen-proto", "Generate Zig types from schemas/v2/protobuf/benchmark_v2.proto");
     const protoc_step = protobuf.RunProtocStep.create(protobuf_dep.builder, target, .{
@@ -80,6 +81,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "flatbuffers", .module = flatbuffers_dep.module("flatbuffers") },
         .{ .name = "avro", .module = avro_dep.module("avro") },
         .{ .name = "arrow", .module = arrow_dep.module("arrow") },
+        .{ .name = "jsonz", .module = jsonz_dep.module("jsonz") },
     };
 
     const serde_tests = b.addTest(.{
@@ -126,6 +128,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "json_lalinsky", .module = json_l_dep.module("json") },
         .{ .name = "arrow", .module = arrow_dep.module("arrow") },
         .{ .name = "avro", .module = avro_dep.module("avro") },
+        .{ .name = "jsonz", .module = jsonz_dep.module("jsonz") },
     };
     const compliance_root = b.createModule(.{
         .root_source_file = b.path("src/compliance.zig"),

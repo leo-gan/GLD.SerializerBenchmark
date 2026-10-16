@@ -5,6 +5,7 @@ const zbor = @import("zbor");
 const zig_msgpack = @import("zig_msgpack");
 const msgpack_l = @import("msgpack_lalinsky");
 const json_l = @import("json_lalinsky");
+const jsonz = @import("jsonz");
 const arrow = @import("arrow");
 const avro = @import("avro");
 
@@ -78,6 +79,7 @@ pub fn main(init: std.process.Init) !void {
         "serde.json",
         "serde.json.borrowed",
         "json.zig",
+        "jsonz",
     };
     var json_sers: std.ArrayList([]const u8) = .empty;
     defer json_sers.deinit(alloc);
@@ -334,6 +336,10 @@ fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !voi
     if (std.mem.eql(u8, ser, "json.zig")) {
         // json.zig validates JSON syntax independently of a destination type.
         json_l.validateFromSlice(input) catch return error.InvalidJson;
+        return;
+    }
+    if (std.mem.eql(u8, ser, "jsonz")) {
+        if (!jsonz.diagnostic.isValid(input, .{})) return error.InvalidJson;
         return;
     }
     if (std.mem.eql(u8, ser, "std.json.borrowed")) {

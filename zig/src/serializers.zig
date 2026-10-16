@@ -14,6 +14,7 @@ const fb_ser = @import("fb_ser.zig");
 const capnp_ser = @import("capnp_ser.zig");
 const avro_ser = @import("avro_ser.zig");
 const arrow_ser = @import("arrow_ser.zig");
+const jsonz = @import("jsonz").typed;
 
 pub const StreamMode = enum {
     native,
@@ -152,6 +153,32 @@ const json_borrowed_vtable = Serializer.VTable{
 
 fn jsonBorrowedDeserialize(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
     return json_util.parseFixtureBorrowed(allocator, type_id, bytes);
+}
+
+const jsonz_vtable = Serializer.VTable{
+    .prepare = Dummy.prepare,
+    .serialize = jsonzSerialize,
+    .deserialize = jsonzParseDeserialize,
+};
+
+fn jsonzSerialize(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
+    switch (fx) {
+        inline else => |payload| try jsonz.toWriter(&writer.writer, payload, .{}),
+    }
+}
+
+fn jsonzParseDeserialize(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
+    inline for (@typeInfo(data.Fixture).@"union".fields) |field| {
+        if (std.mem.eql(u8, type_id, field.name)) {
+            // The trial arena owns the result's pool and fallback allocations.
+            // Keep them alive through checkBatch; arena reset releases both.
+            const parsed = try jsonz.parse(field.type, allocator, bytes, .{});
+            return @unionInit(data.Fixture, field.name, parsed.value);
+        }
+    }
+    return error.UnknownTypeId;
 }
 
 const serde_json_borrowed_vtable = Serializer.VTable{
@@ -350,7 +377,7 @@ const gld_arrow_vtable = Serializer.VTable{
     .supports = arrow_ser.supports,
 };
 
-pub fn allSerializers() [22]Serializer {
+pub fn allSerializers() [23]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -511,6 +538,14 @@ pub fn allSerializers() [22]Serializer {
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
             .vtable = &serde_json_borrowed_vtable,
+        },
+        .{
+            .name = "jsonz",
+            .version = "0.9.2",
+            .stream_mode = .text_on_stream,
+            .native_kind = .comptime_map,
+            .ctx = @ptrCast(&json_state),
+            .vtable = &jsonz_vtable,
         },
         .{
             .name = "gld-avro",

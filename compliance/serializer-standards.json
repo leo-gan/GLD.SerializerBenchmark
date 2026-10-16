@@ -899,6 +899,9 @@
       "json.zig": [
         "json"
       ],
+      "jsonz": [
+        "json"
+      ],
       "serde.yaml": [
         "yaml"
       ],
