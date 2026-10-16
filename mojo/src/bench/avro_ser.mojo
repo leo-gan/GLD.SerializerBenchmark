@@ -47,16 +47,7 @@ struct AvroSer:
         return encode(BatchEvent(fx.events.copy()))
 
     def deserialize_bytes(self, fx: Fixture, data: List[Byte]) raises -> Fixture:
-        var out = Fixture(
-            fx.type_id,
-            fx.n,
-            fx.hash,
-            fx.messages.copy(),
-            fx.documents.copy(),
-            fx.telemetries.copy(),
-            fx.strings.copy(),
-            fx.events.copy(),
-        )
+        var out = Fixture.empty(fx.type_id, fx.n, fx.hash)
         if fx.type_id == "message":
             if fx.n == 1:
                 out.messages = List[Message]()

@@ -383,16 +383,7 @@ struct BsonSer:
         return w^.finish()
 
     def deserialize_bytes(self, fx: Fixture, data: List[Byte]) raises -> Fixture:
-        var out = Fixture(
-            fx.type_id,
-            fx.n,
-            fx.hash,
-            fx.messages.copy(),
-            fx.documents.copy(),
-            fx.telemetries.copy(),
-            fx.strings.copy(),
-            fx.events.copy(),
-        )
+        var out = Fixture.empty(fx.type_id, fx.n, fx.hash)
         var r = WireReader(Span(data))
         if fx.type_id == "message":
             out.messages = List[Message]()

@@ -1322,6 +1322,25 @@ struct Fixture(Copyable, Movable):
         self.books = List[Book]()
         self.grids = List[Grid]()
 
+    @staticmethod
+    def empty(type_id: String, n: Int, hash: String) -> Self:
+        """A fixture with empty lists.
+
+        Deserialize used to copy every suite list and then replace one of
+        them. The copies were inside the timer and did not affect fidelity,
+        which reads only the active type.
+        """
+        return Fixture(
+            type_id,
+            n,
+            hash,
+            List[Message](),
+            List[Document](),
+            List[Telemetry](),
+            List[Strings](),
+            List[Event](),
+        )
+
 
 def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises -> Fixture:
     var rng = Rng(mix_seed(seed, type_id, idx))
