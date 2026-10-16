@@ -1,6 +1,7 @@
 from std.builtin.rebind import downcast
 from std.collections import Dict, List, Optional, Span
 from std.memory import unsafe_memcpy
+from std.sys import is_little_endian
 
 from kiln.error import KilnError
 from kiln.wire import (
@@ -288,22 +289,33 @@ def _store_u16[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt16):
 
 @always_inline
 def _store_u32[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt32):
-    p[unsafe_offset=i] = UInt8(v)
-    p[unsafe_offset=i + 1] = UInt8(v >> 8)
-    p[unsafe_offset=i + 2] = UInt8(v >> 16)
-    p[unsafe_offset=i + 3] = UInt8(v >> 24)
+    # Pointer.unsafe_store is the documented unaligned SIMD store.
+    # It writes host byte order, so it is the little-endian wire only
+    # when the target is little-endian. Byte stores stay for the other case.
+    comptime if is_little_endian():
+        var q = p.unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint32]]()
+        q.unsafe_store[alignment=1](0, v)
+    else:
+        p[unsafe_offset=i] = UInt8(v)
+        p[unsafe_offset=i + 1] = UInt8(v >> 8)
+        p[unsafe_offset=i + 2] = UInt8(v >> 16)
+        p[unsafe_offset=i + 3] = UInt8(v >> 24)
 
 
 @always_inline
 def _store_u64[o: MutOrigin](p: Pointer[UInt8, o], i: Int, v: UInt64):
-    p[unsafe_offset=i] = UInt8(v)
-    p[unsafe_offset=i + 1] = UInt8(v >> 8)
-    p[unsafe_offset=i + 2] = UInt8(v >> 16)
-    p[unsafe_offset=i + 3] = UInt8(v >> 24)
-    p[unsafe_offset=i + 4] = UInt8(v >> 32)
-    p[unsafe_offset=i + 5] = UInt8(v >> 40)
-    p[unsafe_offset=i + 6] = UInt8(v >> 48)
-    p[unsafe_offset=i + 7] = UInt8(v >> 56)
+    comptime if is_little_endian():
+        var q = p.unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint64]]()
+        q.unsafe_store[alignment=1](0, v)
+    else:
+        p[unsafe_offset=i] = UInt8(v)
+        p[unsafe_offset=i + 1] = UInt8(v >> 8)
+        p[unsafe_offset=i + 2] = UInt8(v >> 16)
+        p[unsafe_offset=i + 3] = UInt8(v >> 24)
+        p[unsafe_offset=i + 4] = UInt8(v >> 32)
+        p[unsafe_offset=i + 5] = UInt8(v >> 40)
+        p[unsafe_offset=i + 6] = UInt8(v >> 48)
+        p[unsafe_offset=i + 7] = UInt8(v >> 56)
 
 
 @always_inline

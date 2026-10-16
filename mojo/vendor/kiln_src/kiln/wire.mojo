@@ -1,8 +1,9 @@
 from std.collections import List, Span
 from std.memory import unsafe_memcpy
+from std.sys import is_little_endian
 
 from kiln.error import KilnError
-from kiln.utf8 import string_from_span, utf8_ok
+from kiln.utf8 import string_from_ptr, utf8_ok
 
 
 comptime PROFILE_FROZEN = 0
@@ -222,30 +223,42 @@ struct Reader[origin: ImmOrigin](Movable):
     @always_inline
     def u32_fast(mut self) -> UInt32:
         var i = self.pos
-        var p = self.data.unsafe_ptr()
-        var v = (
-            UInt32(p[unsafe_offset=i])
-            | (UInt32(p[unsafe_offset=i + 1]) << 8)
-            | (UInt32(p[unsafe_offset=i + 2]) << 16)
-            | (UInt32(p[unsafe_offset=i + 3]) << 24)
-        )
-        self.pos = i + 4
-        return v
+        comptime if is_little_endian():
+            var q = self.data.unsafe_ptr().unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint32]]()
+            var v = q.unsafe_load[alignment=1](0)
+            self.pos = i + 4
+            return v
+        else:
+            var p = self.data.unsafe_ptr()
+            var v = (
+                UInt32(p[unsafe_offset=i])
+                | (UInt32(p[unsafe_offset=i + 1]) << 8)
+                | (UInt32(p[unsafe_offset=i + 2]) << 16)
+                | (UInt32(p[unsafe_offset=i + 3]) << 24)
+            )
+            self.pos = i + 4
+            return v
 
     @always_inline
     def u64_fast(mut self) -> UInt64:
         var i = self.pos
-        var p = self.data.unsafe_ptr()
-        var v = UInt64(p[unsafe_offset=i])
-        v = v | (UInt64(p[unsafe_offset=i + 1]) << 8)
-        v = v | (UInt64(p[unsafe_offset=i + 2]) << 16)
-        v = v | (UInt64(p[unsafe_offset=i + 3]) << 24)
-        v = v | (UInt64(p[unsafe_offset=i + 4]) << 32)
-        v = v | (UInt64(p[unsafe_offset=i + 5]) << 40)
-        v = v | (UInt64(p[unsafe_offset=i + 6]) << 48)
-        v = v | (UInt64(p[unsafe_offset=i + 7]) << 56)
-        self.pos = i + 8
-        return v
+        comptime if is_little_endian():
+            var q = self.data.unsafe_ptr().unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint64]]()
+            var v = q.unsafe_load[alignment=1](0)
+            self.pos = i + 8
+            return v
+        else:
+            var p = self.data.unsafe_ptr()
+            var v = UInt64(p[unsafe_offset=i])
+            v = v | (UInt64(p[unsafe_offset=i + 1]) << 8)
+            v = v | (UInt64(p[unsafe_offset=i + 2]) << 16)
+            v = v | (UInt64(p[unsafe_offset=i + 3]) << 24)
+            v = v | (UInt64(p[unsafe_offset=i + 4]) << 32)
+            v = v | (UInt64(p[unsafe_offset=i + 5]) << 40)
+            v = v | (UInt64(p[unsafe_offset=i + 6]) << 48)
+            v = v | (UInt64(p[unsafe_offset=i + 7]) << 56)
+            self.pos = i + 8
+            return v
 
     @always_inline
     def str_fast(mut self) -> StringSpan[Self.origin]:
@@ -268,42 +281,60 @@ struct Reader[origin: ImmOrigin](Movable):
         var i = self.pos
         if i + 2 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var p = self.data.unsafe_ptr()
-        var v = UInt16(p[unsafe_offset=i]) | (UInt16(p[unsafe_offset=i + 1]) << 8)
-        self.pos = i + 2
-        return v
+        comptime if is_little_endian():
+            var q = self.data.unsafe_ptr().unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint16]]()
+            var v = q.unsafe_load[alignment=1](0)
+            self.pos = i + 2
+            return v
+        else:
+            var p = self.data.unsafe_ptr()
+            var v = UInt16(p[unsafe_offset=i]) | (UInt16(p[unsafe_offset=i + 1]) << 8)
+            self.pos = i + 2
+            return v
 
     @always_inline
     def u32(mut self) raises KilnError -> UInt32:
         var i = self.pos
         if i + 4 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var p = self.data.unsafe_ptr()
-        var v = (
-            UInt32(p[unsafe_offset=i])
-            | (UInt32(p[unsafe_offset=i + 1]) << 8)
-            | (UInt32(p[unsafe_offset=i + 2]) << 16)
-            | (UInt32(p[unsafe_offset=i + 3]) << 24)
-        )
-        self.pos = i + 4
-        return v
+        comptime if is_little_endian():
+            var q = self.data.unsafe_ptr().unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint32]]()
+            var v = q.unsafe_load[alignment=1](0)
+            self.pos = i + 4
+            return v
+        else:
+            var p = self.data.unsafe_ptr()
+            var v = (
+                UInt32(p[unsafe_offset=i])
+                | (UInt32(p[unsafe_offset=i + 1]) << 8)
+                | (UInt32(p[unsafe_offset=i + 2]) << 16)
+                | (UInt32(p[unsafe_offset=i + 3]) << 24)
+            )
+            self.pos = i + 4
+            return v
 
     @always_inline
     def u64(mut self) raises KilnError -> UInt64:
         var i = self.pos
         if i + 8 > len(self.data):
             raise KilnError(KilnError.EOF, i)
-        var p = self.data.unsafe_ptr()
-        var v = UInt64(p[unsafe_offset=i])
-        v = v | (UInt64(p[unsafe_offset=i + 1]) << 8)
-        v = v | (UInt64(p[unsafe_offset=i + 2]) << 16)
-        v = v | (UInt64(p[unsafe_offset=i + 3]) << 24)
-        v = v | (UInt64(p[unsafe_offset=i + 4]) << 32)
-        v = v | (UInt64(p[unsafe_offset=i + 5]) << 40)
-        v = v | (UInt64(p[unsafe_offset=i + 6]) << 48)
-        v = v | (UInt64(p[unsafe_offset=i + 7]) << 56)
-        self.pos = i + 8
-        return v
+        comptime if is_little_endian():
+            var q = self.data.unsafe_ptr().unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint64]]()
+            var v = q.unsafe_load[alignment=1](0)
+            self.pos = i + 8
+            return v
+        else:
+            var p = self.data.unsafe_ptr()
+            var v = UInt64(p[unsafe_offset=i])
+            v = v | (UInt64(p[unsafe_offset=i + 1]) << 8)
+            v = v | (UInt64(p[unsafe_offset=i + 2]) << 16)
+            v = v | (UInt64(p[unsafe_offset=i + 3]) << 24)
+            v = v | (UInt64(p[unsafe_offset=i + 4]) << 32)
+            v = v | (UInt64(p[unsafe_offset=i + 5]) << 40)
+            v = v | (UInt64(p[unsafe_offset=i + 6]) << 48)
+            v = v | (UInt64(p[unsafe_offset=i + 7]) << 56)
+            self.pos = i + 8
+            return v
 
     @always_inline
     def i32(mut self) raises KilnError -> Int32:
@@ -347,10 +378,15 @@ struct Reader[origin: ImmOrigin](Movable):
 
     @always_inline
     def read_string(mut self) raises KilnError -> String:
-        var n = self.count()
+        var n = Int(self.u32())
+        if n < 0 or n > MAX_BYTES:
+            raise KilnError(KilnError.LIMIT, self.pos - 4)
         var start = self.pos
-        var sp = self.take(n)
-        return string_from_span(sp, start, self.check_utf8)
+        if start + n > len(self.data):
+            raise KilnError(KilnError.EOF, start)
+        var src = self.data.unsafe_ptr().unsafe_offset(start)
+        self.pos = start + n
+        return string_from_ptr(src, n, start, self.check_utf8)
 
     def read_string_slice(mut self) raises KilnError -> StringSpan[Self.origin]:
         """A view of the string bytes. The slice lives as long as `data`."""

@@ -1,19 +1,47 @@
 from std.collections import Span
+from std.memory import unsafe_memcpy
+from std.sys import is_little_endian
 
 from kiln.error import KilnError
 
 
 @always_inline
-def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
-    """Return true when `span` is well-formed UTF-8.
+def _ascii_bits[o: ImmOrigin](p: Pointer[UInt8, o], n: Int) -> UInt8:
+    """OR of every byte. A result below 0x80 means the buffer is ASCII.
 
-    The check rejects overlong sequences, surrogates, and code points
-    past U+10FFFF. It does not allocate.
+    Eight-byte loads are the pointer manual's unaligned `unsafe_load`.
+    A set high bit in the word returns 0x80 so the multi-byte checker runs.
     """
     var i = 0
-    var n = len(span)
+    comptime if is_little_endian():
+        while i + 8 <= n:
+            var q = p.unsafe_offset(i).unsafe_bitcast[Scalar[DType.uint64]]()
+            var w = q.unsafe_load[alignment=1](0)
+            if (w & UInt64(0x8080808080808080)) != UInt64(0):
+                return UInt8(0x80)
+            i += 8
+    var bits = UInt8(0)
     while i < n:
-        var c = Int(span[i])
+        bits = bits | p[unsafe_offset=i]
+        i += 1
+    return bits
+
+
+@always_inline
+def _utf8_ptr[o: ImmOrigin](p: Pointer[UInt8, o], n: Int) -> Bool:
+    """Well-formed UTF-8 over `n` bytes at `p`.
+
+    ASCII bytes have the high bit clear, so one OR of the bytes accepts
+    that common case. The multi-byte checker runs only when a byte is
+    past 0x7F. Pointer loads skip the per-byte bounds check of `span[i]`.
+    """
+    if n == 0:
+        return True
+    if _ascii_bits(p, n) < UInt8(0x80):
+        return True
+    var i = 0
+    while i < n:
+        var c = Int(p[unsafe_offset=i])
         if c < 0x80:
             i += 1
             continue
@@ -39,7 +67,7 @@ def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
         var k = 0
         while k < need:
             i += 1
-            var cc = Int(span[i])
+            var cc = Int(p[unsafe_offset=i])
             if (cc & 0xC0) != 0x80:
                 return False
             cp = (cp << 6) | (cc & 0x3F)
@@ -51,9 +79,36 @@ def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
 
 
 @always_inline
+def utf8_ok[origin: ImmOrigin](span: Span[UInt8, origin]) -> Bool:
+    """Return true when `span` is well-formed UTF-8.
+
+    The check rejects overlong sequences, surrogates, and code points
+    past U+10FFFF. It does not allocate.
+    """
+    return _utf8_ptr(span.unsafe_ptr(), len(span))
+
+
+@always_inline
+def string_from_ptr[o: ImmOrigin](
+    p: Pointer[UInt8, o], n: Int, offset: Int, check: Bool
+) raises KilnError -> String:
+    """Copy `n` bytes into a `String`.
+
+    `String(unsafe_uninit_length=)` plus `memcpy` is the stdlib's
+    uninitialized SSO fill. On a 5-byte runtime length it was several
+    times faster than `String(unsafe_from_utf8=)` of a sliced span,
+    which is what `read_string` used to build.
+    """
+    if check and not _utf8_ptr(p, n):
+        raise KilnError(KilnError.UTF8, offset)
+    var out = String(unsafe_uninit_length=n)
+    if n > 0:
+        unsafe_memcpy(dest=out.unsafe_ptr_mut(), src=p, count=n)
+    return out^
+
+
+@always_inline
 def string_from_span[origin: ImmOrigin](
     span: Span[UInt8, origin], offset: Int, check: Bool
 ) raises KilnError -> String:
-    if check and not utf8_ok(span):
-        raise KilnError(KilnError.UTF8, offset)
-    return String(unsafe_from_utf8=span)
+    return string_from_ptr(span.unsafe_ptr(), len(span), offset, check)
