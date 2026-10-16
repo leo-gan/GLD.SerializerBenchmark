@@ -1622,6 +1622,12 @@ SPECIFICS: dict[str, str] = {
         "`encode_doc` and `decode_bytes` on a document built from the "
         "suite value."
     ),
+    "gld-kiln": (
+        "gld-kiln (leo-gan) is a positional little-endian codec for Mojo. "
+        "The encoder is generated from the struct fields at compile time "
+        "and writes into a reused buffer. This row times encode and decode "
+        "of the suite structs. There are no field tags on the wire."
+    ),
     "gld-arrow": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -2347,6 +2353,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-bson"): "gld-bson",
     ("mojo", "mojo-ion"): "gld-ion",
     ("mojo", "mojo-smile"): "gld-smile",
+    ("mojo", "kiln"): "gld-kiln",
     ("mojo", "arrow-ipc"): "gld-arrow",
     ("mojo", "parquet"): "gld-parquet",
     ("mojo", "parquet-uncompressed"): "gld-parquet-raw",

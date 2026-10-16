@@ -8,6 +8,7 @@ from bench.schedule import record_run_order, shuffle, strategy
 from bench.emberjson_ser import EmberJsonSer
 from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
+from bench.kiln_ser import KilnSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
@@ -271,6 +272,7 @@ def run() raises:
     var ember = EmberJsonSer()
     var ehsan = EhsanJsonSer()
     var cbor = CborSer()
+    var kiln = KilnSer()
     var avro = AvroSer()
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
@@ -296,6 +298,7 @@ def run() raises:
     names.append(ember.name())
     names.append(ehsan.name())
     names.append(cbor.name())
+    names.append(kiln.name())
     names.append(avro.name())
     names.append(proto.name())
     names.append(fb.name())
@@ -374,6 +377,11 @@ def run() raises:
                     _ = ehsan.serialize_bytes(fx)
                 elif nm == cbor.name():
                     _ = cbor.serialize_bytes(fx)
+                elif nm == kiln.name():
+                    if not kiln.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = kiln.serialize_bytes(fx)
                 elif nm == avro.name():
                     _ = avro.serialize_bytes(fx)
                 elif nm == proto.name():
@@ -485,6 +493,18 @@ def run() raises:
                             var buf = cbor.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = cbor.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == kiln.name():
+                            ver = kiln.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = kiln.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = kiln.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

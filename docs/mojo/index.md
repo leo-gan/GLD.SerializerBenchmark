@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native XML library in this wave. Columnar rows are separate from the five suite types. `arrow-ipc` is gld-arrow 0.2.0 (IPC stream). `parquet` and `parquet-uncompressed` are gld-parquet 0.2.0 (Snappy, and the same writer with compression off). `gld-hdf5` times the array data set (`grid` and `grid_window`), not the five suite types. `gld-netcdf` and `gld-adios2` stay on those suite types. TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
+There is no native XML library in this wave. Columnar rows are separate from the five suite types. `arrow-ipc` is gld-arrow 0.2.0 (IPC stream). `parquet` and `parquet-uncompressed` are gld-parquet 0.2.0 (Snappy, and the same writer with compression off). `gld-hdf5` times the array data set (`grid` and `grid_window`), not the five suite types. `gld-netcdf` and `gld-adios2` stay on those suite types. TOML is two rows: `mojo-toml` (DataBooth/mojo-toml 0.9.1) and `gld-toml` (leo-gan/gld-toml 0.1.0). BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0). Kiln is `kiln` (gld-kiln 0.2.0), a positional little-endian encoding of the suite structs.
 
 These times cannot be ranked against another language.
 
@@ -56,6 +56,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [ehsanmok-json](https://github.com/ehsanmok/json) | JSON | ehsanmok/json 0.4.0 | bytes only | `serialize_json` encode; `loads` + Value walk decode (CPU parser) |
 | [mojo-json](https://github.com/leo-gan/gld-json) | JSON | leo-gan/gld-json 0.5.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
 | [mojo-cbor](https://github.com/leo-gan/gld-cbor) | Binary | leo-gan/gld-cbor 0.8.0 | bytes only | `CborDatum` encode / decode |
+| [kiln](https://github.com/leo-gan/gld-kiln) | Binary | leo-gan/gld-kiln 0.2.0 | bytes only | Positional `encode` / `decode` on suite structs |
 | [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) | Schema | leo-gan/gld-protobuf 0.7.0 | bytes only | Generated from suite `.proto` |
 | [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) | Schema | leo-gan/gld-flatbuffers 0.4.0 | bytes only | Reused `Builder` and generated tables from the suite `.fbs` |
 | [mojo-avro](https://github.com/leo-gan/gld-avro) | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
@@ -96,6 +97,10 @@ gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created be
 #### [mojo-cbor](https://github.com/leo-gan/gld-cbor) · `0.8.0`
 
 gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode.
+
+#### [kiln](https://github.com/leo-gan/gld-kiln) · `0.2.0`
+
+gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire.
 
 #### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) · `0.7.0`
 
