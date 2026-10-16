@@ -59,6 +59,7 @@ export const FORMAT_LABELS = {
   ion: 'Amazon Ion',
   ubjson: 'UBJSON',
   smile: 'Smile',
+  kiln: 'Kiln',
   thrift: 'Thrift',
   capnp: "Cap'n Proto",
   bond: 'Bond',
@@ -136,6 +137,15 @@ export const PUBLISHED_STANDARD_COLUMNS = {
       version: '1.0',
       standard_url:
         'https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/blob/master/v1-0-STANDARD/doc/01Introduction.md',
+      unscored: true,
+    },
+  ],
+  kiln: [
+    {
+      key: 'Kiln wire v0',
+      standard: 'Kiln wire v0',
+      version: 'v0',
+      standard_url: 'https://leo-gan.github.io/gld-kiln/spec/',
       unscored: true,
     },
   ],

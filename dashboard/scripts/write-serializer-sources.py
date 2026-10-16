@@ -2353,7 +2353,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-bson"): "gld-bson",
     ("mojo", "mojo-ion"): "gld-ion",
     ("mojo", "mojo-smile"): "gld-smile",
-    ("mojo", "kiln"): "gld-kiln",
+    ("mojo", "gld-kiln"): "gld-kiln",
     ("mojo", "arrow-ipc"): "gld-arrow",
     ("mojo", "parquet"): "gld-parquet",
     ("mojo", "parquet-uncompressed"): "gld-parquet-raw",

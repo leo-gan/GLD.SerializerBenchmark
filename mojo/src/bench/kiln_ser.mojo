@@ -23,7 +23,7 @@ struct KilnSer:
         self.buf = Writer(4096)
 
     def name(self) -> String:
-        return "kiln"
+        return "gld-kiln"
 
     def supports(self, type_id: String) -> Bool:
         if type_id == "message" or type_id == "document" or type_id == "telemetry":

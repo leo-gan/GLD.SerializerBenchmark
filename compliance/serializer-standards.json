@@ -991,7 +991,9 @@
       "mojo-smile": [
         "smile"
       ],
-      "kiln": [],
+      "gld-kiln": [
+        "kiln"
+      ],
       "gld-yaml": [
         "yaml"
       ],

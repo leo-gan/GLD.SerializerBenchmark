@@ -10,7 +10,7 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | ehsanmok-json | JSON | ehsanmok/json 0.4.0 | `serialize_json` encode; `loads` + Value walk decode |
 | mojo-json | JSON | leo-gan/gld-json 0.5.0 | Typed WireWriter / WireReader encode / decode (vendored sources) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.8.0 | `CborDatum` encode / decode (vendored sources) |
-| kiln | Binary | leo-gan/gld-kiln 0.2.0 | `encode` / `decode` on suite structs (vendored sources, reused Writer) |
+| gld-kiln | Binary | leo-gan/gld-kiln 0.2.0 | `encode` / `decode` on suite structs (vendored sources, reused Writer) |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.7.0 | Generated suite messages (vendored sources) |
 | mojo-flatbuffers | Schema | leo-gan/gld-flatbuffers 0.4.0 | Reused Builder and generated tables from `cpp/schemas/benchmark.fbs` (vendored sources) |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | `AvroDatum` encode / decode (vendored sources) |

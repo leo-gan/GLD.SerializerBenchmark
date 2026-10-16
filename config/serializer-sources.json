@@ -1326,11 +1326,6 @@
         "version": "0.8.0",
         "specifics": "gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode."
       },
-      "kiln": {
-        "source_url": "https://github.com/leo-gan/gld-kiln",
-        "version": "0.2.0",
-        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire."
-      },
       "mojo-flatbuffers": {
         "source_url": "https://github.com/leo-gan/gld-flatbuffers",
         "version": "0.4.0",
@@ -1390,6 +1385,11 @@
         "source_url": "https://github.com/leo-gan/gld-hdf5",
         "version": "0.2.0",
         "specifics": "gld-adios2 is the BP5 writer in gld-hdf5. ADIOS2 BP5 is a step directory. This library writes one float64 variable and one string attribute, so the suite record is packed into that variable. The timed size is the directory files concatenated. bpls does not open this pure-Mojo metadata."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire."
       }
     },
     "php": {

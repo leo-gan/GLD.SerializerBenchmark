@@ -350,7 +350,7 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-bson", formats: ["bson"], docs: "https://github.com/leo-gan/gld-bson", evidence: "gld-bson: BSON documents via decode_document (Mojo 1.1)." },
   { language: "mojo", name: "mojo-ion", formats: ["ion"], docs: "https://github.com/leo-gan/gld-ion", evidence: "gld-ion 0.2.0: Amazon Ion text and binary decode." },
   { language: "mojo", name: "mojo-smile", formats: ["smile"], docs: "https://github.com/leo-gan/gld-smile", evidence: "gld-smile 0.2.0: Smile decode_bytes." },
-  { language: "mojo", name: "kiln", formats: [], docs: "https://github.com/leo-gan/gld-kiln", evidence: "gld-kiln 0.2.0: positional little-endian Frozen layout. The struct is the schema; the bytes do not carry field names. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "mojo", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln", evidence: "gld-kiln 0.2.0: positional little-endian Frozen layout. The struct is the schema; the bytes do not carry field names. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
   { language: "mojo", name: "gld-yaml", formats: ["yaml"], docs: "https://github.com/leo-gan/gld-yaml", evidence: "gld-yaml: YAML value encode/decode." },
   { language: "mojo", name: "arrow-ipc", formats: ["arrow"], docs: "https://github.com/leo-gan/gld-arrow", evidence: "gld-arrow 0.2.0: Arrow IPC stream encode_ipc_stream / decode_ipc_stream." },
   { language: "mojo", name: "parquet", formats: ["parquet"], docs: "https://github.com/leo-gan/gld-parquet", evidence: "gld-parquet 0.2.0: Parquet file encode_table / decode_table with Snappy." },
