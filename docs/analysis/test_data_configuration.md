@@ -32,7 +32,7 @@ By the end of this page you should be able to:
 
 ## Vocabulary
 
-This suite uses a few fixed words. Prefer these over informal synonyms such as “fixture.”
+These are the words for sample data. The full list is [Terminology](terminology.md). That page is also where Fixture and harness are prohibited.
 
 | Term | Meaning | Examples |
 |------|---------|----------|
@@ -54,7 +54,7 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as �
 | `DataTypeInstanceCount` | batch size `N` |
 | `TypeConfigHash` | short hash of the resolved type config |
 
-> **Note:** Older docs and some benchmark-runner code still say *fixture*. That almost always means **data type** (or one generated instance of it), not a separate concept.
+> Older pages and some runner source still say *fixture*. [Terminology](terminology.md#fixture) says to write **data type**.
 
 Batch cells may appear on the Dashboard as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
 
