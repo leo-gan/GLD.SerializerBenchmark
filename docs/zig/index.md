@@ -135,6 +135,10 @@ lalinsky/msgpack.zig is another MessagePack library for Zig with a typed encode/
 
 lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes.
 
+#### [jsonz](https://github.com/KercyDing/jsonz) · `0.9.2`
+
+jsonz is a native Zig JSON library with typed and DOM APIs. This row uses typed.toWriter into the reused output buffer and typed.parse into suite structs. Strings are copied; its pool and fallback allocations remain in the trial arena until fidelity checking. Allocation is timed; arena cleanup is outside decode timing.
+
 #### [zbor](https://codeberg.org/r4gus/zbor) · `0.21.3`
 
 zbor is a native Zig CBOR library. CBOR is the IETF binary JSON-like format. zbor implements stringify/parse for Zig types.
