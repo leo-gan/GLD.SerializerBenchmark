@@ -1413,6 +1413,11 @@ languages:
         package: lalinsky/json.zig
         rationale: "Typed JSON comptime-specialized into the struct; no DOM"
         optimal_api: "json.encode / decodeFromSliceLeaky"
+      - name: jsonz
+        category: json
+        package: KercyDing/jsonz
+        rationale: "Owning typed parse; pool and fallback retained by the trial arena"
+        optimal_api: "jsonz.typed.toWriter / parse"
       - name: zbor
         category: binary
         package: r4gus/zbor

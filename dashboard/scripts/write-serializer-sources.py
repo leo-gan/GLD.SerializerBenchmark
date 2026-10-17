@@ -253,6 +253,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
 
 # Extra rows that are benchmarked but not in the compliance catalog.
 EXTRA_ROWS: list[tuple[str, str, str]] = [
+    ("zig", "jsonz", "https://github.com/KercyDing/jsonz"),
     ("php", "simdjson", "https://github.com/crazyxman/simdjson_php"),
     ("php", "igbinary", "https://github.com/igbinary/igbinary"),
     ("php", "msgpack-pecl", "https://github.com/msgpack/msgpack-php"),
@@ -1514,6 +1515,13 @@ SPECIFICS: dict[str, str] = {
         "with a fixed schema, and it reads and writes std.Io readers and "
         "writers, so a value larger than the buffer still decodes."
     ),
+    "jsonz": (
+        "jsonz is a native Zig JSON library with typed and DOM APIs. "
+        "This row uses typed.toWriter into the reused output buffer and "
+        "typed.parse into suite structs. Strings are copied; its pool and "
+        "fallback allocations remain in the trial arena until fidelity checking. "
+        "Allocation is timed; arena cleanup is outside decode timing."
+    ),
     "msgpack-zig": (
         "lalinsky/msgpack.zig is another MessagePack library for Zig "
         "with a typed encode/decode API. It exists as a native Zig "
@@ -2332,6 +2340,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("zig", "zig-msgpack"): "zig-msgpack",
     ("zig", "msgpack.zig"): "msgpack-zig",
     ("zig", "json.zig"): "json-zig",
+    ("zig", "jsonz"): "jsonz",
     ("zig", "zbor"): "zbor",
     ("zig", "s2s"): "s2s",
     ("zig", "protobuf"): "zig-protobuf",
