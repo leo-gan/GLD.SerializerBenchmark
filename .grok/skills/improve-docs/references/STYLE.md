@@ -18,8 +18,8 @@ Keep it simple. Prefer delete and clarify over decorate.
 ## Content style
 
 - **One idea per paragraph.** Prefer tables for role/path matrices **on the site / Dashboard**, not by fattening the root README.
-- **User terms:** data type, mode (bytes/stream), ops/s, latency, median size, Pareto, baseline.
-- **Avoid in user copy:** fixture (internal OK), harness (prefer benchmark runner), unexplained IQR/P95.
+- **User terms:** the canonical list is `docs/analysis/terminology.md` (data set, data type, benchmark runner, standard, I/O mode, run mode, ops/s, latency, median size, Pareto, baseline).
+- **Avoid in user copy:** fixture (write data type), harness (write benchmark runner), unexplained IQR/P95. Identifiers in runner source may still say `Fixture`.
 - **Honesty line** when ranks appear: within one language; cross-lang directional — prefer **one** place (e.g. Statistics / Method), not a second essay block on README.
 - **Links:** prefer site paths that match MkDocs nav labels (Dashboard, Learn, Method). Avoid “storefront” / “CTA” wording in user-facing labels.
 - **No emoji spam** in product UI; README badges OK.

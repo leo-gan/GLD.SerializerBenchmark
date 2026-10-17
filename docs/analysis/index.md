@@ -50,18 +50,11 @@ Each programming language has a small program called a **benchmark runner**. The
 
 ---
 
-## Shared terms (quick)
+## Terminology
 
-| Say this | Not this | Means |
-|----------|----------|--------|
-| **data type** | “fixture” | One of `message`, `document`, `telemetry`, `strings`, `event` |
-| **benchmark runner** | “harness” | Per-language program that times serializers and writes the CSV |
-| **batch size N** | — | How many instances in one serialize call (`1` or `100`) |
-| **category / family** | — | JSON, schemaless binary, schema-driven, language-native |
-| **I/O mode** (bytes / stream) | — | How the library was called (buffer vs stream), **not** payload size |
-| **run mode** (smoke / full / …) | — | How heavy the experiment is (repetitions / intent) |
+Data set, data type, runner, and the prohibited words are defined on [Terminology](terminology.md). **Fixture** means data type. **Harness** means benchmark runner.
 
-Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabulary](test_data_configuration.md#vocabulary).
+Modes: [Modes](modes.md). Shapes and size knobs: [Test data](test_data_configuration.md).
 
 ---
 
@@ -78,6 +71,7 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 
 | Page | What you will learn | Start here if you want… |
 |------|---------------------|-------------------------|
+| **[Terminology](terminology.md)** | Data set, data type, runner, and the words this site does not use | A term is unclear, or an older page says “fixture” |
 | **[Architecture](architecture.md)** | How the repository is organized and how timing works | The measurement design |
 | **[Timing honesty](TIMING_HONESTY.md)** | What belongs in `prepare` vs the timed encode/decode | “Is this row measuring a real encode?” |
 | **[Modes](modes.md)** | I/O modes (bytes/stream) and run modes (smoke…research) | Why the Dashboard Mode filter has two paths; which run preset to use |
