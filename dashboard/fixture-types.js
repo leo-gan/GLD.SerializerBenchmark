@@ -10,12 +10,25 @@ export const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'e
 export const COLUMNAR_TYPE_IDS = ['table', 'table_project', 'nested_table', 'signal'];
 export const GRAPH_TYPE_IDS = ['graph'];
 export const ARRAY_TYPE_IDS = ['grid', 'grid_window'];
-export const VISIBLE_TYPE_IDS = [...SUITE_TYPE_IDS, ...COLUMNAR_TYPE_IDS, ...GRAPH_TYPE_IDS, ...ARRAY_TYPE_IDS];
-export const DATA_SET_ORDER = ['suite', 'columnar', 'graph', 'array'];
-export const DATA_SET_LABELS = { suite: 'Suite', columnar: 'Columnar', graph: 'Graph', array: 'Array' };
+export const TENSOR_TYPE_IDS = ['tensor', 'tensor_view', 'prompt', 'shard', 'request'];
+export const VISIBLE_TYPE_IDS = [
+  ...SUITE_TYPE_IDS,
+  ...COLUMNAR_TYPE_IDS,
+  ...GRAPH_TYPE_IDS,
+  ...ARRAY_TYPE_IDS,
+  ...TENSOR_TYPE_IDS,
+];
+export const DATA_SET_ORDER = ['suite', 'columnar', 'graph', 'array', 'tensor'];
+export const DATA_SET_LABELS = {
+  suite: 'Suite',
+  columnar: 'Columnar',
+  graph: 'Graph',
+  array: 'Array',
+  tensor: 'Tensor',
+};
 /**
- * These standards are the array data set. A suite-typed row (Mojo gld-hdf5,
- * gld-netcdf, gld-adios2) is not a Suite comparison and does not open Suite.
+ * Suite-typed rows for these standards (Mojo gld-hdf5, gld-netcdf, gld-adios2)
+ * are not a Suite comparison. Array and tensor rows still count.
  */
 const ARRAY_ONLY_STANDARDS = new Set(['hdf5', 'netcdf', 'adios2']);
 
@@ -94,7 +107,7 @@ export function discoverFixtureOptions(allGroups) {
   };
 }
 
-/** suite, columnar, graph, or array for a data-type menu key, including all@n compounds. */
+/** suite, columnar, graph, array, or tensor for a data-type menu key, including all@n compounds. */
 export function dataSetForFixture(key) {
   const s = String(key || '');
   if (!s || s === 'all@all' || /^all@/i.test(s)) return 'suite';
@@ -102,6 +115,7 @@ export function dataSetForFixture(key) {
   if (COLUMNAR_TYPE_IDS.includes(base)) return 'columnar';
   if (GRAPH_TYPE_IDS.includes(base)) return 'graph';
   if (ARRAY_TYPE_IDS.includes(base)) return 'array';
+  if (TENSOR_TYPE_IDS.includes(base)) return 'tensor';
   return 'suite';
 }
 
@@ -135,12 +149,21 @@ export function pickPreferredFixture(options) {
   for (const key of ['grid@n=1', 'grid', 'grid@n=100']) {
     if (options.includes(key)) return key;
   }
+  for (const key of ['tensor@n=1', 'tensor', 'prompt@n=1', 'prompt']) {
+    if (options.includes(key)) return key;
+  }
   return options[0] || '';
 }
 
 function groupDataSet(group) {
   if (!group) return '';
-  if (group.data_set === 'suite' || group.data_set === 'columnar' || group.data_set === 'graph' || group.data_set === 'array') {
+  if (
+    group.data_set === 'suite' ||
+    group.data_set === 'columnar' ||
+    group.data_set === 'graph' ||
+    group.data_set === 'array' ||
+    group.data_set === 'tensor'
+  ) {
     return group.data_set;
   }
   if (!group.test_data) return '';
@@ -150,7 +173,7 @@ function groupDataSet(group) {
 /** Suite-typed HDF5, NetCDF, and ADIOS2 rows are not an Overview comparison. */
 function countsTowardDataSets(group) {
   if (!group) return false;
-  if (ARRAY_ONLY_STANDARDS.has(group.standard) && groupDataSet(group) !== 'array') return false;
+  if (ARRAY_ONLY_STANDARDS.has(group.standard) && groupDataSet(group) === 'suite') return false;
   return true;
 }
 

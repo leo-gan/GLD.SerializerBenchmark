@@ -49,7 +49,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 
 | Path | Role |
 |------|------|
-| `config/benchmark_config.yaml` | Run modes, statistics defaults, language list, CSV column schema |
+| `config/benchmark_config.yaml` | Run modes, data sets, statistics defaults, language list, CSV column schema |
 | `schemas/` | Shared data catalog, Protocol Buffers and related wire definitions |
 | `logs/<language>/` | Timestamped result CSVs (gitignored; not published as raw files) |
 | `analysis/` | Python package that implements the `analyze-benchmarks` command |
@@ -223,6 +223,6 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 
 | Concern | Where it lives |
 |---------|----------------|
-| Run modes, stats, languages, paths | `config/benchmark_config.yaml` — [Modes](modes.md) |
+| Run modes, data sets, stats, languages, paths | `config/benchmark_config.yaml` — [Modes](modes.md) |
 | Payload shapes and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test data](test_data_configuration.md) |
 | Paradigm inventories | [Serialization categories](serialization_categories.md) + each language **Overview** |

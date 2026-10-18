@@ -55,6 +55,29 @@ test('data set is array for grid types and all@ stays suite', () => {
   assert.equal(resolved.testData, 'grid@n=1');
 });
 
+test('data set is tensor for ML payloads and all@ stays suite', () => {
+  assert.equal(dataSetForFixture('tensor@n=1'), 'tensor');
+  assert.equal(dataSetForFixture('tensor_view@n=1'), 'tensor');
+  assert.equal(dataSetForFixture('prompt'), 'tensor');
+  assert.equal(dataSetForFixture('shard@n=1'), 'tensor');
+  assert.equal(dataSetForFixture('request@n=1'), 'tensor');
+  assert.equal(dataSetForFixture('all@all'), 'suite');
+  const keys = ['message@n=1', 'tensor@n=1', 'prompt@n=1', 'all@all'];
+  assert.deepEqual(fixturesForDataSet(keys, 'tensor'), ['tensor@n=1', 'prompt@n=1']);
+  const resolved = resolveStandardDataSet({
+    groups: [
+      { standard: 'hdf5', data_set: 'tensor', test_data: 'tensor@n=1', data_type_instance_count: 1 },
+      { standard: 'hdf5', data_set: 'array', test_data: 'grid@n=1', data_type_instance_count: 1 },
+    ],
+    standard: 'hdf5',
+    testData: 'tensor@n=1',
+    dataSet: 'tensor',
+  });
+  assert.equal(resolved.dataSet, 'tensor');
+  assert.equal(resolved.testData, 'tensor@n=1');
+  assert.deepEqual(resolved.keys, ['tensor@n=1']);
+});
+
 test('data set is graph for the graph type and all@ stays suite', () => {
   assert.equal(dataSetForFixture('graph@n=1'), 'graph');
   assert.equal(dataSetForFixture('graph@n=100'), 'graph');

@@ -27,7 +27,7 @@ import sys
 import time
 import tracemalloc
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .comparer import compare
 from .data_v2.fidelity import expected_for_fidelity, fidelity_for
@@ -179,7 +179,7 @@ def _prepare_for_serializer(
     expected = expected_for_fidelity(type_id, instances)
     name = serializer.name.lower()
 
-    if name == "protobuf":
+    if name == "protobuf" and type_id not in {"tensor", "prompt", "shard", "request"}:
         if not protobuf_bridge.available():
             raise RuntimeError("v2 protobuf stubs missing; run scripts/schemas/generate-all.sh")
         batch = n > 1
@@ -246,15 +246,57 @@ def run_v2(
         print("No cells or serializers matched.")
         return Path(".")
 
-    # Budget ladder (soft)
-    soft = 60 * ((len(serializers) + 9) // 10)
-    hard = int((resolved.get("budget") or {}).get("hard_cap_seconds") or 600)
-    reps_fb = int((resolved.get("budget") or {}).get("reps_fallback") or 50)
+    # Wall-clock ladder. Past the soft budget, drop to reps_fallback.
+    # Past the hard cap, stop. Checked again before every repetition.
+    try:
+        from benchmark_analysis.run_config_v2 import decide_rep_budget, soft_budget_seconds
+    except ImportError:
+        root_budget = _repo_root()
+        if root_budget:
+            src = str(root_budget / "analysis" / "src")
+            if src not in sys.path:
+                sys.path.insert(0, src)
+        from benchmark_analysis.run_config_v2 import decide_rep_budget, soft_budget_seconds
+
+    budget_cfg = resolved.get("budget") or {}
+    per10 = int(budget_cfg.get("soft_seconds_per_10_serializers") or 60)
+    soft = soft_budget_seconds(len(serializers), per10)
+    hard = int(budget_cfg.get("hard_cap_seconds") or 600)
+    reps_fb = int(budget_cfg.get("reps_fallback") or 50)
     t_start = time.monotonic()
     if repetitions > reps_fb and len(serializers) * len(cells) * 2 * repetitions > 50_000:
-        # heuristic: large matrix → start at fallback reps
+        # Huge matrix: start at the fallback instead of waiting for the clock.
         print(f"[PROGRESS] Large matrix; using reps_fallback={reps_fb} (was {repetitions})")
         repetitions = reps_fb
+    rep_limit = repetitions
+    soft_announced = False
+    hard_stop = False
+
+    def _before_rep(index: int) -> bool:
+        """Return True when this repetition must not start."""
+        nonlocal rep_limit, soft_announced, hard_stop
+        elapsed = time.monotonic() - t_start
+        limit, stop_run = decide_rep_budget(
+            elapsed,
+            soft_s=soft,
+            hard_s=hard,
+            repetition_limit=rep_limit,
+            reps_fallback=reps_fb,
+        )
+        if limit != rep_limit:
+            if not soft_announced:
+                print(
+                    f"[PROGRESS] Soft budget {soft}s exceeded at {elapsed:.1f}s; "
+                    f"repetitions {rep_limit} → {limit}"
+                )
+                soft_announced = True
+            rep_limit = limit
+        if stop_run:
+            if not hard_stop:
+                print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
+            hard_stop = True
+            return True
+        return index >= rep_limit
 
     ts = os.environ.get("BENCHMARK_TS") or datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
     os.environ["BENCHMARK_TS"] = ts
@@ -289,7 +331,9 @@ def run_v2(
     print(f"[PROGRESS] Data Model v2 run config={resolved['run_config']['path']}")
     print(f"[PROGRESS] cells={len(cells)} serializers={len(serializers)} reps={repetitions}")
     print(f"[PROGRESS] schedule={schedule_strategy} record_run_order={record_run_order}")
-    print(f"[PROGRESS] soft_budget≈{soft}s hard_cap={hard}s → {ts_file}")
+    print(
+        f"[PROGRESS] soft_budget={soft}s hard_cap={hard}s reps_fallback={reps_fb} → {ts_file}"
+    )
 
     try:
         from benchmark_analysis.dimensions import include_in_mode, io_modes_for_language
@@ -308,10 +352,9 @@ def run_v2(
     )
     compress_mode = (resolved.get("compression") or {}).get("mode") or "none"
     run_order = 0
-    hard_stop = False
 
     for cell in cells:
-        if hard_stop:
+        if hard_stop or _before_rep(0):
             break
         type_id = cell["type_id"]
         n = int(cell["data_type_instance_count"])
@@ -364,14 +407,12 @@ def run_v2(
         if schedule_strategy == "none":
             # Legacy nesting: serializer → mode → all reps
             for ser_name, pack in prepared.items():
-                if hard_stop:
-                    break
-                if time.monotonic() - t_start > hard:
-                    print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
-                    hard_stop = True
+                if hard_stop or _before_rep(0):
                     break
                 serializer, serializable, expected, tip, size_gz, size_zstd = pack
                 for mode in io_modes:
+                    if hard_stop:
+                        break
                     if not include_in_mode("python", ser_name, mode):
                         continue
                     run_order = _run_reps_v2(
@@ -391,6 +432,8 @@ def run_v2(
                         run_order_start=run_order,
                         record_run_order=record_run_order,
                         schedule_position=0,
+                        before_rep=_before_rep,
+                        active_repetitions=lambda: rep_limit,
                     )
                 save_errors(errors, str(error_file))
         else:
@@ -401,9 +444,7 @@ def run_v2(
                 if hard_stop:
                     break
                 for i in range(repetitions):
-                    if time.monotonic() - t_start > hard:
-                        print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
-                        hard_stop = True
+                    if _before_rep(i):
                         break
                     pool = [
                         nm
@@ -426,7 +467,7 @@ def run_v2(
                         log = BenchmarkLog(
                             string_or_stream=mode,
                             test_data_name=type_id,
-                            repetitions=repetitions,
+                            repetitions=rep_limit,
                             repetition_index=i,
                             serializer_name=serializer.name,
                             serializer_version=serializer.version,
@@ -480,7 +521,7 @@ def run_v2(
     console_logs = logs if repetitions == 1 else [l for l in logs if l.repetition_index != 0]
     results = aggregate_logs(console_logs)
     print_report(
-        repetitions,
+        rep_limit,
         results,
         errors,
         sorted({c["type_id"] for c in cells}),
@@ -546,16 +587,21 @@ def _run_reps_v2(
     run_order_start: int = 0,
     record_run_order: bool = True,
     schedule_position: int = 0,
+    before_rep: Optional[Callable[[int], bool]] = None,
+    active_repetitions: Optional[Callable[[], int]] = None,
 ) -> int:
     """Legacy path (strategy=none): all reps for one serializer×mode. Returns next RunOrder."""
     was_error = False
     cached_memory_peak = 0
     run_order = run_order_start
     for i in range(repetitions):
+        if before_rep is not None and before_rep(i):
+            break
+        nrep = repetitions if active_repetitions is None else active_repetitions()
         log = BenchmarkLog(
             string_or_stream=mode,
             test_data_name=td_name,
-            repetitions=repetitions,
+            repetitions=nrep,
             repetition_index=i,
             serializer_name=serializer.name,
             serializer_version=serializer.version,

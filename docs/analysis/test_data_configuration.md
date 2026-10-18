@@ -6,15 +6,16 @@ Think of it as the **shared homework assignment**. Each language implements the 
 
 | Resource | Path |
 |----------|------|
+| Data sets | [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml) `data_sets` |
 | Type catalog | [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) |
 | Run configs | [`config/library/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/config/library) |
 | Wire schemas | [`schemas/v2/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/schemas/v2) |
 | Default matrix | [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) |
 | Smoke matrix | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
 
-**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal` · `graph` · `grid` · `grid_window`
+**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal` · `graph` · `grid` · `grid_window` · `tensor` · `tensor_view` · `prompt` · `shard` · `request`
 
-The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The next four run only from `columnar.yaml` / `columnar-smoke.yaml`, and only for an explicit serializer allow-list: the columnar and SBE rows registered in that language, plus one JSON peer, the primary Protobuf row, one FlatBuffers or Cap’n Proto row when the tree already has one, and the Avro row when the tree already has one. `graph` runs only from `graph.yaml`, and only for serializers whose official API round-trips shared nodes and a reference cycle. `grid` and `grid_window` run only from `array.yaml` / `array-smoke.yaml`. Fortran times them on HDF5, NetCDF, and ADIOS2.
+The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The next four run only from `columnar.yaml` / `columnar-smoke.yaml`, and only for an explicit serializer allow-list: the columnar and SBE rows registered in that language, plus one JSON peer, the primary Protobuf row, one FlatBuffers or Cap’n Proto row when the tree already has one, and the Avro row when the tree already has one. `graph` runs only from `graph.yaml`, and only for serializers whose official API round-trips shared nodes and a reference cycle. `grid` and `grid_window` run only from `array.yaml` / `array-smoke.yaml`. Fortran times them on HDF5, NetCDF, and ADIOS2. `tensor`, `tensor_view`, `prompt`, `shard`, and `request` run only from `tensor.yaml` / `tensor-smoke.yaml`.
 
 How times are cleaned and summarized is separate: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
@@ -25,7 +26,7 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 By the end of this page you should be able to:
 
 1. Define **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Sketch the five publication data types, the four columnar / aligned types, the graph type, and the two array types, and what each stresses.
+2. Sketch the five publication data types, the four columnar / aligned types, the graph type, the two array types, and the five tensor types, and what each stresses.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
 ---
@@ -36,7 +37,7 @@ These are the words for sample data. The full list is [Terminology](terminology.
 
 | Term | Meaning | Examples |
 |------|---------|----------|
-| **data set** | Parent of the data type. A serializer is measured on the sets it supports | `suite`, `columnar`, `graph`, `array` |
+| **data set** | Parent of the data type. Configured under `data_sets` in `config/benchmark_config.yaml`. A serializer is measured on the sets it supports | `suite`, `columnar`, `graph`, `array`, `tensor` |
 | **data type** (also **type id**) | Which *kind* of sample object we serialize. It belongs to one data set | `message` (suite), `table` (columnar), `graph` (graph), `grid` (array) |
 | **type config** | Size and shape knobs for **one** instance of that type | `field_count: 8`, `points: 32` |
 | **instance** | One concrete object of a data type | one `message` record |
@@ -272,6 +273,23 @@ grid_window {
 
 Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. Fidelity is bit-identical float64. The size column is the full file. N stays 1. The array is one value.
 
+### tensor, tensor_view, prompt, shard, and request
+
+These five belong to the `tensor` data set. `all@` does not include them. The run config is `config/library/tensor.yaml` (N=1, bytes, no post-compression), with an explicit serializer allow-list.
+
+```text
+tensor        float32[1024, 1024]     owned read
+tensor_view   the same matrix         borrowed read
+prompt        input_ids, attention_mask, position_ids   int64[4, 256]
+shard         tok_emb float32[1024, 256]
+              attn    float32[256, 256]
+              ffn     float32[512, 256]
+              norm    float32[256]
+request       request_id: int64, model: utf8, temperature: float32, inputs: prompt
+```
+
+Floats are row-major float32. Index 0 of `tensor` is negative zero and index 1 is the quiet NaN `0x7fc00000`. `tensor_view` uses that same matrix for the same seed. A borrowed read must return bytes inside the encoded buffer. An owned copy is not a `tensor_view` result. `prompt` pads each row with zeros after a content prefix. `shard` is one transformer block. `request` is one buffer: the id, the model name, the temperature, and the prompt. Fidelity is bit-identical float32, including the sign of zero and the NaN payload, and exact integers and strings. N stays 1.
+
 ---
 
 ## Primitives
@@ -337,10 +355,16 @@ Modes: `none` | `size_only` | `timed` (timed path is post-MVP).
 ## Wall-clock budget
 
 ```text
-soft_budget_seconds = 60 * ceil(n_serializers / 10)
+soft_budget_seconds = soft_seconds_per_10_serializers * ceil(n_serializers / 10)
 ```
 
-If a run overruns, reduce repetitions from 100 to 50. Hard cap: **600 seconds** per language run.
+`soft_seconds_per_10_serializers` defaults to 60. Before each repetition the runner reads elapsed wall-clock time.
+
+- Inside the soft budget, the run keeps its repetition count.
+- Past the soft budget, the runner lowers the plan to `reps_fallback` (50). Repetitions already written stay in the CSV. Later cells use the lower count.
+- Past `hard_cap_seconds` (**600** seconds), the runner stops at that repetition boundary.
+
+Every library run config carries these three knobs, including `tensor.yaml` and `tensor-smoke.yaml`. Python and Mojo apply the check. A publication splice still requires the full repetition index range, so only a finished run is published.
 
 ---
 

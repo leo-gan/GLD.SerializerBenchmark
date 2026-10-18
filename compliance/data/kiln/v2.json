@@ -1,0 +1,1001 @@
+{
+  "format": "kiln",
+  "standard": "Kiln wire v2",
+  "version": "v2",
+  "standard_url": "https://leo-gan.github.io/gld-kiln/spec/",
+  "provenance": "original-work",
+  "notes": "Cases for Kiln wire version 2. Produced by gld-kiln spec/reference/gen_v2_cases.py and frozen here. The prose is the Kiln wire v2 spec. gld-kiln 0.3.0 is the library. The reference cap is 16777216.",
+  "cases": [
+    {
+      "id": "kiln-v2-empty",
+      "title": "An empty version-2 directory is a 64-byte header",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "A directory with no tensors has directory_bytes 0 and payload_bytes 0. The block is the 64-byte header.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e54020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [],
+        "block_length": 64
+      }
+    },
+    {
+      "id": "kiln-v2-f32",
+      "title": "One unnamed f32 vector is little-endian bits after a 128-byte descriptor",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Dtype 2 is f32. Shape [2] occupies 8 bytes at payload offset 0. The bytes of 1.0 are 00 00 80 3f.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000008000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000080000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f000000c0",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "f32",
+            "shape": [
+              2
+            ],
+            "quant_scheme": 0,
+            "data_hex": "0000803f000000c0"
+          }
+        ],
+        "block_length": 200
+      },
+      "fixes": [
+        "endian"
+      ]
+    },
+    {
+      "id": "kiln-v2-f32-scalar",
+      "title": "Rank 0 is one element and every shape slot is zero",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "A rank of 0 is a scalar. Its element count is 1, and all eight shape slots are 0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000004000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "f32",
+            "shape": [],
+            "quant_scheme": 0,
+            "data_hex": "0000803f"
+          }
+        ],
+        "block_length": 196
+      }
+    },
+    {
+      "id": "kiln-v2-f32-negzero",
+      "title": "A negative zero keeps its sign bit",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "f32 negative zero is the little-endian bytes 00 00 00 80.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000004000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "f32",
+            "shape": [],
+            "quant_scheme": 0,
+            "data_hex": "00000080"
+          }
+        ],
+        "block_length": 196
+      },
+      "fixes": [
+        "endian"
+      ]
+    },
+    {
+      "id": "kiln-v2-f64-nan",
+      "title": "A Float64 NaN keeps the payload bits",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The f64 payload is the little-endian bits 0x7FF8000000000001, a quiet NaN with payload 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000008000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000001000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000f87f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "f64",
+            "shape": [],
+            "quant_scheme": 0,
+            "data_hex": "010000000000f87f"
+          }
+        ],
+        "block_length": 200
+      },
+      "fixes": [
+        "endian"
+      ]
+    },
+    {
+      "id": "kiln-v2-f16-named",
+      "title": "A named f16 tensor stores the name in the heap and pads the payload to a 64-byte boundary",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "IEEE binary16 1.0 is 00 3c. The name flag is set. The name heap is the byte 77. Padding from the heap to the payload base is zero.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e540203000001000000010000000200000000000000810000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000100ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003c",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "names",
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": "w",
+            "dtype": "f16",
+            "shape": [],
+            "quant_scheme": 0,
+            "data_hex": "003c"
+          }
+        ],
+        "block_length": 258
+      }
+    },
+    {
+      "id": "kiln-v2-bf16",
+      "title": "bfloat16 1.0 is the little-endian bits 0x3F80",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "bfloat16 is 1 sign bit, 8 exponent bits, and 7 significand bits. The value 1.0 is 80 3f.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000002000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000004000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "bf16",
+            "shape": [],
+            "quant_scheme": 0,
+            "data_hex": "803f"
+          }
+        ],
+        "block_length": 194
+      }
+    },
+    {
+      "id": "kiln-v2-i8",
+      "title": "An i8 payload is two's complement bytes",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "The bytes 01 ff are the values 1 and -1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000002000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000008000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000200000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001ff",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "i8",
+            "shape": [
+              2
+            ],
+            "quant_scheme": 0,
+            "data_hex": "01ff"
+          }
+        ],
+        "block_length": 194
+      }
+    },
+    {
+      "id": "kiln-v2-bool",
+      "title": "A bool tensor stores one byte per element, 0 or 1",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "Bool elements are bytes. 0 is false and 1 is true.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000002000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000007000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000020000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "bool",
+            "shape": [
+              2
+            ],
+            "quant_scheme": 0,
+            "data_hex": "0100"
+          }
+        ],
+        "block_length": 194
+      }
+    },
+    {
+      "id": "kiln-v2-u4",
+      "title": "Packed u4 stores the first element in the low nibble",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "Three elements 1, 2, 3 occupy the bytes 21 03. The high nibble of the last byte is 0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000000000002000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000011000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000020000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002103",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "u4",
+            "shape": [
+              3
+            ],
+            "quant_scheme": 0,
+            "data_hex": "2103"
+          }
+        ],
+        "block_length": 194
+      }
+    },
+    {
+      "id": "kiln-v2-f8-pair",
+      "title": "Two f8 tensors are aligned, and the second starts at payload offset 64",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "f8e4m3 and f8e5m2 are one byte each. The canonical second offset is 64. Kiln stores the bytes and does not widen them.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000020000000000000041000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000005000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff400000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003c",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "f8e4m3",
+            "shape": [
+              1
+            ],
+            "quant_scheme": 0,
+            "data_hex": "38"
+          },
+          {
+            "name": null,
+            "dtype": "f8e5m2",
+            "shape": [
+              1
+            ],
+            "quant_scheme": 0,
+            "data_hex": "3c"
+          }
+        ],
+        "block_length": 385
+      }
+    },
+    {
+      "id": "kiln-v2-scales",
+      "title": "Scheme 1 points at a sibling scale tensor and does not transform the elements",
+      "section": "Quantization",
+      "section_title": "Quantization",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#quantization",
+      "paragraph": "Thirty-two e2m1 elements share one e8m0 scale. The scale byte is stored as 127. Kiln checks the group count and copies the bits.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000020000000000000041000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000012000100ffff0000ffff000000000000010000002000000001000000ffffffff00000000000000001000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff400000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "e2m1",
+            "shape": [
+              32
+            ],
+            "quant_scheme": 1,
+            "data_hex": "00000000000000000000000000000000"
+          },
+          {
+            "name": null,
+            "dtype": "e8m0",
+            "shape": [
+              1
+            ],
+            "quant_scheme": 0,
+            "data_hex": "7f"
+          }
+        ],
+        "block_length": 385
+      }
+    },
+    {
+      "id": "kiln-v2-scales-outer",
+      "title": "Scheme 2 adds one outer f32 tensor beside the block scales",
+      "section": "Quantization",
+      "section_title": "Quantization",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#quantization",
+      "paragraph": "Sixteen e2m1 elements, one f8e4m3 scale, and one f32 outer value. The outer tensor has one element.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000030000000000000084000000000000008001000000000000000000000000000000000000000000000000000000000000000000000000000012000100ffff0000ffff0000000000000200000010000000010000000200000000000000000000000800000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff40000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff80000000000000000400000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": "e2m1",
+            "shape": [
+              16
+            ],
+            "quant_scheme": 2,
+            "data_hex": "0000000000000000"
+          },
+          {
+            "name": null,
+            "dtype": "f8e4m3",
+            "shape": [
+              1
+            ],
+            "quant_scheme": 0,
+            "data_hex": "38"
+          },
+          {
+            "name": null,
+            "dtype": "f32",
+            "shape": [
+              1
+            ],
+            "quant_scheme": 0,
+            "data_hex": "0000803f"
+          }
+        ],
+        "block_length": 580
+      }
+    },
+    {
+      "id": "kiln-v2-opaque",
+      "title": "An opaque dtype carries a layout name and a block size",
+      "section": "Opaque layouts",
+      "section_title": "Opaque layouts",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#opaque-layouts",
+      "paragraph": "Dtype 4096 is opaque. The layout name is Q4_K and the block size is 18. The shape is not checked against an element width.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e5402020000010000000400000012000000000000008400000000000000000000000000000000000000000000000000000000000000000000000000000000100100ffff000000000400120000000000ffff00000000ffffffffffffffff00000000000000001200000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051345f4b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000102030405060708090a0b0c0d0e0f1011",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "decoded": {
+        "version": 2,
+        "flags": [
+          "le"
+        ],
+        "tensors": [
+          {
+            "name": null,
+            "dtype": 4096,
+            "shape": [
+              32
+            ],
+            "quant_scheme": 0,
+            "data_hex": "000102030405060708090a0b0c0d0e0f1011"
+          }
+        ],
+        "block_length": 274
+      }
+    },
+    {
+      "id": "kiln-v2-in-struct",
+      "title": "A tensors field is the version-2 block after the preceding fields",
+      "section": "Embedding",
+      "section_title": "Embedding",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#embedding",
+      "paragraph": "struct{id:i64,batch:tensors,} writes the i64 and then one complete version-2 block.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "07000000000000004b4c4e5402020000010000000000000008000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000080000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f000000c0",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "struct",
+        "fields": [
+          "id:i64",
+          "batch:tensors"
+        ]
+      },
+      "decoded": {
+        "id": 7,
+        "batch": {
+          "version": 2,
+          "flags": [
+            "le"
+          ],
+          "tensors": [
+            {
+              "name": null,
+              "dtype": "f32",
+              "shape": [
+                2
+              ],
+              "quant_scheme": 0,
+              "data_hex": "0000803f000000c0"
+            }
+          ],
+          "block_length": 200
+        }
+      }
+    },
+    {
+      "id": "kiln-v2-framed",
+      "title": "A frame hash covers the tensors field by the token tensors",
+      "section": "Schema hash",
+      "section_title": "Schema hash",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#schema-hash",
+      "paragraph": "The canonical text mixes struct{, id, :, i64, ,, batch, :, tensors, ,, and }. The frame profile is Frozen.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4b4c4e3000000000820d2f55c7ad8ae507000000000000004b4c4e54020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "frame",
+      "decoded": {
+        "hash": 16540223653110812034,
+        "id": 7,
+        "batch": {
+          "version": 2,
+          "flags": [
+            "le"
+          ],
+          "tensors": [],
+          "block_length": 64
+        }
+      }
+    },
+    {
+      "id": "kiln-pod-list-f32",
+      "title": "A list of two f32 values is a count and the little-endian bits",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "The count fits the remaining bytes, so the decoder may allocate the list. The element bytes are 00 00 80 3f and 00 00 00 c0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "020000000000803f000000c0",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "list",
+        "element": "f32"
+      },
+      "decoded": [
+        1.0,
+        -2.0
+      ],
+      "fixes": [
+        "endian",
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-v2-bad-magic",
+      "title": "A directory with the wrong magic is rejected",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The magic is the ASCII bytes KLNT.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "584c4e54020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "FRAME"
+    },
+    {
+      "id": "kiln-v2-empty-name-flag",
+      "title": "An empty directory rejects the name flag",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The name flag is set exactly when at least one tensor has a name. An empty directory has the flag clear.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-le-clear",
+      "title": "Version 2 rejects a directory whose little-endian flag is clear",
+      "section": "Byte order",
+      "section_title": "Byte order",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#byte-order",
+      "paragraph": "Writers set flag bit 1. A clear bit is a frame error on every host.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "FRAME",
+      "fixes": [
+        "endian"
+      ]
+    },
+    {
+      "id": "kiln-v2-unknown-flag",
+      "title": "Version 2 rejects an unknown flag bit",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Flag bits other than the name bit and the little-endian bit are zero.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "FRAME"
+    },
+    {
+      "id": "kiln-v2-reserved",
+      "title": "A nonzero reserved header byte is rejected",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The 32 reserved bytes at the end of the header are zero.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020200000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "FRAME"
+    },
+    {
+      "id": "kiln-v2-directory-eof",
+      "title": "A tensor count whose directory does not fit is rejected before allocation",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "Count 2 asks for 256 directory bytes. The buffer is only the header. The error is EOF, and the decoder does not allocate two descriptors.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020200000200000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "EOF",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-v2-count-cap",
+      "title": "A tensor count above the configured cap is a limit error",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "At the default cap of 16777216, a count of 16777217 is LIMIT. The cap is checked before the decoder treats directory_bytes as a buffer size.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020200000100000100000000000000000000000080000080000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "LIMIT",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-v2-directory-mismatch",
+      "title": "directory_bytes must equal count times 128 plus name_bytes",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "One descriptor is 128 bytes. A declared directory of 129 bytes does not match.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000004000000000000008100000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-shape-overflow",
+      "title": "A shape product that does not fit in an unsigned 64-bit integer is a limit error",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Rank 2 with both dimensions 2^32 overflows the element-count product.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000200ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000000000000000000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "LIMIT"
+    },
+    {
+      "id": "kiln-v2-length-mismatch",
+      "title": "byte_length must equal the shape product times the dtype width",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Two f32 elements occupy 8 bytes. A declared length of 4 is a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000004000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000040000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-overlap",
+      "title": "Payload ranges must not overlap",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Two payloads that both cover offset 0 are a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000020000000000000004000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-unaligned",
+      "title": "A payload offset must be the canonical 64-byte placement",
+      "section": "Canonical layout",
+      "section_title": "Canonical layout",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#canonical-layout",
+      "paragraph": "The first payload starts at offset 0. Offset 4 is a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000008000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0400000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-nonzero-pad",
+      "title": "Padding from the directory to the payload base must be zero",
+      "section": "Canonical layout",
+      "section_title": "Canonical layout",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#canonical-layout",
+      "paragraph": "A nonzero pad byte changes the block and is a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e540203000001000000010000000200000000000000810000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000100ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001003c",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-duplicate-name",
+      "title": "Tensor names must be unique",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Two tensors named w are a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e540203000002000000020000004400000000000000020100000000000000000000000000000000000000000000000000000000000000000000000000000200000000000100ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000001000100ffff0000000000000000ffff00000000ffffffffffffffff400000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-bad-utf8",
+      "title": "A tensor name must be UTF-8",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The name byte ff is not UTF-8.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e540203000001000000010000000400000000000000810000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000100ffff0000000000000000ffff00000000ffffffffffffffff000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "UTF8"
+    },
+    {
+      "id": "kiln-v2-bool-byte",
+      "title": "A bool tensor byte other than 0 or 1 is a type error",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "The byte 2 is not a bool.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000001000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000007000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-scale-count",
+      "title": "The scale tensor must have one element per group",
+      "section": "Quantization",
+      "section_title": "Quantization",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#quantization",
+      "paragraph": "Thirty-two elements with group size 32 require one scale. Two scales are a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000020000000000000042000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000012000100ffff0000ffff000000000000010000002000000001000000ffffffff00000000000000001000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff400000000000000002000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f7f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-opaque-no-layout",
+      "title": "An opaque dtype requires a layout name",
+      "section": "Opaque layouts",
+      "section_title": "Opaque layouts",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#opaque-layouts",
+      "paragraph": "Dtype 4096 with no layout name is a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000012000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000100100ffff0000ffff0000120000000000ffff00000000ffffffffffffffff000000000000000012000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-trailing",
+      "title": "A standalone directory rejects a trailing byte",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The buffer of a standalone directory is exactly the block.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TRAILING"
+    },
+    {
+      "id": "kiln-v2-high-nibble",
+      "title": "An odd packed count requires a zero high nibble in the last byte",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "One u4 element stored as 10 has a nonzero high nibble.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000001000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000011000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff00000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-shape-tail",
+      "title": "Shape slots at and past the rank must be zero",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "Rank 1 with a nonzero second shape slot is a type error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000004000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000002000100ffff0000ffff0000000000000000ffff00000000ffffffffffffffff0000000000000000040000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803f",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-dtype-zero",
+      "title": "Dtype 0 is rejected",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "Dtype codes start at 1.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-dtype-reserved",
+      "title": "Dtype 20 is reserved and rejected",
+      "section": "Dtypes",
+      "section_title": "Dtypes",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#dtypes",
+      "paragraph": "Codes 20 through 4095 are reserved.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e5402020000010000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000014000000ffff0000ffff0000000000000000ffff00000000ffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "TYPE"
+    },
+    {
+      "id": "kiln-v2-payload-overflow",
+      "title": "A payload length that overflows the block end is a limit error",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "payload_bytes of 2^64-1 plus the 64-byte header overflows. The decoder returns LIMIT and does not allocate.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54020200000000000000000000ffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "LIMIT",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-list-struct-hostile",
+      "title": "A list count of 16777216 structs is rejected when the elements are absent",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "The element minimum is 8 bytes. The product does not fit in the empty remainder. The decoder returns EOF and does not allocate 16777216 structs. The count is inside the default cap, so this is not a limit error.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00000001",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "list",
+        "element": "struct{a:i64}"
+      },
+      "error": "EOF",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-list-struct-short",
+      "title": "A list of two structs is rejected when only one element is present",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "Two i64 structs need 16 bytes after the count. Eight bytes are present. The decoder returns EOF and does not allocate the list.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "020000000100000000000000",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "list",
+        "element": "struct{a:i64}"
+      },
+      "error": "EOF",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-list-str-short",
+      "title": "A list of three strings is rejected when fewer than three length prefixes are present",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "A string is at least 4 bytes. Three strings need 12 bytes after the count. Four bytes are present.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0300000000000000",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "list",
+        "element": "str"
+      },
+      "error": "EOF",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-pod-list-short",
+      "title": "A short list of f32 values is rejected before the copy",
+      "section": "Lengths and allocation",
+      "section_title": "Lengths and allocation",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#lengths-and-allocation",
+      "paragraph": "Two f32 elements need 8 bytes. Four bytes are present. The decoder returns EOF and does not allocate the list.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "020000000000803f",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "list",
+        "element": "f32"
+      },
+      "error": "EOF",
+      "fixes": [
+        "allocation"
+      ]
+    },
+    {
+      "id": "kiln-v2-bad-version",
+      "title": "A directory version other than 2 is rejected",
+      "section": "Tensor directory",
+      "section_title": "Tensor directory",
+      "section_url": "https://leo-gan.github.io/gld-kiln/spec/#tensor-directory",
+      "paragraph": "The directory version is 2. There is no earlier tensor layout.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "4b4c4e54010200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "input_encoding": "hex",
+      "schema": "tensor-v2",
+      "error": "FRAME"
+    }
+  ]
+}

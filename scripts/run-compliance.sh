@@ -461,6 +461,9 @@ for src in sorted(root.rglob("*.json")):
     if src.name.startswith("_"):
         continue
     rel = src.relative_to(root)
+    # Wire v2 is scored by mojo/src/compliance_kiln_v2.mojo against gld-kiln 0.3.0.
+    if rel.as_posix() == "kiln/v2.json":
+        continue
     # YAML catalogs are large enough to OOM EmberJson. Smile is split per
     # case because one truncated header makes gld-smile 0.2.0 loop.
     # TOML chunks stay small: a few DataBooth documents OOM the process.
@@ -536,6 +539,21 @@ PY
                 rm -f "$out"
             fi
         done
+        KILN_V2_BIN="$LOG_DIR/mojo-compliance-kiln-v2"
+        (
+            cd "$PROJECT_ROOT/mojo"
+            pixi run mojo build \
+                -I src -I vendor/emberjson_src -I vendor/kiln_v2_src \
+                src/compliance_kiln_v2.mojo -o "$KILN_V2_BIN"
+        ) || true
+        if [[ -x "$KILN_V2_BIN" ]]; then
+            "$KILN_V2_BIN" \
+                --catalog "$PROJECT_ROOT/compliance/data/kiln/v2.json" \
+                --json-out "$MOJO_PART/kiln-v2-out.json" \
+                || echo -e "${YELLOW}⚠ kiln v2 compliance exited $?${NC}"
+        else
+            echo -e "${YELLOW}⚠ kiln v2 compliance failed to build${NC}"
+        fi
         python3 - "$MOJO_PART" "$MOJO_OUT" <<'PY'
 import json, sys
 from datetime import datetime, timezone

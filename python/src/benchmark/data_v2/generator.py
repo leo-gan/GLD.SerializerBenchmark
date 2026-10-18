@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
+import struct
+
 from .models import (
     Document,
     DocumentItem,
     DocumentMeta,
     Event,
     EventAttr,
+    InferenceRequest,
     Message,
     NestedItem,
     NestedMeta,
@@ -18,12 +21,15 @@ from .models import (
     Grid,
     Order,
     Person,
+    Prompt,
     Region,
+    Shard,
     Signal,
     SignalLeg,
     Strings,
     TableRow,
     Telemetry,
+    TensorMatrix,
 )
 from .prng import XorShift64, mix_seed
 
@@ -61,6 +67,16 @@ def make_one(
         return _make_graph(rng, type_config)
     if type_id in ("grid", "grid_window"):
         return _make_grid(rng, type_config, window=type_id == "grid_window")
+    if type_id in ("tensor", "tensor_view"):
+        # tensor_view is the same matrix as tensor for this seed and shape.
+        view_rng = XorShift64(mix_seed(seed, "tensor", instance_index))
+        return _make_tensor(view_rng, type_config)
+    if type_id == "prompt":
+        return _make_prompt(rng, type_config)
+    if type_id == "shard":
+        return _make_shard(rng, type_config)
+    if type_id == "request":
+        return _make_request(rng, type_config)
     raise ValueError(f"unknown type_id: {type_id!r}")
 
 
@@ -261,6 +277,83 @@ def _make_event(rng: XorShift64, cfg: dict[str, Any]) -> Event:
         occurred_at=_BASE_TS_MS + rng.next_int(0, 86_400_000),
         producer=rng.word(smin, smax),
         attrs=attrs,
+    )
+
+
+def _f32_unit(rng: XorShift64) -> float:
+    """Unit-interval float32, widened to a Python float that keeps those bits."""
+    return struct.unpack("<f", struct.pack("<f", rng.next_f64()))[0]
+
+
+def _f32_fill(rng: XorShift64, count: int, *, pin: bool) -> list[float]:
+    values = [_f32_unit(rng) for _ in range(count)]
+    if pin:
+        values[0] = struct.unpack("<f", struct.pack("<I", 0x80000000))[0]
+        values[1] = struct.unpack("<f", struct.pack("<I", 0x7FC00000))[0]
+    return values
+
+
+def _make_tensor(rng: XorShift64, cfg: dict[str, Any]) -> TensorMatrix:
+    rows = int(cfg["rows"])
+    cols = int(cfg["cols"])
+    return TensorMatrix(rows=rows, cols=cols, values=_f32_fill(rng, rows * cols, pin=True))
+
+
+def _make_prompt(rng: XorShift64, cfg: dict[str, Any]) -> Prompt:
+    """Row-major. Each row is content tokens, then zero padding.
+
+    Call order per row: one content length, then one token id per content
+    position. Position ids are ``0 .. seq-1`` and do not draw from the rng.
+    """
+    batch = int(cfg["batch"])
+    seq = int(cfg["seq"])
+    vocab = int(cfg["vocab"])
+    input_ids: list[int] = []
+    attention_mask: list[int] = []
+    position_ids: list[int] = []
+    for _row in range(batch):
+        content = rng.next_int(max(1, seq // 2), seq)
+        for col in range(seq):
+            if col < content:
+                input_ids.append(rng.next_int(1, vocab - 1))
+                attention_mask.append(1)
+            else:
+                input_ids.append(0)
+                attention_mask.append(0)
+            position_ids.append(col)
+    return Prompt(
+        batch=batch,
+        seq=seq,
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        position_ids=position_ids,
+    )
+
+
+def _make_shard(rng: XorShift64, cfg: dict[str, Any]) -> Shard:
+    """Fill order: embedding, attention, feed-forward, norm. No pinned NaN."""
+    vocab = int(cfg["vocab"])
+    hidden = int(cfg["hidden"])
+    ffn = int(cfg["ffn"])
+    return Shard(
+        vocab=vocab,
+        hidden=hidden,
+        ffn=ffn,
+        tok_emb=_f32_fill(rng, vocab * hidden, pin=False),
+        attn=_f32_fill(rng, hidden * hidden, pin=False),
+        ffn_weight=_f32_fill(rng, ffn * hidden, pin=False),
+        norm=_f32_fill(rng, hidden, pin=False),
+    )
+
+
+def _make_request(rng: XorShift64, cfg: dict[str, Any]) -> InferenceRequest:
+    """Call order: request id, model name, temperature, then the prompt."""
+    smin, smax = _slen(cfg)
+    return InferenceRequest(
+        request_id=rng.next_int(1, 1_000_000_000),
+        model=rng.word(smin, smax),
+        temperature=struct.unpack("<f", struct.pack("<f", rng.next_f64() * 2.0))[0],
+        inputs=_make_prompt(rng, cfg),
     )
 
 

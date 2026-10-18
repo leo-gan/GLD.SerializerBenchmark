@@ -93,6 +93,19 @@ def random_seed(config_path: Optional[str | Path] = None) -> int:
     return int(seed)
 
 
+def data_sets(config_path: Optional[str | Path] = None) -> List[Dict[str, Any]]:
+    """Data Set dimension from the master config, in publication order.
+
+    Each row has ``id``, ``types``, and ``run_config``. ``smoke_run_config``
+    is present when that set has a smoke file.
+    """
+    cfg = load_master_config(config_path)
+    raw = cfg.get("data_sets")
+    if not isinstance(raw, list):
+        return []
+    return [row for row in raw if isinstance(row, dict)]
+
+
 def logs_root(config_path: Optional[str | Path] = None) -> Path:
     cfg = load_master_config(config_path)
     root = repo_root()

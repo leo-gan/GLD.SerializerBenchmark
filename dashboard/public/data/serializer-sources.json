@@ -40,7 +40,7 @@
       "jansson": {
         "source_url": "https://github.com/akheron/jansson",
         "version": "2.15.1",
-        "specifics": "Jansson was created to give C a complete, documented JSON library with a stable API \u2014 encode, decode, and manipulate values \u2014 not just a minimal parser. The problem was that many C JSON snippets were incomplete or awkward to embed. Jansson solves it with a reference-counted value type and an API aimed at RFC 8259."
+        "specifics": "Jansson was created to give C a complete, documented JSON library with a stable API — encode, decode, and manipulate values — not just a minimal parser. The problem was that many C JSON snippets were incomplete or awkward to embed. Jansson solves it with a reference-counted value type and an API aimed at RFC 8259."
       },
       "json-c": {
         "source_url": "https://github.com/json-c/json-c",
@@ -166,7 +166,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "1.0.x",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "cereal": {
         "source_url": "https://github.com/USCiLab/cereal",
@@ -422,17 +422,17 @@
       "MS Bond Compact": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
       },
       "MS Bond Fast": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
       },
       "MS Bond Json": {
         "source_url": "https://github.com/microsoft/bond",
         "version": ".NET 10.0.10",
-        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen \u2014 in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
       },
       "MS DataContract": {
         "source_url": "https://github.com/dotnet/runtime",
@@ -824,7 +824,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto-java",
         "version": "unknown",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "dsl-json": {
         "source_url": "https://github.com/ngs-doo/dsl-json",
@@ -1016,7 +1016,7 @@
       "devalue": {
         "source_url": "https://github.com/Rich-Harris/devalue",
         "version": "5.9.2",
-        "specifics": "devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows \u2014 dates, maps, cyclical graphs \u2014 without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format."
+        "specifics": "devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows — dates, maps, cyclical graphs — without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format."
       },
       "fast-json-stringify": {
         "source_url": "https://github.com/fastify/fast-json-stringify",
@@ -1117,7 +1117,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto-java",
         "version": "0.1.16",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "flatbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1389,7 +1389,7 @@
       "gld-kiln": {
         "source_url": "https://github.com/leo-gan/gld-kiln",
         "version": "0.2.0",
-        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire."
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire. On the tensor data set this row runs every type. encode writes the struct. tensor_view uses Reader.take and does not copy the matrix."
       }
     },
     "php": {
@@ -1483,7 +1483,7 @@
       "arrow-ipc": {
         "source_url": "https://github.com/apache/arrow",
         "version": "25.0.1",
-        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only."
+        "specifics": "Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. request is those prompt tensors plus one record batch in the same buffer. tensor_view returns a buffer inside the stream."
       },
       "avro": {
         "source_url": "https://github.com/fastavro/fastavro",
@@ -1502,7 +1502,7 @@
       "cloudpickle": {
         "source_url": "https://github.com/cloudpipe/cloudpickle",
         "version": "3.1.2",
-        "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model \u2014 with the same security caveats."
+        "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats."
       },
       "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
@@ -1532,7 +1532,7 @@
       "flatbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
         "version": "25.12.19",
-        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder runs every type: tensor, tensor_view, prompt, shard, and request. tensor_view reads the float vector in place."
       },
       "flexbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1763,7 +1763,7 @@
       "serde_avro_fast": {
         "source_url": "https://github.com/Ten0/serde_avro_fast",
         "version": "2.1.1",
-        "specifics": "serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-\u00d7 slower on small records."
+        "specifics": "serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-× slower on small records."
       },
       "serde_json": {
         "source_url": "https://github.com/serde-rs/json",
@@ -1799,12 +1799,12 @@
       "BinaryCodable": {
         "source_url": "https://github.com/christophhagen/BinaryCodable",
         "version": "4.0.0",
-        "specifics": "BinaryCodable is a pure-Swift binary Codable implementation. It was written so Swift types could have a simple binary encoding without an IDL \u2014 Swift-only, not a public standard."
+        "specifics": "BinaryCodable is a pure-Swift binary Codable implementation. It was written so Swift types could have a simple binary encoding without an IDL — Swift-only, not a public standard."
       },
       "CapnProto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "capnproto-1.0.2",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "FlatBuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1909,7 +1909,7 @@
       "capnproto": {
         "source_url": "https://github.com/capnproto/capnproto",
         "version": "1.0.2",
-        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation \u2014 no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
       },
       "comptime-bin": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",

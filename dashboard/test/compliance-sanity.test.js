@@ -547,33 +547,38 @@ test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
   assert.equal(names.has('kiln'), false);
   assert.equal(names.has('gld-kiln'), true);
   const rows = stats.groups.filter((g) => g.serializer === 'gld-kiln');
-  assert.equal(rows.length, 10);
+  assert.equal(rows.length, 15);
   const seen = new Set();
   for (const row of rows) {
     assert.equal(row.serializer_version, '0.2.0');
     assert.equal(row.language, 'mojo');
     assert.equal(row.standard, 'kiln');
-    assert.equal(row.data_set, 'suite');
+    assert.ok(row.data_set === 'suite' || row.data_set === 'tensor');
     assert.equal(serializerDisplayName(row.serializer, row.serializer_version), 'gld-kiln:0.2.0');
     const metrics = row.variants['iqr_1.5'];
     assert.ok(metrics.ser_median_ns > 0);
     assert.ok(metrics.deser_median_ns > 0);
     assert.ok(metrics.median_size_bytes > 0);
-    seen.add(`${row.test_data}@${row.data_type_instance_count}`);
+    seen.add(`${row.data_set}:${row.test_data}@${row.data_type_instance_count}`);
   }
   assert.deepEqual(
     [...seen].sort(),
     [
-      'document@1',
-      'document@100',
-      'event@1',
-      'event@100',
-      'message@1',
-      'message@100',
-      'strings@1',
-      'strings@100',
-      'telemetry@1',
-      'telemetry@100',
+      'suite:document@1',
+      'suite:document@100',
+      'suite:event@1',
+      'suite:event@100',
+      'suite:message@1',
+      'suite:message@100',
+      'suite:strings@1',
+      'suite:strings@100',
+      'suite:telemetry@1',
+      'suite:telemetry@100',
+      'tensor:prompt@1',
+      'tensor:request@1',
+      'tensor:shard@1',
+      'tensor:tensor@1',
+      'tensor:tensor_view@1',
     ],
   );
   const message = rows.find((g) => g.test_data === 'message' && g.data_type_instance_count === 1);
@@ -596,20 +601,20 @@ test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
   assert.deepEqual(listed, { name: 'gld-kiln', version: '0.2.0' });
 });
 
-test('live mojo gld-kiln has a scored Kiln wire v0 cell', () => {
+test('live mojo gld-kiln has a scored Kiln wire v2 cell', () => {
   const compliance = loadJsonGz('compliance.json.gz');
   const cells = compliance.matrix.filter(
     (row) => row.language === 'mojo' && row.serializer === 'gld-kiln' && row.format === 'kiln',
   );
   assert.equal(cells.length, 1);
-  assert.equal(cells[0].standard, 'Kiln wire v0');
-  assert.equal(cells[0].version, 'v0');
-  assert.equal(cells[0].serializer_version, '0.2.0');
-  assert.equal(cells[0].passed, 45);
+  assert.equal(cells[0].standard, 'Kiln wire v2');
+  assert.equal(cells[0].version, 'v2');
+  assert.equal(cells[0].serializer_version, '0.3.0');
+  assert.equal(cells[0].passed, 46);
   assert.equal(cells[0].failed, 0);
-  assert.equal(cells[0].total, 45);
+  assert.equal(cells[0].total, 46);
   const heat = complianceHeatmap(compliance.matrix, { format: 'kiln', language: 'mojo' });
-  assert.deepEqual(heat.columns.map((column) => column.standard), ['Kiln wire v0']);
+  assert.deepEqual(heat.columns.map((column) => column.standard), ['Kiln wire v2']);
   assert.equal(heat.columns[0].unscored, undefined);
   assert.ok(heat.rows.some((row) => row.serializer === 'gld-kiln'));
 });

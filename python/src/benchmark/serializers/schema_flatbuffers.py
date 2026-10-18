@@ -546,7 +546,13 @@ class FlatBuffersSerializer(Serializer):
         return "flatbuffers"
 
     def supports(self, test_data_name: str) -> bool:
-        return test_data_name in _BUILDERS
+        return test_data_name in _BUILDERS or test_data_name in {
+            "tensor",
+            "tensor_view",
+            "prompt",
+            "shard",
+            "request",
+        }
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
@@ -559,6 +565,10 @@ class FlatBuffersSerializer(Serializer):
         return obj  # keep dataclasses / lists for typed builders
 
     def serialize_bytes(self, obj: Any) -> bytes:
+        if self._type_id in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            from . import tensor_payload as tensor
+
+            return tensor.fb_write(self._builder, obj, self._type_id)
         build, _ = _BUILDERS[self._type_id]
         if self._batch:
             # Batch: vector of single-type tables stored as a wrapper table field 0.
@@ -574,6 +584,10 @@ class FlatBuffersSerializer(Serializer):
         return build(self._builder, obj)
 
     def deserialize_bytes(self, data: bytes) -> Any:
+        if self._type_id in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            from . import tensor_payload as tensor
+
+            return tensor.fb_read(data, self._type_id, view=self._type_id == "tensor_view")
         _, read = _BUILDERS[self._type_id]
         if self._batch:
             n = struct.unpack_from("<I", data, 0)[0]

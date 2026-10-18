@@ -141,6 +141,42 @@ class ArrowIpcSerializer(_ColumnarSerializer):
     def name(self) -> str:
         return "arrow-ipc"
 
+    def supports(self, test_data_name: str) -> bool:
+        return test_data_name in _TYPE_IDS or test_data_name in {
+            "tensor",
+            "tensor_view",
+            "prompt",
+            "shard",
+            "request",
+        }
+
+    def prepare(self, test_data_name: str, test_data_type: type) -> None:
+        if test_data_name in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            Serializer.prepare(self, test_data_name, test_data_type)
+            self._type_id = test_data_name
+            return
+        super().prepare(test_data_name, test_data_type)
+
+    def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
+        if test_data_name in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            self._type_id = test_data_name
+            return obj
+        return super().prepare_data(obj, test_data_name, test_data_type)
+
+    def serialize_bytes(self, obj: Any) -> bytes:
+        if self._type_id in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            from . import tensor_payload as tensor
+
+            return tensor.arrow_write(obj, self._type_id)
+        return super().serialize_bytes(obj)
+
+    def deserialize_bytes(self, data: bytes) -> Any:
+        if self._type_id in {"tensor", "tensor_view", "prompt", "shard", "request"}:
+            from . import tensor_payload as tensor
+
+            return tensor.arrow_read(data, self._type_id, view=self._type_id == "tensor_view")
+        return super().deserialize_bytes(data)
+
     def _write(self, table: pa.Table) -> bytes:
         sink = pa.BufferOutputStream()
         with pa_ipc.new_stream(sink, table.schema) as writer:

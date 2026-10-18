@@ -21,9 +21,8 @@ forbidden_type_config_keys:
   - n
   - return_array_even_for_1_instance
 
-# data_set is the parent of a type id. suite = the five publication types.
-# columnar = table, table_project, nested_table, and signal.
-# graph = graph. array = grid and grid_window.
+# data_set is the parent of a type id. The membership is configured in
+# config/benchmark_config.yaml under data_sets. This stamp must match that list.
 # A serializer is measured only on the sets it already supports.
 types:
   message:
@@ -178,3 +177,53 @@ types:
         y0: 64
         wx: 256
         wy: 128
+
+  # ML tensors. Not in default.yaml or smoke.yaml.
+  # Run from config/library/tensor.yaml with an explicit allow-list.
+  # Floats are float32, row-major. Integers on prompt are int64.
+  # N is 1. The shape is the type config, not the instance count.
+  tensor:
+    description: "One dense float32 matrix. Full write and owned read."
+    category: tensor
+    data_set: tensor
+    default_type_config:
+      rows: 1024
+      cols: 1024
+
+  tensor_view:
+    description: "Same shape and values as tensor. Deserialize borrows the payload."
+    category: tensor_view
+    data_set: tensor
+    default_type_config:
+      rows: 1024
+      cols: 1024
+
+  prompt:
+    description: "Padded LLM inputs: input_ids, attention_mask, and position_ids."
+    category: tensor_prompt
+    data_set: tensor
+    default_type_config:
+      batch: 4
+      seq: 256
+      vocab: 32000
+
+  shard:
+    description: "One transformer block: embedding, attention, feed-forward, and norm."
+    category: tensor_shard
+    data_set: tensor
+    default_type_config:
+      vocab: 1024
+      hidden: 256
+      ffn: 512
+
+  request:
+    description: "Request id, model name, temperature, and the prompt tensors."
+    category: tensor_request
+    data_set: tensor
+    default_type_config:
+      batch: 4
+      seq: 256
+      vocab: 32000
+      string_len:
+        min: 3
+        max: 16

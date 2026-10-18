@@ -3,12 +3,22 @@
 from __future__ import annotations
 
 from benchmark_analysis.config_loader import (
+    data_sets,
     enabled_languages,
     known_language_ids,
     language_docs_dir,
     mode_repetitions,
     random_seed,
 )
+
+
+def test_data_sets_are_configured():
+    rows = data_sets()
+    assert [row["id"] for row in rows] == ["suite", "columnar", "graph", "array", "tensor"]
+    by_id = {row["id"]: row["types"] for row in rows}
+    assert by_id["suite"] == ["message", "document", "telemetry", "strings", "event"]
+    assert by_id["tensor"] == ["tensor", "tensor_view", "prompt", "shard", "request"]
+    assert "smoke_run_config" not in next(row for row in rows if row["id"] == "graph")
 
 
 def test_mode_repetitions_from_config():

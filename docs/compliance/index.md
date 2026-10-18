@@ -32,7 +32,7 @@ The catalog covers every standard in this table.
 | HDF5 | superblock 0, superblock 2 | `h5py` |
 | HOCON | 1 | (catalog) |
 | JSON | RFC 4627, RFC 7159, RFC 8259, plus I-JSON (RFC 7493) | `json`, `orjson`, `msgspec`, `rapidjson` |
-| Kiln | wire v0 | (no Python adapter; Mojo `gld-kiln`) |
+| Kiln | wire v2 | (no Python adapter; Mojo `gld-kiln`) |
 | MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
 | NetCDF | classic, 64-bit offset, NetCDF-4 | `netCDF4` |
 | ORC | v1 | `orc`, `orc-uncompressed` |
@@ -49,7 +49,7 @@ The catalog covers every standard in this table.
 
 Arrow IPC, Parquet, ORC v1, and SBE 1.0 have validity cases under `compliance/data/`. Each cell is that library’s own reader. Accept means the reader decoded the case, and when the case names a value the decoded rows must match. A library that accepts a reject case fails that case. Python has no SBE row. Score each of these rows with that library’s own decoder.
 
-HDF5, NetCDF, and ADIOS2 use small original corpora. HDF5 checks the file signature and the superblock version. NetCDF checks a classic header, a 64-bit-offset header, and a NetCDF-4 header. ADIOS2 checks the BP5 index file names. Kiln wire v0 checks Frozen values, the `KLN0` frame, and the `KLNT` tensor. `gld-kiln` is the only Kiln adapter.
+HDF5, NetCDF, and ADIOS2 use small original corpora. HDF5 checks the file signature and the superblock version. NetCDF checks a classic header, a 64-bit-offset header, and a NetCDF-4 header. ADIOS2 checks the BP5 index file names. Kiln wire v2 checks the version-2 tensor directory. `gld-kiln` is the only Kiln adapter.
 
 XML is out of scope. Language-native and private binaries (pickle, gob, Kryo, and the rest) are on the Dashboard under **Standard → No public spec**: one column, no pass/fail cells, so they stay selectable as a group.
 

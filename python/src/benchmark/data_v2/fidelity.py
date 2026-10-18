@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import math
+import struct
 from collections.abc import Mapping
 from dataclasses import asdict, fields, is_dataclass
 from typing import Any
+
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - numpy ships with the scientific rows
+    np = None  # type: ignore
 
 
 def _pb_to_plain(msg: Any) -> Any:
@@ -203,12 +209,84 @@ def fidelity_exact_floats(expected: Any, actual: Any) -> float:
     return 1.0
 
 
+def _is_int(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, int):
+        return True
+    return np is not None and isinstance(value, np.integer)
+
+
+def _is_float(value: Any) -> bool:
+    if isinstance(value, bool) or _is_int(value):
+        return False
+    if isinstance(value, float):
+        return True
+    return np is not None and isinstance(value, np.floating)
+
+
+def _f32_bits(value: Any) -> int | None:
+    if not _is_float(value):
+        return None
+    return struct.unpack("<I", struct.pack("<f", float(value)))[0]
+
+
+def _as_sequence(value: Any) -> list[Any] | None:
+    if np is not None and isinstance(value, np.ndarray):
+        return value.reshape(-1).tolist()
+    if isinstance(value, memoryview):
+        return list(value)
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return None
+
+
+def _as_record(value: Any) -> dict[str, Any] | None:
+    if is_dataclass(value) and not isinstance(value, type):
+        return {item.name: getattr(value, item.name) for item in fields(value)}
+    if isinstance(value, Mapping):
+        return {str(key): item for key, item in value.items()}
+    return None
+
+
+def _tensor_eq(expected: Any, actual: Any) -> bool:
+    """Bit-identical float32, exact ints and strings, field names included."""
+    left = _as_record(expected)
+    right = _as_record(actual)
+    if left is not None or right is not None:
+        if left is None or right is None or set(left) != set(right):
+            return False
+        return all(_tensor_eq(left[key], right[key]) for key in left)
+    left_seq = _as_sequence(expected)
+    right_seq = _as_sequence(actual)
+    if left_seq is not None or right_seq is not None:
+        if left_seq is None or right_seq is None or len(left_seq) != len(right_seq):
+            return False
+        return all(_tensor_eq(a, b) for a, b in zip(left_seq, right_seq))
+    if isinstance(expected, str) or isinstance(actual, str):
+        return expected == actual
+    if _is_int(expected) and _is_int(actual):
+        return int(expected) == int(actual)
+    if _is_float(expected) or _is_float(actual):
+        bits_a = _f32_bits(expected)
+        bits_b = _f32_bits(actual)
+        return bits_a is not None and bits_a == bits_b
+    return expected == actual
+
+
+def fidelity_tensor(expected: Any, actual: Any) -> float:
+    """Float32 payloads keep sign of zero and NaN bits. Ints and names are exact."""
+    return 1.0 if _tensor_eq(expected, actual) else 0.0
+
+
 def fidelity_for(type_id: str, expected: Any, actual: Any) -> float:
     """Dispatch fidelity. ``graph`` must not use the structural walk."""
     if type_id == "graph":
         return fidelity_graph(expected, actual)
     if type_id in ("grid", "grid_window"):
         return fidelity_exact_floats(expected, actual)
+    if type_id in ("tensor", "tensor_view", "prompt", "shard", "request"):
+        return fidelity_tensor(expected, actual)
     return fidelity_v2(expected, actual)
 
 

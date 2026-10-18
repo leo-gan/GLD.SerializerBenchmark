@@ -6,9 +6,11 @@ from pathlib import Path
 
 import pytest
 
+from benchmark_analysis.config_loader import data_sets, load_master_config, repo_root
 from benchmark_analysis.dimensions import (
     DimensionError,
     data_set_for_type,
+    data_set_membership,
     label_result_group,
     label_stats_document,
     load_dimensions,
@@ -25,21 +27,40 @@ SUITE = {"message", "document", "telemetry", "strings", "event"}
 COLUMNAR = {"table", "table_project", "nested_table", "signal"}
 GRAPH = {"graph"}
 ARRAY = {"grid", "grid_window"}
+TENSOR = {"tensor", "tensor_view", "prompt", "shard", "request"}
 
 
 def test_each_type_has_one_data_set():
     catalog = load_catalog(_CATALOG)
-    dims = load_dimensions()
-    allowed = set(dims["data_sets"]["ids"])
+    rows = data_sets()
+    assert [row["id"] for row in rows] == ["suite", "columnar", "graph", "array", "tensor"]
+    membership = data_set_membership()
+    assert set(membership) == SUITE | COLUMNAR | GRAPH | ARRAY | TENSOR
+    assert {k for k, v in membership.items() if v == "suite"} == SUITE
+    assert {k for k, v in membership.items() if v == "columnar"} == COLUMNAR
+    assert {k for k, v in membership.items() if v == "graph"} == GRAPH
+    assert {k for k, v in membership.items() if v == "array"} == ARRAY
+    assert {k for k, v in membership.items() if v == "tensor"} == TENSOR
+    root = repo_root()
+    for row in rows:
+        assert (root / row["run_config"]).is_file()
+        smoke = row.get("smoke_run_config")
+        if smoke:
+            assert (root / smoke).is_file()
     found = {}
     for type_id in catalog["types"]:
         found[type_id] = data_set_for_type(type_id, catalog)
-    assert set(found) == SUITE | COLUMNAR | GRAPH | ARRAY
-    assert set(found.values()) <= allowed
-    assert {k for k, v in found.items() if v == "suite"} == SUITE
-    assert {k for k, v in found.items() if v == "columnar"} == COLUMNAR
-    assert {k for k, v in found.items() if v == "graph"} == GRAPH
-    assert {k for k, v in found.items() if v == "array"} == ARRAY
+    assert found == membership
+    cfg = load_master_config()
+    listed = {item["name"]: item["data_set"] for item in cfg["test_data"]["types"]}
+    assert listed == membership
+
+
+def test_catalog_stamp_must_match_the_configured_data_set():
+    catalog = load_catalog(_CATALOG)
+    catalog["types"]["message"]["data_set"] = "columnar"
+    with pytest.raises(DimensionError, match="benchmark_config.yaml"):
+        data_set_for_type("message", catalog)
 
 
 def test_data_set_is_not_part_of_the_type_config_hash():

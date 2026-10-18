@@ -1,7 +1,8 @@
 """Standard and Data Set labels.
 
 These are labels on rows the suite already produces. They do not add a timed
-loop. Optional I/O membership is the opt-in list in config/dimensions.yaml.
+loop. Data Set membership is ``data_sets`` in config/benchmark_config.yaml.
+Optional I/O membership is the opt-in list in config/dimensions.yaml.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from typing import Any
 
 import yaml
 
+from benchmark_analysis.config_loader import data_sets as configured_data_sets
 from benchmark_analysis.run_config_v2 import DEFAULT_CATALOG
 
 _REPO_ROOT = DEFAULT_CATALOG.parents[1]
@@ -42,8 +44,34 @@ def load_standards(path: Path | None = None) -> dict[str, Any]:
     return raw
 
 
+def data_set_membership() -> dict[str, str]:
+    """type id → data set id from ``benchmark_config.yaml`` ``data_sets``."""
+    out: dict[str, str] = {}
+    rows = configured_data_sets()
+    if not rows:
+        raise DimensionError("benchmark_config.yaml has no data_sets")
+    for row in rows:
+        set_id = row.get("id")
+        type_ids = row.get("types")
+        if not isinstance(set_id, str) or not set_id:
+            raise DimensionError(f"data set row has no id: {row!r}")
+        if not isinstance(type_ids, list) or not type_ids:
+            raise DimensionError(f"data set {set_id!r} has no types")
+        for type_id in type_ids:
+            if not isinstance(type_id, str) or not type_id:
+                raise DimensionError(f"data set {set_id!r} has an empty type id")
+            if type_id in out:
+                raise DimensionError(f"{type_id!r} is listed in more than one data set")
+            out[type_id] = set_id
+    return out
+
+
 def data_set_for_type(type_id: str, catalog: dict[str, Any] | None = None) -> str:
-    """Parent data set of a type id. Raises if the type or the label is missing."""
+    """Parent data set of a type id.
+
+    The configuration is ``benchmark_config.yaml`` ``data_sets``. The catalog
+    stamp must name the same set.
+    """
     if catalog is None:
         from benchmark_analysis.run_config_v2 import load_catalog
 
@@ -52,10 +80,18 @@ def data_set_for_type(type_id: str, catalog: dict[str, Any] | None = None) -> st
     entry = types.get(type_id)
     if not isinstance(entry, dict):
         raise DimensionError(f"unknown type id: {type_id!r}")
-    data_set = entry.get("data_set")
-    if not isinstance(data_set, str) or not data_set:
+    stamped = entry.get("data_set")
+    if not isinstance(stamped, str) or not stamped:
         raise DimensionError(f"type {type_id!r} has no data_set")
-    return data_set
+    configured = data_set_membership().get(type_id)
+    if configured is None:
+        raise DimensionError(f"type {type_id!r} is not in benchmark_config.yaml data_sets")
+    if configured != stamped:
+        raise DimensionError(
+            f"type {type_id!r} data_set is {stamped!r} in the catalog "
+            f"and {configured!r} in benchmark_config.yaml"
+        )
+    return stamped
 
 
 def standard_for(

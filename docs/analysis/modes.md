@@ -135,12 +135,12 @@ If stream and bytes (or string) times are almost the same, check the language **
 
 ## Dimension contract
 
-Standard and Data Set are labels on rows the suite already measures. The machine-readable contract is [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it does not already support.
+Standard and Data Set are labels on rows the suite already measures. Data Set membership is `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Standard primary rules and optional I/O stay in [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it does not already support.
 
 | Dimension | Where it comes from | Values |
 |-----------|---------------------|--------|
 | **Standard** | [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) | `json`, `avro`, `parquet`, … |
-| **Data Set** | `data_set` on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) | `suite` (message, document, telemetry, strings, event), `columnar` (table, table_project, nested_table, signal), `graph` (graph), and `array` (grid, grid_window) |
+| **Data Set** | `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). The catalog stamps the same id. | `suite` (message, document, telemetry, strings, event), `columnar` (table, table_project, nested_table, signal), `graph` (graph), `array` (grid, grid_window), and `tensor` (tensor, tensor_view, prompt, shard, request) |
 | **Data Type** | the type id, child of its Data Set | `message`, `table`, … |
 
 An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.

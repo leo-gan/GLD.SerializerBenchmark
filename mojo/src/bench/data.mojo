@@ -49,6 +49,9 @@ struct Rng(Copyable, Movable):
     def next_f64(mut self) -> Float64:
         return Float64(self.next_u64() >> UInt64(11)) * (1.0 / Float64(UInt64(1) << UInt64(53)))
 
+    def next_f32(mut self) -> Float32:
+        return Float32(self.next_f64())
+
     def word(mut self, min_len: Int, max_len: Int) -> String:
         var n = self.next_int(min_len, max_len)
         var out = String()
@@ -1168,6 +1171,13 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
     var y0: Int
     var wx: Int
     var wy: Int
+    var rows: Int
+    var cols: Int
+    var batch: Int
+    var seq: Int
+    var vocab: Int
+    var hidden: Int
+    var ffn: Int
 
     def __init__(out self):
         self.children = 8
@@ -1188,6 +1198,13 @@ struct TypeConfig(Copyable, ImplicitlyCopyable, Movable):
         self.y0 = 0
         self.wx = 0
         self.wy = 0
+        self.rows = 1024
+        self.cols = 1024
+        self.batch = 4
+        self.seq = 256
+        self.vocab = 32000
+        self.hidden = 256
+        self.ffn = 512
 
 
 @fieldwise_init
@@ -1235,6 +1252,68 @@ struct SignalRow(Copyable, Movable):
     var symbol: String
     var venue: String
     var legs: List[SignalLeg]
+
+
+@fieldwise_init
+struct TensorValue(Copyable, Movable, Defaultable):
+    var rows: Int32
+    var cols: Int32
+    var values: List[Float32]
+
+    def __init__(out self):
+        self.rows = 0
+        self.cols = 0
+        self.values = List[Float32]()
+
+
+@fieldwise_init
+struct PromptValue(Copyable, Movable, Defaultable):
+    var batch: Int32
+    var seq: Int32
+    var input_ids: List[Int64]
+    var attention_mask: List[Int64]
+    var position_ids: List[Int64]
+
+    def __init__(out self):
+        self.batch = 0
+        self.seq = 0
+        self.input_ids = List[Int64]()
+        self.attention_mask = List[Int64]()
+        self.position_ids = List[Int64]()
+
+
+@fieldwise_init
+struct ShardValue(Copyable, Movable, Defaultable):
+    var vocab: Int32
+    var hidden: Int32
+    var ffn: Int32
+    var tok_emb: List[Float32]
+    var attn: List[Float32]
+    var ffn_weight: List[Float32]
+    var norm: List[Float32]
+
+    def __init__(out self):
+        self.vocab = 0
+        self.hidden = 0
+        self.ffn = 0
+        self.tok_emb = List[Float32]()
+        self.attn = List[Float32]()
+        self.ffn_weight = List[Float32]()
+        self.norm = List[Float32]()
+
+
+@fieldwise_init
+struct RequestValue(Copyable, Movable, Defaultable):
+    var request_id: Int64
+    var model: String
+    var temperature: Float32
+    var inputs: PromptValue
+
+    def __init__(out self):
+        self.request_id = 0
+        self.model = ""
+        self.temperature = 0.0
+        self.inputs = PromptValue()
 
 
 @fieldwise_init
@@ -1295,6 +1374,11 @@ struct Fixture(Copyable, Movable):
     var projected: List[Float64]
     var books: List[Book]
     var grids: List[Grid]
+    var tensors: List[TensorValue]
+    var prompts: List[PromptValue]
+    var shards: List[ShardValue]
+    var requests: List[RequestValue]
+    var view_ok: Bool
 
     def __init__(
         out self,
@@ -1321,6 +1405,11 @@ struct Fixture(Copyable, Movable):
         self.projected = List[Float64]()
         self.books = List[Book]()
         self.grids = List[Grid]()
+        self.tensors = List[TensorValue]()
+        self.prompts = List[PromptValue]()
+        self.shards = List[ShardValue]()
+        self.requests = List[RequestValue]()
+        self.view_ok = False
 
     @staticmethod
     def empty(type_id: String, n: Int, hash: String) -> Self:
@@ -1343,7 +1432,10 @@ struct Fixture(Copyable, Movable):
 
 
 def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises -> Fixture:
-    var rng = Rng(mix_seed(seed, type_id, idx))
+    var seed_id = type_id
+    if type_id == "tensor_view":
+        seed_id = "tensor"
+    var rng = Rng(mix_seed(seed, seed_id, idx))
     var fx = Fixture(
         type_id,
         1,
@@ -1497,9 +1589,85 @@ def make_one(type_id: String, cfg: TypeConfig, seed: UInt64, idx: Int) raises ->
         fx.books.append(_make_graph(rng, cfg))
     elif type_id == "grid" or type_id == "grid_window":
         fx.grids.append(_make_grid(rng, cfg, type_id == "grid_window"))
+    elif type_id == "tensor" or type_id == "tensor_view":
+        fx.tensors.append(_make_tensor(rng, cfg))
+    elif type_id == "prompt":
+        fx.prompts.append(_make_prompt(rng, cfg))
+    elif type_id == "shard":
+        fx.shards.append(_make_shard(rng, cfg))
+    elif type_id == "request":
+        fx.requests.append(_make_request(rng, cfg))
     else:
         raise Error("unknown type_id: " + type_id)
     return fx^
+
+
+def _f32_fill(mut rng: Rng, count: Int, pin: Bool) -> List[Float32]:
+    var values = List[Float32]()
+    values.reserve(count)
+    var i = 0
+    while i < count:
+        values.append(rng.next_f32())
+        i += 1
+    if pin and count >= 2:
+        values[0] = Float32(from_bits=UInt32(0x80000000))
+        values[1] = Float32(from_bits=UInt32(0x7FC00000))
+    return values^
+
+
+def _make_tensor(mut rng: Rng, cfg: TypeConfig) -> TensorValue:
+    return TensorValue(
+        Int32(cfg.rows),
+        Int32(cfg.cols),
+        _f32_fill(rng, cfg.rows * cfg.cols, True),
+    )
+
+
+def _make_prompt(mut rng: Rng, cfg: TypeConfig) -> PromptValue:
+    var input_ids = List[Int64]()
+    var attention_mask = List[Int64]()
+    var position_ids = List[Int64]()
+    var n = cfg.batch * cfg.seq
+    input_ids.reserve(n)
+    attention_mask.reserve(n)
+    position_ids.reserve(n)
+    var row = 0
+    while row < cfg.batch:
+        var lo = cfg.seq // 2
+        if lo < 1:
+            lo = 1
+        var content = rng.next_int(lo, cfg.seq)
+        var col = 0
+        while col < cfg.seq:
+            if col < content:
+                input_ids.append(Int64(rng.next_int(1, cfg.vocab - 1)))
+                attention_mask.append(Int64(1))
+            else:
+                input_ids.append(Int64(0))
+                attention_mask.append(Int64(0))
+            position_ids.append(Int64(col))
+            col += 1
+        row += 1
+    return PromptValue(Int32(cfg.batch), Int32(cfg.seq), input_ids^, attention_mask^, position_ids^)
+
+
+def _make_shard(mut rng: Rng, cfg: TypeConfig) -> ShardValue:
+    return ShardValue(
+        Int32(cfg.vocab),
+        Int32(cfg.hidden),
+        Int32(cfg.ffn),
+        _f32_fill(rng, cfg.vocab * cfg.hidden, False),
+        _f32_fill(rng, cfg.hidden * cfg.hidden, False),
+        _f32_fill(rng, cfg.ffn * cfg.hidden, False),
+        _f32_fill(rng, cfg.hidden, False),
+    )
+
+
+def _make_request(mut rng: Rng, cfg: TypeConfig) -> RequestValue:
+    var request_id = Int64(rng.next_int(1, 1_000_000_000))
+    var model = rng.word(cfg.string_min, cfg.string_max)
+    var temperature = Float32(rng.next_f64() * 2.0)
+    return RequestValue(request_id, model^, temperature, _make_prompt(rng, cfg))
 
 
 def _make_grid(mut rng: Rng, cfg: TypeConfig, window: Bool) raises -> Grid:
@@ -1616,6 +1784,14 @@ def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: Stri
             fx.books.append(one.books[0].copy())
         elif type_id == "grid" or type_id == "grid_window":
             fx.grids.append(one.grids[0].copy())
+        elif type_id == "tensor" or type_id == "tensor_view":
+            fx.tensors.append(one.tensors[0].copy())
+        elif type_id == "prompt":
+            fx.prompts.append(one.prompts[0].copy())
+        elif type_id == "shard":
+            fx.shards.append(one.shards[0].copy())
+        elif type_id == "request":
+            fx.requests.append(one.requests[0].copy())
         else:
             raise Error("unknown type_id: " + type_id)
         i += 1
@@ -1624,6 +1800,100 @@ def make_cell(type_id: String, cfg: TypeConfig, seed: UInt64, n: Int, hash: Stri
 
 def _same_f64(a: Float64, b: Float64) -> Bool:
     return Int(bitcast[DType.uint64](a)) == Int(bitcast[DType.uint64](b))
+
+
+def _same_f32(a: Float32, b: Float32) -> Bool:
+    return Int(bitcast[DType.uint32](a)) == Int(bitcast[DType.uint32](b))
+
+
+def _same_f32_list(a: List[Float32], b: List[Float32]) -> Bool:
+    if len(a) != len(b):
+        return False
+    var i = 0
+    while i < len(a):
+        if not _same_f32(a[i], b[i]):
+            return False
+        i += 1
+    return True
+
+
+def _same_i64_list(a: List[Int64], b: List[Int64]) -> Bool:
+    if len(a) != len(b):
+        return False
+    var i = 0
+    while i < len(a):
+        if a[i] != b[i]:
+            return False
+        i += 1
+    return True
+
+
+def _fidelity_prompt_value(a: PromptValue, b: PromptValue) -> Bool:
+    if a.batch != b.batch or a.seq != b.seq:
+        return False
+    if not _same_i64_list(a.input_ids, b.input_ids):
+        return False
+    if not _same_i64_list(a.attention_mask, b.attention_mask):
+        return False
+    return _same_i64_list(a.position_ids, b.position_ids)
+
+
+def _fidelity_tensor(a: Fixture, b: Fixture) -> Bool:
+    if len(a.tensors) != len(b.tensors):
+        return False
+    var i = 0
+    while i < len(a.tensors):
+        if a.tensors[i].rows != b.tensors[i].rows or a.tensors[i].cols != b.tensors[i].cols:
+            return False
+        if not _same_f32_list(a.tensors[i].values, b.tensors[i].values):
+            return False
+        i += 1
+    return True
+
+
+def _fidelity_prompt(a: Fixture, b: Fixture) -> Bool:
+    if len(a.prompts) != len(b.prompts):
+        return False
+    var i = 0
+    while i < len(a.prompts):
+        if not _fidelity_prompt_value(a.prompts[i], b.prompts[i]):
+            return False
+        i += 1
+    return True
+
+
+def _fidelity_shard(a: Fixture, b: Fixture) -> Bool:
+    if len(a.shards) != len(b.shards):
+        return False
+    var i = 0
+    while i < len(a.shards):
+        if a.shards[i].vocab != b.shards[i].vocab or a.shards[i].hidden != b.shards[i].hidden or a.shards[i].ffn != b.shards[i].ffn:
+            return False
+        if not _same_f32_list(a.shards[i].tok_emb, b.shards[i].tok_emb):
+            return False
+        if not _same_f32_list(a.shards[i].attn, b.shards[i].attn):
+            return False
+        if not _same_f32_list(a.shards[i].ffn_weight, b.shards[i].ffn_weight):
+            return False
+        if not _same_f32_list(a.shards[i].norm, b.shards[i].norm):
+            return False
+        i += 1
+    return True
+
+
+def _fidelity_request(a: Fixture, b: Fixture) -> Bool:
+    if len(a.requests) != len(b.requests):
+        return False
+    var i = 0
+    while i < len(a.requests):
+        if a.requests[i].request_id != b.requests[i].request_id or a.requests[i].model != b.requests[i].model:
+            return False
+        if not _same_f32(a.requests[i].temperature, b.requests[i].temperature):
+            return False
+        if not _fidelity_prompt_value(a.requests[i].inputs, b.requests[i].inputs):
+            return False
+        i += 1
+    return True
 
 
 def _close(a: Float64, b: Float64) -> Bool:
@@ -1878,6 +2148,16 @@ def fidelity(a: Fixture, b: Fixture) -> Bool:
                 return False
             i += 1
         return True
+    if a.type_id == "tensor_view":
+        return b.view_ok
+    if a.type_id == "tensor":
+        return _fidelity_tensor(a, b)
+    if a.type_id == "prompt":
+        return _fidelity_prompt(a, b)
+    if a.type_id == "shard":
+        return _fidelity_shard(a, b)
+    if a.type_id == "request":
+        return _fidelity_request(a, b)
     if a.type_id == "grid" or a.type_id == "grid_window":
         if len(a.grids) != len(b.grids):
             return False

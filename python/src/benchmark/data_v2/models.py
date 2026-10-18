@@ -215,6 +215,72 @@ class Grid:
         return asdict(self)
 
 
+@dataclass
+class TensorMatrix:
+    """One row-major float32 matrix. ``values`` length is ``rows * cols``.
+
+    Index 0 is negative zero and index 1 is the canonical quiet NaN
+    ``0x7fc00000``. ``tensor_view`` uses the same values as ``tensor``.
+    """
+
+    rows: int
+    cols: int
+    values: list[float]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class Prompt:
+    """Padded LLM forward input. Each list length is ``batch * seq``."""
+
+    batch: int
+    seq: int
+    input_ids: list[int]
+    attention_mask: list[int]
+    position_ids: list[int]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class Shard:
+    """One transformer block. Weights are row-major float32.
+
+    ``tok_emb`` is ``vocab * hidden``, ``attn`` is ``hidden * hidden``,
+    ``ffn_weight`` is ``ffn * hidden``, and ``norm`` is ``hidden``.
+    """
+
+    vocab: int
+    hidden: int
+    ffn: int
+    tok_emb: list[float]
+    attn: list[float]
+    ffn_weight: list[float]
+    norm: list[float]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class InferenceRequest:
+    """One inference call: metadata plus the prompt tensors."""
+
+    request_id: int
+    model: str
+    temperature: float
+    inputs: Prompt
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+TENSOR_TYPE_IDS = ("tensor", "tensor_view", "prompt", "shard", "request")
+
+
 @dataclass(eq=False, repr=False)
 class Book:
     """One graph instance: shared regions and a person ring."""

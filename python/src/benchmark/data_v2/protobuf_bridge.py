@@ -12,12 +12,16 @@ from .models import (
     DocumentMeta,
     Event,
     EventAttr,
+    InferenceRequest,
     Message,
     NestedRow,
+    Prompt,
+    Shard,
     Signal,
     Strings,
     TableRow,
     Telemetry,
+    TensorMatrix,
 )
 
 # python/generated is on path when running as package (same as v1 protobuf).
@@ -36,9 +40,21 @@ except ImportError:
     except ImportError:
         pb2 = None  # type: ignore
 
+try:
+    from generated.v2 import tensor_pb2 as tpb  # type: ignore
+except ImportError:
+    try:
+        from v2 import tensor_pb2 as tpb  # type: ignore
+    except ImportError:
+        tpb = None  # type: ignore
+
 
 def available() -> bool:
     return pb2 is not None
+
+
+def tensor_available() -> bool:
+    return tpb is not None
 
 
 def message_class_for(type_id: str, batch: bool) -> Type[Any] | None:
@@ -65,12 +81,23 @@ def message_class_for(type_id: str, batch: bool) -> Type[Any] | None:
         ("signal", False): pb2.Signal,
         ("signal", True): pb2.BatchSignal,
     }
+    if tpb is not None and not batch:
+        tensor_table = {
+            "tensor": tpb.TensorMatrix,
+            "prompt": tpb.Prompt,
+            "shard": tpb.Shard,
+            "request": tpb.InferenceRequest,
+        }
+        if type_id in tensor_table:
+            return tensor_table[type_id]
     return table.get((type_id, batch))
 
 
 def to_pb(obj: Any) -> Any:
     if pb2 is None:
         raise RuntimeError("v2 protobuf stubs not available")
+    if isinstance(obj, (TensorMatrix, Prompt, Shard, InferenceRequest)):
+        return _tensor_to_pb(obj)
     if isinstance(obj, list):
         if not obj:
             raise ValueError("empty batch")
@@ -180,3 +207,80 @@ def _batch_for_item(item: Any) -> Any:
     if isinstance(item, Signal):
         return pb2.BatchSignal()
     raise TypeError(type(item))
+
+
+def _tensor_to_pb(obj: Any) -> Any:
+    if tpb is None:
+        raise RuntimeError("tensor protobuf stubs not available")
+    if isinstance(obj, TensorMatrix):
+        msg = tpb.TensorMatrix()
+        msg.rows = obj.rows
+        msg.cols = obj.cols
+        msg.values.extend(obj.values)
+        return msg
+    if isinstance(obj, Prompt):
+        return _prompt_to_pb(obj)
+    if isinstance(obj, Shard):
+        msg = tpb.Shard()
+        msg.vocab = obj.vocab
+        msg.hidden = obj.hidden
+        msg.ffn = obj.ffn
+        msg.tok_emb.extend(obj.tok_emb)
+        msg.attn.extend(obj.attn)
+        msg.ffn_weight.extend(obj.ffn_weight)
+        msg.norm.extend(obj.norm)
+        return msg
+    if isinstance(obj, InferenceRequest):
+        msg = tpb.InferenceRequest()
+        msg.request_id = obj.request_id
+        msg.model = obj.model
+        msg.temperature = obj.temperature
+        msg.inputs.CopyFrom(_prompt_to_pb(obj.inputs))
+        return msg
+    raise TypeError(type(obj))
+
+
+def _prompt_to_pb(obj: Prompt) -> Any:
+    msg = tpb.Prompt()
+    msg.batch = obj.batch
+    msg.seq = obj.seq
+    msg.input_ids.extend(obj.input_ids)
+    msg.attention_mask.extend(obj.attention_mask)
+    msg.position_ids.extend(obj.position_ids)
+    return msg
+
+
+def tensor_from_pb(msg: Any) -> Any:
+    name = msg.DESCRIPTOR.name if getattr(msg, "DESCRIPTOR", None) else ""
+    if name == "TensorMatrix":
+        return TensorMatrix(rows=msg.rows, cols=msg.cols, values=[float(v) for v in msg.values])
+    if name == "Prompt":
+        return _prompt_from_pb(msg)
+    if name == "Shard":
+        return Shard(
+            vocab=msg.vocab,
+            hidden=msg.hidden,
+            ffn=msg.ffn,
+            tok_emb=[float(v) for v in msg.tok_emb],
+            attn=[float(v) for v in msg.attn],
+            ffn_weight=[float(v) for v in msg.ffn_weight],
+            norm=[float(v) for v in msg.norm],
+        )
+    if name == "InferenceRequest":
+        return InferenceRequest(
+            request_id=int(msg.request_id),
+            model=msg.model,
+            temperature=float(msg.temperature),
+            inputs=_prompt_from_pb(msg.inputs),
+        )
+    raise TypeError(name)
+
+
+def _prompt_from_pb(msg: Any) -> Prompt:
+    return Prompt(
+        batch=msg.batch,
+        seq=msg.seq,
+        input_ids=[int(v) for v in msg.input_ids],
+        attention_mask=[int(v) for v in msg.attention_mask],
+        position_ids=[int(v) for v in msg.position_ids],
+    )

@@ -10,6 +10,7 @@ Publication type ids: `message` · `document` · `telemetry` · `strings` · `ev
 Columnar / aligned type ids: `table` · `table_project` · `nested_table` · `signal`  
 Graph type id: `graph`  
 Array type ids: `grid` · `grid_window`  
+Tensor type ids: `tensor` · `tensor_view` · `prompt` · `shard` · `request`  
 (catalog: `schemas/data_catalog_v2.yaml`).
 
 ## Files
@@ -23,6 +24,8 @@ Array type ids: `grid` · `grid_window`
 | `graph.yaml` | Data type `graph` at N=1 and N=100. Requires a serializer allow-list. |
 | `array-smoke.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
 | `array.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
+| `tensor-smoke.yaml` | `tensor`, `tensor_view`, `prompt`, `shard`, and `request` at N=1. Requires a serializer allow-list. |
+| `tensor.yaml` | Those five tensor types at N=1. Requires a serializer allow-list. |
 
 ## Usage
 

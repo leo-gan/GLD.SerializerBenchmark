@@ -769,7 +769,7 @@ add("mojo", "mojo-ion", ["ion"], "https://github.com/leo-gan/gld-ion",
 add("mojo", "mojo-smile", ["smile"], "https://github.com/leo-gan/gld-smile",
     "gld-smile 0.2.0: Smile decode_bytes.")
 add("mojo", "gld-kiln", ["kiln"], "https://github.com/leo-gan/gld-kiln",
-    "gld-kiln 0.2.0: positional little-endian Frozen layout. The struct is the schema; the bytes do not carry field names. Spec: https://leo-gan.github.io/gld-kiln/spec/")
+    "gld-kiln 0.3.0 scores Kiln wire v2. The timed row remains gld-kiln 0.2.0. Spec: https://leo-gan.github.io/gld-kiln/spec/")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 add("mojo", "arrow-ipc", ["arrow"], "https://github.com/leo-gan/gld-arrow",
