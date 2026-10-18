@@ -1,7 +1,8 @@
 # Dimension contract for the benchmark.
 # Labels on rows the suite already produces. Not an extra timed loop.
 # Standard ids live in compliance/serializer-standards.json.
-# Data set membership lives on each type in schemas/data_catalog_v2.yaml.
+# Data Set ids and membership live in config/benchmark_config.yaml under data_sets.
+# The catalog stamps the same data_set on each type.
 schema: gld.serializer-benchmark.dimensions/1
 
 standards:
@@ -12,9 +13,6 @@ standards:
   primary:
     csharp:
       "MS Bond Json": json
-
-data_sets:
-  ids: [suite, columnar, graph, array]
 
 # Optional I/O. The publication default stays one in-memory level.
 # A second level is stored only for opt_in, and only when honesty is

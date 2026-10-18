@@ -16,11 +16,14 @@ import re
 # Array publication CSVs use names like 2026-10-10-fortran-array-full.csv.
 # dashboard/scripts/splice-array-stats.py appends those groups and drops the
 # old suite rows for hdf5-fortran, netcdf-fortran, and adios2.
+# Tensor publication CSVs use names like 2026-10-17-python-tensor-full.csv.
+# dashboard/scripts/splice-tensor-stats.py appends those groups.
 # Do not let this script drop any of those splices.
 _RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 _COLUMNAR_TYPES = {"table", "table_project", "nested_table", "signal"}
 _GRAPH_TYPES = {"graph"}
 _ARRAY_TYPES = {"grid", "grid_window"}
+_TENSOR_TYPES = {"tensor", "tensor_view", "prompt", "shard", "request"}
 _DAGR_SERIALIZERS = {
     "dagr-frozen",
     "dagr-frozen-packed",
@@ -102,6 +105,20 @@ def _refuse_array_loss(lang, existing_stats, new_stats):
     print(f"ERROR: {lang} snapshot has array types {sorted(lost)} that this sync would drop.")
     print("That snapshot was built by splice-array-stats.py. Refusing to overwrite.")
     print("Set DASHBOARD_REPLACE_ARRAY=1 to replace the snapshot anyway.")
+    sys.exit(1)
+
+
+def _refuse_tensor_loss(lang, existing_stats, new_stats):
+    """Abort when a sync would erase spliced tensor groups."""
+    lost = (_base_types(existing_stats) & _TENSOR_TYPES) - _base_types(new_stats)
+    if not lost:
+        return
+    if os.environ.get("DASHBOARD_REPLACE_TENSOR", "").strip().lower() in ("1", "true", "yes"):
+        print(f"WARNING: {lang} replacing snapshot and dropping tensor types {sorted(lost)}")
+        return
+    print(f"ERROR: {lang} snapshot has tensor types {sorted(lost)} that this sync would drop.")
+    print("That snapshot was built by splice-tensor-stats.py. Refusing to overwrite.")
+    print("Set DASHBOARD_REPLACE_TENSOR=1 to replace the snapshot anyway.")
     sys.exit(1)
 
 
@@ -228,6 +245,7 @@ def main():
         _refuse_dagr_loss(lang, existing_stats, stats_data)
         _refuse_graph_loss(lang, existing_stats, stats_data)
         _refuse_array_loss(lang, existing_stats, stats_data)
+        _refuse_tensor_loss(lang, existing_stats, stats_data)
         if stats_data:
             stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
                 "utf-8"

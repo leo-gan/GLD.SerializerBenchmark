@@ -220,9 +220,12 @@ def _validate_fresh(fresh: dict, published_groups: list) -> list:
 
 
 def _split(groups: list) -> tuple[list, list]:
+    """Replace array cells only. A later tensor splice on the same row stays."""
     keep, old = [], []
     for group in groups:
-        if str(group.get("serializer") or "") in STANDARDS:
+        name = str(group.get("serializer") or "")
+        base = _base(group.get("test_data"))
+        if name in STANDARDS and base in ARRAY_TYPES:
             old.append(group)
         else:
             keep.append(group)
@@ -288,9 +291,12 @@ def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
     payload["array_splice"] = copy.deepcopy(note)
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
         raise SystemExit(f"{language}: suite counts for the other serializers changed")
-    if any(str(group.get("serializer") or "") in STANDARDS and group.get("data_set") != "array"
-           for group in stats["groups"]):
-        raise SystemExit(f"{language}: an array serializer still has a non-array group")
+    if any(
+        str(group.get("serializer") or "") in STANDARDS
+        and group.get("data_set") not in ("array", "tensor")
+        for group in stats["groups"]
+    ):
+        raise SystemExit(f"{language}: an array serializer still has a group outside array and tensor")
     _write_gz(stats_path, stats)
     _write_gz(payload_path, payload)
     print(f"{language}: wrote {len(new_groups)} array groups")

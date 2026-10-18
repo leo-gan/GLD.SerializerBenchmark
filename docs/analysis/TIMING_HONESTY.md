@@ -80,6 +80,8 @@ Building that object is **prepare**. Writing it out is **serialize**.
 9. **Array types time the file, not the source fill.**  
    For `grid` and `grid_window`, building the float64 array is prepare. Creating the file, writing the whole array, and reading either the whole array or the window are timed. Declaring the ADIOS IO and selecting the BP5 engine is prepare. `grid_window` deserialize is a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. A full read plus a host-side slice is not a `grid_window` result. The size column is the full file.
 
+   For `tensor`, `prompt`, `shard`, and `request`, building the host arrays is prepare. Writing the file or buffer and reading it back are timed. `tensor_view` uses the same write. Its read must borrow the payload from the encoded buffer. A copy, including a copy followed by a view of the copy, is not a `tensor_view` result. Arrow record-batch conversion stays on the columnar types. A tensor row uses the library's tensor or numeric-array API.
+
 ## Allowed exceptions (must be labelled)
 
 | Exception | Why it exists | How to label it |

@@ -37,6 +37,7 @@ import {
   serializerSourceUrl,
 } from './serializer-sources.js';
 import {
+  DATA_SET_ORDER,
   SUITE_TYPE_IDS,
   baseTypeId,
   instanceCount,
@@ -456,7 +457,7 @@ function applySavedSettings(saved) {
   if (typeof saved.currentLanguage === 'string' && knownLanguage(saved.currentLanguage)) {
     state.currentLanguage = saved.currentLanguage;
   }
-  if (typeof saved.currentDataSet === 'string' && (saved.currentDataSet === 'suite' || saved.currentDataSet === 'columnar' || saved.currentDataSet === 'graph' || saved.currentDataSet === 'array')) {
+  if (typeof saved.currentDataSet === 'string' && DATA_SET_ORDER.includes(saved.currentDataSet)) {
     state.currentDataSet = saved.currentDataSet;
   }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
@@ -531,7 +532,7 @@ function applySavedSettings(saved) {
 function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang') && knownLanguage(p.get('lang'))) state.currentLanguage = p.get('lang');
-  if (p.has('dataset') && (p.get('dataset') === 'suite' || p.get('dataset') === 'columnar' || p.get('dataset') === 'graph' || p.get('dataset') === 'array')) {
+  if (p.has('dataset') && DATA_SET_ORDER.includes(p.get('dataset'))) {
     state.currentDataSet = p.get('dataset');
   }
   if (p.has('data')) state.currentTestData = p.get('data');
@@ -1983,6 +1984,7 @@ function populateFixtureSelect(options, cfg = {}) {
     addGroup('Columnar', options.filter((key) => dataSetForFixture(key) === 'columnar'));
     addGroup('Graph', options.filter((key) => dataSetForFixture(key) === 'graph'));
     addGroup('Array', options.filter((key) => dataSetForFixture(key) === 'array'));
+    addGroup('Tensor', options.filter((key) => dataSetForFixture(key) === 'tensor'));
   } else {
     appendFixtureOptions(sel, options);
   }

@@ -97,9 +97,9 @@ test('Arrow, Parquet, ORC, and SBE show spec columns when the matrix is empty', 
     language: 'mojo',
     extras: [{ language: 'mojo', serializer: 'gld-kiln' }],
   });
-  assert.deepEqual(kiln.columns.map((column) => column.standard), ['Kiln wire v0']);
+  assert.deepEqual(kiln.columns.map((column) => column.standard), ['Kiln wire v2']);
   assert.equal(kiln.columns[0].unscored, true);
-  assert.equal(kiln.columns[0].version, 'v0');
+  assert.equal(kiln.columns[0].version, 'v2');
   assert.equal(kiln.columns[0].standard_url, 'https://leo-gan.github.io/gld-kiln/spec/');
   assert.deepEqual(kiln.rows.map((row) => row.serializer), ['gld-kiln']);
   assert.ok(kiln.rows.every((row) => row.byStandard.size === 0));

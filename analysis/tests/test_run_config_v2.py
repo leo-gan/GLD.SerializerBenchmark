@@ -8,6 +8,7 @@ import pytest
 
 from benchmark_analysis.run_config_v2 import (
     RunConfigError,
+    decide_rep_budget,
     expand_cells,
     load_catalog,
     resolve_run_config,
@@ -37,6 +38,11 @@ def test_catalog_loads_suite_types():
         "graph",
         "grid",
         "grid_window",
+        "tensor",
+        "tensor_view",
+        "prompt",
+        "shard",
+        "request",
     }
 
 
@@ -157,6 +163,35 @@ def test_array_run_configs_cell_counts():
     assert full["execution"]["io_modes"] == ["bytes"]
 
 
+def test_tensor_run_configs_cell_counts():
+    smoke = resolve_run_config(_LIBRARY / "tensor-smoke.yaml", catalog_path=_CATALOG, seed=42)
+    full = resolve_run_config(_LIBRARY / "tensor.yaml", catalog_path=_CATALOG, seed=42)
+    ids = {("tensor", 1), ("tensor_view", 1), ("prompt", 1), ("shard", 1), ("request", 1)}
+    assert smoke["cell_count"] == 5
+    assert {(c["type_id"], c["data_type_instance_count"]) for c in smoke["cells"]} == ids
+    assert {(c["type_id"], c["data_type_instance_count"]) for c in full["cells"]} == ids
+    by_id = {c["type_id"]: c for c in full["cells"]}
+    assert by_id["tensor"]["type_config"]["rows"] == 1024
+    assert by_id["tensor"]["type_config"]["cols"] == 1024
+    assert by_id["tensor"]["type_config_hash"] == by_id["tensor_view"]["type_config_hash"]
+    assert by_id["prompt"]["type_config"]["batch"] == 4
+    assert by_id["prompt"]["type_config"]["seq"] == 256
+    assert by_id["shard"]["type_config"]["ffn"] == 512
+    assert full["compression"]["mode"] == "none"
+    assert full["execution"]["io_modes"] == ["bytes"]
+    for name in ("tensor.yaml", "tensor-smoke.yaml"):
+        budget = resolve_run_config(_LIBRARY / name, catalog_path=_CATALOG, seed=42)["budget"]
+        assert budget["soft_seconds_per_10_serializers"] == 60
+        assert budget["hard_cap_seconds"] == 600
+        assert budget["reps_fallback"] == 50
+
+
+def test_tensor_matrix_needs_two_elements():
+    cat = load_catalog(_CATALOG)
+    with pytest.raises(RunConfigError, match="at least 2 elements"):
+        resolve_type_config("tensor", {"rows": 1, "cols": 1}, cat)
+
+
 def test_grid_window_must_lie_inside_the_array():
     cat = load_catalog(_CATALOG)
     with pytest.raises(RunConfigError, match="does not lie inside"):
@@ -186,6 +221,43 @@ def test_signal_schema_field_order():
 
 def test_soft_budget():
     assert soft_budget_seconds(1) == 60
+    assert soft_budget_seconds(2) == 60
     assert soft_budget_seconds(10) == 60
     assert soft_budget_seconds(11) == 120
     assert soft_budget_seconds(19) == 120
+    assert soft_budget_seconds(20, 60) == 120
+
+
+def test_decide_rep_budget_keeps_the_plan_until_the_bound_passes():
+    assert decide_rep_budget(
+        60, soft_s=60, hard_s=600, repetition_limit=100, reps_fallback=50
+    ) == (100, False)
+    # The soft budget has passed. The hard cap stops only after its own bound.
+    assert decide_rep_budget(
+        600, soft_s=60, hard_s=600, repetition_limit=100, reps_fallback=50
+    ) == (50, False)
+    assert decide_rep_budget(
+        600, soft_s=600, hard_s=600, repetition_limit=100, reps_fallback=50
+    ) == (100, False)
+
+
+def test_decide_rep_budget_drops_to_fallback_after_the_soft_budget():
+    assert decide_rep_budget(
+        60.1, soft_s=60, hard_s=600, repetition_limit=100, reps_fallback=50
+    ) == (50, False)
+    # A plan that is already at or below the fallback stays there.
+    assert decide_rep_budget(
+        120, soft_s=60, hard_s=600, repetition_limit=50, reps_fallback=50
+    ) == (50, False)
+    assert decide_rep_budget(
+        120, soft_s=60, hard_s=600, repetition_limit=2, reps_fallback=50
+    ) == (2, False)
+
+
+def test_decide_rep_budget_stops_on_the_hard_cap():
+    assert decide_rep_budget(
+        600.1, soft_s=60, hard_s=600, repetition_limit=100, reps_fallback=50
+    ) == (50, True)
+    assert decide_rep_budget(
+        600.1, soft_s=60, hard_s=600, repetition_limit=50, reps_fallback=50
+    ) == (50, True)

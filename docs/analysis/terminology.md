@@ -53,7 +53,7 @@ The architecture page keeps an old HTML anchor, `harness-contract-summary`, so l
 
 ## Data set
 
-A **data set** is the parent of a data type. The Dashboard filter keeps the table inside one set. A serializer is measured on the sets its runner already supports. Membership is the `data_set` field on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml). The label contract is [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml).
+A **data set** is the parent of a data type. The Dashboard filter keeps the table inside one set. A serializer is measured on the sets its runner already supports. The sets and their member types are configured under `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). The catalog stamps the same id on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml).
 
 | Data set | Data types | Where the cells are chosen |
 | --- | --- | --- |
@@ -61,8 +61,9 @@ A **data set** is the parent of a data type. The Dashboard filter keeps the tabl
 | `columnar` | `table`, `table_project`, `nested_table`, `signal` | `config/library/columnar.yaml`, for the serializers named in that file. |
 | `graph` | `graph` | `config/library/graph.yaml`, for the serializers named in that file. |
 | `array` | `grid`, `grid_window` | `config/library/array.yaml`, for the serializers named in that file. |
+| `tensor` | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | `config/library/tensor.yaml`, for the serializers named in that file. |
 
-Columnar, graph, and array do not appear in the default matrix. A runner measures them only from those configs.
+Columnar, graph, array, and tensor do not appear in the default matrix. A runner measures them only from those configs.
 
 This project is often called **the suite**. That is the repository and the measurement rules together. The data set id `suite` is narrower: it is only the five publication types. A sentence about sample data uses the data-set meaning. A sentence about the repository uses the project meaning.
 
@@ -104,6 +105,11 @@ The **type catalog** is `schemas/data_catalog_v2.yaml`. A **run config** is the 
 | `graph` | `graph` | One graph with shared nodes and one reference cycle. |
 | `grid` | `array` | One dense 512×512 array of 64-bit floats. |
 | `grid_window` | `array` | The same array on write. The read is an interior window. |
+| `tensor` | `tensor` | One dense 1024×1024 matrix of 32-bit floats. |
+| `tensor_view` | `tensor` | The same matrix. The read borrows the payload. |
+| `prompt` | `tensor` | `input_ids`, `attention_mask`, and `position_ids`, each int64 `[4, 256]`. |
+| `shard` | `tensor` | Named float32 weights: embedding, attention, feed-forward, and norm. |
+| `request` | `tensor` | Request id, model name, temperature, and the prompt. |
 
 Field lists, defaults, and fidelity rules for each type are on [Test data](test_data_configuration.md). Array libraries are on [Array bindings](array_bindings.md).
 

@@ -39,7 +39,7 @@ The official FlatBuffers Python package builds with a pure-Python Builder. The C
 
 `pickle`, `cloudpickle`, and `dill` work only in Python. Loading untrusted input with them can run arbitrary code.
 
-`h5py`, `netCDF4`, and `adios2` time the array data set only (`grid` and `grid_window` in `config/library/array.yaml`). They do not run on the five suite types. `h5py` uses the HDF5 core driver. `netCDF4` writes a NetCDF-4 file. `adios2` writes a serial BP5 directory. The window read is a hyperslab, a variable slice, or an ADIOS selection.
+`h5py`, `netCDF4`, and `adios2` time the array data set (`grid` and `grid_window` in `config/library/array.yaml`). They do not run on the five suite types or the tensor data set. `h5py` uses the HDF5 core driver. `netCDF4` writes a NetCDF-4 file. `adios2` writes a serial BP5 directory. The window read is a hyperslab, a variable slice, or an ADIOS selection. `arrow-ipc` and `flatbuffers` run every type in the tensor data set. `protobuf` does not.
 
 These times cannot be ranked against another language.
 
@@ -98,7 +98,7 @@ Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (te
 
 #### [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) · `25.0.1`
 
-Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. `request` is those prompt tensors plus one record batch in the same buffer. `tensor_view` returns a buffer inside the stream.
 
 #### [avro](https://github.com/fastavro/fastavro) · `1.12.2`
 
@@ -134,7 +134,7 @@ dill extends pickle further for scientific Python: graphs, lambdas, and interpre
 
 #### [flatbuffers](https://github.com/google/flatbuffers) · `25.12.19`
 
-FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder writes `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. `tensor_view` reads the float vector in place.
 
 #### [fory](https://github.com/apache/fory)
 

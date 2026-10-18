@@ -94,6 +94,7 @@ def resolve_type_config(
     if "primitive_types" in merged:
         merged["primitive_types"] = _resolve_primitive_types(merged["primitive_types"], catalog)
     _check_array_config(type_id, merged)
+    _check_tensor_config(type_id, merged)
     return merged
 
 
@@ -125,6 +126,25 @@ def _check_array_config(type_id: str, merged: dict[str, Any]) -> None:
         raise RunConfigError(
             f"grid_window window ({x0},{y0}) {wx}x{wy} does not lie inside {nx}x{ny}"
         )
+
+
+def _check_tensor_config(type_id: str, merged: dict[str, Any]) -> None:
+    """Tensor shapes are positive. The matrix has room for the two pinned values."""
+    if type_id in ("tensor", "tensor_view"):
+        rows = _require_int(merged, "rows", type_id, minimum=1)
+        cols = _require_int(merged, "cols", type_id, minimum=1)
+        if rows * cols < 2:
+            raise RunConfigError(f"{type_id} needs at least 2 elements, got {rows}x{cols}")
+        return
+    if type_id in ("prompt", "request"):
+        _require_int(merged, "batch", type_id, minimum=1)
+        _require_int(merged, "seq", type_id, minimum=1)
+        _require_int(merged, "vocab", type_id, minimum=2)
+        return
+    if type_id == "shard":
+        _require_int(merged, "vocab", type_id, minimum=1)
+        _require_int(merged, "hidden", type_id, minimum=1)
+        _require_int(merged, "ffn", type_id, minimum=1)
 
 
 def _as_count_list(counts: Any, where: str) -> list[int]:
@@ -223,3 +243,26 @@ def soft_budget_seconds(n_serializers: int, seconds_per_10: int = 60) -> int:
     if n_serializers < 1:
         n_serializers = 1
     return seconds_per_10 * ((n_serializers + 9) // 10)
+
+
+def decide_rep_budget(
+    elapsed_s: float,
+    *,
+    soft_s: int,
+    hard_s: int,
+    repetition_limit: int,
+    reps_fallback: int,
+) -> tuple[int, bool]:
+    """Return ``(repetition_limit, stop_run)`` before the next repetition.
+
+    A soft overrun lowers the limit to ``reps_fallback`` when the current
+    limit is higher. A hard overrun stops the language run. Equality with
+    either bound keeps the current plan: the runner stops only after the
+    bound has passed.
+    """
+    limit = repetition_limit
+    if elapsed_s > soft_s and limit > reps_fallback:
+        limit = reps_fallback
+    if elapsed_s > hard_s:
+        return limit, True
+    return limit, False

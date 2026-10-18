@@ -95,8 +95,8 @@ class _ArraySerializer(Serializer):
         self._type_id = test_data_name
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
-        grid = _grid(obj)
         self._type_id = test_data_name
+        grid = _grid(obj)
         self._window = (grid.x0, grid.y0, grid.wx, grid.wy)
         return grid
 

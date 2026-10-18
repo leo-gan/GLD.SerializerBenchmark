@@ -7,11 +7,16 @@ from bench.data import (
     Event,
     Fixture,
     Message,
+    _same_f32,
+    PromptValue,
+    RequestValue,
+    ShardValue,
     Strings,
     Telemetry,
+    TensorValue,
 )
 from kiln import decode, encode
-from kiln.wire import Writer
+from kiln.wire import Reader, Writer
 
 
 struct KilnSer:
@@ -29,6 +34,10 @@ struct KilnSer:
         if type_id == "message" or type_id == "document" or type_id == "telemetry":
             return True
         if type_id == "strings" or type_id == "event":
+            return True
+        if type_id == "tensor" or type_id == "tensor_view" or type_id == "prompt":
+            return True
+        if type_id == "shard" or type_id == "request":
             return True
         return False
 
@@ -55,6 +64,14 @@ struct KilnSer:
                 encode(fx.strings[0], self.buf)
             else:
                 encode(fx.strings, self.buf)
+        elif fx.type_id == "tensor" or fx.type_id == "tensor_view":
+            encode(fx.tensors[0], self.buf)
+        elif fx.type_id == "prompt":
+            encode(fx.prompts[0], self.buf)
+        elif fx.type_id == "shard":
+            encode(fx.shards[0], self.buf)
+        elif fx.type_id == "request":
+            encode(fx.requests[0], self.buf)
         else:
             if fx.n == 1:
                 encode(fx.events[0], self.buf)
@@ -65,6 +82,29 @@ struct KilnSer:
     def deserialize_bytes(self, fx: Fixture, data: List[UInt8]) raises -> Fixture:
         var out = Fixture.empty(fx.type_id, fx.n, fx.hash)
         var raw = Span(data)
+        if fx.type_id == "tensor_view":
+            out.view_ok = _tensor_view_ok(fx, raw)
+            return out^
+        if fx.type_id == "tensor":
+            var one = List[TensorValue]()
+            one.append(decode[TensorValue](raw))
+            out.tensors = one^
+            return out^
+        if fx.type_id == "prompt":
+            var one = List[PromptValue]()
+            one.append(decode[PromptValue](raw))
+            out.prompts = one^
+            return out^
+        if fx.type_id == "shard":
+            var one = List[ShardValue]()
+            one.append(decode[ShardValue](raw))
+            out.shards = one^
+            return out^
+        if fx.type_id == "request":
+            var one = List[RequestValue]()
+            one.append(decode[RequestValue](raw))
+            out.requests = one^
+            return out^
         if fx.type_id == "message":
             if fx.n == 1:
                 var one = List[Message]()
@@ -101,3 +141,31 @@ struct KilnSer:
             else:
                 out.events = decode[List[Event]](raw)
         return out^
+
+
+def _tensor_view_ok[o: ImmOrigin](fx: Fixture, data: Span[UInt8, o]) raises -> Bool:
+    """Borrowed read. Reader.take returns a span of the encoded payload."""
+    var reader = Reader(data)
+    var rows = reader.i32()
+    var cols = reader.i32()
+    var n = reader.count()
+    var payload = reader.take(n * 4)
+    if len(fx.tensors) != 1:
+        return False
+    if rows != fx.tensors[0].rows or cols != fx.tensors[0].cols or n != len(fx.tensors[0].values):
+        return False
+    if len(payload) != n * 4:
+        return False
+    var i = 0
+    while i < n:
+        var bits = (
+            UInt32(payload[i * 4])
+            | (UInt32(payload[i * 4 + 1]) << 8)
+            | (UInt32(payload[i * 4 + 2]) << 16)
+            | (UInt32(payload[i * 4 + 3]) << 24)
+        )
+        var got = Float32(from_bits=bits)
+        if not _same_f32(got, fx.tensors[0].values[i]):
+            return False
+        i += 1
+    return True

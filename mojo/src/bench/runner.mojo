@@ -176,6 +176,34 @@ def load_cells(path: String, data_filter: String) raises -> Tuple[UInt64, List[C
             except:
                 pass
             try:
+                cfg.rows = Int(tc["rows"].int())
+            except:
+                pass
+            try:
+                cfg.cols = Int(tc["cols"].int())
+            except:
+                pass
+            try:
+                cfg.batch = Int(tc["batch"].int())
+            except:
+                pass
+            try:
+                cfg.seq = Int(tc["seq"].int())
+            except:
+                pass
+            try:
+                cfg.vocab = Int(tc["vocab"].int())
+            except:
+                pass
+            try:
+                cfg.hidden = Int(tc["hidden"].int())
+            except:
+                pass
+            try:
+                cfg.ffn = Int(tc["ffn"].int())
+            except:
+                pass
+            try:
                 var win = tc["window"].object().copy()
                 cfg.x0 = Int(win["x0"].int())
                 cfg.y0 = Int(win["y0"].int())
@@ -227,6 +255,99 @@ def _array_id(type_id: String) -> Bool:
 
 def _array_name(name: String) -> Bool:
     return name == "gld-hdf5"
+
+
+def _soft_budget_seconds(n_serializers: Int, seconds_per_10: Int) -> Int:
+    var n = n_serializers
+    if n < 1:
+        n = 1
+    return seconds_per_10 * ((n + 9) // 10)
+
+
+def load_budget(path: String) raises -> Tuple[Int, Int, Int]:
+    """Read (soft_seconds_per_10, hard_cap_seconds, reps_fallback)."""
+    var text = open(path, "r").read()
+    var root = parse(text)
+    var per10 = 60
+    var hard = 600
+    var fallback = 50
+    try:
+        var b = root.object()["budget"].object().copy()
+        try:
+            per10 = Int(b["soft_seconds_per_10_serializers"].int())
+        except:
+            pass
+        try:
+            hard = Int(b["hard_cap_seconds"].int())
+        except:
+            pass
+        try:
+            fallback = Int(b["reps_fallback"].int())
+        except:
+            pass
+    except:
+        pass
+    return (per10, hard, fallback)
+
+
+struct RunBudget:
+    var soft_s: Int
+    var hard_s: Int
+    var reps_fallback: Int
+    var t_start: Int
+    var rep_limit: Int
+    var announced: Bool
+    var stop_run: Bool
+
+    def __init__(
+        out self,
+        soft_s: Int,
+        hard_s: Int,
+        reps_fallback: Int,
+        t_start: Int,
+        rep_limit: Int,
+    ):
+        self.soft_s = soft_s
+        self.hard_s = hard_s
+        self.reps_fallback = reps_fallback
+        self.t_start = t_start
+        self.rep_limit = rep_limit
+        self.announced = False
+        self.stop_run = False
+
+    # Same ladder as benchmark_analysis.run_config_v2.decide_rep_budget.
+    # True means this repetition must not start.
+    def before_rep(mut self, index: Int) -> Bool:
+        if self.stop_run:
+            return True
+        var elapsed = Float64(Int(perf_counter_ns()) - self.t_start) / 1000000000.0
+        if elapsed > Float64(self.soft_s) and self.rep_limit > self.reps_fallback:
+            if not self.announced:
+                print(
+                    "[PROGRESS] Soft budget",
+                    self.soft_s,
+                    "s exceeded; repetitions",
+                    self.rep_limit,
+                    "->",
+                    self.reps_fallback,
+                )
+                self.announced = True
+            self.rep_limit = self.reps_fallback
+        if elapsed > Float64(self.hard_s):
+            print("[ERROR] Hard cap", self.hard_s, "s exceeded; stopping.")
+            self.stop_run = True
+            return True
+        return index >= self.rep_limit
+
+
+def _tensor_id(type_id: String) -> Bool:
+    return (
+        type_id == "tensor"
+        or type_id == "tensor_view"
+        or type_id == "prompt"
+        or type_id == "shard"
+        or type_id == "request"
+    )
 
 
 def run() raises:
@@ -338,6 +459,13 @@ def run() raises:
     var sched = strategy()
     var record_ro = record_run_order()
     var run_order = 0
+    var knobs = load_budget(resolved)
+    var per10 = knobs[0]
+    var hard_s = knobs[1]
+    var reps_fb = knobs[2]
+    var soft_s = _soft_budget_seconds(len(names), per10)
+    var t_start = Int(perf_counter_ns())
+    var budget = RunBudget(soft_s, hard_s, reps_fb, t_start, reps)
 
     print(
         "[PROGRESS] Mojo Data Model v2:",
@@ -349,9 +477,19 @@ def run() raises:
         "reps, modes=bytes schedule=",
         sched,
     )
+    print(
+        "[PROGRESS] soft_budget=",
+        soft_s,
+        "s hard_cap=",
+        hard_s,
+        "s reps_fallback=",
+        reps_fb,
+    )
 
     var ci = 0
     while ci < len(cells):
+        if budget.before_rep(0):
+            break
         var cell = cells[ci].copy()
         var fx = make_cell(cell.type_id, cell.cfg, seed, cell.n, cell.hash)
         print("[PROGRESS] Testing Data:", fx.type_id, "(N=", fx.n, ")")
@@ -364,6 +502,10 @@ def run() raises:
                 continue
             # grid is gld-hdf5 only. That name does not time the five suite types.
             if _array_id(fx.type_id) != _array_name(nm):
+                ri += 1
+                continue
+            # The tensor data set is gld-kiln. Kiln also times the suite types.
+            if _tensor_id(fx.type_id) and nm != kiln.name():
                 ri += 1
                 continue
             # Shared regions and the person ring. Only regular and frozen Dagr.
@@ -445,9 +587,13 @@ def run() raises:
 
         var mi = 0
         while mi < len(modes):
+            if budget.stop_run:
+                break
             var mode = modes[mi]
             var rep = 0
-            while rep < reps:
+            while rep < budget.rep_limit:
+                if budget.before_rep(rep):
+                    break
                 var order = ready.copy()
                 if sched != "none":
                     order = shuffle(ready, Int(seed), fx.type_id, fx.n, fx.hash, mode, rep)
@@ -784,7 +930,7 @@ def run() raises:
                             + ","
                             + fx.type_id
                             + ","
-                            + String(reps)
+                            + String(budget.rep_limit)
                             + ","
                             + String(rep)
                             + ","

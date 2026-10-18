@@ -54,9 +54,9 @@ NetCDF rows call `netCDF4.Dataset`, `nf90_open`, or gld-netcdf (`read_cdf1` / `r
 
 | Format id | File | What a case checks |
 | --- | --- | --- |
-| `kiln` | `compliance/data/kiln/v0.json` | Frozen values, the `KLN0` frame, and the `KLNT` tensor: accept the bytes the spec requires, reject a bad tag, a bad UTF-8 byte, a length past the buffer, depth 65, a trailing byte, a wrong frame, and a short tensor |
+| `kiln` | `compliance/data/kiln/v2.json` | Version-2 tensor directory, a `tensors` field, the frame hash, and the list allocation check |
 
-`gld-kiln` calls `decode_value` for a Frozen value, `decode_framed` for a frame, and `read_f64` for a tensor. The bytes were frozen from the Kiln reference codec. A language with no Kiln library has no cell.
+`gld-kiln` 0.3.0 calls `decode` and `decode_framed`. The bytes were frozen from the Kiln reference codec. A language with no Kiln library has no cell.
 
 ## Python
 

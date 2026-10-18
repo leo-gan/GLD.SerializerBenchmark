@@ -74,45 +74,126 @@ data_model_v2:
   schemas_root: "schemas/v2"
   generate_script: "scripts/schemas/generate-all.sh"
 
-# Shared test data — catalog is normative; names are type_id values.
+# -----------------------------------------------------------------------------
+# Data Set — parent of a data type. A benchmark run measures one set.
+# `types` is the membership. The catalog stamps the same id on each type.
+# `run_config` selects that set. smoke.yaml is the message+telemetry subset.
+# -----------------------------------------------------------------------------
+data_sets:
+  - id: suite
+    description: "Publication types at N=1 and N=100"
+    run_config: config/library/default.yaml
+    smoke_run_config: config/library/smoke.yaml
+    types: [message, document, telemetry, strings, event]
+  - id: columnar
+    description: "Wide rows, a projection, a nested table, and an aligned record"
+    run_config: config/library/columnar.yaml
+    smoke_run_config: config/library/columnar-smoke.yaml
+    types: [table, table_project, nested_table, signal]
+  - id: graph
+    description: "Shared nodes and one reference cycle"
+    run_config: config/library/graph.yaml
+    types: [graph]
+  - id: array
+    description: "One dense float64 array and a window of that array"
+    run_config: config/library/array.yaml
+    smoke_run_config: config/library/array-smoke.yaml
+    types: [grid, grid_window]
+  - id: tensor
+    description: "A float32 matrix, a borrowed read, an LLM prompt, a weight shard, and a request"
+    run_config: config/library/tensor.yaml
+    smoke_run_config: config/library/tensor-smoke.yaml
+    types: [tensor, tensor_view, prompt, shard, request]
+
+# Shared test data — catalog is normative for shape knobs; names are type_id values.
+# data_set must match the data_sets membership above.
 test_data:
   catalog_file: "schemas/data_catalog_v2.yaml"
   types:
     - name: message
+      data_set: suite
       category: flat_mixed
       description: "Single-level mixed primitives"
       supports_circular: false
     - name: document
+      data_set: suite
       category: nested
       description: "Nested document with items"
       supports_circular: false
     - name: telemetry
+      data_set: suite
       category: numeric_bulk
       description: "Numeric bulk / tags (points axis in type_config)"
       supports_circular: false
     - name: strings
+      data_set: suite
       category: text_bulk
       description: "String bulk / memory pressure"
       supports_circular: false
     - name: event
+      data_set: suite
       category: envelope
       description: "Event envelope with attributes"
       supports_circular: false
     - name: table
+      data_set: columnar
       category: columnar_flat
       description: "Wide flat row (16 float64, 4 int64, 2 trailing strings). Columnar run config only."
       supports_circular: false
     - name: table_project
+      data_set: columnar
       category: columnar_project
       description: "Same row as table; deserialize returns f_float_0 only. Columnar run config only."
       supports_circular: false
     - name: nested_table
+      data_set: columnar
       category: columnar_nested
       description: "Struct plus list of structs. Columnar run config only."
       supports_circular: false
     - name: signal
+      data_set: columnar
       category: aligned_record
       description: "Fixed fields, then variable strings, then a repeating group. Columnar run config only."
+      supports_circular: false
+    - name: graph
+      data_set: graph
+      category: graph
+      description: "Shared region nodes and a reference cycle. Graph run config only."
+      supports_circular: true
+    - name: grid
+      data_set: array
+      category: array
+      description: "One dense float64 array. Array run config only."
+      supports_circular: false
+    - name: grid_window
+      data_set: array
+      category: array_window
+      description: "Same array as grid. Deserialize reads an interior window. Array run config only."
+      supports_circular: false
+    - name: tensor
+      data_set: tensor
+      category: tensor
+      description: "One dense float32 matrix. Tensor run config only."
+      supports_circular: false
+    - name: tensor_view
+      data_set: tensor
+      category: tensor_view
+      description: "Same matrix as tensor. Deserialize borrows the payload. Tensor run config only."
+      supports_circular: false
+    - name: prompt
+      data_set: tensor
+      category: tensor_prompt
+      description: "Padded LLM inputs. Tensor run config only."
+      supports_circular: false
+    - name: shard
+      data_set: tensor
+      category: tensor_shard
+      description: "One transformer block of float32 weights. Tensor run config only."
+      supports_circular: false
+    - name: request
+      data_set: tensor
+      category: tensor_request
+      description: "Request id, model name, temperature, and the prompt. Tensor run config only."
       supports_circular: false
 
 # -----------------------------------------------------------------------------

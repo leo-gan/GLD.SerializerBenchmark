@@ -2513,6 +2513,21 @@ for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):
 for _row, _text in _DAGR_ROW_TEXT.items():
     EXTRA[("cpp", _row)] = _text + " The C++ code is header-only (`cpp/dagr_gen/`)."
 
+EXTRA[("python", "arrow-ipc")] = (
+    "On the tensor data set this row runs every type. The matrix, the prompt, "
+    "and the shard are IPC tensor messages. request is those prompt tensors "
+    "plus one record batch in the same buffer. tensor_view returns a buffer "
+    "inside the stream."
+)
+EXTRA[("python", "flatbuffers")] = (
+    "On the tensor data set the Builder runs every type: tensor, tensor_view, "
+    "prompt, shard, and request. tensor_view reads the float vector in place."
+)
+EXTRA[("mojo", "gld-kiln")] = (
+    "On the tensor data set this row runs every type. encode writes the struct. "
+    "tensor_view uses Reader.take and does not copy the matrix."
+)
+
 def load_measured_versions() -> dict[tuple[str, str], str]:
     """Map (language, SerializerName) → SerializerVersion from latest benches."""
     out: dict[tuple[str, str], str] = {}

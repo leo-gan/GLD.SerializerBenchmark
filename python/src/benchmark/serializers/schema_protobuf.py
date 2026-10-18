@@ -8,6 +8,7 @@ from typing import Any
 from .base import Serializer
 from ..data_v2 import protobuf_bridge
 from ..data_v2.fidelity import project_f_float_0
+from ..data_v2.models import TENSOR_TYPE_IDS
 
 
 class ProtobufSerializer(Serializer):
@@ -45,9 +46,14 @@ class ProtobufSerializer(Serializer):
         self._msg_cls = protobuf_bridge.message_class_for(test_data_name, batch=batch)
         if self._msg_cls is None:
             raise TypeError(f"no protobuf mapping for {test_data_name}")
+        # Tensor payloads are the arrays. Filling the message is the encode.
+        if test_data_name in TENSOR_TYPE_IDS:
+            return obj
         return protobuf_bridge.to_pb(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:
+        if getattr(self, "_test_data_name", "") in TENSOR_TYPE_IDS and not hasattr(obj, "SerializeToString"):
+            obj = protobuf_bridge.to_pb(obj)
         return obj.SerializeToString()
 
     def deserialize_bytes(self, data: bytes) -> Any:
@@ -55,6 +61,8 @@ class ProtobufSerializer(Serializer):
             raise RuntimeError("prepare required")
         msg = self._msg_cls()
         msg.ParseFromString(data)
+        if self._test_data_name in {"tensor", "prompt", "shard", "request"}:
+            return protobuf_bridge.tensor_from_pb(msg)
         if self._test_data_name == "table_project":
             return project_f_float_0(msg)
         return msg

@@ -142,9 +142,9 @@ export const PUBLISHED_STANDARD_COLUMNS = {
   ],
   kiln: [
     {
-      key: 'Kiln wire v0',
-      standard: 'Kiln wire v0',
-      version: 'v0',
+      key: 'Kiln wire v2',
+      standard: 'Kiln wire v2',
+      version: 'v2',
       standard_url: 'https://leo-gan.github.io/gld-kiln/spec/',
       unscored: true,
     },

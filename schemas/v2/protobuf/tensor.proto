@@ -1,0 +1,36 @@
+// Tensor data set. Separate from benchmark_v2.proto so suite stubs stay put.
+// Field names match the logical types in schemas/data_catalog_v2.yaml.
+syntax = "proto3";
+
+package benchmark.v2;
+
+message TensorMatrix {
+  int32 rows = 1;
+  int32 cols = 2;
+  repeated float values = 3 [packed = true];
+}
+
+message Prompt {
+  int32 batch = 1;
+  int32 seq = 2;
+  repeated int64 input_ids = 3 [packed = true];
+  repeated int64 attention_mask = 4 [packed = true];
+  repeated int64 position_ids = 5 [packed = true];
+}
+
+message Shard {
+  int32 vocab = 1;
+  int32 hidden = 2;
+  int32 ffn = 3;
+  repeated float tok_emb = 4 [packed = true];
+  repeated float attn = 5 [packed = true];
+  repeated float ffn_weight = 6 [packed = true];
+  repeated float norm = 7 [packed = true];
+}
+
+message InferenceRequest {
+  int64 request_id = 1;
+  string model = 2;
+  float temperature = 3;
+  Prompt inputs = 4;
+}
