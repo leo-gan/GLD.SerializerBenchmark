@@ -6,8 +6,9 @@ Usage:
     BENCHMARK_RUN_CONFIG=config/library/smoke.yaml python -m benchmark.runner_v2 2
 
 serializerFilter is one substring, or a comma-separated allow-list of
-substrings. ``parquet`` still matches ``parquet-uncompressed``. A columnar
-run passes the allow-list; an empty filter times every registered serializer.
+substrings. ``parquet`` still matches ``parquet-uncompressed``. After that
+filter, ``serializer_data_sets`` in the master config decides which data
+sets each serializer is measured on. An absent name is suite only.
 
 Env:
     BENCHMARK_RUN_CONFIG  path to run config YAML (default: config/library/default.yaml)
@@ -30,6 +31,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .comparer import compare
+from .dataset_membership import dataset_allows
 from .data_v2.fidelity import expected_for_fidelity, fidelity_for
 from .data_v2.generator import instances_for_cell
 from .data_v2 import protobuf_bridge
@@ -369,6 +371,10 @@ def run_v2(
         failed_prepare: set = set()
         for serializer in serializers:
             if not serializer.supports(type_id):
+                continue
+            # Exact membership. The substring filter cannot say this:
+            # "dagr-frozen" also matches dagr-frozen-packed.
+            if not dataset_allows(serializer.name, type_id):
                 continue
             try:
                 serializable, expected, tip = _prepare_for_serializer(

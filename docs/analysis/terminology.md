@@ -53,7 +53,7 @@ The architecture page keeps an old HTML anchor, `harness-contract-summary`, so l
 
 ## Data set
 
-A **data set** is the parent of a data type. The Dashboard filter keeps the table inside one set. A serializer is measured on the sets its runner already supports. The sets and their member types are configured under `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). The catalog stamps the same id on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml).
+A **data set** is the parent of a data type. The Dashboard filter keeps the table inside one set. A serializer is measured on the data sets named for it under `serializer_data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). A name that is absent is measured on suite only. One serializer may list several sets. The sets and their member types are `data_sets` in that same file. The catalog stamps the same id on each type in [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml).
 
 | Data set | Data types | Where the cells are chosen |
 | --- | --- | --- |

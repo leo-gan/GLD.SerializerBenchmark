@@ -136,7 +136,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `swift/**` | → `swift` |
 | **Shared (force all enabled langs)** — only *real* contract inputs | |
 | `schemas/**` **except** prose (see below) | → **all** enabled languages |
-| `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `scripts/read-config.py`, `scripts/resolve_run_config.py` | → **all** |
+| `scripts/run-all-benchmarks.sh`, `scripts/lib/**` except `scripts/lib/config.sh`, `scripts/read-config.py`, `scripts/resolve_run_config.py` | → **all**. `config.sh` only fills an empty serializer filter on specialized run configs from `serializer_data_sets`. Suite runs stay on the caller's filter, so that file does not rebench every language. |
 | `config/benchmark_config.yaml` | newly added language ids only (`config_lang_delta.py`); any other edit in that file → **all** |
 | **Always ignored (never select langs, never force-all)** | |
 | `docs/**`, `dashboard/public/data/**`, `logs/**`, `reports/**`, `site/**`, `.grok/**`, `compliance/**` | meta / published artifacts / spec corpus (not a bench runner) |

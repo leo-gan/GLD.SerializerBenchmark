@@ -1,7 +1,8 @@
 # Run config: smoke for the array data set.
 # Not the suite smoke path. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/array-smoke.yaml
-# Pass an explicit serializer allow-list. Fortran:
+# An empty serializer filter selects serializer_data_sets for array
+# on runners whose comma filter is exact. Fortran:
 #   hdf5-fortran,netcdf-fortran,adios2,gld-arrow
 # The Fortran runner also skips every other serializer on these type ids.
 id: array-smoke

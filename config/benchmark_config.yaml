@@ -105,6 +105,133 @@ data_sets:
     smoke_run_config: config/library/tensor-smoke.yaml
     types: [tensor, tensor_view, prompt, shard, request]
 
+# -----------------------------------------------------------------------------
+# Serializer → data sets. One serializer may be measured on several sets.
+# A name that is absent is measured on suite only. Specialized sets stay
+# listed here; they are not the default.
+#
+# Suite runs do not replace the caller's serializer filter from this map.
+# Runners whose comma filter is exact names fill an empty filter on a
+# specialized run config from the names below (scripts/serializer_data_sets.py).
+# Python applies the map in the runner: its comma filter is still a substring
+# match, so "dagr-frozen" would also select dagr-frozen-packed.
+# C, Mojo, PHP, Swift, and Zig keep their existing supports() gates. A comma
+# list is one substring there and would select nothing.
+# -----------------------------------------------------------------------------
+serializer_data_sets:
+  python:
+    arrow-ipc: [columnar, tensor]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    orc: [columnar]
+    orc-uncompressed: [columnar]
+    orjson: [suite, columnar]
+    protobuf: [suite, columnar]
+    avro: [suite, columnar]
+    flatbuffers: [suite, columnar, tensor]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+    pickle: [suite, graph]
+    cloudpickle: [suite, graph]
+    h5py: [array]
+    netCDF4: [array]
+    adios2: [array]
+  cpp:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    orc: [columnar]
+    orc-uncompressed: [columnar]
+    sbe: [columnar]
+    nlohmann_json: [suite, columnar]
+    protobuf: [suite, columnar]
+    flatbuffers: [suite, columnar]
+    avro: [suite, columnar]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+    highfive: [array]
+  csharp:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    System.Text.Json: [suite, columnar]
+    Google.Protobuf: [suite, columnar]
+    FlatSharp: [suite, columnar]
+    Apache.Avro: [suite, columnar]
+    PureHDF: [array]
+  go:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    sbe: [columnar]
+    encoding/json: [suite, columnar]
+    protobuf: [suite, columnar]
+    hamba/avro: [suite, columnar]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+  java:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    orc: [columnar]
+    orc-uncompressed: [columnar]
+    sbe: [columnar]
+    jackson: [suite, columnar]
+    protobuf: [suite, columnar]
+    flatbuffers: [suite, columnar]
+    avro: [suite, columnar]
+  kotlin:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    orc: [columnar]
+    orc-uncompressed: [columnar]
+    sbe: [columnar]
+    kotlinx-json: [suite, columnar]
+    protobuf: [suite, columnar]
+    flatbuffers: [suite, columnar]
+    avro: [suite, columnar]
+  javascript:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    "JSON.stringify": [suite, columnar]
+    protobufjs: [suite, columnar]
+    flatbuffers: [suite, columnar]
+    avsc: [suite, columnar]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+    h5wasm: [array]
+  rust:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    sbe: [columnar]
+    serde_json: [suite, columnar]
+    prost: [suite, columnar]
+    serde_avro_fast: [suite, columnar]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+    hdf5-metno: [array]
+  mojo:
+    arrow-ipc: [columnar]
+    parquet: [columnar]
+    parquet-uncompressed: [columnar]
+    gld-kiln: [suite, tensor]
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+    gld-hdf5: [array]
+  swift:
+    dagr-regular: [suite, graph]
+    dagr-frozen: [suite, graph]
+  c:
+    hdf5: [array]
+  fortran:
+    hdf5-fortran: [array]
+    netcdf-fortran: [array]
+    adios2: [array]
+    gld-arrow: [array]
+
 # Shared test data — catalog is normative for shape knobs; names are type_id values.
 # data_set must match the data_sets membership above.
 test_data:

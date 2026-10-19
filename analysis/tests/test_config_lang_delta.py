@@ -105,6 +105,25 @@ def test_existing_log_dir_edit_forces_all():
     assert classify(old, new) is None
 
 
+def test_serializer_data_sets_do_not_force_all():
+    old = _base()
+    new = _base()
+    new["serializer_data_sets"] = {"python": {"arrow-ipc": ["columnar", "tensor"]}}
+    assert classify(old, new) == []
+    changed = _base()
+    changed["serializer_data_sets"] = {"python": {"arrow-ipc": ["columnar"]}}
+    assert classify(new, changed) == []
+
+
+def test_serializer_data_sets_plus_a_shared_key_forces_all():
+    old = _base()
+    old["serializer_data_sets"] = {"python": {"h5py": ["array"]}}
+    new = _base()
+    new["serializer_data_sets"] = {"python": {"h5py": ["array"]}}
+    new["reproducibility"] = {"random_seed": 7}
+    assert classify(old, new) is None
+
+
 def test_log_dir_for_unknown_language_forces_all():
     old = _base()
     old["paths"] = {"language_log_dirs": {"c": "logs/c"}}

@@ -1,9 +1,10 @@
 # Run config: publication cells for the tensor data set.
 # Not default.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/tensor.yaml
-# Pass an explicit serializer allow-list. A serializer on this set runs every
-# type below. Python: arrow-ipc,flatbuffers. Mojo: gld-kiln.
-# Runners skip every other serializer on these type ids.
+# An empty serializer filter selects serializer_data_sets for tensor
+# on runners whose comma filter is exact. A serializer on this set runs every
+# type below. Python: arrow-ipc, flatbuffers. Mojo: gld-kiln.
+# Python applies the map in the runner. Other serializers skip these type ids.
 # N stays 1. The shape is the type config, not the instance count.
 id: tensor
 description: "tensor, tensor_view, prompt, shard, and request at N=1; bytes; no post-compression"

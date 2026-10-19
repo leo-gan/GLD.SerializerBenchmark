@@ -135,7 +135,7 @@ If stream and bytes (or string) times are almost the same, check the language **
 
 ## Dimension contract
 
-Standard and Data Set are labels on rows the suite already measures. Data Set membership is `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Standard primary rules and optional I/O stay in [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it does not already support.
+Standard and Data Set are labels on rows the suite already measures. Data Set membership is `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Which serializers are measured on each set is `serializer_data_sets` in that file. A name that is absent is suite only. Standard primary rules and optional I/O stay in [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it is not mapped to.
 
 | Dimension | Where it comes from | Values |
 |-----------|---------------------|--------|

@@ -19,13 +19,13 @@ Tensor type ids: `tensor` · `tensor_view` · `prompt` · `shard` · `request`
 |------|---------|
 | `smoke.yaml` | CI / quick sanity (`message` + `telemetry`, n=1) |
 | `default.yaml` | Publication matrix (five types × [1, 100]) |
-| `columnar-smoke.yaml` | Four new types × n=1. Requires a serializer allow-list. |
-| `columnar.yaml` | Columnar and `signal` cells. Requires a serializer allow-list. |
-| `graph.yaml` | Data type `graph` at N=1 and N=100. Requires a serializer allow-list. |
-| `array-smoke.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
-| `array.yaml` | `grid` and `grid_window` at N=1. Requires a serializer allow-list. |
-| `tensor-smoke.yaml` | `tensor`, `tensor_view`, `prompt`, `shard`, and `request` at N=1. Requires a serializer allow-list. |
-| `tensor.yaml` | Those five tensor types at N=1. Requires a serializer allow-list. |
+| `columnar-smoke.yaml` | Four columnar types × n=1. Empty filter uses `serializer_data_sets`. |
+| `columnar.yaml` | Columnar and `signal` cells. Empty filter uses `serializer_data_sets`. |
+| `graph.yaml` | Data type `graph` at N=1 and N=100. Empty filter uses `serializer_data_sets`. |
+| `array-smoke.yaml` | `grid` and `grid_window` at N=1. Empty filter uses `serializer_data_sets`. |
+| `array.yaml` | `grid` and `grid_window` at N=1. Empty filter uses `serializer_data_sets`. |
+| `tensor-smoke.yaml` | Five tensor types at N=1. Empty filter uses `serializer_data_sets`. |
+| `tensor.yaml` | Those five tensor types at N=1. Empty filter uses `serializer_data_sets`. |
 
 ## Usage
 
