@@ -113,8 +113,13 @@ bench_run_config_for_mode() {
 }
 
 # Language id from a run-benchmarks.sh path. c-sharp before c.
+# The caller path is often relative (./scripts/run-benchmarks.sh). Resolve it
+# before matching, or Go and C# never receive the data-set filter.
 _bench_lang_id() {
-  local src="$1"
+  local src="$1" dir base
+  dir="$(cd "$(dirname "$src")" 2>/dev/null && pwd)" || dir="$(dirname "$src")"
+  base="$(basename "$src")"
+  src="${dir}/${base}"
   case "$src" in
     */c-sharp/*|*/csharp/*) echo csharp ;;
     */cpp/*) echo cpp ;;

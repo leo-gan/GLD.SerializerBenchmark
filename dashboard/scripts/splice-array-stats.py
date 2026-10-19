@@ -33,7 +33,7 @@ LANGUAGE = "fortran"
 ARRAY_NAMES = ("hdf5-fortran", "netcdf-fortran", "adios2", "gld-arrow")
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 MIN_REPS = 100
-DEFAULT_CSV = REPO / "logs/fortran/2026-10-11-fortran-array-full.csv"
+DEFAULT_CSV = REPO / "logs/fortran/2026-10-19-fortran-array-full.csv"
 STANDARDS = {
     "hdf5-fortran": "hdf5",
     "netcdf-fortran": "netcdf",
@@ -344,13 +344,13 @@ def main(argv: list[str] | None = None) -> int:
     _select_language(args.language)
     defaults = {
         "fortran": DEFAULT_CSV,
-        "python": REPO / "logs/python/2026-10-10-python-array-full.csv",
-        "c": REPO / "logs/c/2026-10-11-c-hdf5-array.csv",
-        "cpp": REPO / "logs/cpp/2026-10-11-cpp-hdf5-array.csv",
-        "rust": REPO / "logs/rust/2026-10-11-rust-hdf5-array.csv",
-        "javascript": REPO / "logs/javascript/2026-10-11-js-hdf5-array.csv",
-        "csharp": REPO / "logs/csharp/2026-10-11-csharp-hdf5-array.csv",
-        "mojo": REPO / "logs/mojo/2026-10-13-mojo-hdf5-array.csv",
+        "python": REPO / "logs/python/2026-10-19-python-array-full.csv",
+        "c": REPO / "logs/c/2026-10-19-c-array-full.csv",
+        "cpp": REPO / "logs/cpp/2026-10-19-cpp-array-full.csv",
+        "rust": REPO / "logs/rust/2026-10-19-rust-array-full.csv",
+        "javascript": REPO / "logs/javascript/2026-10-19-javascript-array-full.csv",
+        "csharp": REPO / "logs/csharp/2026-10-19-csharp-array-full.csv",
+        "mojo": REPO / "logs/mojo/2026-10-19-mojo-array-full.csv",
     }
     csv_path = args.csv or defaults[args.language]
     if not csv_path.is_absolute():

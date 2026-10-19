@@ -41,13 +41,13 @@ COLUMNAR_TYPES = ("table", "table_project", "nested_table", "signal")
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 
 DEFAULT_CSVS = {
-    "python": REPO / "logs/python/2026-10-09-python-graph-full.csv",
-    "cpp": REPO / "logs/cpp/2026-10-09-cpp-graph-full.csv",
-    "rust": REPO / "logs/rust/2026-10-09-rust-graph-full.csv",
-    "go": REPO / "logs/go/2026-10-09-go-graph-full.csv",
-    "javascript": REPO / "logs/javascript/2026-10-09-javascript-graph-full.csv",
-    "mojo": REPO / "logs/mojo/2026-10-09-mojo-graph-full.csv",
-    "swift": REPO / "logs/swift/2026-10-09-swift-graph-full.csv",
+    "python": REPO / "logs/python/2026-10-19-python-graph-full.csv",
+    "cpp": REPO / "logs/cpp/2026-10-19-cpp-graph-full.csv",
+    "rust": REPO / "logs/rust/2026-10-19-rust-graph-full.csv",
+    "go": REPO / "logs/go/2026-10-19-go-graph-full.csv",
+    "javascript": REPO / "logs/javascript/2026-10-19-javascript-graph-full.csv",
+    "mojo": REPO / "logs/mojo/2026-10-19-mojo-graph-full.csv",
+    "swift": REPO / "logs/swift/2026-10-19-swift-graph-full.csv",
 }
 
 

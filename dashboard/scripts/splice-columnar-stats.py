@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append columnar.yaml groups onto the published five-type dashboard snapshots.
+"""Replace columnar.yaml groups on the published dashboard snapshots.
 
 sync-data.py publishes only logs named YYYY-MM-DD-HHMMSS.csv, and it replaces
 the whole language snapshot. The columnar full runs use other filenames on
@@ -7,9 +7,9 @@ purpose. Several timestamped files under logs/ are columnar smokes; publishing
 those would erase the five-type matrix. This script does not call sync-data.
 
 It analyzes one columnar CSV with the same statistics pipeline as
-analyze-benchmarks, then appends schema-2.2 groups whose identity is not
-already in the snapshot. On a collision the published group stays. Row-type
-groups (message, document, telemetry, strings, event) are not recomputed.
+analyze-benchmarks, drops the previous columnar groups, and writes the new
+ones. Suite, graph, array, and tensor groups are not recomputed. The serializer
+names must match serializer_data_sets for that language.
 
 Both dashboard/public/data/<lang>_latest.json.gz and stats_<lang>_latest.json.gz
 are rewritten so Overview and Compliance see the same roster.
@@ -27,6 +27,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
 from benchmark_analysis.parser import parse_csv_file  # noqa: E402
+from benchmark_analysis.serializer_data_sets import allow_list  # noqa: E402
 from benchmark_analysis.stats import (  # noqa: E402
     _EXPORT_IDENTITY_KEYS,
     build_stats_export_payload,
@@ -41,15 +42,15 @@ MIN_REPS = 50
 
 # Full columnar CSVs. Names must not match sync-data's latest-run regex.
 DEFAULT_CSVS = {
-    "python": REPO / "logs/python/2026-10-02-py-columnar-full.csv",
-    "cpp": REPO / "logs/cpp/2026-10-02-cpp-columnar-full.csv",
-    "csharp": REPO / "logs/csharp/2026-10-02-csharp-columnar-full.csv",
-    "go": REPO / "logs/go/2026-10-02-go-columnar-full.csv",
-    "java": REPO / "logs/java/2026-10-02-java-columnar-full.csv",
-    "rust": REPO / "logs/rust/2026-10-02-rust-columnar-full.csv",
-    "javascript": REPO / "logs/javascript/2026-10-03-js-columnar-full.csv",
-    "kotlin": REPO / "logs/kotlin/2026-10-03-kt-columnar-full.csv",
-    "mojo": REPO / "logs/mojo/2026-10-13-mojo-columnar-full.csv",
+    "python": REPO / "logs/python/2026-10-19-python-columnar-full.csv",
+    "cpp": REPO / "logs/cpp/2026-10-19-cpp-columnar-full.csv",
+    "csharp": REPO / "logs/csharp/2026-10-19-csharp-columnar-full.csv",
+    "go": REPO / "logs/go/2026-10-19-go-columnar-full.csv",
+    "java": REPO / "logs/java/2026-10-19-java-columnar-full.csv",
+    "rust": REPO / "logs/rust/2026-10-19-rust-columnar-full.csv",
+    "javascript": REPO / "logs/javascript/2026-10-19-javascript-columnar-full.csv",
+    "kotlin": REPO / "logs/kotlin/2026-10-19-kotlin-columnar-full.csv",
+    "mojo": REPO / "logs/mojo/2026-10-19-mojo-columnar-full.csv",
 }
 CORE = ("python", "cpp", "csharp", "go", "java", "rust")
 
@@ -140,12 +141,13 @@ def splice_language(lang: str, csv_path: Path) -> None:
 
     before_groups = list(embedded.get("groups") or [])
     before_counts = _counts(before_groups)
-    had_columnar = any(_base(group.get("test_data")) in COLUMNAR_TYPES for group in before_groups)
     fresh, meta = _analyze(lang, csv_path)
+    expected = set(allow_list(lang, "columnar"))
+    got = set(meta["serializers"])
+    if got != expected:
+        raise SystemExit(f"{lang}: columnar serializers {sorted(got)} != map {sorted(expected)}")
 
-    seen = {_ident(group) for group in before_groups}
     added = []
-    kept = 0
     for group in fresh.get("groups") or []:
         base = _base(group.get("test_data"))
         if base not in COLUMNAR_TYPES:
@@ -154,18 +156,13 @@ def splice_language(lang: str, csv_path: Path) -> None:
             group["language"] = lang
         if group.get("language") != lang:
             raise SystemExit(f"{lang}: analysis group language is {group.get('language')}")
-        key = _ident(group)
-        if key in seen:
-            kept += 1
-            continue
-        seen.add(key)
         added.append(group)
+    if not added:
+        raise SystemExit(f"{lang}: analysis produced no columnar groups")
 
-    if not added and not had_columnar:
-        raise SystemExit(f"{lang}: analysis produced no new columnar groups")
-
-    # Keep the published filter-policy catalog. New groups carry their own variants.
-    embedded["groups"] = before_groups + added
+    kept = [group for group in before_groups if _base(group.get("test_data")) not in COLUMNAR_TYPES]
+    replaced = len(before_groups) - len(kept)
+    embedded["groups"] = kept + added
     after_counts = _counts(embedded["groups"])
     if after_counts != before_counts:
         raise SystemExit(f"{lang}: row-type counts changed {before_counts} -> {after_counts}")
@@ -179,10 +176,10 @@ def splice_language(lang: str, csv_path: Path) -> None:
         "types": meta["types"],
         "serializers": meta["serializers"],
         "groups_added": len(added),
-        "groups_already_present": kept,
+        "groups_replaced": replaced,
         "row_group_counts": after_counts,
         "note": (
-            "Columnar groups were measured in a separate columnar.yaml run and appended. "
+            "Columnar groups were measured in a separate columnar.yaml run and replaced. "
             "Groups for message, document, telemetry, strings, and event are the previously "
             "published snapshot and were not recomputed."
         ),
@@ -194,7 +191,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     _write_gz(stats_path, embedded, compact=True)
     _write_gz(payload_path, payload, compact=False)
     print(
-        f"{lang}: added {len(added)} groups, kept {kept} collisions, "
+        f"{lang}: replaced {replaced} columnar groups with {len(added)}, "
         f"row counts {after_counts}, serializers {meta['serializers']}"
     )
 
