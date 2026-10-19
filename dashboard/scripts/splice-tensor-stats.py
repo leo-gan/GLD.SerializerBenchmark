@@ -257,7 +257,7 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
             "Suite, columnar, graph, and array groups were not recomputed."
         ),
     }
-    print(f"python: {meta['rows']} rows, {len(new_groups)} groups, replace {len(stats_old)}")
+    print(f"{LANGUAGE}: {meta['rows']} rows, {len(new_groups)} groups, replace {len(stats_old)}")
     if dry_run:
         print("python: dry-run, snapshots not written")
         return
@@ -274,7 +274,7 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
         raise SystemExit("python: array counts changed")
     _write_gz(stats_path, stats)
     _write_gz(payload_path, payload)
-    print(f"python: wrote {len(new_groups)} tensor groups")
+    print(f"{LANGUAGE}: wrote {len(new_groups)} tensor groups")
 
 
 def main(argv: list[str] | None = None) -> int:
