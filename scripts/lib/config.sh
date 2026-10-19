@@ -112,14 +112,65 @@ bench_run_config_for_mode() {
   fi
 }
 
+# Language id from a run-benchmarks.sh path. c-sharp before c.
+_bench_lang_id() {
+  local src="$1"
+  case "$src" in
+    */c-sharp/*|*/csharp/*) echo csharp ;;
+    */cpp/*) echo cpp ;;
+    */python/*) echo python ;;
+    */rust/*) echo rust ;;
+    */javascript/*) echo javascript ;;
+    */go/*) echo go ;;
+    */java/*) echo java ;;
+    */kotlin/*) echo kotlin ;;
+    */php/*) echo php ;;
+    */swift/*) echo swift ;;
+    */zig/*) echo zig ;;
+    */mojo/*) echo mojo ;;
+    */fortran/*) echo fortran ;;
+    */c/*) echo c ;;
+    *) echo "" ;;
+  esac
+}
+
+# Fill an empty FILTER_SER from serializer_data_sets on specialized run configs.
+# Suite prints SKIP and is left alone. Runners that are not exact-comma also
+# print SKIP (Python applies the map itself; substring runners must not
+# receive a comma list).
+_bench_apply_dataset_filter() {
+  local src="$1"
+  local lang line py
+  lang="$(_bench_lang_id "$src")"
+  if [[ -z "$lang" || -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+    return 0
+  fi
+  if [[ -n "${FILTER_SER:-}" ]]; then
+    return 0
+  fi
+  py="$(bench_config_py)"
+  if ! line="$(PYTHONPATH="${_BENCH_REPO_ROOT}/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
+      "$py" "${_BENCH_REPO_ROOT}/scripts/serializer_data_sets.py" \
+      --lang "$lang" --run-config "$BENCHMARK_RUN_CONFIG")"; then
+    echo "[ERROR] serializer_data_sets lookup failed for $lang" >&2
+    return 1
+  fi
+  if [[ "$line" == "SKIP" || -z "$line" ]]; then
+    return 0
+  fi
+  FILTER_SER="$line"
+  echo "[INFO] serializer data set filter ($lang): $FILTER_SER"
+}
+
 # Export BENCHMARK_RUN_CONFIG from master config unless already set (caller override).
 # Usage in run-benchmarks.sh after MODE is known:
 #   bench_export_run_config "$MODE"
+# Also fills an empty FILTER_SER for specialized sets on exact-comma runners.
 bench_export_run_config() {
   local mode="${1:-all-single}"
-  if [[ -n "${BENCHMARK_RUN_CONFIG:-}" ]]; then
-    return 0
+  if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+    export BENCHMARK_RUN_CONFIG
+    BENCHMARK_RUN_CONFIG="$(bench_run_config_for_mode "$mode")"
   fi
-  export BENCHMARK_RUN_CONFIG
-  BENCHMARK_RUN_CONFIG="$(bench_run_config_for_mode "$mode")"
+  _bench_apply_dataset_filter "${BASH_SOURCE[1]:-}"
 }

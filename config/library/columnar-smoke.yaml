@@ -1,13 +1,10 @@
 # Run config: smoke for columnar and aligned-record types.
 # Not the suite smoke path. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/columnar-smoke.yaml
-# Pass an explicit serializer allow-list. The list is the new rows registered
-# in that language (arrow-ipc, parquet, parquet-uncompressed, orc,
-# orc-uncompressed, sbe) plus one existing JSON peer, the primary protobuf
-# row, one FlatBuffers or Cap'n Proto row when the tree already has one, and
-# the Avro row when the tree already has one.
-# Do not run this file unfiltered. Several harnesses treat Supports() as true
-# for every type name.
+# An empty serializer filter selects serializer_data_sets for columnar
+# on runners whose comma filter is exact. A passed filter still narrows.
+# Python applies the same map in the runner. Do not rely on Supports()
+# alone: several harnesses return true for every type name.
 id: columnar-smoke
 description: "table, table_project, nested_table, signal at N=1; bytes; no post-compression"
 data_model_version: 2

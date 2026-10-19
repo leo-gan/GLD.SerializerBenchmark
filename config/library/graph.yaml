@@ -1,7 +1,8 @@
 # Run config: the graph data type (shared nodes and one reference cycle).
 # Not default.yaml and not smoke.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/graph.yaml
-# Pass an explicit serializer allow-list. Tree codecs skip this type.
+# An empty serializer filter selects serializer_data_sets for graph
+# on runners whose comma filter is exact. Tree codecs are not in that map.
 # Python smoke:
 #   cd python && BENCHMARK_RUN_CONFIG=../config/library/graph.yaml \
 #     ./scripts/run-benchmarks.sh custom 2 "dagr-packed,dagr-regular,dagr-frozen,dagr-frozen-packed,pickle"

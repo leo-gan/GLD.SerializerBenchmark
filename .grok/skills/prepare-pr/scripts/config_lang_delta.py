@@ -31,8 +31,17 @@ def _shared_without_log_dirs(doc: dict[str, Any]) -> dict[str, Any]:
     A new language also adds ``paths.language_log_dirs.<id>``. That line
     does not move numbers for languages that already exist. Every other
     shared key still does.
+
+    ``serializer_data_sets`` records which specialized sets a serializer is
+    measured on. An absent name stays on suite. Editing the map does not
+    change modes, seeds, or the suite type list, and suite runs do not
+    replace their serializer filter from it.
     """
-    shared = {k: v for k, v in doc.items() if k != "languages"}
+    shared = {
+        k: v
+        for k, v in doc.items()
+        if k not in ("languages", "serializer_data_sets")
+    }
     paths = shared.get("paths")
     if isinstance(paths, dict) and "language_log_dirs" in paths:
         paths = {k: v for k, v in paths.items() if k != "language_log_dirs"}

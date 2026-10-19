@@ -95,7 +95,17 @@ is_shared_force_all() {
     schemas/*)
       return 0
       ;;
-    scripts/run-all-benchmarks.sh|scripts/lib/*|scripts/read-config.py|scripts/resolve_run_config.py)
+    scripts/run-all-benchmarks.sh|scripts/read-config.py|scripts/resolve_run_config.py)
+      return 0
+      ;;
+    scripts/lib/*)
+      # config.sh applies serializer_data_sets as the default filter on
+      # specialized run configs only. Suite runs keep the caller's filter
+      # (the helper prints SKIP). That does not move the publication matrix.
+      # Other files under scripts/lib/ still force every language.
+      if [[ "$p" == "scripts/lib/config.sh" ]]; then
+        return 1
+      fi
       return 0
       ;;
   esac

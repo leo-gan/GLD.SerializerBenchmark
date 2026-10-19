@@ -1,5 +1,6 @@
 # Run config: smoke for the tensor data set.
-# Not smoke.yaml. Invoke with:
+# Not smoke.yaml. An empty serializer filter selects serializer_data_sets
+# for tensor on runners whose comma filter is exact. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/tensor-smoke.yaml
 id: tensor-smoke
 description: "tensor, tensor_view, prompt, shard, and request at N=1; bytes; no post-compression"

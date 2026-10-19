@@ -1,7 +1,8 @@
 # Run config: publication cells for the array data set.
 # Not default.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/array.yaml
-# Pass an explicit serializer allow-list. Examples:
+# An empty serializer filter selects serializer_data_sets for array
+# on runners whose comma filter is exact. Examples:
 #   hdf5-fortran,netcdf-fortran,adios2,gld-arrow
 #   h5py,netCDF4,adios2
 #   hdf5

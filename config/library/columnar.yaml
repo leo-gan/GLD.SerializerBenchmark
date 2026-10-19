@@ -1,7 +1,8 @@
 # Run config: publication cells for columnar and aligned-record types.
 # Not default.yaml. Invoke with:
 #   BENCHMARK_RUN_CONFIG=config/library/columnar.yaml
-# Pass an explicit serializer allow-list (see columnar-smoke.yaml).
+# An empty serializer filter selects serializer_data_sets for this set
+# on runners whose comma filter is exact. A passed filter still narrows.
 # A type row may set data_type_instance_count and override the file-level list.
 # The large step stays 10000. On the Python proof, one warmed repetition of
 # the slowest peer (flatbuffers) on table at N=10000 was under 2 seconds.
