@@ -87,11 +87,27 @@ is_prose_or_meta() {
   return 1
 }
 
+# YES when the committed file and the work tree differ only by explanation text.
+explanation_only_yaml() {
+  local rel="$1"
+  local answer
+  answer="$(python3 "$SCRIPT_DIR/config_lang_delta.py" \
+    --repo "$PROJECT_ROOT" --base "$BASE_REF" --explanation-only "$rel" 2>/dev/null || true)"
+  [[ "$answer" == "YES" ]]
+}
+
 # True if path is a *real* shared input that invalidates every language's numbers.
 is_shared_force_all() {
   local p="$1"
   case "$p" in
-    # Wire schemas, catalogs, generators — not prose under schemas/
+    # Wire schemas, catalogs, generators — not prose under schemas/.
+    # An explanation-only edit of the type catalog is dashboard copy.
+    schemas/data_catalog_v2.yaml)
+      if explanation_only_yaml "schemas/data_catalog_v2.yaml"; then
+        return 1
+      fi
+      return 0
+      ;;
     schemas/*)
       return 0
       ;;

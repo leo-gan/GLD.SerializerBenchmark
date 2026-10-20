@@ -26,7 +26,7 @@ body.dash-view-compliance #compare,
 body.dash-view-compliance #history-custom,
 body.dash-view-compliance #orientation-banner,
 body.dash-view-compliance #run-meta,
-body.dash-view-compliance #filter-policy-meta,
+body.dash-view-compliance #filter-explain,
 body.dash-view-compliance #experiments {
   display: none !important;
 }

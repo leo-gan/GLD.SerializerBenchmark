@@ -1,18 +1,43 @@
 # Dimension contract for the benchmark.
 # Labels on rows the suite already produces. Not an extra timed loop.
 # Standard ids live in compliance/serializer-standards.json.
+# What each standard is: config/standards.yaml (dashboard copy, not a timed loop).
 # Data Set ids and membership live in config/benchmark_config.yaml under data_sets.
+# Each data set's explanation sits on that row. Each data type's explanation
+# sits on its entry in schemas/data_catalog_v2.yaml.
 # The catalog stamps the same data_set on each type.
 schema: gld.serializer-benchmark.dimensions/1
 
 standards:
   catalog: compliance/serializer-standards.json
+  definitions: config/standards.yaml
   # Empty compliance list. Those codecs stay on the leaderboard and stay unscored.
   empty_value: custom
   # More than one compliance id: one timed row, this primary id.
   primary:
     csharp:
       "MS Bond Json": json
+
+# Sentences for Data Type menu values that are not a single catalog type.
+# {n}, {nA}, and {nB} are the batch sizes in the current selection.
+# The dashboard appends these to the type explanation. It does not invent the words.
+data_type_views:
+  batch: >-
+    Batch size is {n}. One call writes and reads that whole batch. Size 1 is
+    a single message or request. A larger size is a page of logs or telemetry
+    sent together.
+  batch_compound: >-
+    This row averages the {nA}-record call and the {nB}-record call for this
+    same data type. A library can be quick on one record and slower on a
+    batch. Both results stay in the score.
+  all_n: >-
+    This row averages the five suite records at {n} per call: message,
+    document, telemetry, strings, and event. It is one score for everyday
+    payloads. Tables, graphs, arrays, and tensors stay in their own data sets.
+  all_all: >-
+    This row averages every suite record at every batch size. It is the
+    broadest single score for the publication set. Tables, graphs, arrays,
+    and tensors stay in their own data sets.
 
 # Optional I/O. The publication default stays one in-memory level.
 # A second level is stored only for opt_in, and only when honesty is

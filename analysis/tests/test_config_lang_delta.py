@@ -105,6 +105,26 @@ def test_existing_log_dir_edit_forces_all():
     assert classify(old, new) is None
 
 
+def test_explanation_text_does_not_force_all():
+    old = _base()
+    old["data_sets"] = [{"id": "suite", "types": ["message"]}]
+    new = _base()
+    new["data_sets"] = [
+        {"id": "suite", "types": ["message"], "explanation": "The suite is the publication set."}
+    ]
+    assert classify(old, new) == []
+
+
+def test_data_set_membership_still_forces_all():
+    old = _base()
+    old["data_sets"] = [{"id": "suite", "types": ["message"], "explanation": "a"}]
+    new = _base()
+    new["data_sets"] = [
+        {"id": "suite", "types": ["message", "document"], "explanation": "b"}
+    ]
+    assert classify(old, new) is None
+
+
 def test_serializer_data_sets_do_not_force_all():
     old = _base()
     new = _base()
