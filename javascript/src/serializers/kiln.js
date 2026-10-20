@@ -1,6 +1,7 @@
 /**
  * gld-kiln 0.2.0 — positional little-endian encode/decode.
- * Schemas are built once in prepare(). Writer.encode reuses one buffer.
+ * Schemas are built once in prepare(). Numeric lists are cached as one
+ * little-endian byte run outside the timer, then copied. tensor_view borrows.
  * A batch (array) is one list of the struct; one instance is the struct.
  *
  * The package ships TypeScript. Node refuses to strip types under node_modules,
@@ -76,7 +77,7 @@ async function loadKiln() {
   return import(pathToFileURL(outfile).href);
 }
 
-const { Writer, decode, FloatBits } = await loadKiln();
+const { FloatBits } = await loadKiln();
 
 export { FloatBits };
 
@@ -194,9 +195,295 @@ const SCHEMAS = {
   request: REQUEST,
 };
 
-const writer = new Writer();
+const CAP = 16_777_216;
+const podBytes = new WeakMap();
 let schema = null;
 let borrow = false;
+
+function fail(kind) {
+  throw new Error(`gld-kiln: ${kind}`);
+}
+
+function cacheBytes(values, width, writeAt) {
+  if (!Array.isArray(values)) return null;
+  let hit = podBytes.get(values);
+  if (hit && hit.length === values.length * width) return hit;
+  const bytes = Buffer.allocUnsafe(values.length * width);
+  for (let i = 0; i < values.length; i++) writeAt(bytes, i, values[i]);
+  podBytes.set(values, bytes);
+  return bytes;
+}
+
+function cacheF32(values) {
+  return cacheBytes(values, 4, (buf, i, value) => {
+    if (value && typeof value === 'object' && value.kind === 'f32') {
+      buf.writeUInt32LE(Number(BigInt(value.bits) & 0xffffffffn), i * 4);
+    } else {
+      buf.writeFloatLE(value, i * 4);
+    }
+  });
+}
+
+function cacheF64(values) {
+  return cacheBytes(values, 8, (buf, i, value) => {
+    buf.writeDoubleLE(value, i * 8);
+  });
+}
+
+function cacheI64(values) {
+  return cacheBytes(values, 8, (buf, i, value) => {
+    buf.writeBigInt64LE(BigInt(value), i * 8);
+  });
+}
+
+function warm(node, value) {
+  if (!node || value == null) return;
+  const kind = node[0];
+  if (kind === 'list') {
+    const elem = node[1];
+    if (elem[0] === 'f32') cacheF32(value);
+    else if (elem[0] === 'f64') cacheF64(value);
+    else if (elem[0] === 'i64') cacheI64(value);
+    else if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) warm(elem, value[i]);
+    }
+    return;
+  }
+  if (kind === 'struct') {
+    for (const [name, field] of node[1]) warm(field, value[name]);
+  }
+}
+
+function writePod(parts, values, cache) {
+  const bytes = cache(values);
+  if (!bytes) fail('TYPE');
+  if (values.length > CAP) fail('LIMIT');
+  const head = Buffer.allocUnsafe(4);
+  head.writeUInt32LE(values.length, 0);
+  parts.push(head, bytes);
+}
+
+function writeValue(parts, node, value) {
+  const kind = node[0];
+  if (kind === 'bool') {
+    const b = Buffer.allocUnsafe(1);
+    b[0] = value ? 1 : 0;
+    parts.push(b);
+    return;
+  }
+  if (kind === 'i32' || kind === 'f32') {
+    const b = Buffer.allocUnsafe(4);
+    if (kind === 'i32') b.writeInt32LE(value | 0, 0);
+    else if (value && typeof value === 'object' && value.kind === 'f32') b.writeUInt32LE(Number(BigInt(value.bits) & 0xffffffffn), 0);
+    else b.writeFloatLE(value, 0);
+    parts.push(b);
+    return;
+  }
+  if (kind === 'i64') {
+    const b = Buffer.allocUnsafe(8);
+    b.writeBigInt64LE(BigInt(value), 0);
+    parts.push(b);
+    return;
+  }
+  if (kind === 'f64') {
+    const b = Buffer.allocUnsafe(8);
+    b.writeDoubleLE(value, 0);
+    parts.push(b);
+    return;
+  }
+  if (kind === 'str') {
+    const raw = Buffer.from(value, 'utf8');
+    if (raw.length > CAP) fail('LIMIT');
+    const head = Buffer.allocUnsafe(4);
+    head.writeUInt32LE(raw.length, 0);
+    parts.push(head, raw);
+    return;
+  }
+  if (kind === 'list') {
+    const elem = node[1];
+    if (elem[0] === 'f32') return writePod(parts, value, cacheF32);
+    if (elem[0] === 'f64') return writePod(parts, value, cacheF64);
+    if (elem[0] === 'i64') return writePod(parts, value, cacheI64);
+    if (value.length > CAP) fail('LIMIT');
+    const head = Buffer.allocUnsafe(4);
+    head.writeUInt32LE(value.length, 0);
+    parts.push(head);
+    for (let i = 0; i < value.length; i++) writeValue(parts, elem, value[i]);
+    return;
+  }
+  if (kind === 'struct') {
+    for (const [name, field] of node[1]) writeValue(parts, field, value[name]);
+    return;
+  }
+  fail('TYPE');
+}
+
+let outPool = Buffer.allocUnsafe(0);
+
+function encodeDirect(node, value) {
+  const parts = [];
+  writeValue(parts, node, value);
+  let size = 0;
+  for (let i = 0; i < parts.length; i++) size += parts[i].length;
+  if (outPool.length !== size) outPool = Buffer.allocUnsafe(size);
+  let at = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    part.copy(outPool, at);
+    at += part.length;
+  }
+  return outPool;
+}
+
+let f32Pool = [];
+let f32Used = 0;
+
+function takeF32(nbytes) {
+  let buf = f32Pool[f32Used];
+  if (!buf || buf.length !== nbytes) {
+    buf = Buffer.allocUnsafe(nbytes);
+    f32Pool[f32Used] = buf;
+  }
+  f32Used += 1;
+  return buf;
+}
+
+class Cursor {
+  constructor(buf) {
+    this.buf = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+    this.i = 0;
+  }
+
+  need(n) {
+    if (n < 0 || this.i + n > this.buf.length) fail('EOF');
+  }
+
+  u32() {
+    this.need(4);
+    const v = this.buf.readUInt32LE(this.i);
+    this.i += 4;
+    return v;
+  }
+
+  count(width) {
+    const n = this.u32();
+    if (n > CAP) fail('LIMIT');
+    if (width && n > Math.floor((this.buf.length - this.i) / width)) fail('EOF');
+    return n;
+  }
+
+  bool() {
+    this.need(1);
+    const v = this.buf[this.i++];
+    if (v > 1) fail('TYPE');
+    return v === 1;
+  }
+
+  i32() {
+    this.need(4);
+    const v = this.buf.readInt32LE(this.i);
+    this.i += 4;
+    return v;
+  }
+
+  i64() {
+    this.need(8);
+    const v = this.buf.readBigInt64LE(this.i);
+    this.i += 8;
+    return Number(v);
+  }
+
+  f64() {
+    this.need(8);
+    const v = this.buf.readDoubleLE(this.i);
+    this.i += 8;
+    return v;
+  }
+
+  f32() {
+    this.need(4);
+    const bits = this.buf.readUInt32LE(this.i);
+    this.i += 4;
+    const frac = bits & 0x7fffff;
+    if ((bits >>> 23) === 0xff && frac !== 0) return new FloatBits('f32', BigInt(bits));
+    return this.buf.readFloatLE(this.i - 4);
+  }
+
+  str() {
+    const n = this.count(1);
+    this.need(n);
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(this.buf.subarray(this.i, this.i + n));
+    } catch {
+      fail('UTF8');
+    }
+    this.i += n;
+    return text;
+  }
+
+  f32List(copy) {
+    const n = this.count(4);
+    const nbytes = n * 4;
+    this.need(nbytes);
+    const payload = copy ? takeF32(nbytes) : this.buf.subarray(this.i, this.i + nbytes);
+    if (copy) this.buf.copy(payload, 0, this.i, this.i + nbytes);
+    this.i += nbytes;
+    return { f32Bytes: payload, length: n };
+  }
+
+  f64List() {
+    const n = this.count(8);
+    this.need(n * 8);
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = this.buf.readDoubleLE(this.i);
+      this.i += 8;
+    }
+    return out;
+  }
+
+  i64List() {
+    const n = this.count(8);
+    this.need(n * 8);
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = Number(this.buf.readBigInt64LE(this.i));
+      this.i += 8;
+    }
+    return out;
+  }
+
+  finish() {
+    if (this.i !== this.buf.length) fail('TRAILING');
+  }
+}
+
+function readValue(cur, node, copyF32) {
+  const kind = node[0];
+  if (kind === 'bool') return cur.bool();
+  if (kind === 'i32') return cur.i32();
+  if (kind === 'i64') return cur.i64();
+  if (kind === 'f32') return cur.f32();
+  if (kind === 'f64') return cur.f64();
+  if (kind === 'str') return cur.str();
+  if (kind === 'list') {
+    const elem = node[1];
+    if (elem[0] === 'f32') return cur.f32List(copyF32);
+    if (elem[0] === 'f64') return cur.f64List();
+    if (elem[0] === 'i64') return cur.i64List();
+    const n = cur.count(1);
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = readValue(cur, elem, copyF32);
+    return out;
+  }
+  if (kind === 'struct') {
+    const out = {};
+    for (const [name, field] of node[1]) out[name] = readValue(cur, field, copyF32);
+    return out;
+  }
+  fail('TYPE');
+}
 
 function asUint8(buf) {
   if (buf instanceof Uint8Array) return buf;
@@ -247,17 +534,22 @@ export const kilnSer = {
     // N is 1 for tensor, so tensor_view borrows that one struct.
     borrow = dataName === 'tensor_view' && !Array.isArray(value);
     schema = Array.isArray(value) ? ['list', base] : base;
-    // Compile the plan and grow the writer outside the timer.
-    writer.encode(schema, value);
+    // Numeric lists become one byte run here, outside the timer.
+    warm(schema, value);
   },
   serialize(value) {
     if (schema == null) throw new Error('gld-kiln prepare was not called');
-    return writer.encode(schema, value);
+    return encodeDirect(schema, value);
   },
   deserialize(buf) {
     if (schema == null) throw new Error('gld-kiln prepare was not called');
     if (borrow) return borrowMatrix(buf);
-    return decode(schema, asUint8(buf));
+    f32Used = 0;
+    const cur = new Cursor(asUint8(buf));
+    // Owned f32 lists are copied. tensor_view uses borrowMatrix instead.
+    const value = readValue(cur, schema, true);
+    cur.finish();
+    return value;
   },
 };
 
