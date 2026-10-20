@@ -2,6 +2,9 @@
  * Standard and Data Set labels for benchmark rows.
  * The map is dashboard/public/data/dimension-labels.json, built from
  * compliance/serializer-standards.json and schemas/data_catalog_v2.yaml.
+ * explanations on that file are copied from the configs
+ * (config/standards.yaml, data_sets in benchmark_config.yaml,
+ * type explanations in the catalog, data_type_views in dimensions.yaml).
  */
 
 export function baseTypeId(key) {

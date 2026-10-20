@@ -4,6 +4,7 @@
  * Pure helpers so URL migration and filter hiding can be tested without the DOM.
  */
 
+/** The Compare table holds eight columns. Show may list more on the graphs. */
 export const MAX_COMPARE_COLUMNS = 8;
 
 const ALL_LANG = 'all';
@@ -31,7 +32,7 @@ export function parseSerToken(token, fallbackLang) {
   return { lang, serializer: raw };
 }
 
-/** Drop blanks and duplicates. Keep the first of each pair, capped at 8. */
+/** Drop blanks and duplicates. Keep the first of each pair, capped at the column limit. */
 export function dedupePicks(picks, max = MAX_COMPARE_COLUMNS) {
   const out = [];
   const seen = new Set();
@@ -191,6 +192,33 @@ export function orderedVisible(picks, groups, baselineKey) {
   if (!base) return [];
   const baseId = pickKey(base);
   return [base, ...visible.filter((pick) => pickKey(pick) !== baseId)];
+}
+
+/**
+ * Add a pick, or remove it if it is already chosen.
+ * At the cap, a new pick is refused and the list is unchanged.
+ * @returns {{ picks: {lang: string, serializer: string}[], changed: boolean, action: 'add'|'remove'|'cap'|'' }}
+ */
+export function togglePick(picks, pick, max = MAX_COMPARE_COLUMNS) {
+  const key = pickKey(pick);
+  const list = dedupePicks(picks, max);
+  if (!key) return { picks: list, changed: false, action: '' };
+  if (list.some((item) => pickKey(item) === key)) {
+    return {
+      picks: list.filter((item) => pickKey(item) !== key),
+      changed: true,
+      action: 'remove',
+    };
+  }
+  if (list.length >= max) return { picks: list, changed: false, action: 'cap' };
+  return {
+    picks: dedupePicks(
+      [...list, { lang: String(pick.lang).trim(), serializer: String(pick.serializer).trim() }],
+      max,
+    ),
+    changed: true,
+    action: 'add',
+  };
 }
 
 /** First-visit seed. `groups` is already in the order to keep. */

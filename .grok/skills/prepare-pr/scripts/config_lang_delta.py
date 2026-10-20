@@ -25,6 +25,19 @@ from typing import Any
 import yaml
 
 
+def _without_explanations(obj: Any) -> Any:
+    """Drop ``explanation`` keys. They are dashboard prose, not bench inputs."""
+    if isinstance(obj, dict):
+        return {
+            key: _without_explanations(value)
+            for key, value in obj.items()
+            if key != "explanation"
+        }
+    if isinstance(obj, list):
+        return [_without_explanations(value) for value in obj]
+    return obj
+
+
 def _shared_without_log_dirs(doc: dict[str, Any]) -> dict[str, Any]:
     """Shared keys, with paths.language_log_dirs removed.
 
@@ -36,6 +49,9 @@ def _shared_without_log_dirs(doc: dict[str, Any]) -> dict[str, Any]:
     measured on. An absent name stays on suite. Editing the map does not
     change modes, seeds, or the suite type list, and suite runs do not
     replace their serializer filter from it.
+
+    ``explanation`` text on a data set (or anywhere else in this file) is
+    dashboard copy. It does not move a measured number.
     """
     shared = {
         k: v
@@ -47,7 +63,7 @@ def _shared_without_log_dirs(doc: dict[str, Any]) -> dict[str, Any]:
         paths = {k: v for k, v in paths.items() if k != "language_log_dirs"}
         shared = dict(shared)
         shared["paths"] = paths
-    return shared
+    return _without_explanations(shared)
 
 
 def _log_dirs(doc: dict[str, Any]) -> dict[str, Any] | None:
@@ -113,6 +129,17 @@ def _git_show(repo: Path, base: str, rel: str) -> str:
     return proc.stdout
 
 
+def explanation_only_change(old: Any, new: Any) -> bool:
+    """True when two YAML documents differ only by ``explanation`` text.
+
+    Unreadable documents are not explanation-only. The caller then keeps the
+    safe answer (re-bench).
+    """
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    return _without_explanations(old) == _without_explanations(new)
+
+
 def classify_repo(repo: Path, base: str, rel: str = "config/benchmark_config.yaml") -> list[str] | None:
     old_text = _git_show(repo, base, rel)
     new_path = repo / rel
@@ -127,9 +154,24 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo", type=Path, required=True)
     ap.add_argument("--base", required=True, help="Git tree-ish for the old file")
+    ap.add_argument(
+        "--explanation-only",
+        default=None,
+        help="Repo-relative YAML. Print YES when the diff is explanation text only.",
+    )
     args = ap.parse_args(argv)
+    repo = args.repo.resolve()
+    if args.explanation_only:
+        try:
+            old = yaml.safe_load(_git_show(repo, args.base, args.explanation_only))
+            new = yaml.safe_load((repo / args.explanation_only).read_text(encoding="utf-8"))
+            print("YES" if explanation_only_change(old, new) else "NO")
+        except Exception as exc:  # noqa: BLE001 — detector must fail closed
+            print(f"[config_lang_delta] {exc}", file=sys.stderr)
+            print("NO")
+        return 0
     try:
-        added = classify_repo(args.repo.resolve(), args.base)
+        added = classify_repo(repo, args.base)
     except Exception as exc:  # noqa: BLE001 — detector must fail closed
         print(f"[config_lang_delta] {exc}", file=sys.stderr)
         print("FORCE_ALL")

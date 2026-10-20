@@ -7,6 +7,7 @@ import {
   orderedVisible,
   resolvePickLanguages,
   seedPicks,
+  togglePick,
   visiblePicks,
 } from '../compare-picks.js';
 
@@ -185,6 +186,23 @@ test('ensureBaseline keeps a hidden star and falls back when the star is gone', 
   assert.equal(ensureBaseline(picks, 'mojo|gld-hdf5'), 'mojo|gld-hdf5');
   assert.equal(ensureBaseline(picks, 'csharp|PureHDF'), 'fortran|hdf5-fortran');
   assert.equal(ensureBaseline(picks, 'gld-hdf5'), 'mojo|gld-hdf5');
+});
+
+test('toggle adds, removes, and refuses a ninth column', () => {
+  const first = togglePick([], { lang: 'csharp', serializer: 'PureHDF' });
+  assert.equal(first.action, 'add');
+  assert.deepEqual(first.picks, [{ lang: 'csharp', serializer: 'PureHDF' }]);
+  const removed = togglePick(first.picks, { lang: 'csharp', serializer: 'PureHDF' });
+  assert.equal(removed.action, 'remove');
+  assert.deepEqual(removed.picks, []);
+  const full = Array.from({ length: 8 }, (_, i) => ({ lang: 'c', serializer: `s${i}` }));
+  const capped = togglePick(full, { lang: 'c', serializer: 'extra' });
+  assert.equal(capped.action, 'cap');
+  assert.equal(capped.changed, false);
+  assert.equal(capped.picks.length, 8);
+  const freed = togglePick(full, { lang: 'c', serializer: 's0' });
+  assert.equal(freed.action, 'remove');
+  assert.equal(freed.picks.length, 7);
 });
 
 test('seed keeps the given order and stars the first', () => {

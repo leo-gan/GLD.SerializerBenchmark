@@ -119,9 +119,15 @@
       </div>
     </section>
 
-    <div id="filter-policy-meta" class="filter-policy-meta glass-panel" hidden>
-      <span id="filter-policy-meta-text" class="filter-policy-meta-text"></span>
-    </div>
+    <details id="filter-explain" class="filter-explain glass-panel" hidden>
+      <summary>Standard, data set, data type, and samples</summary>
+      <div class="filter-explain-body">
+        <p id="explain-standard" class="filter-policy-meta-text" hidden></p>
+        <p id="explain-dataset" class="filter-policy-meta-text" hidden></p>
+        <p id="explain-datatype" class="filter-policy-meta-text" hidden></p>
+        <p id="filter-policy-meta-text" class="filter-policy-meta-text"></p>
+      </div>
+    </details>
 
     <div id="run-meta" class="run-meta glass-panel" hidden>
       <a id="run-meta-claim" class="run-meta-claim"
@@ -286,29 +292,23 @@
       <div class="compare-controls-compact">
         <div class="compare-ctrl-row compare-ctrl-row-main">
           <h2 class="chart-title compare-h2">Compare</h2>
-          <span class="compare-status-line" id="compare-status-line">0 of 8 · 0 metrics</span>
+          <span class="compare-status-line" id="compare-status-line">0 serializers · 0 metrics</span>
           <button type="button" id="btn-copy-compare-md" class="tab-btn chart-tool-btn compare-copy-btn">Copy Markdown</button>
         </div>
 
         <div class="compare-ctrl-row compare-pick-row">
-          <div class="compare-pick" id="compare-pick">
-            <input type="search" id="compare-pick-search" class="compare-pick-search" role="combobox"
-              placeholder="Search by language or serializer…"
-              aria-label="Search by language or serializer"
-              aria-autocomplete="list"
-              aria-expanded="false"
-              aria-controls="compare-pick-list"
-              autocomplete="off"
-              spellcheck="false">
-            <div id="compare-pick-list" class="compare-pick-list" role="listbox" hidden></div>
+          <label class="filter-label" for="compare-add-select">Add</label>
+          <div class="select-wrapper compare-add-select-wrap">
+            <select id="compare-add-select" aria-label="Add a serializer to the comparison">
+              <option value="">Add a serializer…</option>
+            </select>
           </div>
         </div>
 
         <div class="compare-ctrl-row compare-chip-row">
-          <div id="compare-pick-chips" class="chip-groups chip-groups-compact" aria-label="Selected serializers"></div>
+          <div id="compare-pick-chips" class="chip-groups chip-groups-compact" aria-label="Serializers in the table"></div>
           <button type="button" id="compare-pick-clear" class="link-btn" hidden>Clear</button>
         </div>
-        <p id="compare-pick-hidden" class="compare-pick-note" hidden></p>
         <p id="compare-xl-disclaimer" class="compare-xl-hint" hidden title="Runtimes, GCs, and hosts differ">
           Times across languages are directional only.
         </p>

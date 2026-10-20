@@ -175,6 +175,21 @@ test('missing registered rows keep the standard filter and skip measured names',
   assert.equal(jsonOnly.some((row) => row.serializer.startsWith('dagr-')), false);
 });
 
+test('published explanations cover the menu values', () => {
+  const path = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'dimension-labels.json');
+  const labels = JSON.parse(readFileSync(path, 'utf8'));
+  const exp = labels.explanations;
+  assert.ok(exp.standards.json.includes('JSON'));
+  assert.ok(exp.standards.all.length > 40);
+  assert.ok(exp.standards.custom.length > 40);
+  assert.ok(exp.data_sets.suite.length > 40);
+  assert.ok(exp.data_sets.tensor.length > 40);
+  assert.ok(exp.data_types.message.length > 40);
+  assert.ok(exp.data_types.tensor_view.length > 40);
+  assert.ok(exp.views.batch.includes('{n}'));
+  assert.ok(exp.views.all_all.length > 40);
+});
+
 test('dimension labels map every Dagr row to custom', () => {
   const path = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'dimension-labels.json');
   const labels = JSON.parse(readFileSync(path, 'utf8'));

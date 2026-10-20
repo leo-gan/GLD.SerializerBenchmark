@@ -376,6 +376,32 @@ body.dash-view-compare .toolbar > .tabs:not(.lang-tabs) {
   white-space: nowrap;
 }
 
+.filter-explain {
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.filter-explain summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.filter-explain-body {
+  padding-top: 0.35rem;
+}
+
+.filter-explain-body p {
+  margin: 0;
+}
+
+.filter-explain-body p + p {
+  margin-top: 0.28rem;
+}
+
 .filter-policy-meta {
   margin: 0;
   padding: 0.35rem 0.7rem;
@@ -392,6 +418,8 @@ body.dash-view-compare .toolbar > .tabs:not(.lang-tabs) {
 .filter-policy-meta-text .fp-criteria {
   color: var(--text-muted);
 }
+
+
 
 .toolbar {
   display: flex;
@@ -2378,6 +2406,24 @@ tr.roster-baseline-row td.num.baseline-col {
   z-index: 6;
 }
 
+.compare-pick-row .compare-add-select-wrap {
+  flex: 0 1 18rem;
+  width: 18rem;
+  min-width: 12rem;
+  max-width: 20rem;
+}
+
+.compare-pick-row .compare-add-select-wrap select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.compare-pick-row .compare-pick {
+  flex: 1 1 12rem;
+  width: auto;
+}
+
 .compare-pick {
   position: relative;
   flex: 1 1 100%;
@@ -2445,7 +2491,11 @@ tr.roster-baseline-row td.num.baseline-col {
   background: #e8f0fe;
 }
 
-.compare-pick-option.is-added,
+.compare-pick-option.is-added {
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
 .compare-pick-option.is-disabled {
   color: var(--text-muted);
   cursor: default;

@@ -82,25 +82,58 @@ data_model_v2:
 data_sets:
   - id: suite
     description: "Publication types at N=1 and N=100"
+    explanation: >-
+      The suite is the publication set: five small record shapes, measured at
+      one record and at one hundred. It exists so every language can be
+      compared on the same everyday payloads: a flat message, a nested
+      document, numeric telemetry, a block of strings, and an event envelope.
+      Typical uses of these shapes are APIs, documents, metrics, and logs.
+      This is the default data set.
     run_config: config/library/default.yaml
     smoke_run_config: config/library/smoke.yaml
     types: [message, document, telemetry, strings, event]
   - id: columnar
     description: "Wide rows, a projection, a nested table, and an aligned record"
+    explanation: >-
+      The columnar set is wide tables and one aligned trading-style record.
+      It exists because a five-field message does not show the difference
+      between a row serializer and a column file. Typical uses are scans over
+      many rows, reading one column out of a wide table, nested rows, and
+      market-data messages. Only libraries that can carry these shapes are
+      measured here.
     run_config: config/library/columnar.yaml
     smoke_run_config: config/library/columnar-smoke.yaml
     types: [table, table_project, nested_table, signal]
   - id: graph
     description: "Shared nodes and one reference cycle"
+    explanation: >-
+      The graph set is one object network with shared nodes and a cycle. It
+      exists because most codecs store trees, and a tree cannot represent two
+      fields that point at the same object. Typical uses are object graphs
+      inside one process, such as a document whose records share a child.
+      Libraries that only write trees are absent from this set.
     run_config: config/library/graph.yaml
     types: [graph]
   - id: array
     description: "One dense float64 array and a window of that array"
+    explanation: >-
+      The array set is one dense grid of numbers, plus a read of a window
+      inside that grid. It exists so scientific file formats are compared on
+      the job they were built for, instead of on a small message. Typical
+      uses are images, maps, and simulation grids. The five suite records are
+      not part of this set.
     run_config: config/library/array.yaml
     smoke_run_config: config/library/array-smoke.yaml
     types: [grid, grid_window]
   - id: tensor
     description: "A float32 matrix, a borrowed read, an LLM prompt, a weight shard, and a request"
+    explanation: >-
+      The tensor set is machine-learning payloads: a float matrix, a borrowed
+      read of that matrix, a token prompt, a block of weights, and a request
+      that wraps them. It exists because document codecs and tensor codecs are
+      built for different shapes. Typical uses are model serving, training
+      checkpoints, and inference requests. A borrowed read uses the encoded
+      bytes in place.
     run_config: config/library/tensor.yaml
     smoke_run_config: config/library/tensor-smoke.yaml
     types: [tensor, tensor_view, prompt, shard, request]

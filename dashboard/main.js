@@ -62,16 +62,14 @@ import { NO_SPEC_LABEL, scoredFormatIds, standardMenuLabel } from './compliance-
 import { dashboardRunPanelOpen, dashboardViewFromHash } from './dash-hash.js';
 import { foldIoGroups } from './fold-io.js';
 import { compareFigurePng, mountCompareLatency, resizeCompareFigures } from './exp-charts.js';
-import { normalizeShow, toggleSeries } from './exp-export.js';
+import { normalizeShow, rowsForShow, toggleSeries } from './exp-export.js';
 import {
   MAX_COMPARE_COLUMNS,
   ensureBaseline,
-  hiddenPickCount,
-  migrateCompareSelection,
   orderedVisible,
   pickKey,
   resolvePickLanguages,
-  seedPicks,
+  togglePick,
   visiblePicks,
 } from './compare-picks.js';
 
@@ -241,7 +239,7 @@ let state = {
   urlBaseline: '',
   urlCbase: '',
   /** Compare charts: which rows to draw, and which Write and Read series are on. */
-  compareShow: 'all',
+  compareShow: 'top 10',
   compareWriteOn: true,
   compareReadOn: true,
 
@@ -658,13 +656,14 @@ function updateCompareStatusLine() {
   const el = document.getElementById('compare-status-line');
   const countEl = document.getElementById('compare-selected-count');
   const metricsEl = document.getElementById('metrics-selected-count');
-  const n = state.comparePicks.length;
+  const n = visiblePicks(state.comparePicks, state.filteredGroups).length;
   const m = state.selectedMetrics.filter((k) =>
     state.availableMetrics.length ? state.availableMetrics.includes(k) : true
   ).length;
   if (el) {
     const metLabel = m === 1 ? 'metric' : 'metrics';
-    el.textContent = `${n} of ${MAX_COMPARE_COLUMNS} · ${m} ${metLabel}`;
+    const serLabel = n === 1 ? 'serializer' : 'serializers';
+    el.textContent = `${n} ${serLabel} · ${m} ${metLabel}`;
   }
   if (countEl) countEl.textContent = String(n);
   if (metricsEl) metricsEl.textContent = String(m);
@@ -723,7 +722,12 @@ function setupEventListeners() {
   compareRoot?.addEventListener('change', (e) => {
     if (e.target?.id !== 'compare-show') return;
     state.compareShow = normalizeShow(e.target.value);
+    comparePicksCustom = false;
+    ensureComparePicks();
+    renderComparePicker();
+    renderCompareMatrix();
     renderCompareFigures();
+    saveSettings();
   });
   compareRoot?.addEventListener('click', (e) => {
     const id = e.target?.id;
@@ -1791,10 +1795,20 @@ function setFilterPolicy(policyId) {
   filterAndRefresh();
 }
 
+function syncFilterExplain() {
+  const panel = document.getElementById('filter-explain');
+  if (!panel) return;
+  const any = ['explain-standard', 'explain-dataset', 'explain-datatype', 'filter-policy-meta-text'].some((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.hidden) return false;
+    return (el.textContent || '').trim().length > 0;
+  });
+  panel.hidden = !any;
+}
+
 function updateFilterPolicyMeta() {
-  const el = document.getElementById('filter-policy-meta');
   const text = document.getElementById('filter-policy-meta-text');
-  if (!el || !text) return;
+  if (!text) return;
 
   const pid = state.filterPolicy;
   const catalog = state.filterPolicies[pid] || FILTER_POLICY_FALLBACK[pid] || {};
@@ -1851,7 +1865,79 @@ function updateFilterPolicyMeta() {
     (statsBits.length
       ? `<br><span class="fp-criteria">This view: ${statsBits.join(' · ')}</span>`
       : '');
+  text.hidden = false;
+  syncFilterExplain();
+}
+
+function fillExplainLine(id, title, text) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  const body = String(text || '').trim();
+  if (!body) {
+    el.hidden = true;
+    el.replaceChildren();
+    return false;
+  }
   el.hidden = false;
+  el.replaceChildren();
+  const strong = document.createElement('strong');
+  strong.textContent = title;
+  el.append(strong, ` — ${body}`);
+  return true;
+}
+
+function applyViewTemplate(template, vars) {
+  return String(template || '').replace(/\{(\w+)\}/g, (_, key) => (
+    Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : ''
+  ));
+}
+
+/** Explanation of the Data Type menu value, from the catalog plus view sentences. */
+function dataTypeExplanation(key) {
+  const exp = dimensionLabels?.explanations;
+  if (!exp) return '';
+  const parsed = parseFixtureSelection(key);
+  const types = exp.data_types || {};
+  const views = exp.views || {};
+  if (parsed.kind === 'all_all') return views.all_all || '';
+  if (parsed.kind === 'all_n') return applyViewTemplate(views.all_n, { n: parsed.n });
+  if (parsed.kind === 'batch_compound') {
+    const base = types[parsed.base] || '';
+    const extra = applyViewTemplate(views.batch_compound, {
+      nA: parsed.nA,
+      nB: parsed.nB,
+    });
+    return [base, extra].filter(Boolean).join(' ');
+  }
+  const baseId = baseTypeId(parsed.key || key);
+  const base = types[baseId] || '';
+  const nMatch = String(parsed.key || key).match(/@n=(\d+)/i);
+  const extra = nMatch ? applyViewTemplate(views.batch, { n: nMatch[1] }) : '';
+  return [base, extra].filter(Boolean).join(' ');
+}
+
+function updateDimensionExplain() {
+  const exp = dimensionLabels?.explanations || {};
+  const standardId = state.currentStandard || 'all';
+  const standardText = (exp.standards || {})[standardId] || '';
+  const dataSetText = (exp.data_sets || {})[state.currentDataSet] || '';
+  const dataTypeText = dataTypeExplanation(state.currentTestData);
+  const shown = [
+    fillExplainLine('explain-standard', `Standard: ${standardMenuLabel(standardId)}`, standardText),
+    fillExplainLine('explain-dataset', `Data set: ${dataSetLabel(state.currentDataSet)}`, dataSetText),
+    fillExplainLine(
+      'explain-datatype',
+      `Data type: ${fixtureOptionLabel(state.currentTestData) || state.currentTestData || ''}`,
+      dataTypeText,
+    ),
+  ];
+  if (!shown.some(Boolean)) {
+    for (const id of ['explain-standard', 'explain-dataset', 'explain-datatype']) {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    }
+  }
+  syncFilterExplain();
 }
 
 function discoverMetricKeys(groups) {
@@ -2437,6 +2523,7 @@ function filterAndRefresh() {
 
   updateKPIs();
   updateFilterPolicyMeta();
+  updateDimensionExplain();
   updateStreamHonestyChip();
   populateBaselineSelect();
   renderComparePicker();
@@ -3292,6 +3379,15 @@ function finiteMetric(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Write + read time, the same total the Write + read chart sorts by. */
+function writeReadTotalNs(g) {
+  const write = finiteMetric(g?.ser_median_ns ?? g?.avg_time_ser_ns);
+  const read = finiteMetric(g?.deser_median_ns ?? g?.avg_time_deser_ns);
+  let total = finiteMetric(g?.total_median_ns ?? g?.avg_time_total_ns);
+  if (total == null && write != null && read != null) total = write + read;
+  return total;
+}
+
 /** Map a dashboard group onto the experiment chart row shape. */
 function compareChartRows(groups) {
   const allLangs = isAllLanguages();
@@ -3299,8 +3395,7 @@ function compareChartRows(groups) {
     .map((g) => {
       const write = finiteMetric(g.ser_median_ns ?? g.avg_time_ser_ns);
       const read = finiteMetric(g.deser_median_ns ?? g.avg_time_deser_ns);
-      let total = finiteMetric(g.total_median_ns ?? g.avg_time_total_ns);
-      if (total == null && write != null && read != null) total = write + read;
+      const total = writeReadTotalNs(g);
       const name = g.serializer || '';
       return {
         library: name,
@@ -3333,9 +3428,6 @@ function renderCompareFigures() {
   if (!mount) return;
   const rows = compareChartRows(state.filteredGroups);
   const cross = isAllLanguages() || new Set(rows.map((r) => r.language).filter(Boolean)).size > 1;
-  const lead = isAllLanguages()
-    ? 'Every measured serializer in this standard, data set, and data type. The table below is only the serializers you added.'
-    : 'Every measured serializer for this language, standard, data set, and data type. The table below is only the serializers you added.';
   mountCompareLatency(mount, rows, {
     show: state.compareShow,
     writeOn: state.compareWriteOn,
@@ -3347,80 +3439,95 @@ function renderCompareFigures() {
     scroll: true,
     crossLang: cross,
     lang: cross ? 'every language' : languageLabel(state.currentLanguage),
-    lead,
   });
   if (document.body.classList.contains('dash-view-compare')) {
     requestAnimationFrame(() => resizeCompareFigures());
   }
 }
 
-let comparePickOpen = false;
-let comparePickActive = -1;
+/** True after Add, remove, or Clear. Language, standard, data, and Show start a fresh set. */
+let comparePicksCustom = false;
+let compareViewKey = '';
 
-function ensureComparePicks() {
-  if (!state.comparePicksReady) {
-    const migrated = migrateCompareSelection({
-      currentLanguage: state.currentLanguage,
-      comparePicksPresent: Array.isArray(state.savedComparePicks),
-      comparePicks: state.savedComparePicks || [],
-      comparePickBaseline: state.savedComparePickBaseline,
-      detailSerializers: state.detailSerializers,
-      xlSelected: state.xlSelected,
-      xlBaselineKey: state.xlBaselineKey,
-      scope: state.compareScope,
-      urlScope: state.urlScope,
-      urlSers: state.urlSers || [],
-      urlBaseline: state.urlBaseline,
-      urlCbase: state.urlCbase,
-      compareBaseline: state.compareBaseline,
-    });
-    state.comparePicks = resolvePickLanguages(
-      migrated.picks,
-      state.filteredGroups,
-      state.currentLanguage,
-    );
-    state.comparePickBaseline = ensureBaseline(state.comparePicks, migrated.baseline);
-    state.comparePicksSet = migrated.set;
-    state.comparePicksReady = true;
-  } else {
-    state.comparePicks = resolvePickLanguages(
-      state.comparePicks,
-      state.filteredGroups,
-      state.currentLanguage,
-    );
-    state.comparePickBaseline = ensureBaseline(state.comparePicks, state.comparePickBaseline);
-  }
-  if (!state.comparePicksSet) {
-    const seeded = seedPicks(groupsForCompareSeed(), 6);
-    if (seeded.set) {
-      state.comparePicks = seeded.picks;
-      state.comparePickBaseline = seeded.baseline;
-      state.comparePicksSet = true;
-    }
-  }
+function compareViewKeyNow() {
+  return [
+    state.currentLanguage,
+    state.currentStandard,
+    state.currentDataSet,
+    state.currentTestData,
+    state.currentMode,
+    state.filterPolicy,
+    state.compareShow,
+  ].join('\0');
 }
 
+/** Rows on the Write + read chart for the current Show value, fastest first for "top". */
+function picksMatchingShow() {
+  const ranked = groupsForCompareSeed();
+  const shown = rowsForShow(
+    ranked.map((row) => ({
+      library: row.serializer,
+      language: row.language,
+      total_median_ns: row.total,
+    })),
+    state.compareShow,
+    'total_median_ns',
+  );
+  return shown
+    .filter((row) => row.language && row.library)
+    .slice(0, MAX_COMPARE_COLUMNS)
+    .map((row) => ({ lang: row.language, serializer: row.library }));
+}
+
+function applyShowToCompareTable() {
+  const picks = picksMatchingShow();
+  state.comparePicks = picks;
+  state.comparePickBaseline = pickKey(picks[0]);
+  state.comparePicksSet = true;
+  state.comparePicksReady = true;
+  comparePicksCustom = false;
+}
+
+function ensureComparePicks() {
+  const key = compareViewKeyNow();
+  if (key !== compareViewKey) {
+    compareViewKey = key;
+    comparePicksCustom = false;
+  }
+  if (!comparePicksCustom) {
+    applyShowToCompareTable();
+    return;
+  }
+  state.comparePicks = resolvePickLanguages(
+    state.comparePicks,
+    state.filteredGroups,
+    state.currentLanguage,
+  );
+  const visible = visiblePicks(state.comparePicks, state.filteredGroups);
+  if (!visible.length) {
+    applyShowToCompareTable();
+    return;
+  }
+  state.comparePicks = visible;
+  state.comparePickBaseline = ensureBaseline(visible, state.comparePickBaseline);
+  state.comparePicksSet = true;
+  state.comparePicksReady = true;
+}
+
+/** Fastest write + read first. The same order as the Write + read chart. */
 function groupsForCompareSeed() {
   const byKey = new Map();
   for (const g of state.filteredGroups || []) {
     if (!g?.serializer) continue;
     const lang = g.language || (isAllLanguages() ? '' : state.currentLanguage);
     if (!lang) continue;
+    const total = writeReadTotalNs(g);
+    if (total == null) continue;
     const key = `${lang}|${g.serializer}`;
-    if (!byKey.has(key)) byKey.set(key, { ...g, language: lang });
+    const prev = byKey.get(key);
+    if (!prev || total < prev.total) byKey.set(key, { language: lang, serializer: g.serializer, total });
   }
-  const pareto = [];
-  for (const name of state.paretoSerializerNames) {
-    const g = (state.filteredGroups || []).find((row) => groupKey(row) === name);
-    if (!g) continue;
-    const lang = g.language || (isAllLanguages() ? '' : state.currentLanguage);
-    const key = lang ? `${lang}|${g.serializer}` : '';
-    if (key && byKey.has(key)) {
-      pareto.push(byKey.get(key));
-      byKey.delete(key);
-    }
-  }
-  return pareto.length ? pareto : [...byKey.values()];
+  return [...byKey.values()].sort((a, b) => a.total - b.total);
 }
 
 function groupForPick(pick) {
@@ -3436,7 +3543,7 @@ function effectiveVisibleBaseline() {
   return visible.find((pick) => pickKey(pick) === state.comparePickBaseline) || visible[0] || null;
 }
 
-function compareCandidateRows() {
+function compareCandidateRows(query) {
   const byLang = new Map();
   for (const g of state.filteredGroups || []) {
     if (!g?.language || !g?.serializer) continue;
@@ -3445,7 +3552,10 @@ function compareCandidateRows() {
     if (!langMap.has(g.serializer)) langMap.set(g.serializer, g);
   }
   const selected = new Set(state.comparePicks.map((pick) => pickKey(pick)));
-  const q = (document.getElementById('compare-pick-search')?.value || '').trim().toLowerCase();
+  const q = (query != null
+    ? String(query)
+    : (document.getElementById('compare-pick-search')?.value || '')
+  ).trim().toLowerCase();
   const rows = [];
   for (const [lang, langMap] of byLang) {
     const peers = [...langMap.keys()];
@@ -3469,6 +3579,7 @@ function compareCandidateRows() {
   }
   const order = new Map(LANGUAGE_CATALOG.map((lang, index) => [lang.id, index]));
   rows.sort((a, b) => {
+    if (a.added !== b.added) return a.added ? 1 : -1;
     const la = order.has(a.lang) ? order.get(a.lang) : 999;
     const lb = order.has(b.lang) ? order.get(b.lang) : 999;
     if (la !== lb) return la - lb;
@@ -3478,37 +3589,7 @@ function compareCandidateRows() {
 }
 
 function comparePickAtCap() {
-  return state.comparePicks.length >= MAX_COMPARE_COLUMNS;
-}
-
-function rowAddable(row) {
-  return !!(row && !row.added && !comparePickAtCap());
-}
-
-function firstAddableIndex(rows, start = 0) {
-  for (let i = Math.max(0, start); i < rows.length; i += 1) {
-    if (rowAddable(rows[i])) return i;
-  }
-  for (let i = Math.min(start, rows.length) - 1; i >= 0; i -= 1) {
-    if (rowAddable(rows[i])) return i;
-  }
-  return -1;
-}
-
-function moveComparePickActive(rows, delta) {
-  if (!rows.length) {
-    comparePickActive = -1;
-    return;
-  }
-  let i = comparePickActive < 0 ? (delta > 0 ? -1 : rows.length) : comparePickActive;
-  while (true) {
-    i += delta;
-    if (i < 0 || i >= rows.length) return;
-    if (rowAddable(rows[i])) {
-      comparePickActive = i;
-      return;
-    }
-  }
+  return visiblePicks(state.comparePicks, state.filteredGroups).length >= MAX_COMPARE_COLUMNS;
 }
 
 function commitComparePicks() {
@@ -3519,26 +3600,46 @@ function commitComparePicks() {
   renderCompareMatrix();
 }
 
+function scrollCompareColumnIntoView(key) {
+  requestAnimationFrame(() => {
+    const nodes = document.querySelectorAll('#serializer-metrics-head th[data-pick-key]');
+    const th = [...nodes].find((el) => el.dataset.pickKey === key);
+    th?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+}
+
+function applyCompareToggle(lang, serializer) {
+  if (!lang || !serializer) return;
+  const result = togglePick(state.comparePicks, { lang, serializer }, MAX_COMPARE_COLUMNS);
+  if (result.action === 'cap') {
+    showNotification(
+      `The table holds ${MAX_COMPARE_COLUMNS} serializers. Remove one to add another.`,
+      'error',
+    );
+    return;
+  }
+  if (!result.changed) return;
+  comparePicksCustom = true;
+  const key = `${lang}|${serializer}`;
+  state.comparePicks = result.picks;
+  if (result.action === 'remove' && state.comparePickBaseline === key) {
+    state.comparePickBaseline = pickKey(state.comparePicks[0]);
+  }
+  if (result.action === 'add' && !state.comparePickBaseline) {
+    state.comparePickBaseline = key;
+  }
+  commitComparePicks();
+  if (result.action === 'add') scrollCompareColumnIntoView(key);
+}
+
 function addComparePick(lang, serializer) {
   if (!lang || !serializer) return;
   if (state.comparePicks.some((pick) => pick.lang === lang && pick.serializer === serializer)) return;
-  if (comparePickAtCap()) return;
-  const prev = comparePickActive;
-  state.comparePicks = [...state.comparePicks, { lang, serializer }];
-  if (!state.comparePickBaseline) state.comparePickBaseline = `${lang}|${serializer}`;
-  comparePickActive = firstAddableIndex(compareCandidateRows(), prev + 1);
-  commitComparePicks();
-  document.getElementById('compare-pick-search')?.focus();
-  openComparePickList();
+  applyCompareToggle(lang, serializer);
 }
 
 function removeComparePick(pick) {
-  const key = pickKey(pick);
-  state.comparePicks = state.comparePicks.filter((item) => pickKey(item) !== key);
-  if (state.comparePickBaseline === key) {
-    state.comparePickBaseline = pickKey(state.comparePicks[0]);
-  }
-  commitComparePicks();
+  applyCompareToggle(pick?.lang, pick?.serializer);
 }
 
 function setComparePickBaseline(pick) {
@@ -3551,38 +3652,24 @@ function setComparePickBaseline(pick) {
 }
 
 function clearComparePicks() {
+  comparePicksCustom = true;
   state.comparePicks = [];
   state.comparePickBaseline = '';
-  comparePickActive = -1;
   commitComparePicks();
 }
 
 function renderComparePicker() {
-  const input = document.getElementById('compare-pick-search');
-  if (input) {
-    input.placeholder = comparePickAtCap()
-      ? `${MAX_COMPARE_COLUMNS} of ${MAX_COMPARE_COLUMNS} — remove a chip to add another`
-      : 'Search by language or serializer…';
-  }
+  renderCompareAddSelect();
   renderCompareChips();
   updateComparePickNotes();
   updateCompareStatusLine();
-  if (comparePickOpen) renderComparePickList();
 }
 
 function updateComparePickNotes() {
-  const hiddenEl = document.getElementById('compare-pick-hidden');
   const disclaimer = document.getElementById('compare-xl-disclaimer');
   const clearBtn = document.getElementById('compare-pick-clear');
-  const hidden = hiddenPickCount(state.comparePicks, state.filteredGroups);
-  if (hiddenEl) {
-    hiddenEl.hidden = hidden === 0;
-    hiddenEl.textContent =
-      hidden === 1
-        ? '1 selected serializer is hidden by the current filters.'
-        : `${hidden} selected serializers are hidden by the current filters.`;
-  }
-  if (clearBtn) clearBtn.hidden = state.comparePicks.length === 0;
+  const visible = visiblePicks(state.comparePicks, state.filteredGroups);
+  if (clearBtn) clearBtn.hidden = visible.length === 0;
   if (disclaimer) {
     const langs = new Set(visiblePicks(state.comparePicks, state.filteredGroups).map((pick) => pick.lang));
     disclaimer.hidden = langs.size < 2;
@@ -3644,153 +3731,56 @@ function renderCompareChips() {
   }
 }
 
-function renderComparePickList() {
-  const list = document.getElementById('compare-pick-list');
-  const input = document.getElementById('compare-pick-search');
-  if (!list) return;
-  const rows = compareCandidateRows();
-  if (comparePickActive >= rows.length) comparePickActive = rows.length - 1;
-  list.replaceChildren();
-  if (comparePickAtCap()) {
-    const cap = document.createElement('div');
-    cap.className = 'compare-pick-cap';
-    cap.textContent = `${MAX_COMPARE_COLUMNS} of ${MAX_COMPARE_COLUMNS} — remove a chip to add another`;
-    list.appendChild(cap);
-  }
-  if (!rows.length) {
-    const empty = document.createElement('div');
-    empty.className = 'compare-pick-empty';
-    empty.textContent = 'No matches';
-    list.appendChild(empty);
-    input?.removeAttribute('aria-activedescendant');
-    return;
-  }
-  let lastLang = '';
-  rows.forEach((row, index) => {
-    if (row.lang !== lastLang) {
-      lastLang = row.lang;
-      const heading = document.createElement('div');
-      heading.className = 'compare-pick-lang';
-      heading.textContent = row.languageLabel;
-      list.appendChild(heading);
+function renderCompareAddSelect() {
+  const sel = document.getElementById('compare-add-select');
+  if (!sel) return;
+  const rows = compareCandidateRows('').filter((row) => !row.added);
+  const atCap = comparePickAtCap();
+  sel.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = atCap
+    ? 'Remove one to add another'
+    : rows.length
+      ? 'Add a serializer…'
+      : 'Every serializer in this filter is in the table';
+  sel.appendChild(placeholder);
+  const langs = new Set(rows.map((row) => row.lang));
+  const addOption = (parent, row) => {
+    const opt = document.createElement('option');
+    opt.value = `${row.lang}|${row.serializer}`;
+    opt.textContent = langs.size > 1 ? `${row.languageLabel} / ${row.label}` : row.label;
+    parent.appendChild(opt);
+  };
+  if (langs.size > 1) {
+    let current = '';
+    let group = null;
+    for (const row of rows) {
+      if (row.lang !== current) {
+        current = row.lang;
+        group = document.createElement('optgroup');
+        group.label = row.languageLabel;
+        sel.appendChild(group);
+      }
+      addOption(group, row);
     }
-    const opt = document.createElement('div');
-    opt.className = 'compare-pick-option';
-    opt.id = `compare-pick-opt-${index}`;
-    opt.setAttribute('role', 'option');
-    opt.dataset.pickIndex = String(index);
-    opt.dataset.lang = row.lang;
-    opt.dataset.serializer = row.serializer;
-    const addable = rowAddable(row);
-    if (!addable) opt.classList.add(row.added ? 'is-added' : 'is-disabled');
-    if (index === comparePickActive) opt.classList.add('is-active');
-    opt.setAttribute('aria-selected', index === comparePickActive ? 'true' : 'false');
-    opt.setAttribute('aria-disabled', addable ? 'false' : 'true');
-    const name = document.createElement('span');
-    name.textContent = row.label;
-    const mark = document.createElement('span');
-    mark.className = 'compare-pick-mark';
-    mark.textContent = row.added ? 'added' : '';
-    opt.title = `${row.languageLabel} / ${row.title}`;
-    opt.appendChild(name);
-    opt.appendChild(mark);
-    list.appendChild(opt);
-  });
-  const active = list.querySelector('.is-active');
-  if (active) {
-    const top = active.offsetTop;
-    const bottom = top + active.offsetHeight;
-    if (top < list.scrollTop) list.scrollTop = top;
-    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  } else {
+    rows.forEach((row) => addOption(sel, row));
   }
-  if (input) {
-    if (comparePickActive >= 0) {
-      input.setAttribute('aria-activedescendant', `compare-pick-opt-${comparePickActive}`);
-    } else {
-      input.removeAttribute('aria-activedescendant');
-    }
-  }
-}
-
-function openComparePickList() {
-  comparePickOpen = true;
-  const list = document.getElementById('compare-pick-list');
-  const input = document.getElementById('compare-pick-search');
-  if (list) list.hidden = false;
-  input?.setAttribute('aria-expanded', 'true');
-  if (comparePickActive < 0) comparePickActive = firstAddableIndex(compareCandidateRows(), 0);
-  renderComparePickList();
-}
-
-function closeComparePickList() {
-  comparePickOpen = false;
-  const list = document.getElementById('compare-pick-list');
-  const input = document.getElementById('compare-pick-search');
-  if (list) list.hidden = true;
-  input?.setAttribute('aria-expanded', 'false');
-  input?.removeAttribute('aria-activedescendant');
+  sel.disabled = atCap || rows.length === 0;
+  sel.value = '';
 }
 
 function setupComparePickListeners() {
-  const input = document.getElementById('compare-pick-search');
-  const list = document.getElementById('compare-pick-list');
-  input?.addEventListener('focus', () => openComparePickList());
-  input?.addEventListener('input', () => {
-    comparePickActive = firstAddableIndex(compareCandidateRows(), 0);
-    openComparePickList();
-  });
-  input?.addEventListener('keydown', (e) => {
-    const rows = compareCandidateRows();
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (!comparePickOpen) {
-        comparePickActive = firstAddableIndex(rows, 0);
-        openComparePickList();
-        return;
-      }
-      moveComparePickActive(rows, e.key === 'ArrowDown' ? 1 : -1);
-      renderComparePickList();
-      return;
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (!comparePickOpen) {
-        openComparePickList();
-        return;
-      }
-      const row = rows[comparePickActive];
-      if (rowAddable(row)) addComparePick(row.lang, row.serializer);
-      return;
-    }
-    if (e.key === 'Escape' && comparePickOpen) {
-      e.preventDefault();
-      closeComparePickList();
-    }
-  });
-  list?.addEventListener('pointerdown', (e) => {
-    // Keep the field focused, and don't let this event reach the outside-click closer.
-    // The option node is replaced as soon as the row is added.
-    e.preventDefault();
-    e.stopPropagation();
-    const opt = e.target.closest?.('[data-pick-index]');
-    if (!opt) return;
-    const index = Number(opt.dataset.pickIndex);
-    const row = compareCandidateRows()[index];
-    if (!rowAddable(row)) return;
-    comparePickActive = index;
-    addComparePick(row.lang, row.serializer);
-  });
-  list?.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  document.getElementById('compare-add-select')?.addEventListener('change', (e) => {
+    const value = e.target.value;
+    e.target.value = '';
+    const bar = value.indexOf('|');
+    if (bar <= 0) return;
+    addComparePick(value.slice(0, bar), value.slice(bar + 1));
   });
   document.getElementById('compare-pick-clear')?.addEventListener('click', () => {
     clearComparePicks();
-  });
-  document.addEventListener('pointerdown', (e) => {
-    const root = document.getElementById('compare-pick');
-    if (!root || root.contains(e.target)) return;
-    closeComparePickList();
   });
 }
 
@@ -3825,6 +3815,7 @@ function renderCompareMatrix() {
   columns.forEach((col) => {
     const th = document.createElement('th');
     th.className = 'cmp-th-ser' + (col.isBaseline ? ' baseline-col' : '');
+    th.dataset.pickKey = col.key;
     th.title = col.isBaseline ? `${col.label} (baseline)` : col.label;
 
     // Split "Lang / name:ver" or "name:ver" into stacked lines (avoids interleaved wraps)
@@ -3886,9 +3877,7 @@ function renderCompareMatrix() {
   const colCount = Math.max(1, columns.length + 1);
   if (!columns.length) {
     const tr = document.createElement('tr');
-    const msg = state.comparePicks.length
-      ? 'Selected serializers are hidden by the current filters.'
-      : 'Add a serializer to compare.';
+    const msg = 'Add a serializer to compare.';
     tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">${msg}</td>`;
     tbody.appendChild(tr);
     return;

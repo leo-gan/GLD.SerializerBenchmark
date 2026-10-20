@@ -21,12 +21,19 @@ forbidden_type_config_keys:
   - n
   - return_array_even_for_1_instance
 
+# explanation is the dashboard sentence for this type (why it exists, typical uses).
+# It is not part of type_config and does not change the type-config hash.
 # data_set is the parent of a type id. The membership is configured in
 # config/benchmark_config.yaml under data_sets. This stamp must match that list.
 # A serializer is measured only on the sets it already supports.
 types:
   message:
     description: "Single-level map/struct of mixed primitives"
+    explanation: >-
+      A message is one flat record of mixed fields: booleans, integers, floats,
+      and short strings, with no nested objects. It is in the suite as the
+      cheapest structured payload, so the cost of the library itself is visible.
+      Typical uses are a status update, a user record, or a simple API body.
     category: flat_mixed
     data_set: suite
     default_type_config:
@@ -42,6 +49,11 @@ types:
 
   document:
     description: "Nested structure; structure dominates cost"
+    explanation: >-
+      A document is a nested record: an id, a status, a small map, and a list of
+      line items. It is in the suite because many real payloads are trees, and
+      nesting costs more than a flat struct. Typical uses are an order, a stored
+      document, or an API response with a list inside.
     category: nested
     data_set: suite
     default_type_config:
@@ -54,6 +66,11 @@ types:
 
   telemetry:
     description: "Mostly numeric bulk inside one instance"
+    explanation: >-
+      Telemetry is one reading made mostly of numbers: a source, a timestamp, a
+      few tags, and a list of values. It is in the suite to show numeric bulk
+      rather than nested structure. Typical uses are a sensor sample, a metric
+      point, or a monitoring row.
     category: numeric_bulk
     data_set: suite
     default_type_config:
@@ -66,6 +83,11 @@ types:
 
   strings:
     description: "Homogeneous text bulk; trivial shell"
+    explanation: >-
+      The strings type is a list of text and almost nothing else. It is in the
+      suite to show the cost of encoding and copying text, without a complicated
+      record around it. Typical uses are a batch of names, log lines, or search
+      tokens.
     category: text_bulk
     data_set: suite
     default_type_config:
@@ -77,6 +99,11 @@ types:
 
   event:
     description: "Stream envelope; batch via data_type_instance_count"
+    explanation: >-
+      An event is a small envelope: an id, a type, a time, a producer, and a few
+      attributes. It is in the suite as the shape of a log line or a message-bus
+      record. Typical uses are an audit event, a click, or a trace span. One
+      hundred events in one call is a batch.
     category: envelope
     data_set: suite
     default_type_config:
@@ -90,6 +117,11 @@ types:
   # Run them from config/library/columnar.yaml with an explicit serializer allow-list.
   table:
     description: "Wide flat row: 16 float64, 4 int64, then 2 utf8 strings"
+    explanation: >-
+      A table row is a wide flat record: sixteen floats, four integers, and two
+      strings. It exists so columnar files and row codecs can be timed on a
+      scan-shaped row, not on a tiny message. Typical uses are a feature row, a
+      measurement row, or a warehouse record.
     category: columnar_flat
     data_set: columnar
     default_type_config:
@@ -103,6 +135,11 @@ types:
 
   table_project:
     description: "Same row as table; deserialize returns f_float_0 only"
+    explanation: >-
+      Table project writes the same wide row as table, and the read returns only
+      the first float column. It exists because columnar formats are built to skip
+      the columns a query does not need, and a full-row read hides that. Typical
+      uses are a query that needs one measure from a wide table.
     category: columnar_project
     data_set: columnar
     default_type_config:
@@ -116,6 +153,11 @@ types:
 
   nested_table:
     description: "One struct column plus a list of structs (shredding)"
+    explanation: >-
+      A nested table is one struct plus a list of structs. It exists because
+      column formats shred that nesting into columns, which a flat row does not
+      exercise. Typical uses are an order with line items, or an event with a
+      repeated group, stored as a table.
     category: columnar_nested
     data_set: columnar
     default_type_config:
@@ -126,6 +168,11 @@ types:
 
   signal:
     description: "Fixed block, then variable strings, then a repeating group"
+    explanation: >-
+      A signal is a fixed header, then short strings, then a repeating group. It
+      exists as the aligned record Simple Binary Encoding was designed to pack,
+      and as a check that other codecs can carry the same shape. Typical uses are
+      a market-data tick or an order update.
     category: aligned_record
     data_set: columnar
     default_type_config:
@@ -139,6 +186,12 @@ types:
   # Tree codecs do not support this type.
   graph:
     description: "One graph: shared region nodes and a reference cycle"
+    explanation: >-
+      A graph is shared region nodes plus a ring of people who point at one
+      another. It exists because a tree encoding cannot store one object reached
+      by two fields, or a cycle. Typical uses are an object network in memory,
+      such as orders that share a region. Libraries that only write trees do not
+      appear on this type.
     category: graph
     data_set: graph
     default_type_config:
@@ -157,6 +210,11 @@ types:
   # N is 1. The array is one value.
   grid:
     description: "One dense float64 array. Full write and full read."
+    explanation: >-
+      A grid is one 512 by 512 array of 64-bit floats, written and read in full.
+      It exists so array file formats are timed on a real grid rather than on a
+      handful of fields. Typical uses are a raster, a map layer, or a simulation
+      field.
     category: array
     data_set: array
     default_type_config:
@@ -167,6 +225,11 @@ types:
   # (hyperslab, NetCDF start/count, or ADIOS selection).
   grid_window:
     description: "Same dense float64 array. Deserialize reads an interior window."
+    explanation: >-
+      Grid window writes the same array as grid, and the read returns only an
+      interior rectangle. It exists because scientific formats can fetch a window
+      without copying the whole array. Typical uses are viewing a region of a map
+      or a tile of a larger field.
     category: array_window
     data_set: array
     default_type_config:
@@ -184,6 +247,11 @@ types:
   # N is 1. The shape is the type config, not the instance count.
   tensor:
     description: "One dense float32 matrix. Full write and owned read."
+    explanation: >-
+      A tensor is one 1024 by 1024 matrix of 32-bit floats, including a negative
+      zero and a quiet NaN, read back as an owned copy. It exists as the plain
+      path that returns the matrix. Typical uses are an activation, an embedding
+      table, or a batch of features.
     category: tensor
     data_set: tensor
     default_type_config:
@@ -192,6 +260,11 @@ types:
 
   tensor_view:
     description: "Same shape and values as tensor. Deserialize borrows the payload."
+    explanation: >-
+      Tensor view is the same matrix as tensor, and the read borrows the payload
+      from the encoded buffer instead of copying it. It exists to show designs
+      that avoid a second allocation. Typical uses are serving a weight or an
+      activation without copying the matrix.
     category: tensor_view
     data_set: tensor
     default_type_config:
@@ -200,6 +273,10 @@ types:
 
   prompt:
     description: "Padded LLM inputs: input_ids, attention_mask, and position_ids."
+    explanation: >-
+      A prompt is padded token inputs: token ids, an attention mask, and position
+      ids, as integer matrices. It exists because model servers send tokens, not
+      one float matrix. Typical uses are a batch of prompts waiting for inference.
     category: tensor_prompt
     data_set: tensor
     default_type_config:
@@ -209,6 +286,11 @@ types:
 
   shard:
     description: "One transformer block: embedding, attention, feed-forward, and norm."
+    explanation: >-
+      A shard is one transformer block of 32-bit weights: an embedding, attention,
+      a feed-forward layer, and a norm. It exists so a checkpoint-shaped payload
+      is in the set, not only a single matrix. Typical uses are saving or shipping
+      one layer of a model.
     category: tensor_shard
     data_set: tensor
     default_type_config:
@@ -218,6 +300,10 @@ types:
 
   request:
     description: "Request id, model name, temperature, and the prompt tensors."
+    explanation: >-
+      A request pairs a request id, a model name, and a temperature with the
+      prompt tensors. It exists because a real inference call is metadata plus
+      tensors. Typical uses are an inference request body.
     category: tensor_request
     data_set: tensor
     default_type_config:

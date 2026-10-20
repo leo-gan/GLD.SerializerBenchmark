@@ -1,0 +1,260 @@
+# What each Standard id is. The dashboard explains the selected value from here.
+# Serializer membership is compliance/serializer-standards.json, not this file.
+schema: gld.serializer-benchmark.standards/1
+
+standards:
+  all:
+    label: All
+    explanation: >-
+      All lists every serializer measured for the languages you picked, public
+      formats and private ones together. The value exists so the whole field
+      is visible in one place when you are choosing a library. Choosing a named
+      standard narrows that list to codecs that speak one format.
+
+  custom:
+    label: No public spec
+    explanation: >-
+      No public spec means the library invents its own bytes. These codecs were
+      written so one language, or one program, could save objects quickly
+      without agreeing on a format other people publish. Typical uses are
+      caches, session state, and local files. Another language usually cannot
+      read the payload.
+
+  json:
+    label: JSON
+    explanation: >-
+      JSON (JavaScript Object Notation) is a text format for objects, arrays,
+      numbers, strings, and booleans. It grew out of JavaScript object literals
+      in the early 2000s so browsers and servers could exchange data without a
+      schema file. Typical uses are web APIs, configuration, and logs. It is
+      easy to read and widely supported. Binary formats are usually smaller.
+
+  yaml:
+    label: YAML
+    explanation: >-
+      YAML is a text format meant to be easier for people to edit than JSON or
+      XML. It was created for configuration, with indentation, comments, and
+      less punctuation. Typical uses are application settings, CI pipelines,
+      and Kubernetes manifests. Many documents can also be read as JSON. The
+      extra syntax makes parsers slower and less alike.
+
+  toml:
+    label: TOML
+    explanation: >-
+      TOML is a text configuration format with named tables and simple
+      assignments. It was created so config files stayed obvious, without
+      YAML's indentation rules. Typical uses are tool settings and package
+      manifests, such as Cargo.toml and pyproject.toml.
+
+  cbor:
+    label: CBOR
+    explanation: >-
+      CBOR (Concise Binary Object Representation) is a binary form of the JSON
+      data model. It was standardized so small devices and network protocols
+      could send JSON-like values in fewer bytes. Typical uses are IoT,
+      security tokens, and embedded protocols. A reader needs a CBOR library.
+      It does not need a separate schema file.
+
+  msgpack:
+    label: MessagePack
+    explanation: >-
+      MessagePack is a binary encoding of the same kind of values as JSON:
+      maps, arrays, strings, and numbers. It was created to make JSON smaller
+      and faster on the wire. Typical uses are RPC between services, caches,
+      and logging. Field names usually travel with the data, so a reader can
+      ignore a field it does not know.
+
+  protobuf:
+    label: Protocol Buffers
+    explanation: >-
+      Protocol Buffers is a schema-first binary format from Google. It was
+      created so services could add fields over time without breaking old
+      readers. You write a .proto file and generate code for each language.
+      Typical uses are gRPC APIs and long-lived service data. The bytes are
+      compact. A reader needs the field numbers from that schema.
+
+  avro:
+    label: Avro
+    explanation: >-
+      Apache Avro is a binary format that keeps the schema with the data,
+      often in a file header or a schema registry. It was created for pipelines
+      that store years of records and still need to add fields. Typical uses
+      are Kafka topics, Hadoop files, and event logs. A reader uses the
+      writer's schema to decode older data.
+
+  bson:
+    label: BSON
+    explanation: >-
+      BSON (Binary JSON) is the document format used by MongoDB. It was created
+      so a database could store JSON-like documents with lengths and extra
+      types, including dates and raw bytes, that are quick to scan. Typical
+      uses are MongoDB documents and their drivers. Outside that ecosystem it
+      is less common than JSON or MessagePack.
+
+  flatbuffers:
+    label: FlatBuffers
+    explanation: >-
+      FlatBuffers is a binary format a program can read in place, without
+      unpacking the bytes into new objects. It was created for games and other
+      software that must touch data with very little overhead. Typical uses are
+      game assets, telemetry, and large tables passed between processes. A
+      schema defines the layout. The reader walks offsets inside the original
+      buffer.
+
+  ion:
+    label: Amazon Ion
+    explanation: >-
+      Amazon Ion is one data model with a text form and a binary form. It was
+      created at Amazon so systems could keep rich types, such as timestamps,
+      decimals, blobs, and annotations, and still move documents between
+      languages. Typical uses are service payloads and storage inside Amazon
+      systems. A reader can skip fields it does not know.
+
+  ubjson:
+    label: UBJSON
+    explanation: >-
+      UBJSON (Universal Binary JSON) is a binary encoding of the JSON data
+      model with explicit sizes on values. It was created as a simple binary
+      JSON so a parser could allocate once and skip values it does not need.
+      Typical uses are embedded and application data where a text JSON document
+      is bulky and a separate schema is unnecessary.
+
+  smile:
+    label: Smile
+    explanation: >-
+      Smile is a binary JSON format from the Jackson project. It was created so
+      Java services that already spoke JSON could send the same values in fewer
+      bytes without a different data model. Typical uses are Jackson-based HTTP
+      and messaging. After the first message, repeated field names can be
+      shortened.
+
+  kiln:
+    label: Kiln
+    explanation: >-
+      Kiln is a schema-first binary format for records and numeric blocks,
+      including a read that borrows an array from the encoded buffer. It exists
+      so machine-learning and array workloads can share one wire contract
+      across languages. Typical uses are tensors, a block of model weights, and
+      a request that carries both metadata and arrays.
+
+  thrift:
+    label: Thrift
+    explanation: >-
+      Apache Thrift is a schema and RPC system first built at Facebook. It was
+      created so many languages could call the same service from one interface
+      definition. Typical uses are internal RPC. This benchmark times the
+      serialization layer. A reader needs the generated schema.
+
+  capnp:
+    label: Cap'n Proto
+    explanation: >-
+      Cap'n Proto is a schema-based binary format whose in-memory layout matches
+      the bytes on the wire. It was created to remove the pack and unpack step
+      that Protocol Buffers and Thrift perform. Typical uses are low-latency
+      RPC and messages passed between processes. A reader follows pointers
+      inside the original buffer.
+
+  bond:
+    label: Bond
+    explanation: >-
+      Microsoft Bond is a schema-based serialization system for services. It
+      was created so services could evolve data contracts across languages,
+      with schemas that can also be read at runtime. Typical uses are service
+      payloads and logs. Bond has compact and fast binary layouts, and a JSON
+      encoding of the same schema.
+
+  bebop:
+    label: Bebop
+    explanation: >-
+      Bebop is a schema-based binary format aimed at small messages. It was
+      created as a compact contract with code generation and little work on the
+      hot path. Typical uses are multiplayer game messages and typed
+      client/server payloads.
+
+  hocon:
+    label: HOCON
+    explanation: >-
+      HOCON (Human-Optimized Config Object Notation) is a JSON superset for
+      configuration. It was created for the Typesafe stack so config files
+      could include comments, substitutions, and includes. Typical uses are
+      application configuration on the JVM, especially Play and Akka. It is a
+      text format for people, not a compact wire format.
+
+  plist:
+    label: Property List
+    explanation: >-
+      Property List is Apple's structured data format, in XML and in a binary
+      form. It was created for preferences and bundles on Apple platforms.
+      Typical uses are app settings, Info.plist metadata, and local
+      persistence. Outside Apple systems JSON is the more common choice.
+
+  zon:
+    label: ZON
+    explanation: >-
+      ZON (Zig Object Notation) is Zig's text format for data and
+      configuration. It exists so Zig programs can store structured values
+      with the standard library, in syntax that matches the language. Typical
+      uses are Zig build data and config. It is a language format, not a
+      cross-language standard.
+
+  arrow:
+    label: Arrow IPC
+    explanation: >-
+      Arrow IPC is the columnar format from Apache Arrow, written as a stream
+      or a file. It was created so data systems could share columns of numbers
+      and strings without converting each row into a new object. Typical uses
+      are handing tables between query engines, data frames, and Arrow Flight.
+      A reader that speaks Arrow can use the column buffers directly.
+
+  parquet:
+    label: Parquet
+    explanation: >-
+      Apache Parquet is a columnar file format. It was created so analytics
+      jobs could read only the columns they need from very large tables, and
+      compress similar values together. Typical uses are data lakes, Spark,
+      and warehouse exports. It is a file of many rows, not a codec for one
+      web request.
+
+  orc:
+    label: ORC
+    explanation: >-
+      Apache ORC is a columnar file format from the Hive ecosystem. It was
+      created for the same scan-heavy analytics job as Parquet, with its own
+      stripes, indexes, and types. Typical uses are Hive and other warehouse
+      tables. Like Parquet, it targets files of many rows.
+
+  sbe:
+    label: SBE
+    explanation: >-
+      Simple Binary Encoding (SBE) is a schema-based binary layout from the
+      FIX trading community. It was created so trading messages could be
+      encoded with fixed offsets and almost no copying. Typical uses are
+      market data and order messages. The schema fixes where each field sits.
+      It fits records whose shape is stable.
+
+  hdf5:
+    label: HDF5
+    explanation: >-
+      HDF5 is a file format and library for large scientific arrays. It was
+      created so researchers could store multidimensional numbers, with
+      groups, attributes, and partial reads, in one portable file. Typical
+      uses are simulations, instruments, and machine-learning datasets. This
+      suite times an array, not the five small records.
+
+  netcdf:
+    label: NetCDF
+    explanation: >-
+      NetCDF is a file format for array-oriented scientific data, often stored
+      on top of HDF5. It was created so climate, ocean, and atmosphere data
+      could be shared with named dimensions and coordinates. Typical uses are
+      gridded measurements and model output. A reader can ask for a window of
+      the grid instead of the whole array.
+
+  adios2:
+    label: ADIOS2
+    explanation: >-
+      ADIOS (Adaptable IO System) is a library for large simulations to write
+      arrays efficiently, including in parallel. It was created so
+      supercomputer jobs could move huge timesteps to storage. Typical uses
+      are HPC simulations and later analysis of those outputs. This benchmark
+      times the array path.
