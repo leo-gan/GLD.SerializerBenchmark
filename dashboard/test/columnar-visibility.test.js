@@ -46,25 +46,27 @@ function rowCounts(groups) {
  *  One parent row per serializer after I/O fold (bytes+stream are no longer two groups).
  */
 const ROW_COUNTS = {
-  python: { message: 44, document: 44, telemetry: 44, strings: 44, event: 44 },
-  cpp: { message: 66, document: 66, telemetry: 66, strings: 66, event: 66 },
-  csharp: { message: 94, document: 92, telemetry: 92, strings: 92, event: 94 },
-  go: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
-  java: { message: 42, document: 42, telemetry: 42, strings: 42, event: 42 },
-  rust: { message: 43, document: 43, telemetry: 43, strings: 44, event: 43 },
-  javascript: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
-  kotlin: { message: 52, document: 52, telemetry: 52, strings: 52, event: 52 },
+  // Published suite groups, including the gld-kiln splice (N=1 and N=100)
+  // on every language here except kotlin.
+  python: { message: 48, document: 48, telemetry: 48, strings: 48, event: 48 },
+  cpp: { message: 126, document: 126, telemetry: 126, strings: 126, event: 126 },
+  csharp: { message: 166, document: 162, telemetry: 162, strings: 166, event: 166 },
+  go: { message: 98, document: 98, telemetry: 98, strings: 98, event: 98 },
+  java: { message: 86, document: 86, telemetry: 86, strings: 86, event: 86 },
+  rust: { message: 79, document: 79, telemetry: 79, strings: 81, event: 79 },
+  javascript: { message: 54, document: 54, telemetry: 54, strings: 54, event: 54 },
+  kotlin: { message: 54, document: 54, telemetry: 54, strings: 54, event: 54 },
 };
 
 const RUN_IDS = {
-  python: '2026-09-29-183133',
-  cpp: '2026-09-14-132646',
-  csharp: '2026-09-30-130138',
-  go: '2026-10-01-214434',
+  python: '2026-10-05-110943',
+  cpp: '2026-09-21-121230',
+  csharp: '2026-10-02-145902',
+  go: '2026-10-02-144747',
   java: '2026-09-14-133226',
-  rust: '2026-09-29-183721',
+  rust: '2026-10-02-150612',
   javascript: '2026-09-29-183620',
-  kotlin: '2026-09-14-133310',
+  kotlin: '2026-10-11-145043',
 };
 
 const MUST_HAVE = {

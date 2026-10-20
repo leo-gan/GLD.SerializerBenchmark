@@ -1636,6 +1636,11 @@ SPECIFICS: dict[str, str] = {
         "and writes into a reused buffer. This row times encode and decode "
         "of the suite structs. There are no field tags on the wire."
     ),
+    "gld-kiln-port": (
+        "gld-kiln (leo-gan) is a positional little-endian codec. "
+        "The timed path reuses one writer. There are no field tags on the wire. "
+        "This row times encode and decode of the suite structs."
+    ),
     "gld-arrow": (
         "Apache Arrow was created so analytic engines could share columnar "
         "batches without copying each one into a private layout. The problem "
@@ -2363,6 +2368,16 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-ion"): "gld-ion",
     ("mojo", "mojo-smile"): "gld-smile",
     ("mojo", "gld-kiln"): "gld-kiln",
+    ("python", "gld-kiln"): "gld-kiln-port",
+    ("rust", "gld-kiln"): "gld-kiln-port",
+    ("c", "gld-kiln"): "gld-kiln-port",
+    ("cpp", "gld-kiln"): "gld-kiln-port",
+    ("javascript", "gld-kiln"): "gld-kiln-port",
+    ("go", "gld-kiln"): "gld-kiln-port",
+    ("java", "gld-kiln"): "gld-kiln-port",
+    ("swift", "gld-kiln"): "gld-kiln-port",
+    ("zig", "gld-kiln"): "gld-kiln-port",
+    ("csharp", "gld-kiln"): "gld-kiln-port",
     ("mojo", "arrow-ipc"): "gld-arrow",
     ("mojo", "parquet"): "gld-parquet",
     ("mojo", "parquet-uncompressed"): "gld-parquet-raw",
@@ -2527,6 +2542,13 @@ EXTRA[("mojo", "gld-kiln")] = (
     "On the tensor data set this row runs every type. encode writes the struct. "
     "tensor_view uses Reader.take and does not copy the matrix."
 )
+for _lang in (
+    "python", "rust", "c", "cpp", "javascript", "go", "java", "swift", "zig", "csharp",
+):
+    EXTRA[(_lang, "gld-kiln")] = (
+        "On the tensor data set this row runs every type. "
+        "tensor_view borrows the float32 payload and does not copy the matrix."
+    )
 
 def load_measured_versions() -> dict[tuple[str, str], str]:
     """Map (language, SerializerName) → SerializerVersion from latest benches."""
