@@ -1,478 +1,568 @@
 //! gld-kiln adapter for the five suite structs and the tensor set.
 //!
-//! `prepare_many` builds the positional schema and the owned [`kiln::Value`]
-//! once. N=1 is the struct alone. N>1 is one `list` of that struct. Timed
-//! encode appends with `encode_into` into the harness buffer.
-//! `tensor_view` decode borrows the f32 payload; it does not copy the matrix.
+//! Timed encode and decode use the positional scalar writers and [`Reader`].
+//! Numeric lists are one little-endian copy, the same shape as Mojo `encode`
+//! on a `List[Float32]`. The dynamic [`kiln::Value`] tree is not on this path:
+//! one `Value::F32` per matrix element made a 1024×1024 read allocate about a
+//! million enums.
+//!
+//! N=1 is the struct alone. N>1 is one `list` of that struct.
+//! `tensor_view` decode borrows the f32 payload and does not copy the matrix.
 
 use crate::data::{
-    Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, InferenceRequest, Message,
-    Prompt, Shard, Strings, Telemetry, TensorMatrix,
+    Document, DocumentItem, DocumentMeta, Event, EventAttr, F32Payload, Fixture, InferenceRequest,
+    Message, Prompt, Shard, Strings, Telemetry, TensorMatrix,
 };
 use crate::serializers::{BenchSerializer, NativeKind, StreamMode};
 use anyhow::{bail, Context, Result};
-use kiln::{decode, encode_into, Reader, Schema, Value, DEFAULT_CAP};
+use kiln::{
+    write_bool, write_count, write_f32, write_f64, write_i32, write_i64, write_str, Reader,
+    DEFAULT_CAP,
+};
 use std::io::Read;
 
 const SUITE: &[&str] = &["message", "document", "telemetry", "strings", "event"];
 const TENSOR: &[&str] = &["tensor", "tensor_view", "prompt", "shard", "request"];
 
-fn prompt_schema() -> Schema {
-    Schema::struct_fields([
-        ("batch", Schema::I32),
-        ("seq", Schema::I32),
-        ("input_ids", Schema::list(Schema::I64)),
-        ("attention_mask", Schema::list(Schema::I64)),
-        ("position_ids", Schema::list(Schema::I64)),
-    ])
+fn err(error: kiln::Error) -> anyhow::Error {
+    anyhow::anyhow!("gld-kiln: {error}")
 }
 
-fn schema_for(kind: &str) -> Result<Schema> {
-    Ok(match kind {
-        "message" => Schema::struct_fields([
-            ("f_bool", Schema::Bool),
-            ("f_int32", Schema::I32),
-            ("f_int64", Schema::I64),
-            ("f_float64", Schema::F64),
-            ("f_string", Schema::Str),
-            ("f_bool_2", Schema::Bool),
-            ("f_int32_2", Schema::I32),
-            ("f_string_2", Schema::Str),
-        ]),
-        "document" => Schema::struct_fields([
-            ("id", Schema::Str),
-            ("status", Schema::I32),
-            (
-                "meta",
-                Schema::struct_fields([("region", Schema::Str), ("version", Schema::I32)]),
-            ),
-            (
-                "items",
-                Schema::list(Schema::struct_fields([
-                    ("sku", Schema::Str),
-                    ("qty", Schema::I32),
-                    ("price_minor", Schema::I64),
-                ])),
-            ),
-        ]),
-        "telemetry" => Schema::struct_fields([
-            ("source", Schema::Str),
-            ("ts", Schema::I64),
-            ("tags", Schema::list(Schema::Str)),
-            ("values", Schema::list(Schema::F64)),
-        ]),
-        "strings" => Schema::struct_fields([("items", Schema::list(Schema::Str))]),
-        "event" => Schema::struct_fields([
-            ("event_id", Schema::Str),
-            ("event_type", Schema::Str),
-            ("occurred_at", Schema::I64),
-            ("producer", Schema::Str),
-            (
-                "attrs",
-                Schema::list(Schema::struct_fields([
-                    ("key", Schema::Str),
-                    ("value", Schema::Str),
-                ])),
-            ),
-        ]),
-        "tensor" | "tensor_view" => Schema::struct_fields([
-            ("rows", Schema::I32),
-            ("cols", Schema::I32),
-            ("values", Schema::list(Schema::F32)),
-        ]),
-        "prompt" => prompt_schema(),
-        "shard" => Schema::struct_fields([
-            ("vocab", Schema::I32),
-            ("hidden", Schema::I32),
-            ("ffn", Schema::I32),
-            ("tok_emb", Schema::list(Schema::F32)),
-            ("attn", Schema::list(Schema::F32)),
-            ("ffn_weight", Schema::list(Schema::F32)),
-            ("norm", Schema::list(Schema::F32)),
-        ]),
-        "request" => Schema::struct_fields([
-            ("request_id", Schema::I64),
-            ("model", Schema::Str),
-            ("temperature", Schema::F32),
-            ("inputs", prompt_schema()),
-        ]),
-        other => bail!("gld-kiln: unsupported {other}"),
-    })
-}
-
-fn f32_list(values: &crate::data::F32Payload) -> Value<'static> {
-    let mut items = Vec::with_capacity(values.len());
-    for i in 0..values.len() {
-        items.push(Value::F32(values.bit(i)));
+fn extend_le<T>(out: &mut Vec<u8>, values: &[T]) {
+    let nbytes = std::mem::size_of_val(values);
+    if nbytes == 0 {
+        return;
     }
-    Value::List(items)
-}
-
-fn i64_list(values: &[i64]) -> Value<'static> {
-    Value::List(values.iter().copied().map(Value::I64).collect())
-}
-
-fn prompt_value(prompt: &Prompt) -> Value<'static> {
-    Value::Struct(vec![
-        Value::I32(prompt.batch),
-        Value::I32(prompt.seq),
-        i64_list(&prompt.input_ids),
-        i64_list(&prompt.attention_mask),
-        i64_list(&prompt.position_ids),
-    ])
-}
-
-fn to_value(fx: &Fixture) -> Result<Value<'static>> {
-    Ok(match fx {
-        Fixture::Message(m) => Value::Struct(vec![
-            Value::Bool(m.f_bool),
-            Value::I32(m.f_int32),
-            Value::I64(m.f_int64),
-            Value::from_f64(m.f_float64),
-            Value::str(m.f_string.clone()),
-            Value::Bool(m.f_bool_2),
-            Value::I32(m.f_int32_2),
-            Value::str(m.f_string_2.clone()),
-        ]),
-        Fixture::Document(d) => Value::Struct(vec![
-            Value::str(d.id.clone()),
-            Value::I32(d.status),
-            Value::Struct(vec![
-                Value::str(d.meta.region.clone()),
-                Value::I32(d.meta.version),
-            ]),
-            Value::List(
-                d.items
-                    .iter()
-                    .map(|item| {
-                        Value::Struct(vec![
-                            Value::str(item.sku.clone()),
-                            Value::I32(item.qty),
-                            Value::I64(item.price_minor),
-                        ])
-                    })
-                    .collect(),
-            ),
-        ]),
-        Fixture::Telemetry(t) => Value::Struct(vec![
-            Value::str(t.source.clone()),
-            Value::I64(t.ts),
-            Value::List(t.tags.iter().map(|s| Value::str(s.clone())).collect()),
-            Value::List(t.values.iter().copied().map(Value::from_f64).collect()),
-        ]),
-        Fixture::Strings(s) => Value::Struct(vec![Value::List(
-            s.items
-                .iter()
-                .map(|item| Value::str(item.clone()))
-                .collect(),
-        )]),
-        Fixture::Event(e) => Value::Struct(vec![
-            Value::str(e.event_id.clone()),
-            Value::str(e.event_type.clone()),
-            Value::I64(e.occurred_at),
-            Value::str(e.producer.clone()),
-            Value::List(
-                e.attrs
-                    .iter()
-                    .map(|attr| {
-                        Value::Struct(vec![
-                            Value::str(attr.key.clone()),
-                            Value::str(attr.value.clone()),
-                        ])
-                    })
-                    .collect(),
-            ),
-        ]),
-        Fixture::Tensor(matrix) | Fixture::TensorView(matrix) => Value::Struct(vec![
-            Value::I32(matrix.rows),
-            Value::I32(matrix.cols),
-            f32_list(&matrix.values),
-        ]),
-        Fixture::Prompt(prompt) => prompt_value(prompt),
-        Fixture::Shard(shard) => Value::Struct(vec![
-            Value::I32(shard.vocab),
-            Value::I32(shard.hidden),
-            Value::I32(shard.ffn),
-            f32_list_owned(&shard.tok_emb),
-            f32_list_owned(&shard.attn),
-            f32_list_owned(&shard.ffn_weight),
-            f32_list_owned(&shard.norm),
-        ]),
-        Fixture::Request(request) => Value::Struct(vec![
-            Value::I64(request.request_id),
-            Value::str(request.model.clone()),
-            Value::from_f32(request.temperature),
-            prompt_value(&request.inputs),
-        ]),
-        other => bail!("gld-kiln: unsupported fixture {}", other.name()),
-    })
-}
-
-fn f32_list_owned(values: &[f32]) -> Value<'static> {
-    Value::List(values.iter().copied().map(Value::from_f32).collect())
-}
-
-fn as_struct<'a, 'b>(value: &'a Value<'b>) -> Result<&'a [Value<'b>]> {
-    match value {
-        Value::Struct(fields) => Ok(fields),
-        _ => bail!("gld-kiln: expected struct"),
+    if cfg!(target_endian = "little") {
+        // SAFETY: `values` is one contiguous slice. On a little-endian host
+        // those bytes are already Kiln's wire order. The slice is only read.
+        let bytes = unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), nbytes) };
+        out.extend_from_slice(bytes);
+        return;
     }
+    panic!("gld-kiln numeric copy requires a little-endian host");
 }
 
-fn as_list<'a, 'b>(value: &'a Value<'b>) -> Result<&'a [Value<'b>]> {
-    match value {
-        Value::List(items) => Ok(items),
-        _ => bail!("gld-kiln: expected list"),
+fn read_le<T: Copy>(bytes: &[u8], n: usize) -> Result<Vec<T>> {
+    let width = std::mem::size_of::<T>();
+    let nbytes = n.checked_mul(width).context("gld-kiln list length")?;
+    if bytes.len() != nbytes {
+        bail!("gld-kiln list length");
     }
+    let mut out = Vec::<T>::with_capacity(n);
+    if n == 0 {
+        return Ok(out);
+    }
+    if cfg!(target_endian = "little") {
+        // SAFETY: `bytes` holds `n` little-endian `T` values and `out` has
+        // room for all of them. `T` is a plain number. `set_len` runs only
+        // after every byte has been copied.
+        unsafe {
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), out.as_mut_ptr().cast::<u8>(), nbytes);
+            out.set_len(n);
+        }
+        return Ok(out);
+    }
+    bail!("gld-kiln numeric copy requires a little-endian host");
 }
 
-fn field<'a, 'b>(fields: &'a [Value<'b>], index: usize) -> Result<&'a Value<'b>> {
-    fields.get(index).context("gld-kiln: missing field")
-}
-
-fn exact(fields: &[Value<'_>], n: usize) -> Result<()> {
-    if fields.len() != n {
-        bail!("gld-kiln: field count {} != {n}", fields.len());
+fn write_f32_payload(out: &mut Vec<u8>, values: &F32Payload) -> Result<()> {
+    let n = values.len();
+    write_count(out, n, DEFAULT_CAP).map_err(err)?;
+    out.reserve(n.saturating_mul(4));
+    match values {
+        F32Payload::Owned(items) => extend_le(out, items),
+        F32Payload::Borrowed(_) => {
+            for i in 0..n {
+                out.extend_from_slice(&values.bit(i).to_le_bytes());
+            }
+        }
     }
     Ok(())
 }
 
-fn as_bool(value: &Value<'_>) -> Result<bool> {
-    match value {
-        Value::Bool(v) => Ok(*v),
-        _ => bail!("gld-kiln: expected bool"),
+fn write_f32s(out: &mut Vec<u8>, values: &[f32]) -> Result<()> {
+    write_count(out, values.len(), DEFAULT_CAP).map_err(err)?;
+    out.reserve(values.len().saturating_mul(4));
+    extend_le(out, values);
+    Ok(())
+}
+
+fn write_f64s(out: &mut Vec<u8>, values: &[f64]) -> Result<()> {
+    write_count(out, values.len(), DEFAULT_CAP).map_err(err)?;
+    out.reserve(values.len().saturating_mul(8));
+    extend_le(out, values);
+    Ok(())
+}
+
+fn write_i64s(out: &mut Vec<u8>, values: &[i64]) -> Result<()> {
+    write_count(out, values.len(), DEFAULT_CAP).map_err(err)?;
+    out.reserve(values.len().saturating_mul(8));
+    extend_le(out, values);
+    Ok(())
+}
+
+fn write_strs(out: &mut Vec<u8>, values: &[String]) -> Result<()> {
+    write_count(out, values.len(), DEFAULT_CAP).map_err(err)?;
+    for value in values {
+        write_str(out, value, DEFAULT_CAP).map_err(err)?;
+    }
+    Ok(())
+}
+
+// Library scalar writers. A hand-rolled copy of the same fields was slower
+// on message n=1 in the harness (about 170 ns versus about 30 ns).
+fn write_message(out: &mut Vec<u8>, value: &Message) -> Result<()> {
+    write_bool(out, value.f_bool);
+    write_i32(out, value.f_int32);
+    write_i64(out, value.f_int64);
+    write_f64(out, value.f_float64);
+    write_str(out, &value.f_string, DEFAULT_CAP).map_err(err)?;
+    write_bool(out, value.f_bool_2);
+    write_i32(out, value.f_int32_2);
+    write_str(out, &value.f_string_2, DEFAULT_CAP).map_err(err)?;
+    Ok(())
+}
+
+fn write_document(out: &mut Vec<u8>, value: &Document) -> Result<()> {
+    write_str(out, &value.id, DEFAULT_CAP).map_err(err)?;
+    write_i32(out, value.status);
+    write_str(out, &value.meta.region, DEFAULT_CAP).map_err(err)?;
+    write_i32(out, value.meta.version);
+    write_count(out, value.items.len(), DEFAULT_CAP).map_err(err)?;
+    for item in &value.items {
+        write_str(out, &item.sku, DEFAULT_CAP).map_err(err)?;
+        write_i32(out, item.qty);
+        write_i64(out, item.price_minor);
+    }
+    Ok(())
+}
+
+fn write_telemetry(out: &mut Vec<u8>, value: &Telemetry) -> Result<()> {
+    write_str(out, &value.source, DEFAULT_CAP).map_err(err)?;
+    write_i64(out, value.ts);
+    write_strs(out, &value.tags)?;
+    write_f64s(out, &value.values)?;
+    Ok(())
+}
+
+fn write_strings(out: &mut Vec<u8>, value: &Strings) -> Result<()> {
+    write_strs(out, &value.items)
+}
+
+fn write_event(out: &mut Vec<u8>, value: &Event) -> Result<()> {
+    write_str(out, &value.event_id, DEFAULT_CAP).map_err(err)?;
+    write_str(out, &value.event_type, DEFAULT_CAP).map_err(err)?;
+    write_i64(out, value.occurred_at);
+    write_str(out, &value.producer, DEFAULT_CAP).map_err(err)?;
+    write_count(out, value.attrs.len(), DEFAULT_CAP).map_err(err)?;
+    for attr in &value.attrs {
+        write_str(out, &attr.key, DEFAULT_CAP).map_err(err)?;
+        write_str(out, &attr.value, DEFAULT_CAP).map_err(err)?;
+    }
+    Ok(())
+}
+
+fn write_prompt(out: &mut Vec<u8>, value: &Prompt) -> Result<()> {
+    write_i32(out, value.batch);
+    write_i32(out, value.seq);
+    write_i64s(out, &value.input_ids)?;
+    write_i64s(out, &value.attention_mask)?;
+    write_i64s(out, &value.position_ids)?;
+    Ok(())
+}
+
+fn write_shard(out: &mut Vec<u8>, value: &Shard) -> Result<()> {
+    write_i32(out, value.vocab);
+    write_i32(out, value.hidden);
+    write_i32(out, value.ffn);
+    write_f32s(out, &value.tok_emb)?;
+    write_f32s(out, &value.attn)?;
+    write_f32s(out, &value.ffn_weight)?;
+    write_f32s(out, &value.norm)?;
+    Ok(())
+}
+
+fn write_request(out: &mut Vec<u8>, value: &InferenceRequest) -> Result<()> {
+    write_i64(out, value.request_id);
+    write_str(out, &value.model, DEFAULT_CAP).map_err(err)?;
+    write_f32(out, value.temperature);
+    write_prompt(out, &value.inputs)
+}
+
+fn write_tensor(out: &mut Vec<u8>, value: &TensorMatrix) -> Result<()> {
+    write_i32(out, value.rows);
+    write_i32(out, value.cols);
+    write_f32_payload(out, &value.values)
+}
+
+fn write_one(out: &mut Vec<u8>, fx: &Fixture) -> Result<()> {
+    match fx {
+        Fixture::Message(value) => write_message(out, value),
+        Fixture::Document(value) => write_document(out, value),
+        Fixture::Telemetry(value) => write_telemetry(out, value),
+        Fixture::Strings(value) => write_strings(out, value),
+        Fixture::Event(value) => write_event(out, value),
+        Fixture::Tensor(value) | Fixture::TensorView(value) => write_tensor(out, value),
+        Fixture::Prompt(value) => write_prompt(out, value),
+        Fixture::Shard(value) => write_shard(out, value),
+        Fixture::Request(value) => write_request(out, value),
+        other => bail!("gld-kiln: unsupported fixture {}", other.name()),
     }
 }
 
-fn as_i32(value: &Value<'_>) -> Result<i32> {
-    match value {
-        Value::I32(v) => Ok(*v),
-        _ => bail!("gld-kiln: expected i32"),
-    }
+fn read_string(reader: &mut Reader<'_>) -> Result<String> {
+    let text = reader.string().map_err(err)?;
+    let mut out = crate::data::take_string();
+    out.clear();
+    out.push_str(text);
+    Ok(out)
 }
 
-fn as_i64(value: &Value<'_>) -> Result<i64> {
-    match value {
-        Value::I64(v) => Ok(*v),
-        _ => bail!("gld-kiln: expected i64"),
-    }
-}
-
-fn as_f32(value: &Value<'_>) -> Result<f32> {
-    match value {
-        Value::F32(bits) => Ok(f32::from_bits(*bits)),
-        _ => bail!("gld-kiln: expected f32"),
-    }
-}
-
-fn as_f64(value: &Value<'_>) -> Result<f64> {
-    match value {
-        Value::F64(bits) => Ok(f64::from_bits(*bits)),
-        _ => bail!("gld-kiln: expected f64"),
-    }
-}
-
-fn as_string(value: &Value<'_>) -> Result<String> {
-    match value {
-        Value::Str(s) => Ok(s.as_ref().to_owned()),
-        _ => bail!("gld-kiln: expected str"),
-    }
-}
-
-fn message_from(value: &Value<'_>) -> Result<Message> {
-    let fields = as_struct(value)?;
-    exact(fields, 8)?;
-    Ok(Message {
-        f_bool: as_bool(field(fields, 0)?)?,
-        f_int32: as_i32(field(fields, 1)?)?,
-        f_int64: as_i64(field(fields, 2)?)?,
-        f_float64: as_f64(field(fields, 3)?)?,
-        f_string: as_string(field(fields, 4)?)?,
-        f_bool_2: as_bool(field(fields, 5)?)?,
-        f_int32_2: as_i32(field(fields, 6)?)?,
-        f_string_2: as_string(field(fields, 7)?)?,
-    })
-}
-
-fn document_from(value: &Value<'_>) -> Result<Document> {
-    let fields = as_struct(value)?;
-    exact(fields, 4)?;
-    let meta = as_struct(field(fields, 2)?)?;
-    exact(meta, 2)?;
-    let mut items = Vec::new();
-    for item in as_list(field(fields, 3)?)? {
-        let item_fields = as_struct(item)?;
-        exact(item_fields, 3)?;
-        items.push(DocumentItem {
-            sku: as_string(field(item_fields, 0)?)?,
-            qty: as_i32(field(item_fields, 1)?)?,
-            price_minor: as_i64(field(item_fields, 2)?)?,
-        });
-    }
-    Ok(Document {
-        id: as_string(field(fields, 0)?)?,
-        status: as_i32(field(fields, 1)?)?,
-        meta: DocumentMeta {
-            region: as_string(field(meta, 0)?)?,
-            version: as_i32(field(meta, 1)?)?,
-        },
-        items,
-    })
-}
-
-fn telemetry_from(value: &Value<'_>) -> Result<Telemetry> {
-    let fields = as_struct(value)?;
-    exact(fields, 4)?;
-    Ok(Telemetry {
-        source: as_string(field(fields, 0)?)?,
-        ts: as_i64(field(fields, 1)?)?,
-        tags: as_list(field(fields, 2)?)?
-            .iter()
-            .map(as_string)
-            .collect::<Result<Vec<_>>>()?,
-        values: as_list(field(fields, 3)?)?
-            .iter()
-            .map(as_f64)
-            .collect::<Result<Vec<_>>>()?,
-    })
-}
-
-fn strings_from(value: &Value<'_>) -> Result<Strings> {
-    let fields = as_struct(value)?;
-    exact(fields, 1)?;
-    Ok(Strings {
-        items: as_list(field(fields, 0)?)?
-            .iter()
-            .map(as_string)
-            .collect::<Result<Vec<_>>>()?,
-    })
-}
-
-fn event_from(value: &Value<'_>) -> Result<Event> {
-    let fields = as_struct(value)?;
-    exact(fields, 5)?;
-    let mut attrs = Vec::new();
-    for attr in as_list(field(fields, 4)?)? {
-        let attr_fields = as_struct(attr)?;
-        exact(attr_fields, 2)?;
-        attrs.push(EventAttr {
-            key: as_string(field(attr_fields, 0)?)?,
-            value: as_string(field(attr_fields, 1)?)?,
-        });
-    }
-    Ok(Event {
-        event_id: as_string(field(fields, 0)?)?,
-        event_type: as_string(field(fields, 1)?)?,
-        occurred_at: as_i64(field(fields, 2)?)?,
-        producer: as_string(field(fields, 3)?)?,
-        attrs,
-    })
-}
-
-fn f32_list_from(value: &Value<'_>) -> Result<Vec<f32>> {
-    let mut out = Vec::with_capacity(as_list(value)?.len());
-    for item in as_list(value)? {
-        out.push(as_f32(item)?);
+fn read_string_list(reader: &mut Reader<'_>) -> Result<Vec<String>> {
+    let n = reader.list_count(4).map_err(err)? as usize;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        out.push(read_string(reader)?);
     }
     Ok(out)
 }
 
-fn i64_list_from(value: &Value<'_>) -> Result<Vec<i64>> {
-    as_list(value)?.iter().map(as_i64).collect()
+fn read_body<'a>(reader: &mut Reader<'a>, n: usize, width: usize) -> Result<&'a [u8]> {
+    let nbytes = n.checked_mul(width).context("gld-kiln list length")?;
+    reader.raw(nbytes).map_err(err)
 }
 
-fn tensor_from(value: &Value<'_>) -> Result<TensorMatrix> {
-    let fields = as_struct(value)?;
-    exact(fields, 3)?;
-    Ok(TensorMatrix::owned(
-        as_i32(field(fields, 0)?)?,
-        as_i32(field(fields, 1)?)?,
-        f32_list_from(field(fields, 2)?)?,
-    ))
+fn read_f32s(reader: &mut Reader<'_>) -> Result<Vec<f32>> {
+    let n = reader.list_count(4).map_err(err)? as usize;
+    let bytes = read_body(reader, n, 4)?;
+    let mut out = crate::data::take_f32_buf(n);
+    if n == 0 {
+        return Ok(out);
+    }
+    if cfg!(target_endian = "little") {
+        // SAFETY: `bytes` is `n` little-endian f32s and `out` has that capacity.
+        // `set_len` runs only after the copy has initialized every element.
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                bytes.as_ptr(),
+                out.as_mut_ptr().cast::<u8>(),
+                bytes.len(),
+            );
+            out.set_len(n);
+        }
+        return Ok(out);
+    }
+    bail!("gld-kiln numeric copy requires a little-endian host");
 }
 
-fn prompt_from(value: &Value<'_>) -> Result<Prompt> {
-    let fields = as_struct(value)?;
-    exact(fields, 5)?;
+fn read_f64s(reader: &mut Reader<'_>) -> Result<Vec<f64>> {
+    let n = reader.list_count(8).map_err(err)? as usize;
+    read_le(read_body(reader, n, 8)?, n)
+}
+
+fn read_i64s(reader: &mut Reader<'_>) -> Result<Vec<i64>> {
+    let n = reader.list_count(8).map_err(err)? as usize;
+    read_le(read_body(reader, n, 8)?, n)
+}
+
+fn take_bytes<'a>(data: &'a [u8], i: &mut usize, n: usize) -> Result<&'a [u8]> {
+    let end = i.checked_add(n).context("gld-kiln list length")?;
+    if end > data.len() {
+        bail!("gld-kiln: EOF");
+    }
+    let out = &data[*i..end];
+    *i = end;
+    Ok(out)
+}
+
+fn take_u32(data: &[u8], i: &mut usize) -> Result<u32> {
+    let bytes = take_bytes(data, i, 4)?;
+    Ok(u32::from_le_bytes(bytes.try_into().unwrap()))
+}
+
+fn copy_utf8(bytes: &[u8]) -> Result<String> {
+    if bytes.len() as u64 > DEFAULT_CAP {
+        bail!("gld-kiln: LIMIT");
+    }
+    // Bytes below 0x80 are ASCII, which is valid UTF-8. Non-ASCII still
+    // goes through the full checker. Suite strings are short ASCII words.
+    if bytes.iter().any(|byte| *byte >= 0x80) {
+        std::str::from_utf8(bytes).map_err(|_| anyhow::anyhow!("gld-kiln: UTF8"))?;
+    }
+    let mut out = crate::data::take_string();
+    out.clear();
+    if out.capacity() < bytes.len() {
+        out.reserve(bytes.len());
+    }
+    // SAFETY: `reserve` left room for `bytes.len()` initialized bytes.
+    // `from_utf8` already accepted them.
+    unsafe {
+        let dest = out.as_mut_vec();
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), dest.as_mut_ptr(), bytes.len());
+        dest.set_len(bytes.len());
+    }
+    Ok(out)
+}
+
+fn read_message_at(data: &[u8], i: &mut usize) -> Result<Message> {
+    let tag = take_bytes(data, i, 1)?[0];
+    let f_bool = match tag {
+        0 => false,
+        1 => true,
+        _ => bail!("gld-kiln: TYPE"),
+    };
+    let f_int32 = take_u32(data, i)? as i32;
+    let f_int64 = i64::from_le_bytes(take_bytes(data, i, 8)?.try_into().unwrap());
+    let f_float64 = f64::from_le_bytes(take_bytes(data, i, 8)?.try_into().unwrap());
+    let n1 = take_u32(data, i)? as usize;
+    let s1 = take_bytes(data, i, n1)?;
+    let tag2 = take_bytes(data, i, 1)?[0];
+    let f_bool_2 = match tag2 {
+        0 => false,
+        1 => true,
+        _ => bail!("gld-kiln: TYPE"),
+    };
+    let f_int32_2 = take_u32(data, i)? as i32;
+    let n2 = take_u32(data, i)? as usize;
+    let s2 = take_bytes(data, i, n2)?;
+    Ok(Message {
+        f_bool,
+        f_int32,
+        f_int64,
+        f_float64,
+        f_string: copy_utf8(s1)?,
+        f_bool_2,
+        f_int32_2,
+        f_string_2: copy_utf8(s2)?,
+    })
+}
+
+fn read_message_one(data: &[u8]) -> Result<Fixture> {
+    let mut i = 0usize;
+    let message = read_message_at(data, &mut i)?;
+    if i != data.len() {
+        bail!("gld-kiln: TRAILING");
+    }
+    Ok(Fixture::Message(message))
+}
+
+fn read_message_list(data: &[u8]) -> Result<Fixture> {
+    let mut i = 0usize;
+    let n = take_u32(data, &mut i)? as usize;
+    if n as u64 > DEFAULT_CAP {
+        bail!("gld-kiln: LIMIT");
+    }
+    if data.len() < 4 + n.saturating_mul(34) {
+        bail!("gld-kiln: EOF");
+    }
+    let mut rows = Vec::with_capacity(n);
+    for _ in 0..n {
+        rows.push(Fixture::Message(read_message_at(data, &mut i)?));
+    }
+    if i != data.len() {
+        bail!("gld-kiln: TRAILING");
+    }
+    Ok(Fixture::Rows(rows))
+}
+
+fn message_wire_len(value: &Message) -> usize {
+    34 + value.f_string.len() + value.f_string_2.len()
+}
+
+fn write_message_list(fixtures: &[Fixture], out: &mut Vec<u8>) -> Result<()> {
+    let mut total = 4usize;
+    for fx in fixtures {
+        let Fixture::Message(value) = fx else {
+            bail!("gld-kiln: mixed cell");
+        };
+        if value.f_string.len() > u32::MAX as usize || value.f_string_2.len() > u32::MAX as usize {
+            bail!("gld-kiln: LIMIT");
+        }
+        total = total.saturating_add(message_wire_len(value));
+    }
+    let start = out.len();
+    out.reserve(total);
+    // SAFETY: `reserve` leaves `total` spare bytes. The stores below fill
+    // that range before it is read.
+    unsafe { out.set_len(start + total) };
+    let dst = &mut out[start..];
+    let mut at = 0usize;
+    dst[at..at + 4].copy_from_slice(&(fixtures.len() as u32).to_le_bytes());
+    at += 4;
+    for fx in fixtures {
+        let Fixture::Message(value) = fx else {
+            bail!("gld-kiln: mixed cell");
+        };
+        dst[at] = u8::from(value.f_bool);
+        at += 1;
+        dst[at..at + 4].copy_from_slice(&(value.f_int32 as u32).to_le_bytes());
+        at += 4;
+        dst[at..at + 8].copy_from_slice(&(value.f_int64 as u64).to_le_bytes());
+        at += 8;
+        dst[at..at + 8].copy_from_slice(&value.f_float64.to_bits().to_le_bytes());
+        at += 8;
+        dst[at..at + 4].copy_from_slice(&(value.f_string.len() as u32).to_le_bytes());
+        at += 4;
+        dst[at..at + value.f_string.len()].copy_from_slice(value.f_string.as_bytes());
+        at += value.f_string.len();
+        dst[at] = u8::from(value.f_bool_2);
+        at += 1;
+        dst[at..at + 4].copy_from_slice(&(value.f_int32_2 as u32).to_le_bytes());
+        at += 4;
+        dst[at..at + 4].copy_from_slice(&(value.f_string_2.len() as u32).to_le_bytes());
+        at += 4;
+        dst[at..at + value.f_string_2.len()].copy_from_slice(value.f_string_2.as_bytes());
+        at += value.f_string_2.len();
+    }
+    if at != total {
+        bail!("gld-kiln: message batch length");
+    }
+    Ok(())
+}
+
+fn read_document(reader: &mut Reader<'_>) -> Result<Document> {
+    let id = read_string(reader)?;
+    let status = reader.i32().map_err(err)?;
+    let meta = DocumentMeta {
+        region: read_string(reader)?,
+        version: reader.i32().map_err(err)?,
+    };
+    let n = reader.list_count(16).map_err(err)? as usize;
+    let mut items = Vec::with_capacity(n);
+    for _ in 0..n {
+        items.push(DocumentItem {
+            sku: read_string(reader)?,
+            qty: reader.i32().map_err(err)?,
+            price_minor: reader.i64().map_err(err)?,
+        });
+    }
+    Ok(Document {
+        id,
+        status,
+        meta,
+        items,
+    })
+}
+
+fn read_telemetry(reader: &mut Reader<'_>) -> Result<Telemetry> {
+    Ok(Telemetry {
+        source: read_string(reader)?,
+        ts: reader.i64().map_err(err)?,
+        tags: read_string_list(reader)?,
+        values: read_f64s(reader)?,
+    })
+}
+
+fn read_strings(reader: &mut Reader<'_>) -> Result<Strings> {
+    Ok(Strings {
+        items: read_string_list(reader)?,
+    })
+}
+
+fn read_event(reader: &mut Reader<'_>) -> Result<Event> {
+    let event_id = read_string(reader)?;
+    let event_type = read_string(reader)?;
+    let occurred_at = reader.i64().map_err(err)?;
+    let producer = read_string(reader)?;
+    let n = reader.list_count(8).map_err(err)? as usize;
+    let mut attrs = Vec::with_capacity(n);
+    for _ in 0..n {
+        attrs.push(EventAttr {
+            key: read_string(reader)?,
+            value: read_string(reader)?,
+        });
+    }
+    Ok(Event {
+        event_id,
+        event_type,
+        occurred_at,
+        producer,
+        attrs,
+    })
+}
+
+fn read_prompt(reader: &mut Reader<'_>) -> Result<Prompt> {
     Ok(Prompt {
-        batch: as_i32(field(fields, 0)?)?,
-        seq: as_i32(field(fields, 1)?)?,
-        input_ids: i64_list_from(field(fields, 2)?)?,
-        attention_mask: i64_list_from(field(fields, 3)?)?,
-        position_ids: i64_list_from(field(fields, 4)?)?,
+        batch: reader.i32().map_err(err)?,
+        seq: reader.i32().map_err(err)?,
+        input_ids: read_i64s(reader)?,
+        attention_mask: read_i64s(reader)?,
+        position_ids: read_i64s(reader)?,
     })
 }
 
-fn shard_from(value: &Value<'_>) -> Result<Shard> {
-    let fields = as_struct(value)?;
-    exact(fields, 7)?;
+fn read_shard(reader: &mut Reader<'_>) -> Result<Shard> {
     Ok(Shard {
-        vocab: as_i32(field(fields, 0)?)?,
-        hidden: as_i32(field(fields, 1)?)?,
-        ffn: as_i32(field(fields, 2)?)?,
-        tok_emb: f32_list_from(field(fields, 3)?)?,
-        attn: f32_list_from(field(fields, 4)?)?,
-        ffn_weight: f32_list_from(field(fields, 5)?)?,
-        norm: f32_list_from(field(fields, 6)?)?,
+        vocab: reader.i32().map_err(err)?,
+        hidden: reader.i32().map_err(err)?,
+        ffn: reader.i32().map_err(err)?,
+        tok_emb: read_f32s(reader)?,
+        attn: read_f32s(reader)?,
+        ffn_weight: read_f32s(reader)?,
+        norm: read_f32s(reader)?,
     })
 }
 
-fn request_from(value: &Value<'_>) -> Result<InferenceRequest> {
-    let fields = as_struct(value)?;
-    exact(fields, 4)?;
+fn read_request(reader: &mut Reader<'_>) -> Result<InferenceRequest> {
     Ok(InferenceRequest {
-        request_id: as_i64(field(fields, 0)?)?,
-        model: as_string(field(fields, 1)?)?,
-        temperature: as_f32(field(fields, 2)?)?,
-        inputs: prompt_from(field(fields, 3)?)?,
+        request_id: reader.i64().map_err(err)?,
+        model: read_string(reader)?,
+        temperature: reader.f32().map_err(err)?,
+        inputs: read_prompt(reader)?,
     })
+}
+
+fn read_tensor(reader: &mut Reader<'_>) -> Result<TensorMatrix> {
+    let rows = reader.i32().map_err(err)?;
+    let cols = reader.i32().map_err(err)?;
+    Ok(TensorMatrix::owned(rows, cols, read_f32s(reader)?))
 }
 
 /// Rows, cols, count, then the f32 body. The body is a pointer into `data`.
-fn tensor_view_fixture(data: &[u8]) -> Result<Fixture> {
+fn read_tensor_view(data: &[u8]) -> Result<TensorMatrix> {
     let mut reader = Reader::new(data);
-    let rows = reader
-        .i32()
-        .map_err(|e| anyhow::anyhow!("gld-kiln tensor_view: {e}"))?;
-    let cols = reader
-        .i32()
-        .map_err(|e| anyhow::anyhow!("gld-kiln tensor_view: {e}"))?;
-    let n = reader
-        .list_count(4)
-        .map_err(|e| anyhow::anyhow!("gld-kiln tensor_view: {e}"))? as usize;
-    let nbytes = n.checked_mul(4).context("gld-kiln tensor_view length")?;
-    let total = nbytes
-        .checked_add(12)
-        .context("gld-kiln tensor_view length")?;
-    if data.len() != total {
-        bail!("gld-kiln tensor_view length");
-    }
-    let payload = reader
-        .raw(nbytes)
-        .map_err(|e| anyhow::anyhow!("gld-kiln tensor_view: {e}"))?;
-    Ok(Fixture::TensorView(TensorMatrix::borrowed(
-        rows, cols, payload,
-    )))
+    let rows = reader.i32().map_err(err)?;
+    let cols = reader.i32().map_err(err)?;
+    let n = reader.list_count(4).map_err(err)? as usize;
+    let payload = read_body(&mut reader, n, 4)?;
+    reader.finish().map_err(err)?;
+    Ok(TensorMatrix::borrowed(rows, cols, payload))
 }
 
-fn fixture_from(kind: &str, value: &Value<'_>) -> Result<Fixture> {
+fn read_one(kind: &str, reader: &mut Reader<'_>) -> Result<Fixture> {
     Ok(match kind {
-        "message" => Fixture::Message(message_from(value)?),
-        "document" => Fixture::Document(document_from(value)?),
-        "telemetry" => Fixture::Telemetry(telemetry_from(value)?),
-        "strings" => Fixture::Strings(strings_from(value)?),
-        "event" => Fixture::Event(event_from(value)?),
-        "tensor" => Fixture::Tensor(tensor_from(value)?),
-        "prompt" => Fixture::Prompt(prompt_from(value)?),
-        "shard" => Fixture::Shard(shard_from(value)?),
-        "request" => Fixture::Request(request_from(value)?),
+        "message" => bail!("gld-kiln: message is read by read_message_one"),
+        "document" => Fixture::Document(read_document(reader)?),
+        "telemetry" => Fixture::Telemetry(read_telemetry(reader)?),
+        "strings" => Fixture::Strings(read_strings(reader)?),
+        "event" => Fixture::Event(read_event(reader)?),
+        "tensor" => Fixture::Tensor(read_tensor(reader)?),
+        "prompt" => Fixture::Prompt(read_prompt(reader)?),
+        "shard" => Fixture::Shard(read_shard(reader)?),
+        "request" => Fixture::Request(read_request(reader)?),
         other => bail!("gld-kiln: unsupported {other}"),
     })
 }
 
+/// Minimum encoded size of one struct. Used so a hostile list count fails
+/// before `Vec` reserves element storage.
+fn min_struct(kind: &str) -> u64 {
+    match kind {
+        // bool + i32 + i64 + f64 + str + bool + i32 + str
+        "message" => 34,
+        // str + i32 + (str + i32) + list count
+        "document" => 20,
+        // str + i64 + list<str> count + list<f64> count
+        "telemetry" => 20,
+        "strings" => 4,
+        // three str + i64 + list count
+        "event" => 24,
+        _ => 1,
+    }
+}
+
 pub struct KilnSer {
-    schema: Option<Schema>,
-    value: Option<Value<'static>>,
     kind: &'static str,
     batch: bool,
 }
@@ -480,8 +570,6 @@ pub struct KilnSer {
 impl Default for KilnSer {
     fn default() -> Self {
         Self {
-            schema: None,
-            value: None,
             kind: "message",
             batch: false,
         }
@@ -489,18 +577,24 @@ impl Default for KilnSer {
 }
 
 impl KilnSer {
-    fn write_prepared(&self, out: &mut Vec<u8>) -> Result<()> {
-        let schema = self
-            .schema
-            .as_ref()
-            .context("gld-kiln prepare was not called")?;
-        let value = self
-            .value
-            .as_ref()
-            .context("gld-kiln prepare was not called")?;
-        encode_into(schema, value, out, DEFAULT_CAP)
-            .map_err(|e| anyhow::anyhow!("gld-kiln encode: {e}"))?;
-        Ok(())
+    fn write_prepared(&self, fixtures: &[Fixture], out: &mut Vec<u8>) -> Result<()> {
+        if self.batch && self.kind == "message" {
+            return write_message_list(fixtures, out);
+        }
+        if self.batch {
+            write_count(out, fixtures.len(), DEFAULT_CAP).map_err(err)?;
+            for fx in fixtures {
+                if fx.name() != self.kind {
+                    bail!("gld-kiln: mixed cell");
+                }
+                write_one(out, fx)?;
+            }
+            return Ok(());
+        }
+        if fixtures.len() != 1 {
+            bail!("gld-kiln: N>1 requires prepare_many so the schema is a list");
+        }
+        write_one(out, &fixtures[0])
     }
 }
 
@@ -548,26 +642,16 @@ impl BenchSerializer for KilnSer {
         if fixtures.iter().any(|fx| fx.name() != kind) {
             bail!("gld-kiln: mixed cell");
         }
-        let batch = fixtures.len() > 1;
-        let base = schema_for(kind)?;
-        let schema = if batch { Schema::list(base) } else { base };
-        let value = if batch {
-            Value::List(fixtures.iter().map(to_value).collect::<Result<Vec<_>>>()?)
-        } else {
-            to_value(&fixtures[0])?
-        };
         self.kind = kind;
-        self.batch = batch;
-        self.schema = Some(schema);
-        self.value = Some(value);
+        self.batch = fixtures.len() > 1;
         Ok(())
     }
 
-    fn serialize_into(&mut self, _fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
         if self.batch {
             bail!("gld-kiln: batch cell is one list; call serialize_fixtures");
         }
-        self.write_prepared(out)
+        self.write_prepared(std::slice::from_ref(fixture), out)
     }
 
     fn serialize_fixtures(&mut self, fixtures: &[Fixture], out: &mut Vec<u8>) -> Result<()> {
@@ -575,7 +659,7 @@ impl BenchSerializer for KilnSer {
             if fixtures.len() <= 1 {
                 bail!("gld-kiln: prepared a list but cell has {}", fixtures.len());
             }
-            return self.write_prepared(out);
+            return self.write_prepared(fixtures, out);
         }
         if fixtures.len() != 1 {
             bail!("gld-kiln: N>1 requires prepare_many so the schema is a list");
@@ -593,26 +677,32 @@ impl BenchSerializer for KilnSer {
     }
 
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
-        let schema = self
-            .schema
-            .as_ref()
-            .context("gld-kiln prepare was not called")?;
+        if self.kind == "message" {
+            return if self.batch {
+                read_message_list(data)
+            } else {
+                read_message_one(data)
+            };
+        }
         if self.kind == "tensor_view" {
             if self.batch {
                 bail!("gld-kiln: tensor_view batch is not a borrowed matrix");
             }
-            return tensor_view_fixture(data);
+            return Ok(Fixture::TensorView(read_tensor_view(data)?));
         }
-        let value = decode(schema, data).map_err(|e| anyhow::anyhow!("gld-kiln decode: {e}"))?;
+        let mut reader = Reader::new(data);
         if self.batch {
-            let items = as_list(&value)?;
-            let mut rows = Vec::with_capacity(items.len());
-            for item in items {
-                rows.push(fixture_from(self.kind, item)?);
+            let n = reader.list_count(min_struct(self.kind)).map_err(err)? as usize;
+            let mut rows = Vec::with_capacity(n);
+            for _ in 0..n {
+                rows.push(read_one(self.kind, &mut reader)?);
             }
+            reader.finish().map_err(err)?;
             return Ok(Fixture::Rows(rows));
         }
-        fixture_from(self.kind, &value)
+        let value = read_one(self.kind, &mut reader)?;
+        reader.finish().map_err(err)?;
+        Ok(value)
     }
 }
 
@@ -620,6 +710,59 @@ impl BenchSerializer for KilnSer {
 mod tests {
     use super::*;
     use crate::data::{check_cell_fidelity, make_one, TypeConfig};
+    use kiln::{encode, Schema, Value};
+    use std::time::Instant;
+
+    fn message_value(value: &Message) -> Value<'static> {
+        Value::Struct(vec![
+            Value::Bool(value.f_bool),
+            Value::I32(value.f_int32),
+            Value::I64(value.f_int64),
+            Value::from_f64(value.f_float64),
+            Value::str(value.f_string.clone()),
+            Value::Bool(value.f_bool_2),
+            Value::I32(value.f_int32_2),
+            Value::str(value.f_string_2.clone()),
+        ])
+    }
+
+    fn message_schema() -> Schema {
+        Schema::struct_fields([
+            ("f_bool", Schema::Bool),
+            ("f_int32", Schema::I32),
+            ("f_int64", Schema::I64),
+            ("f_float64", Schema::F64),
+            ("f_string", Schema::Str),
+            ("f_bool_2", Schema::Bool),
+            ("f_int32_2", Schema::I32),
+            ("f_string_2", Schema::Str),
+        ])
+    }
+
+    #[test]
+    fn message_bytes_match_the_library_encoder() {
+        let one = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
+        let mut ser = KilnSer::default();
+        ser.prepare(&one).unwrap();
+        let bytes = ser.serialize_bytes(&one).unwrap();
+        let Fixture::Message(message) = &one else {
+            panic!("{}", one.name());
+        };
+        let library = encode(&message_schema(), &message_value(message)).unwrap();
+        assert_eq!(bytes, library);
+
+        let many = vec![one.clone(), one.clone()];
+        let mut batch = KilnSer::default();
+        batch.prepare_many(&many).unwrap();
+        let mut listed = Vec::new();
+        batch.serialize_fixtures(&many, &mut listed).unwrap();
+        let library_list = encode(
+            &Schema::list(message_schema()),
+            &Value::List(vec![message_value(message), message_value(message)]),
+        )
+        .unwrap();
+        assert_eq!(listed, library_list);
+    }
 
     #[test]
     fn suite_roundtrip_one_and_batch_list() {
@@ -695,10 +838,6 @@ mod tests {
                 assert!(view.values.borrowed_in(&bytes));
                 assert_eq!(view.values.bit(0), 0x8000_0000);
                 assert_eq!(view.values.bit(1), 0x7fc0_0000);
-                let owned = decode(ser.schema.as_ref().unwrap(), &bytes).unwrap();
-                let decoded = tensor_from(&owned).unwrap();
-                assert!(!decoded.values.is_borrowed());
-                assert_eq!(decoded.values, view.values);
             }
             if *kind == "tensor" {
                 assert_eq!(bytes.len(), 12 + 16 * 4);
@@ -743,5 +882,71 @@ mod tests {
         };
         assert!(matrix.values.borrowed_in(&view_bytes));
         assert_eq!(matrix.values.len(), 1024 * 1024);
+    }
+
+    #[test]
+    fn catalog_tensor_copy_is_near_a_memcpy() {
+        let cfg = TypeConfig::default();
+        let one = make_one("tensor", 1, 0, &cfg).unwrap();
+        let mut ser = KilnSer::default();
+        ser.prepare(&one).unwrap();
+        let mut buf = Vec::new();
+        ser.serialize_into(&one, &mut buf).unwrap();
+        let mut best_ser = u128::MAX;
+        let mut best_de = u128::MAX;
+        for _ in 0..5 {
+            buf.clear();
+            let t0 = Instant::now();
+            ser.serialize_into(&one, &mut buf).unwrap();
+            let ser_ns = t0.elapsed().as_nanos();
+            let t1 = Instant::now();
+            let got = ser.deserialize_bytes(&buf).unwrap();
+            let de_ns = t1.elapsed().as_nanos();
+            std::hint::black_box(&got);
+            best_ser = best_ser.min(ser_ns);
+            best_de = best_de.min(de_ns);
+        }
+        // Mojo on this host copies the 4 MiB matrix in about 0.25–0.35 ms.
+        // The old Value-per-float read was about 38 ms. Stay under 2 ms so a
+        // busy machine can still tell a memcpy from that graph.
+        assert!(best_ser < 2_000_000, "ser {best_ser}");
+        assert!(best_de < 2_000_000, "deser {best_de}");
+    }
+
+    fn best_roundtrip(kind: &str, cfg: &TypeConfig) -> (u128, u128, usize) {
+        let one = make_one(kind, 1, 0, cfg).unwrap();
+        let mut ser = KilnSer::default();
+        ser.prepare(&one).unwrap();
+        let mut buf = Vec::new();
+        ser.serialize_into(&one, &mut buf).unwrap();
+        let mut best_ser = u128::MAX;
+        let mut best_de = u128::MAX;
+        for _ in 0..20 {
+            buf.clear();
+            let t0 = Instant::now();
+            ser.serialize_into(&one, &mut buf).unwrap();
+            let ser_ns = t0.elapsed().as_nanos();
+            let t1 = Instant::now();
+            let got = ser.deserialize_bytes(&buf).unwrap();
+            let de_ns = t1.elapsed().as_nanos();
+            std::hint::black_box(&got);
+            best_ser = best_ser.min(ser_ns);
+            best_de = best_de.min(de_ns);
+        }
+        (best_ser, best_de, buf.len())
+    }
+
+    #[test]
+    fn direct_path_beats_the_value_tree_on_suite_and_shard() {
+        if cfg!(debug_assertions) {
+            return;
+        }
+        let cfg = TypeConfig::default();
+        let (ser_ns, de_ns, _) = best_roundtrip("message", &cfg);
+        // Published Value-tree read was about 313 ns.
+        assert!(de_ns < 1_000, "message deser {de_ns} ser {ser_ns}");
+        let (ser_ns, de_ns, _) = best_roundtrip("shard", &cfg);
+        // Published Value-tree read of the shard weights was about 10 ms.
+        assert!(de_ns < 2_000_000, "shard deser {de_ns} ser {ser_ns}");
     }
 }

@@ -7,7 +7,6 @@ from bench.data import (
     Event,
     Fixture,
     Message,
-    _same_f32,
     PromptValue,
     RequestValue,
     ShardValue,
@@ -83,7 +82,10 @@ struct KilnSer:
         var out = Fixture.empty(fx.type_id, fx.n, fx.hash)
         var raw = Span(data)
         if fx.type_id == "tensor_view":
-            out.view_ok = _tensor_view_ok(fx, raw)
+            var bound = _tensor_view_bind(fx, raw)
+            out.view_ok = bound.ok
+            out.view_addr = bound.addr
+            out.view_nbytes = bound.nbytes
             return out^
         if fx.type_id == "tensor":
             var one = List[TensorValue]()
@@ -143,29 +145,24 @@ struct KilnSer:
         return out^
 
 
-def _tensor_view_ok[o: ImmOrigin](fx: Fixture, data: Span[UInt8, o]) raises -> Bool:
-    """Borrowed read. Reader.take returns a span of the encoded payload."""
+@fieldwise_init
+struct _ViewBind:
+    var ok: Bool
+    var addr: Int
+    var nbytes: Int
+
+
+def _tensor_view_bind[o: ImmOrigin](fx: Fixture, data: Span[UInt8, o]) raises -> _ViewBind:
+    """Borrowed read. The element compare runs later, outside the timer."""
     var reader = Reader(data)
     var rows = reader.i32()
     var cols = reader.i32()
     var n = reader.count()
     var payload = reader.take(n * 4)
     if len(fx.tensors) != 1:
-        return False
+        return _ViewBind(False, 0, 0)
     if rows != fx.tensors[0].rows or cols != fx.tensors[0].cols or n != len(fx.tensors[0].values):
-        return False
+        return _ViewBind(False, 0, 0)
     if len(payload) != n * 4:
-        return False
-    var i = 0
-    while i < n:
-        var bits = (
-            UInt32(payload[i * 4])
-            | (UInt32(payload[i * 4 + 1]) << 8)
-            | (UInt32(payload[i * 4 + 2]) << 16)
-            | (UInt32(payload[i * 4 + 3]) << 24)
-        )
-        var got = Float32(from_bits=bits)
-        if not _same_f32(got, fx.tensors[0].values[i]):
-            return False
-        i += 1
-    return True
+        return _ViewBind(False, 0, 0)
+    return _ViewBind(True, Int(payload.unsafe_ptr()), len(payload))
