@@ -427,4 +427,50 @@ namespace GLD.SerializerBenchmark.TestData.V2
             return outv;
         }
     }
+
+    /// <summary>
+    /// Row-major float32 matrix. <c>Values</c> length is <c>Rows * Cols</c>.
+    /// Index 0 is negative zero and index 1 is quiet NaN <c>0x7fc00000</c>.
+    /// <c>tensor_view</c> is the same matrix as <c>tensor</c>.
+    /// </summary>
+    public sealed class TensorMatrix
+    {
+        public int Rows { get; set; }
+        public int Cols { get; set; }
+        public float[] Values { get; set; } = System.Array.Empty<float>();
+    }
+
+    /// <summary>Padded LLM inputs. Each list length is <c>Batch * Seq</c>.</summary>
+    public sealed class Prompt
+    {
+        public int Batch { get; set; }
+        public int Seq { get; set; }
+        public long[] InputIds { get; set; } = System.Array.Empty<long>();
+        public long[] AttentionMask { get; set; } = System.Array.Empty<long>();
+        public long[] PositionIds { get; set; } = System.Array.Empty<long>();
+    }
+
+    /// <summary>
+    /// One transformer block. <c>TokEmb</c> is vocab*hidden, <c>Attn</c> is hidden*hidden,
+    /// <c>FfnWeight</c> is ffn*hidden, and <c>Norm</c> is hidden.
+    /// </summary>
+    public sealed class Shard
+    {
+        public int Vocab { get; set; }
+        public int Hidden { get; set; }
+        public int Ffn { get; set; }
+        public float[] TokEmb { get; set; } = System.Array.Empty<float>();
+        public float[] Attn { get; set; } = System.Array.Empty<float>();
+        public float[] FfnWeight { get; set; } = System.Array.Empty<float>();
+        public float[] Norm { get; set; } = System.Array.Empty<float>();
+    }
+
+    /// <summary>Request id, model name, temperature, and the prompt tensors.</summary>
+    public sealed class InferenceRequest
+    {
+        public long RequestId { get; set; }
+        public string Model { get; set; } = "";
+        public float Temperature { get; set; }
+        public Prompt Inputs { get; set; } = new Prompt();
+    }
 }

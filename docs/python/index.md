@@ -71,6 +71,7 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
 | [fory](https://github.com/apache/fory) | Binary | `pyfory` | dataclass | adapted | Native mode; types registered before timing |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-python) | Binary | `gld-kiln` | dict | adapted | Kiln 0.2.0 positional encode / decode. A batch is one list |
 | [json](https://github.com/python/cpython/tree/main/Lib/json) | JSON | stdlib | dict | adapted | Baseline text JSON |
 | [mashumaro](https://github.com/Fatal1ty/mashumaro) | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
 | [msgpack](https://github.com/msgpack/msgpack-python) | Binary | `msgpack` | dict | native | Reference MessagePack |
@@ -135,6 +136,10 @@ dill extends pickle further for scientific Python: graphs, lambdas, and interpre
 #### [flatbuffers](https://github.com/google/flatbuffers) · `25.12.19`
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder writes `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. `tensor_view` reads the float vector in place.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-python) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. The schema is the struct field order, so the timed path does not write names or tags. `prepare_data` turns the suite dataclasses into dicts. `Writer.encode` and `decode` then walk `message`, `document`, `telemetry`, `strings`, and `event`. A batch of 100 is one list of that struct. The tensor data set uses the same structs as Mojo `gld-kiln`: `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. `tensor_view` returns a float32 view of the payload. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [fory](https://github.com/apache/fory)
 

@@ -86,6 +86,7 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
             }
             break :blk .{ .event = out };
         },
+        else => return error.Unsupported,
     };
 }
 

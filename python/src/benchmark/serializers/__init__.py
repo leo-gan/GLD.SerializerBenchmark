@@ -16,6 +16,7 @@ from .json_serpyco import SerpycoSerializer
 from .binary_msgpack import MsgpackSerializer
 from .binary_cbor2 import Cbor2Serializer
 from .binary_ion import AmazonIonSerializer
+from .binary_kiln import KilnSerializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
@@ -40,6 +41,7 @@ __all__ = [
     "MsgpackSerializer",
     "Cbor2Serializer",
     "AmazonIonSerializer",
+    "KilnSerializer",
     "ProtobufSerializer",
     "AvroSerializer",
     "FlatBuffersSerializer",

@@ -30,6 +30,7 @@ public final class Registry {
           new Entry("jackson-cbor", JacksonCborSer::new),
           new Entry("jackson-smile", JacksonSmileSer::new),
           new Entry("ion", IonSer::new),
+          new Entry("gld-kiln", KilnSer::new),
           new Entry("bson", BsonSer::new),
           new Entry("jackson-yaml", JacksonYamlSer::new),
           // Schema

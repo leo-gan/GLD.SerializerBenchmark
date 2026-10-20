@@ -30,7 +30,7 @@ class ForySer final : public ISerializer {
   void prepare(const Fixture& fx) override {
     std::visit([this](const auto& value) {
       using T = std::decay_t<decltype(value)>;
-      if constexpr (is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>) {
+      if constexpr (is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T> || is_tensor_alt_v<T>) {
         decode_ = nullptr;
       } else {
         decode_ = [](fory::serialization::Fory& f, const std::vector<uint8_t>& bytes) -> Value {
@@ -43,7 +43,7 @@ class ForySer final : public ISerializer {
   std::vector<uint8_t> serialize_bytes(const Fixture& fx) override {
     return std::visit([this](const auto& value) -> std::vector<uint8_t> {
       using T = std::decay_t<decltype(value)>;
-      if constexpr (is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T>) {
+      if constexpr (is_columnar_alt_v<T> || is_graph_alt_v<T> || is_array_alt_v<T> || is_tensor_alt_v<T>) {
         throw std::runtime_error("fory: unsupported type");
       } else {
         return fory_.serialize(value).value();

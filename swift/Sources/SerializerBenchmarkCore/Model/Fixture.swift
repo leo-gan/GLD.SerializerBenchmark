@@ -124,6 +124,24 @@ public func semanticEqual(_ a: Any, _ b: Any) -> Bool {
     if let x = a as? Book, let y = b as? Book {
         return graphEqual(x, y)
     }
+    if let x = a as? TensorMatrix, let y = b as? TensorMatrix {
+        return x == y
+    }
+    if let x = a as? TensorMatrix, let y = b as? TensorView {
+        return tensorViewMatches(x, y)
+    }
+    if let x = a as? TensorView, let y = b as? TensorMatrix {
+        return tensorViewMatches(y, x)
+    }
+    if let x = a as? Prompt, let y = b as? Prompt {
+        return x == y
+    }
+    if let x = a as? Shard, let y = b as? Shard {
+        return x == y
+    }
+    if let x = a as? Request, let y = b as? Request {
+        return x == y
+    }
     if let x = a as? [Message], let y = b as? [Message] {
         return x.count == y.count && zip(x, y).allSatisfy { semanticEqual($0, $1) }
     }
@@ -209,6 +227,29 @@ private func graphPair(
         return true
     default:
         return false
+    }
+}
+
+/// Bit-identical float32, including negative zero and the NaN payload.
+private func tensorViewMatches(_ matrix: TensorMatrix, _ view: TensorView) -> Bool {
+    if matrix.rows != view.rows || matrix.cols != view.cols || matrix.values.count != view.count {
+        return false
+    }
+    let bytes = view.count * 4
+    if view.offset < 0 || bytes < 0 || view.offset > view.storage.count - bytes {
+        return false
+    }
+    return view.storage.withUnsafeBytes { raw in
+        guard let base = raw.baseAddress else { return view.count == 0 }
+        let payload = base.advanced(by: view.offset)
+        for i in 0..<view.count {
+            let bits = UInt32(payload.load(fromByteOffset: i * 4, as: UInt8.self))
+                | (UInt32(payload.load(fromByteOffset: i * 4 + 1, as: UInt8.self)) << 8)
+                | (UInt32(payload.load(fromByteOffset: i * 4 + 2, as: UInt8.self)) << 16)
+                | (UInt32(payload.load(fromByteOffset: i * 4 + 3, as: UInt8.self)) << 24)
+            if bits != matrix.values[i].bitPattern { return false }
+        }
+        return true
     }
 }
 

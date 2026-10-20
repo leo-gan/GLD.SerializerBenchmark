@@ -93,7 +93,7 @@ class ColumnarV2Test {
   @Test
   void filterAllowListPreservesRegistryOrder() {
     List<String> names = Registry.names();
-    assertEquals(27, names.size());
+    assertEquals(28, names.size());
     assertEquals(names, Main.selectSerializerNames(names, ""));
     List<String> jackson = Main.selectSerializerNames(names, "jackson");
     assertTrue(jackson.contains("jackson"));

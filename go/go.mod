@@ -26,6 +26,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19 // stay on this pin; v1.0.20 is a separate bump
 	github.com/klauspost/compress v1.19.2
+	github.com/leo-gan/gld-kiln-go v0.0.0-20261020044241-3403821d9310 // tag 0.2.0; Git tag has no v prefix, so Go records the commit
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4

@@ -1160,6 +1160,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e762b9b188634fc508d4ec54b62ea3d352c43fd431d18d05d46f559f217f4725"
 
 [[package]]
+name = "gld-kiln"
+version = "0.2.0"
+source = "git+https://github.com/leo-gan/gld-kiln-rust?tag=0.2.0#764336d82632ecf53b294e768775c7886c5bc78a"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2627,6 +2635,7 @@ dependencies = [
  "flate2",
  "flexbuffers",
  "fory",
+ "gld-kiln",
  "hdf5-metno",
  "ion-rs",
  "minicbor",

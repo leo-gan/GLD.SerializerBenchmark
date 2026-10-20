@@ -5,7 +5,7 @@ title: "Java"
 Java
 ====
 
-Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **27** serializers.
+Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON, Kiln), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **28** serializers.
 
 ## Runtime
 
@@ -62,6 +62,7 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 | [dsl-json](https://github.com/ngs-doo/dsl-json) | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
 | [fastjson2](https://github.com/alibaba/fastjson2) | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
 | [fory](https://github.com/apache/fory) | Binary | fory-core 1.7.4 | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-java) | Binary | gld-kiln-java 0.2.0 | Kiln.encodeTo / decode | adapted | Schema once; reused buffer. A batch is one list |
 | [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
 | [hessian](https://github.com/ebourg/hessian) | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
 | [ion](https://github.com/amazon-ion/ion-java) | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
@@ -118,6 +119,10 @@ fastjson2 is Alibaba's rewrite of fastjson for high-performance JSON on the JVM.
 #### [fory](https://github.com/apache/fory) · `1.3.0`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-java) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in prepare, so the timed path does not write names or tags. `Kiln.encodeTo` reuses one buffer; `decode` reads the bytes back into maps that `toDomain` turns into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [gson](https://github.com/google/gson) · `2.14.0`
 

@@ -52,9 +52,56 @@ export function allFixturesV2(seed = 42) {
   }));
 }
 
+const f32BitsBuf = new ArrayBuffer(4);
+const f32BitsView = new DataView(f32BitsBuf);
+
+function isF32ByteView(v) {
+  return v != null && typeof v === 'object' && !Array.isArray(v) && v.f32Bytes instanceof Uint8Array;
+}
+
+function bitsOfF32Value(v) {
+  if (typeof v === 'number') {
+    f32BitsView.setFloat32(0, v, true);
+    return f32BitsView.getUint32(0, true);
+  }
+  // gld-kiln FloatBits (and the same shape): quiet NaN payload survives here.
+  if (v != null && typeof v === 'object' && v.kind === 'f32' && typeof v.bits === 'bigint') {
+    return Number(v.bits & 0xffffffffn) >>> 0;
+  }
+  return null;
+}
+
+function bitsAtF32(seq, view, i) {
+  if (view) {
+    const b = seq.f32Bytes;
+    const o = i * 4;
+    return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+  }
+  return bitsOfF32Value(seq[i]);
+}
+
+// tensor_view values are a subarray of the payload, not a copied float list.
+function f32ViewEqual(a, b) {
+  const aView = isF32ByteView(a);
+  const bView = isF32ByteView(b);
+  const aLen = aView ? a.length : Array.isArray(a) ? a.length : -1;
+  const bLen = bView ? b.length : Array.isArray(b) ? b.length : -1;
+  if (aLen < 0 || bLen < 0 || aLen !== bLen) return false;
+  if (aView && a.f32Bytes.length !== aLen * 4) return false;
+  if (bView && b.f32Bytes.length !== bLen * 4) return false;
+  for (let i = 0; i < aLen; i++) {
+    const ba = bitsAtF32(a, aView, i);
+    const bb = bitsAtF32(b, bView, i);
+    if (ba == null || bb == null || ba !== bb) return false;
+  }
+  return true;
+}
+
 /** Deep equality (key-order insensitive). Prefer this over JSON.stringify for fidelity. */
 export function deepEqual(a, b) {
   if (Object.is(a, b)) return true;
+  // Byte span vs float list: every float32 bit, including -0 and the NaN payload.
+  if (isF32ByteView(a) || isF32ByteView(b)) return f32ViewEqual(a, b);
   if (typeof a !== typeof b) return false;
   if (a === null || b === null) return a === b;
   if (typeof a !== 'object') return false;

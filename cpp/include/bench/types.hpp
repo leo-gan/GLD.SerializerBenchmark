@@ -4,7 +4,9 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +16,39 @@ namespace bench {
 inline bool nearly_eq(double a, double b) {
   const double scale = std::max(1.0, std::max(std::fabs(a), std::fabs(b)));
   return std::fabs(a - b) <= 1e-6 * scale;
+}
+
+inline uint32_t f32_bits(float v) {
+  uint32_t bits = 0;
+  std::memcpy(&bits, &v, sizeof bits);
+  return bits;
+}
+
+inline float f32_from_bits(uint32_t bits) {
+  float v = 0;
+  std::memcpy(&v, &bits, sizeof v);
+  return v;
+}
+
+inline bool f32_same(float a, float b) { return f32_bits(a) == f32_bits(b); }
+
+inline bool f32_vec_eq(const std::vector<float>& a, const std::vector<float>& b) {
+  if (a.size() != b.size()) return false;
+  for (size_t i = 0; i < a.size(); ++i) {
+    if (!f32_same(a[i], b[i])) return false;
+  }
+  return true;
+}
+
+// `raw` is little-endian f32 bits, 4 bytes each. No numeric compare: -0 and NaN payloads differ.
+inline bool f32_payload_eq(std::span<const uint8_t> raw, const std::vector<float>& owned) {
+  if (raw.size() % 4 != 0 || raw.size() / 4 != owned.size()) return false;
+  for (size_t i = 0; i < owned.size(); ++i) {
+    uint32_t bits = 0;
+    std::memcpy(&bits, raw.data() + i * 4, 4);
+    if (bits != f32_bits(owned[i])) return false;
+  }
+  return true;
 }
 
 inline constexpr int64_t kBaseTsMs = 1'704'067'200'000LL;
@@ -201,6 +236,75 @@ struct Grid {
   }
 
   bool operator==(const Grid& o) const { return values == o.values; }
+};
+
+// Row-major float32 matrix. values.size() is rows * cols.
+// Index 0 is negative zero (0x80000000). Index 1 is quiet NaN 0x7fc00000.
+struct TensorMatrix {
+  int32_t rows = 0;
+  int32_t cols = 0;
+  std::vector<float> values;
+
+  bool operator==(const TensorMatrix& o) const {
+    return rows == o.rows && cols == o.cols && f32_vec_eq(values, o.values);
+  }
+};
+
+// Borrowed little-endian f32 payload (values.size() == count * 4). Does not own the bytes.
+struct TensorView {
+  int32_t rows = 0;
+  int32_t cols = 0;
+  std::span<const uint8_t> values;
+
+  bool operator==(const TensorView& o) const {
+    if (rows != o.rows || cols != o.cols || values.size() != o.values.size()) return false;
+    if (values.empty()) return true;
+    return std::memcmp(values.data(), o.values.data(), values.size()) == 0;
+  }
+};
+
+// Padded LLM inputs. Each list length is batch * seq, row-major.
+struct Prompt {
+  int32_t batch = 0;
+  int32_t seq = 0;
+  std::vector<int64_t> input_ids;
+  std::vector<int64_t> attention_mask;
+  std::vector<int64_t> position_ids;
+
+  bool operator==(const Prompt& o) const {
+    return batch == o.batch && seq == o.seq && input_ids == o.input_ids &&
+           attention_mask == o.attention_mask && position_ids == o.position_ids;
+  }
+};
+
+// One transformer block. tok_emb is vocab*hidden, attn hidden*hidden,
+// ffn_weight ffn*hidden, norm hidden. Float32, no pinned NaN.
+struct Shard {
+  int32_t vocab = 0;
+  int32_t hidden = 0;
+  int32_t ffn = 0;
+  std::vector<float> tok_emb;
+  std::vector<float> attn;
+  std::vector<float> ffn_weight;
+  std::vector<float> norm;
+
+  bool operator==(const Shard& o) const {
+    return vocab == o.vocab && hidden == o.hidden && ffn == o.ffn && f32_vec_eq(tok_emb, o.tok_emb) &&
+           f32_vec_eq(attn, o.attn) && f32_vec_eq(ffn_weight, o.ffn_weight) && f32_vec_eq(norm, o.norm);
+  }
+};
+
+// Request id, model name, float32 temperature, and the prompt tensors.
+struct Request {
+  int64_t request_id = 0;
+  std::string model;
+  float temperature = 0;
+  Prompt inputs;
+
+  bool operator==(const Request& o) const {
+    return request_id == o.request_id && model == o.model && f32_same(temperature, o.temperature) &&
+           inputs == o.inputs;
+  }
 };
 
 struct Order {

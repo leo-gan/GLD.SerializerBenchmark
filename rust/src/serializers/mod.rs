@@ -19,6 +19,7 @@
 //! Layout (one family / concern per file, matching Go/Python/C):
 //! - [`json`] — serde_json, simd-json, sonic-rs
 //! - [`binary_serde`] — rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson, ion-rs
+//! - [`kiln_ser`] — gld-kiln (positional suite structs; N>1 is one list)
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
 //! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
@@ -35,11 +36,12 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 mod avro_ser;
 mod binary_serde;
 mod columnar;
-mod hdf5_metno;
 mod dagr_ser;
 mod direct;
 mod fory_ser;
+mod hdf5_metno;
 mod json;
+mod kiln_ser;
 mod kinded;
 mod prost_ser;
 mod sbe_ser;
@@ -50,10 +52,11 @@ use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
 };
 use columnar::{ArrowIpc, ParquetSer};
-use hdf5_metno::Hdf5Metno;
 use dagr_ser::{DagrFrozenPackedSer, DagrFrozenSer, DagrRegularSer, DagrSer};
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
+use hdf5_metno::Hdf5Metno;
 use json::{SerdeJson, SimdJson, SonicRs};
+use kiln_ser::KilnSer;
 use prost_ser::ProstSer;
 use sbe_ser::SbeSer;
 use yaml::SerdeYaml;
@@ -113,11 +116,18 @@ pub trait BenchSerializer: Send {
         NativeKind::Serde
     }
     fn supports(&self, test_data_name: &str) -> bool {
-        // Columnar ids and `graph` are opt-in. `graph` is shared nodes plus a
-        // reference cycle; only a codec that keeps aliases should override this.
+        // Columnar ids, arrays, the tensor set, and `graph` are opt-in.
+        // `graph` is shared nodes plus a reference cycle.
         test_data_name != "graph"
             && !crate::data::is_columnar_id(test_data_name)
             && !crate::data::is_array_id(test_data_name)
+            && !crate::data::is_tensor_id(test_data_name)
+    }
+
+    /// N>1 is one codec payload, not the length-prefixed per-item frame.
+    /// gld-kiln uses this so a batch is one list of the struct.
+    fn one_cell_payload(&self) -> bool {
+        false
     }
 
     /// Untimed: build reusable codec state / bind kind-specific encode fns.
@@ -204,6 +214,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(FlexbuffersSer::default()),
         Box::new(BsonSer::default()),
         Box::new(IonRsSer::default()),
+        Box::new(KilnSer::default()),
         // Direct / zero-copy / schema
         Box::new(MinicborDirect::default()),
         Box::new(RkyvSer::default()),
@@ -227,17 +238,20 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::data::{
-        all_fixtures, check_cell_fidelity, fidelity, make_one, Fixture, TypeConfig,
-    };
     use super::binary_serde::CiboriumSer;
     use super::json::SerdeJson;
+    use super::*;
+    use crate::data::{all_fixtures, check_cell_fidelity, fidelity, make_one, Fixture, TypeConfig};
 
     fn roundtrip(ser: &mut dyn BenchSerializer, fx: &Fixture) {
         ser.prepare(fx).expect("prepare");
         let bytes = ser.serialize_bytes(fx).expect("ser");
-        assert!(!bytes.is_empty(), "{} empty ser for {}", ser.name(), fx.name());
+        assert!(
+            !bytes.is_empty(),
+            "{} empty ser for {}",
+            ser.name(),
+            fx.name()
+        );
         let out = ser.deserialize_bytes(&bytes).expect("de");
         assert!(
             fidelity(fx, &out),
@@ -266,7 +280,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 28);
+        assert_eq!(all.len(), 29);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -274,8 +288,8 @@ mod tests {
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        // Columnar rows do not support message. Fory, serde_yaml, and the four Dagr rows do.
-        assert_eq!(ok, 23);
+        // Columnar rows do not support message. Fory, serde_yaml, gld-kiln, and the four Dagr rows do.
+        assert_eq!(ok, 24);
     }
 
     #[test]
@@ -341,7 +355,8 @@ mod tests {
             // Stream is a separate pass. Prost's encode cursor is per pass.
             ser.begin_cell_encode();
             let mut stream = Vec::new();
-            ser.serialize_stream(&fixtures[0], &mut stream).expect("stream ser");
+            ser.serialize_stream(&fixtures[0], &mut stream)
+                .expect("stream ser");
             let mut cursor = std::io::Cursor::new(stream);
             let streamed = ser.deserialize_stream(&mut cursor).expect("stream de");
             check_cell_fidelity(type_id, &fixtures, &[streamed])
@@ -352,7 +367,15 @@ mod tests {
     #[test]
     fn columnar_and_peers_roundtrip_n1_and_n100() {
         let ids = ["table", "table_project", "nested_table", "signal"];
-        let peers = ["arrow-ipc", "parquet", "parquet-uncompressed", "sbe", "serde_json", "prost", "serde_avro_fast"];
+        let peers = [
+            "arrow-ipc",
+            "parquet",
+            "parquet-uncompressed",
+            "sbe",
+            "serde_json",
+            "prost",
+            "serde_avro_fast",
+        ];
         for mut ser in all_serializers() {
             if !peers.contains(&ser.name()) {
                 continue;

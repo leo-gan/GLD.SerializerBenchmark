@@ -19,9 +19,9 @@ use arrow::array::{
 };
 use arrow::buffer::{OffsetBuffer, ScalarBuffer};
 use arrow::datatypes::{DataType, Field, Fields, Schema, SchemaRef};
-use arrow::record_batch::RecordBatchReader;
 use arrow::ipc::reader::StreamReader;
 use arrow::ipc::writer::StreamWriter;
+use arrow::record_batch::RecordBatchReader;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::arrow::arrow_writer::ArrowWriter;
 use parquet::arrow::ProjectionMask;
@@ -37,11 +37,7 @@ fn table_schema() -> SchemaRef {
     S.get_or_init(|| {
         let mut fields = Vec::with_capacity(22);
         for i in 0..16 {
-            fields.push(Field::new(
-                format!("f_float_{i}"),
-                DataType::Float64,
-                false,
-            ));
+            fields.push(Field::new(format!("f_float_{i}"), DataType::Float64, false));
         }
         for i in 0..4 {
             fields.push(Field::new(format!("f_int_{i}"), DataType::Int64, false));
@@ -339,7 +335,10 @@ fn batch_for(kind: &str, fixtures: &[Fixture], schema: SchemaRef) -> Result<Reco
                 match fx {
                     Fixture::Table(r) | Fixture::TableProject(r) => rows.push(r),
                     other => {
-                        return Err(anyhow!("columnar: expected table row, got {}", other.name()))
+                        return Err(anyhow!(
+                            "columnar: expected table row, got {}",
+                            other.name()
+                        ))
                     }
                 }
             }
@@ -365,7 +364,9 @@ fn batch_for(kind: &str, fixtures: &[Fixture], schema: SchemaRef) -> Result<Reco
             for fx in fixtures {
                 match fx {
                     Fixture::Signal(r) => rows.push(r),
-                    other => return Err(anyhow!("columnar: expected signal, got {}", other.name())),
+                    other => {
+                        return Err(anyhow!("columnar: expected signal, got {}", other.name()))
+                    }
                 }
             }
             signal_batch(&rows, schema)
@@ -753,7 +754,7 @@ pub(crate) fn parquet_column_compression(data: &[u8]) -> Result<Compression> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::{make_one, check_cell_fidelity, TypeConfig};
+    use crate::data::{check_cell_fidelity, make_one, TypeConfig};
     use std::hint::black_box;
     use std::time::Instant;
 
@@ -808,13 +809,21 @@ mod tests {
         pq_p.prepare_many(&projected).unwrap();
         let (schema, batch) = read_ipc(&ipc, true).unwrap();
         assert_eq!(
-            schema.fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(),
+            schema
+                .fields()
+                .iter()
+                .map(|f| f.name().as_str())
+                .collect::<Vec<_>>(),
             vec!["f_float_0"]
         );
         assert_eq!(batch.num_columns(), 1);
         let (schema, batch) = read_parquet(&bytes, true).unwrap();
         assert_eq!(
-            schema.fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(),
+            schema
+                .fields()
+                .iter()
+                .map(|f| f.name().as_str())
+                .collect::<Vec<_>>(),
             vec!["f_float_0"]
         );
         assert_eq!(batch.num_columns(), 1);

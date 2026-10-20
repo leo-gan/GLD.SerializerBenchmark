@@ -60,6 +60,7 @@ pub fn build(b: *std.Build) void {
     const flatbuffers_dep = b.dependency("flatbuffers", .{ .target = target, .optimize = optimize });
     const avro_dep = b.dependency("gld_avro_zig", .{ .target = target, .optimize = optimize });
     const arrow_dep = b.dependency("gld_arrow_zig", .{ .target = target, .optimize = optimize });
+    const kiln_dep = b.dependency("gld_kiln_zig", .{ .target = target, .optimize = optimize });
     const jsonz_dep = b.dependency("jsonz", .{ .target = target, .optimize = optimize });
 
     const gen_proto = b.step("gen-proto", "Generate Zig types from schemas/v2/protobuf/benchmark_v2.proto");
@@ -82,6 +83,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "avro", .module = avro_dep.module("avro") },
         .{ .name = "arrow", .module = arrow_dep.module("arrow") },
         .{ .name = "jsonz", .module = jsonz_dep.module("jsonz") },
+        .{ .name = "kiln", .module = kiln_dep.module("kiln") },
     };
 
     const serde_tests = b.addTest(.{

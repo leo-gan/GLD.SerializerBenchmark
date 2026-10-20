@@ -96,6 +96,14 @@ final class ReusedByteScratch {
         return encoded
     }
 
+    /// One copy out of a reused writer buffer (Kiln `Writer.encode` returns a slice).
+    func store(_ bytes: ArraySlice<UInt8>) -> Data {
+        encoded.removeAll(keepingCapacity: true)
+        encoded.reserveCapacity(bytes.count)
+        encoded.append(contentsOf: bytes)
+        return encoded
+    }
+
     func copyIn(_ data: Data) -> [UInt8] {
         raw.removeAll(keepingCapacity: true)
         if raw.capacity < data.count {

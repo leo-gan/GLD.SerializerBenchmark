@@ -18,13 +18,14 @@ const Tag = enum(u3) {
     strings,
     event,
 
-    fn of(fx: data.Fixture) Tag {
+    fn of(fx: data.Fixture) error{Unsupported}!Tag {
         return switch (fx) {
             .message => .message,
             .document => .document,
             .telemetry => .telemetry,
             .strings => .strings,
             .event => .event,
+            else => error.Unsupported,
         };
     }
 };
@@ -122,7 +123,7 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
     self.clearDatums();
     self.enc_i = 0;
     if (fixtures.len == 0) return;
-    const tag = Tag.of(fixtures[0]);
+    const tag = try Tag.of(fixtures[0]);
     const pool = try poolFor(self, tag);
     const datums = try self.gpa.alloc(avro.Datum, fixtures.len);
     var n: usize = 0;
@@ -131,7 +132,7 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
         self.gpa.free(datums);
     }
     for (fixtures) |fx| {
-        if (Tag.of(fx) != tag) return error.MixedFixtures;
+        if (try Tag.of(fx) != tag) return error.MixedFixtures;
         datums[n] = try buildDatum(pool, self.gpa, fx);
         n += 1;
     }
@@ -200,6 +201,7 @@ fn buildDatum(pool: *avro.SchemaPool, gpa: std.mem.Allocator, fx: data.Fixture) 
         .telemetry => |t| try buildTelemetry(pool, gpa, t),
         .strings => |s| try buildStrings(pool, gpa, s),
         .event => |e| try buildEvent(pool, gpa, e),
+        else => error.Unsupported,
     };
 }
 

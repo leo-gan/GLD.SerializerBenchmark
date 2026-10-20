@@ -53,6 +53,7 @@ fi
 
 echo "[INFO] Building C# benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$CS_DIR"
+bash "$SCRIPT_DIR/fetch-gld-kiln.sh"
 dotnet build src/GLD.SerializerBenchmark.csproj -c Release --nologo -v q
 
 ARGS=("$REPS")

@@ -57,4 +57,5 @@ test {
     _ = compress;
     _ = serde_ser;
     _ = extra;
+    _ = @import("kiln_ser.zig");
 }

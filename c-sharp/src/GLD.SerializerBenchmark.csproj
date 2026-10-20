@@ -9,6 +9,8 @@
     <RootNamespace>GLD.SerializerBenchmark</RootNamespace>
     <Version>0.2.0</Version>
     <BondSkipCodegen>true</BondSkipCodegen>
+    <!-- Local feed filled by scripts/fetch-gld-kiln.sh from git tag 0.2.0 (not nuget.org, not a path into the library checkout). -->
+    <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)obj/gld-kiln-feed</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <!--
@@ -19,6 +21,8 @@
   -->
   <ItemGroup>
     <PackageReference Include="Apache.Fory" Version="1.7.4" />
+    <!-- https://github.com/leo-gan/gld-kiln-csharp tag 0.2.0, package id Gld.Kiln -->
+    <PackageReference Include="Gld.Kiln" Version="0.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
     <PackageReference Include="LightProto" Version="1.*" />

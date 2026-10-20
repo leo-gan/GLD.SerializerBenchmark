@@ -6,7 +6,7 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Objects;
 
-/** Semantic equality for suite fixtures (float tolerance). */
+/** Semantic equality for suite fixtures (float64 tolerance, float32 bits). */
 public final class Fidelity {
   private Fidelity() {}
 
@@ -38,6 +38,9 @@ public final class Fidelity {
         if (!check(Array.get(expected, i), Array.get(actual, i))) return false;
       }
       return true;
+    }
+    if (expected instanceof Float ef && actual instanceof Float af) {
+      return Float.floatToRawIntBits(ef) == Float.floatToRawIntBits(af);
     }
     if (expected instanceof Double || expected instanceof Float
         || actual instanceof Double || actual instanceof Float) {

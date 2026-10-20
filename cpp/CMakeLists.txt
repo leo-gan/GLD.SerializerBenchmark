@@ -165,6 +165,41 @@ FetchContent_MakeAvailable(
   nlohmann_json rapidjson simdjson ArduinoJson yyjson msgpack cereal bitsery zpp_bits jsoncons yas cista flatbuffers
 )
 
+# gld-kiln has a Makefile, not CMake. Fetch the tag and compile the library sources.
+FetchContent_Declare(gld_kiln
+  GIT_REPOSITORY https://github.com/leo-gan/gld-kiln-cpp.git
+  GIT_TAG 0.2.0
+  GIT_SHALLOW TRUE
+  SOURCE_DIR ${CPP_TP}/gld-kiln-cpp
+)
+FetchContent_GetProperties(gld_kiln)
+if(NOT gld_kiln_POPULATED)
+  FetchContent_Populate(gld_kiln)
+endif()
+set(GLD_KILN_DIR "${CPP_TP}/gld-kiln-cpp")
+add_library(gld_kiln STATIC
+  ${GLD_KILN_DIR}/src/hashing.cpp
+  ${GLD_KILN_DIR}/src/json.cpp
+  ${GLD_KILN_DIR}/src/json_scan.cpp
+  ${GLD_KILN_DIR}/src/schema.cpp
+  ${GLD_KILN_DIR}/src/schema_json.cpp
+  ${GLD_KILN_DIR}/src/value.cpp
+  ${GLD_KILN_DIR}/src/value_access.cpp
+  ${GLD_KILN_DIR}/src/tensor_encode.cpp
+  ${GLD_KILN_DIR}/src/tensor_decode.cpp
+  ${GLD_KILN_DIR}/src/tensor_names.cpp
+  ${GLD_KILN_DIR}/src/tensor_check.cpp
+  ${GLD_KILN_DIR}/src/frozen_encode.cpp
+  ${GLD_KILN_DIR}/src/frozen_write.cpp
+  ${GLD_KILN_DIR}/src/frozen_decode.cpp
+  ${GLD_KILN_DIR}/src/codegen.cpp
+  ${GLD_KILN_DIR}/src/codegen_util.cpp
+)
+target_include_directories(gld_kiln
+  PUBLIC ${GLD_KILN_DIR}/include
+  PRIVATE ${GLD_KILN_DIR}/src
+)
+
 # rapidjson does not always export a target on old tags — ensure include
 if(NOT TARGET rapidjson)
   add_library(rapidjson INTERFACE)
@@ -239,6 +274,7 @@ set(BENCH_SOURCES
   src/serializers/ser_sbe.cpp
   src/serializers/ser_dagr.cpp
   src/serializers/ser_highfive.cpp
+  src/serializers/ser_kiln.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -357,6 +393,7 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   zpp_bits_hdr
   yas_hdr
   cista_hdr
+  gld_kiln
   pthread
   ZLIB::ZLIB
   yaml-cpp::yaml-cpp
@@ -426,6 +463,7 @@ set(TEST_SOURCES
   tests/test_graph.cpp
   src/serializers/ser_dagr.cpp
   src/serializers/ser_highfive.cpp
+  src/serializers/ser_kiln.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -458,6 +496,7 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   zpp_bits_hdr
   yas_hdr
   cista_hdr
+  gld_kiln
   pthread
   ZLIB::ZLIB
   yaml-cpp::yaml-cpp

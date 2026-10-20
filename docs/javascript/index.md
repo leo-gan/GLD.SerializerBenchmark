@@ -54,7 +54,7 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
-26 serializers are registered when the optional `simdjson` addon loads, and 25 otherwise. That is the previous registry plus `fory`.
+32 serializers are registered when the optional `simdjson` addon loads, and 31 otherwise. That is the previous registry plus `fory` and `gld-kiln`.
 
 The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prepare()` is outside the clock. Every row, including the columnar ones, is **bytes only**: there is no distinct stream loop and no compliance decoder. `arrow-ipc` times the Arrow IPC stream (`tableToIPC(..., 'stream')`), not the Arrow file format. Parquet is registered because one `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. `parquet` keeps the writer default, Snappy. `parquet-uncompressed` sets `codec: 'UNCOMPRESSED'`, which changes the bytes and the column codec metadata. That is a second call path of the same writer, not a second library. `parquet-wasm` is not registered. Schema objects are selected in `prepare()`. Building the columnar batch from rows is inside timed `serialize`. `table_project` deserialize returns `f_float_0` only, an array of length N, including N=1.
 
@@ -77,6 +77,7 @@ The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prep
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | `Builder` / `ByteBuffer` |
 | [fory](https://github.com/apache/fory) | Binary | `@apache-fory/core` | Registered struct/list codecs; bytes only |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` (FlexBuffers) | `encode` / `toObject` |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-typescript) | Binary | `gld-kiln` | Positional `Writer.encode` / `decode`; a batch is one list |
 | [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema | `google-protobuf` | official jspb `serializeBinary` / `deserializeBinary` |
 | [ion-js](https://github.com/amazon-ion/ion-js) | Binary | `ion-js` | `dumpBinary` / `load`; plain-object conversion is outside the timer |
 | [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
@@ -161,6 +162,10 @@ Apache Fory (formerly Fury) was created for high-performance, cross-language ser
 #### [flexbuffers](https://github.com/google/flatbuffers) · `24.12.23`
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-typescript) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in `prepare()`, so the timed path does not write names or tags. `Writer.encode` reuses one buffer; `decode` reads the bytes back into plain objects. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) · `3.21.4`
 

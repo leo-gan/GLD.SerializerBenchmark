@@ -1,7 +1,8 @@
-//! Suite v2 fixtures. Deterministic within Zig; not bit-identical across languages.
+//! Suite and tensor fixtures. Deterministic within Zig; not bit-identical across languages.
 //!
 //! RNG: xorshift64 seeded from mixSeed(suite_seed, type_id, instance_index).
 //! mixSeed is FNV-1a-ish with the golden-ratio avalanche (same idea as Rust).
+//! tensor_view mixes the seed with "tensor", not "tensor_view".
 
 const std = @import("std");
 
@@ -60,11 +61,60 @@ pub const Event = struct {
     attrs: []EventAttr,
 };
 
+pub const Tensor = struct {
+    rows: i32,
+    cols: i32,
+    values: []f32,
+};
+
+/// Generator fills `values`. A borrowed decode sets `payload` to the encoded
+/// f32 bytes and leaves `values` empty. Fidelity accepts either side.
+pub const TensorView = struct {
+    rows: i32,
+    cols: i32,
+    values: []f32,
+    payload: []const u8 = &.{},
+};
+
+pub const Prompt = struct {
+    batch: i32,
+    seq: i32,
+    input_ids: []i64,
+    attention_mask: []i64,
+    position_ids: []i64,
+};
+
+pub const Shard = struct {
+    vocab: i32,
+    hidden: i32,
+    ffn: i32,
+    tok_emb: []f32,
+    attn: []f32,
+    ffn_weight: []f32,
+    norm: []f32,
+};
+
+pub const Request = struct {
+    request_id: i64,
+    model: []const u8,
+    temperature: f32,
+    inputs: Prompt,
+};
+
 pub const TypeConfig = struct {
     children: i32 = 8,
     points: i32 = 32,
     count: i32 = 32,
     attr_count: i32 = 4,
+    rows: i32 = 1024,
+    cols: i32 = 1024,
+    batch: i32 = 4,
+    seq: i32 = 256,
+    vocab: i32 = 32000,
+    hidden: i32 = 256,
+    ffn: i32 = 512,
+    string_min: i32 = 3,
+    string_max: i32 = 16,
 };
 
 pub const Fixture = union(enum) {
@@ -73,6 +123,11 @@ pub const Fixture = union(enum) {
     telemetry: Telemetry,
     strings: Strings,
     event: Event,
+    tensor: Tensor,
+    tensor_view: TensorView,
+    prompt: Prompt,
+    shard: Shard,
+    request: Request,
 
     pub fn typeId(self: Fixture) []const u8 {
         return switch (self) {
@@ -81,6 +136,11 @@ pub const Fixture = union(enum) {
             .telemetry => "telemetry",
             .strings => "strings",
             .event => "event",
+            .tensor => "tensor",
+            .tensor_view => "tensor_view",
+            .prompt => "prompt",
+            .shard => "shard",
+            .request => "request",
         };
     }
 };
@@ -125,6 +185,11 @@ pub const Rng = struct {
         return @as(f64, @floatFromInt(bits)) / @as(f64, @floatFromInt(@as(u64, 1) << 53));
     }
 
+    /// `nextF64` narrowed to float32. Not a second generator.
+    pub fn nextF32(self: *Rng) f32 {
+        return @floatCast(self.nextF64());
+    }
+
     pub fn word(self: *Rng, allocator: std.mem.Allocator, min_l: i32, max_l: i32) ![]u8 {
         const n: usize = @intCast(self.nextInt(min_l, max_l));
         const buf = try allocator.alloc(u8, n);
@@ -142,7 +207,9 @@ pub fn makeOne(
     instance_index: i32,
     cfg: TypeConfig,
 ) !Fixture {
-    var rng = Rng.init(mixSeed(seed, type_id, instance_index));
+    // tensor_view is the same matrix as tensor, including the RNG stream.
+    const seed_id = if (std.mem.eql(u8, type_id, "tensor_view")) "tensor" else type_id;
+    var rng = Rng.init(mixSeed(seed, seed_id, instance_index));
     if (std.mem.eql(u8, type_id, "message")) {
         return .{ .message = .{
             .f_bool = rng.nextBool(),
@@ -212,7 +279,109 @@ pub fn makeOne(
             .attrs = attrs,
         } };
     }
+    if (std.mem.eql(u8, type_id, "tensor")) {
+        return .{ .tensor = try makeTensor(allocator, &rng, cfg) };
+    }
+    if (std.mem.eql(u8, type_id, "tensor_view")) {
+        const tensor = try makeTensor(allocator, &rng, cfg);
+        return .{ .tensor_view = .{
+            .rows = tensor.rows,
+            .cols = tensor.cols,
+            .values = tensor.values,
+        } };
+    }
+    if (std.mem.eql(u8, type_id, "prompt")) {
+        return .{ .prompt = try makePrompt(allocator, &rng, cfg) };
+    }
+    if (std.mem.eql(u8, type_id, "shard")) {
+        return .{ .shard = try makeShard(allocator, &rng, cfg) };
+    }
+    if (std.mem.eql(u8, type_id, "request")) {
+        return .{ .request = try makeRequest(allocator, &rng, cfg) };
+    }
     return error.UnknownTypeId;
+}
+
+fn makeTensor(allocator: std.mem.Allocator, rng: *Rng, cfg: TypeConfig) !Tensor {
+    if (cfg.rows < 1 or cfg.cols < 1) return error.InvalidShape;
+    const n = @as(usize, @intCast(cfg.rows)) * @as(usize, @intCast(cfg.cols));
+    if (n < 2) return error.InvalidShape;
+    return .{
+        .rows = cfg.rows,
+        .cols = cfg.cols,
+        .values = try f32Fill(allocator, rng, n, true),
+    };
+}
+
+fn makePrompt(allocator: std.mem.Allocator, rng: *Rng, cfg: TypeConfig) !Prompt {
+    if (cfg.batch < 1 or cfg.seq < 1 or cfg.vocab < 2) return error.InvalidShape;
+    const batch: usize = @intCast(cfg.batch);
+    const seq: usize = @intCast(cfg.seq);
+    const n = batch * seq;
+    const input_ids = try allocator.alloc(i64, n);
+    const attention_mask = try allocator.alloc(i64, n);
+    const position_ids = try allocator.alloc(i64, n);
+    var row: usize = 0;
+    while (row < batch) : (row += 1) {
+        var lo = @divTrunc(cfg.seq, 2);
+        if (lo < 1) lo = 1;
+        const content = rng.nextInt(lo, cfg.seq);
+        var col: i32 = 0;
+        while (col < cfg.seq) : (col += 1) {
+            const i = row * seq + @as(usize, @intCast(col));
+            if (col < content) {
+                input_ids[i] = rng.nextInt(1, cfg.vocab - 1);
+                attention_mask[i] = 1;
+            } else {
+                input_ids[i] = 0;
+                attention_mask[i] = 0;
+            }
+            position_ids[i] = col;
+        }
+    }
+    return .{
+        .batch = cfg.batch,
+        .seq = cfg.seq,
+        .input_ids = input_ids,
+        .attention_mask = attention_mask,
+        .position_ids = position_ids,
+    };
+}
+
+fn makeShard(allocator: std.mem.Allocator, rng: *Rng, cfg: TypeConfig) !Shard {
+    if (cfg.vocab < 1 or cfg.hidden < 1 or cfg.ffn < 1) return error.InvalidShape;
+    const vocab: usize = @intCast(cfg.vocab);
+    const hidden: usize = @intCast(cfg.hidden);
+    const ffn: usize = @intCast(cfg.ffn);
+    return .{
+        .vocab = cfg.vocab,
+        .hidden = cfg.hidden,
+        .ffn = cfg.ffn,
+        .tok_emb = try f32Fill(allocator, rng, vocab * hidden, false),
+        .attn = try f32Fill(allocator, rng, hidden * hidden, false),
+        .ffn_weight = try f32Fill(allocator, rng, ffn * hidden, false),
+        .norm = try f32Fill(allocator, rng, hidden, false),
+    };
+}
+
+fn makeRequest(allocator: std.mem.Allocator, rng: *Rng, cfg: TypeConfig) !Request {
+    if (cfg.string_min < 0 or cfg.string_max < cfg.string_min) return error.InvalidShape;
+    return .{
+        .request_id = rng.nextInt(1, 1_000_000_000),
+        .model = try rng.word(allocator, cfg.string_min, cfg.string_max),
+        .temperature = @floatCast(rng.nextF64() * 2.0),
+        .inputs = try makePrompt(allocator, rng, cfg),
+    };
+}
+
+fn f32Fill(allocator: std.mem.Allocator, rng: *Rng, count: usize, pin: bool) ![]f32 {
+    const values = try allocator.alloc(f32, count);
+    for (values) |*slot| slot.* = rng.nextF32();
+    if (pin and count >= 2) {
+        values[0] = @bitCast(@as(u32, 0x80000000));
+        values[1] = @bitCast(@as(u32, 0x7fc00000));
+    }
+    return values;
 }
 
 pub fn instances(
@@ -264,7 +433,79 @@ pub fn fidelity(a: Fixture, b: Fixture) bool {
             .event => |y| eventEq(x, y),
             else => false,
         },
+        .tensor => |x| switch (b) {
+            .tensor => |y| tensorEq(x, y),
+            else => false,
+        },
+        .tensor_view => |x| switch (b) {
+            .tensor_view => |y| tensorViewEq(x, y),
+            else => false,
+        },
+        .prompt => |x| switch (b) {
+            .prompt => |y| promptEq(x, y),
+            else => false,
+        },
+        .shard => |x| switch (b) {
+            .shard => |y| shardEq(x, y),
+            else => false,
+        },
+        .request => |x| switch (b) {
+            .request => |y| requestEq(x, y),
+            else => false,
+        },
     };
+}
+
+fn sameF32s(a: []const f32, b: []const f32) bool {
+    if (a.len != b.len) return false;
+    for (a, b) |x, y| {
+        if (@as(u32, @bitCast(x)) != @as(u32, @bitCast(y))) return false;
+    }
+    return true;
+}
+
+fn payloadEq(values: []const f32, payload: []const u8) bool {
+    const need = std.math.mul(usize, values.len, 4) catch return false;
+    if (payload.len != need) return false;
+    var i: usize = 0;
+    while (i < values.len) : (i += 1) {
+        const bits = std.mem.readInt(u32, payload[i * 4 ..][0..4], .little);
+        if (bits != @as(u32, @bitCast(values[i]))) return false;
+    }
+    return true;
+}
+
+fn tensorEq(x: Tensor, y: Tensor) bool {
+    return x.rows == y.rows and x.cols == y.cols and sameF32s(x.values, y.values);
+}
+
+fn tensorViewEq(x: TensorView, y: TensorView) bool {
+    if (x.rows != y.rows or x.cols != y.cols) return false;
+    if (x.payload.len != 0 and y.payload.len != 0) return std.mem.eql(u8, x.payload, y.payload);
+    if (x.payload.len != 0) return payloadEq(y.values, x.payload);
+    if (y.payload.len != 0) return payloadEq(x.values, y.payload);
+    return sameF32s(x.values, y.values);
+}
+
+fn promptEq(x: Prompt, y: Prompt) bool {
+    if (x.batch != y.batch or x.seq != y.seq) return false;
+    return std.mem.eql(i64, x.input_ids, y.input_ids) and
+        std.mem.eql(i64, x.attention_mask, y.attention_mask) and
+        std.mem.eql(i64, x.position_ids, y.position_ids);
+}
+
+fn shardEq(x: Shard, y: Shard) bool {
+    if (x.vocab != y.vocab or x.hidden != y.hidden or x.ffn != y.ffn) return false;
+    return sameF32s(x.tok_emb, y.tok_emb) and
+        sameF32s(x.attn, y.attn) and
+        sameF32s(x.ffn_weight, y.ffn_weight) and
+        sameF32s(x.norm, y.norm);
+}
+
+fn requestEq(x: Request, y: Request) bool {
+    if (x.request_id != y.request_id or !std.mem.eql(u8, x.model, y.model)) return false;
+    if (@as(u32, @bitCast(x.temperature)) != @as(u32, @bitCast(y.temperature))) return false;
+    return promptEq(x.inputs, y.inputs);
 }
 
 fn documentEq(x: Document, y: Document) bool {
@@ -337,4 +578,38 @@ test "instances length" {
     defer arena.deinit();
     const batch = try instances(arena.allocator(), "message", 42, 3, .{});
     try std.testing.expectEqual(@as(usize, 3), batch.len);
+}
+
+test "tensor_view reuses the tensor seed and pins float32 bits" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const cfg = TypeConfig{ .rows = 4, .cols = 4 };
+    const tensor = (try makeOne(arena.allocator(), "tensor", 7, 2, cfg)).tensor;
+    const view = (try makeOne(arena.allocator(), "tensor_view", 7, 2, cfg)).tensor_view;
+    try std.testing.expectEqual(tensor.rows, view.rows);
+    try std.testing.expectEqual(tensor.cols, view.cols);
+    try std.testing.expect(sameF32s(tensor.values, view.values));
+    try std.testing.expectEqual(@as(u32, 0x80000000), @as(u32, @bitCast(tensor.values[0])));
+    try std.testing.expectEqual(@as(u32, 0x7fc00000), @as(u32, @bitCast(tensor.values[1])));
+    const other = (try makeOne(arena.allocator(), "tensor", 8, 2, cfg)).tensor;
+    try std.testing.expect(!sameF32s(tensor.values, other.values));
+}
+
+test "prompt positions are the column index and do not draw" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const cfg = TypeConfig{ .batch = 2, .seq = 5, .vocab = 20 };
+    const prompt = (try makeOne(arena.allocator(), "prompt", 3, 0, cfg)).prompt;
+    try std.testing.expectEqual(@as(usize, 10), prompt.input_ids.len);
+    for (prompt.position_ids, 0..) |pos, i| {
+        try std.testing.expectEqual(@as(i64, @intCast(i % 5)), pos);
+    }
+    for (prompt.input_ids, prompt.attention_mask) |id, mask| {
+        if (mask == 0) {
+            try std.testing.expectEqual(@as(i64, 0), id);
+        } else {
+            try std.testing.expectEqual(@as(i64, 1), mask);
+            try std.testing.expect(id >= 1 and id < cfg.vocab);
+        }
+    }
 }

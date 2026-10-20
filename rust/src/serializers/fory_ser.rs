@@ -72,7 +72,12 @@ impl BenchSerializer for ForySer {
             | Fixture::Rows(_)
             | Fixture::Projected(_)
             | Fixture::Graph(_)
-            | Fixture::Grid(_) => {
+            | Fixture::Grid(_)
+            | Fixture::Tensor(_)
+            | Fixture::TensorView(_)
+            | Fixture::Prompt(_)
+            | Fixture::Shard(_)
+            | Fixture::Request(_) => {
                 bail!("fory does not support {}", fixture.name());
             }
         }

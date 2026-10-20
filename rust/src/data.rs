@@ -1,16 +1,16 @@
 //! Data Model v2 domain types for the Rust harness.
 //!
 //! Suite types: message, document, telemetry, strings, event, plus the columnar
-//! ids table, table_project, nested_table, and signal, plus `graph`.
+//! ids table, table_project, nested_table, and signal, plus `graph`, plus the
+//! tensor set (tensor, tensor_view, prompt, shard, request).
 //! Multiple derive stacks co-exist on the original five so each serializer can
 //! use its native path. The columnar structs are serde-only.
 //! `graph` is shared nodes and one reference cycle. It is not a serde tree.
 
-
 use minicbor::{Decode, Encode};
 use nanoserde::{DeBin, SerBin};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use speedy::{Readable, Writable};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -615,6 +615,13 @@ pub fn is_array_id(type_id: &str) -> bool {
     matches!(type_id, "grid" | "grid_window")
 }
 
+pub fn is_tensor_id(type_id: &str) -> bool {
+    matches!(
+        type_id,
+        "tensor" | "tensor_view" | "prompt" | "shard" | "request"
+    )
+}
+
 pub fn is_columnar_id(type_id: &str) -> bool {
     matches!(
         type_id,
@@ -766,6 +773,150 @@ fn make_graph(rng: &mut Rng, cfg: &TypeConfig) -> anyhow::Result<Book> {
     Ok(Book { orders, people })
 }
 
+/// xorshift64* matching the Python tensor fixtures. Suite cells stay on `Rng`.
+struct Xs64 {
+    state: u64,
+}
+
+impl Xs64 {
+    fn new(seed: u64) -> Self {
+        let state = if seed == 0 {
+            0x9E37_79B9_7F4A_7C15
+        } else {
+            seed
+        };
+        Self { state }
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        let mut x = self.state;
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        self.state = x;
+        x
+    }
+
+    fn next_int(&mut self, lo: i32, hi: i32) -> i32 {
+        if hi <= lo {
+            return lo;
+        }
+        let span = (hi - lo + 1) as u64;
+        lo + (self.next_u64() % span) as i32
+    }
+
+    fn next_f64(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / ((1u64 << 53) as f64)
+    }
+
+    fn word(&mut self, min_l: usize, max_l: usize) -> String {
+        let n = self.next_int(min_l as i32, max_l as i32) as usize;
+        const A: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
+        (0..n)
+            .map(|_| A[(self.next_u64() % 26) as usize] as char)
+            .collect()
+    }
+}
+
+fn next_f32(rng: &mut Xs64) -> f32 {
+    rng.next_f64() as f32
+}
+
+/// `pin` overwrites index 0 and 1 after the draws, so the RNG stream still advances.
+fn f32_fill(rng: &mut Xs64, count: usize, pin: bool) -> Vec<f32> {
+    let mut values = Vec::with_capacity(count);
+    for _ in 0..count {
+        values.push(next_f32(rng));
+    }
+    if pin && !values.is_empty() {
+        values[0] = f32::from_bits(0x8000_0000);
+        if values.len() >= 2 {
+            values[1] = f32::from_bits(0x7fc0_0000);
+        }
+    }
+    values
+}
+
+fn make_tensor(rng: &mut Xs64, cfg: &TypeConfig) -> anyhow::Result<TensorMatrix> {
+    let rows = cfg.i32("rows", 1024);
+    let cols = cfg.i32("cols", 1024);
+    if rows < 0 || cols < 0 {
+        anyhow::bail!("tensor shape");
+    }
+    let Some(n) = (rows as usize).checked_mul(cols as usize) else {
+        anyhow::bail!("tensor shape");
+    };
+    Ok(TensorMatrix::owned(rows, cols, f32_fill(rng, n, true)))
+}
+
+fn make_prompt(rng: &mut Xs64, cfg: &TypeConfig) -> anyhow::Result<Prompt> {
+    let batch = cfg.i32("batch", 4);
+    let seq = cfg.i32("seq", 256);
+    let vocab = cfg.i32("vocab", 32_000);
+    if batch < 0 || seq < 0 {
+        anyhow::bail!("prompt shape");
+    }
+    let Some(n) = (batch as usize).checked_mul(seq as usize) else {
+        anyhow::bail!("prompt shape");
+    };
+    let mut input_ids = Vec::with_capacity(n);
+    let mut attention_mask = Vec::with_capacity(n);
+    let mut position_ids = Vec::with_capacity(n);
+    let lo = (seq / 2).max(1);
+    for _row in 0..batch {
+        let content = rng.next_int(lo, seq);
+        for col in 0..seq {
+            if col < content {
+                input_ids.push(i64::from(rng.next_int(1, vocab.saturating_sub(1))));
+                attention_mask.push(1);
+            } else {
+                input_ids.push(0);
+                attention_mask.push(0);
+            }
+            // Position is the column. It does not draw from the RNG.
+            position_ids.push(i64::from(col));
+        }
+    }
+    Ok(Prompt {
+        batch,
+        seq,
+        input_ids,
+        attention_mask,
+        position_ids,
+    })
+}
+
+fn make_shard(rng: &mut Xs64, cfg: &TypeConfig) -> anyhow::Result<Shard> {
+    let vocab = cfg.i32("vocab", 1024);
+    let hidden = cfg.i32("hidden", 256);
+    let ffn = cfg.i32("ffn", 512);
+    if vocab < 0 || hidden < 0 || ffn < 0 {
+        anyhow::bail!("shard shape");
+    }
+    let vocab_n = vocab as usize;
+    let hidden_n = hidden as usize;
+    let ffn_n = ffn as usize;
+    Ok(Shard {
+        vocab,
+        hidden,
+        ffn,
+        tok_emb: f32_fill(rng, vocab_n.saturating_mul(hidden_n), false),
+        attn: f32_fill(rng, hidden_n.saturating_mul(hidden_n), false),
+        ffn_weight: f32_fill(rng, ffn_n.saturating_mul(hidden_n), false),
+        norm: f32_fill(rng, hidden_n, false),
+    })
+}
+
+fn make_request(rng: &mut Xs64, cfg: &TypeConfig) -> anyhow::Result<InferenceRequest> {
+    let (smin, smax) = cfg.range("string_len", 3, 16);
+    Ok(InferenceRequest {
+        request_id: i64::from(rng.next_int(1, 1_000_000_000)),
+        model: rng.word(smin as usize, smax as usize),
+        temperature: (rng.next_f64() * 2.0) as f32,
+        inputs: make_prompt(rng, cfg)?,
+    })
+}
+
 /// Build one V2 fixture. `cfg` is the resolved type_config (empty object = catalog defaults).
 ///
 /// Old type ids keep the historical draw sequence when catalog defaults are in effect.
@@ -787,6 +938,27 @@ pub fn make_one(
         } else {
             Fixture::Table(row)
         });
+    }
+    if type_id == "tensor" || type_id == "tensor_view" {
+        // Same stream as tensor. Do not mix the seed with "tensor_view".
+        let mut rng = Xs64::new(mix_seed(seed, "tensor", instance_index));
+        let matrix = make_tensor(&mut rng, cfg)?;
+        return Ok(if type_id == "tensor_view" {
+            Fixture::TensorView(matrix)
+        } else {
+            Fixture::Tensor(matrix)
+        });
+    }
+    if type_id == "prompt" || type_id == "shard" || type_id == "request" {
+        // Same xorshift stream as the Python tensor fixtures, so the model
+        // string and float32 bits match that dataset. Suite cells stay on Rng.
+        let mut rng = Xs64::new(mix_seed(seed, type_id, instance_index));
+        return match type_id {
+            "prompt" => Ok(Fixture::Prompt(make_prompt(&mut rng, cfg)?)),
+            "shard" => Ok(Fixture::Shard(make_shard(&mut rng, cfg)?)),
+            "request" => Ok(Fixture::Request(make_request(&mut rng, cfg)?)),
+            _ => unreachable!(),
+        };
     }
     let mut r = Rng::new(mix_seed(seed, type_id, instance_index));
     match type_id {
@@ -954,6 +1126,208 @@ impl Grid {
     }
 }
 
+/// Borrowed float32 payload. Clone copies the pointer, not the matrix.
+///
+/// Valid only while the encoded buffer passed to decode is still alive.
+/// The harness reads it during fidelity before that buffer is reused.
+#[derive(Clone, Copy)]
+pub struct F32Span {
+    ptr: *const u8,
+    len: usize,
+}
+
+impl F32Span {
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        assert!(bytes.len() % 4 == 0, "f32 span length");
+        Self {
+            ptr: bytes.as_ptr(),
+            len: bytes.len() / 4,
+        }
+    }
+
+    fn bit(self, index: usize) -> u32 {
+        assert!(index < self.len, "f32 span index");
+        let start = index * 4;
+        // SAFETY: `from_bytes` captured `len` little-endian f32s. The caller
+        // keeps that buffer alive until fidelity has read every bit.
+        unsafe {
+            let bytes = std::slice::from_raw_parts(self.ptr, self.len * 4);
+            u32::from_le_bytes([
+                bytes[start],
+                bytes[start + 1],
+                bytes[start + 2],
+                bytes[start + 3],
+            ])
+        }
+    }
+}
+
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for F32Span {}
+
+/// Owned float32 list, or a view of encoded payload bytes.
+#[derive(Clone)]
+pub enum F32Payload {
+    Owned(Vec<f32>),
+    Borrowed(F32Span),
+}
+
+impl F32Payload {
+    pub fn len(&self) -> usize {
+        match self {
+            F32Payload::Owned(values) => values.len(),
+            F32Payload::Borrowed(span) => span.len,
+        }
+    }
+
+    pub fn bit(&self, index: usize) -> u32 {
+        match self {
+            F32Payload::Owned(values) => values[index].to_bits(),
+            F32Payload::Borrowed(span) => span.bit(index),
+        }
+    }
+
+    pub fn is_borrowed(&self) -> bool {
+        matches!(self, F32Payload::Borrowed(_))
+    }
+
+    /// True when this view's bytes sit inside `buf`.
+    pub fn borrowed_in(&self, buf: &[u8]) -> bool {
+        let F32Payload::Borrowed(span) = self else {
+            return false;
+        };
+        if span.len == 0 {
+            return true;
+        }
+        let start = span.ptr as usize;
+        let end = start + span.len * 4;
+        let b0 = buf.as_ptr() as usize;
+        let b1 = b0 + buf.len();
+        start >= b0 && end <= b1
+    }
+}
+
+impl PartialEq for F32Payload {
+    fn eq(&self, other: &Self) -> bool {
+        self.len() == other.len() && (0..self.len()).all(|i| self.bit(i) == other.bit(i))
+    }
+}
+
+impl std::fmt::Debug for F32Payload {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kind = if self.is_borrowed() {
+            "borrowed"
+        } else {
+            "owned"
+        };
+        write!(f, "{kind} f32[{}]", self.len())
+    }
+}
+
+impl Serialize for F32Payload {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            F32Payload::Owned(values) => Serialize::serialize(values, serializer),
+            F32Payload::Borrowed(span) => {
+                serializer.collect_seq((0..span.len).map(|i| f32::from_bits(span.bit(i))))
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for F32Payload {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(F32Payload::Owned(Vec::<f32>::deserialize(deserializer)?))
+    }
+}
+
+/// Row-major float32 matrix. Index 0 is negative zero. Index 1 is `0x7fc00000`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TensorMatrix {
+    pub rows: i32,
+    pub cols: i32,
+    pub values: F32Payload,
+}
+
+impl TensorMatrix {
+    pub fn owned(rows: i32, cols: i32, values: Vec<f32>) -> Self {
+        Self {
+            rows,
+            cols,
+            values: F32Payload::Owned(values),
+        }
+    }
+
+    /// `payload` is the list body only (no count prefix). Not copied.
+    pub fn borrowed(rows: i32, cols: i32, payload: &[u8]) -> Self {
+        Self {
+            rows,
+            cols,
+            values: F32Payload::Borrowed(F32Span::from_bytes(payload)),
+        }
+    }
+}
+
+/// Padded LLM forward input. Each list length is `batch * seq`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Prompt {
+    pub batch: i32,
+    pub seq: i32,
+    pub input_ids: Vec<i64>,
+    pub attention_mask: Vec<i64>,
+    pub position_ids: Vec<i64>,
+}
+
+/// One transformer block. Weights are row-major float32, filled without a pinned NaN.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Shard {
+    pub vocab: i32,
+    pub hidden: i32,
+    pub ffn: i32,
+    pub tok_emb: Vec<f32>,
+    pub attn: Vec<f32>,
+    pub ffn_weight: Vec<f32>,
+    pub norm: Vec<f32>,
+}
+
+/// One inference call: metadata plus the prompt tensors.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InferenceRequest {
+    pub request_id: i64,
+    pub model: String,
+    pub temperature: f32,
+    pub inputs: Prompt,
+}
+
+fn f32s_eq(left: &[f32], right: &[f32]) -> bool {
+    left.len() == right.len()
+        && left
+            .iter()
+            .zip(right.iter())
+            .all(|(a, b)| a.to_bits() == b.to_bits())
+}
+
+impl PartialEq for Shard {
+    fn eq(&self, other: &Self) -> bool {
+        self.vocab == other.vocab
+            && self.hidden == other.hidden
+            && self.ffn == other.ffn
+            && f32s_eq(&self.tok_emb, &other.tok_emb)
+            && f32s_eq(&self.attn, &other.attn)
+            && f32s_eq(&self.ffn_weight, &other.ffn_weight)
+            && f32s_eq(&self.norm, &other.norm)
+    }
+}
+
+impl PartialEq for InferenceRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.request_id == other.request_id
+            && self.model == other.model
+            && self.temperature.to_bits() == other.temperature.to_bits()
+            && self.inputs == other.inputs
+    }
+}
+
 /// Holder for harness fixtures (externally tagged for Serde formats).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Fixture {
@@ -975,6 +1349,13 @@ pub enum Fixture {
     Graph(Book),
     /// `grid` and `grid_window`. `read_window` selects the interior hyperslab on read.
     Grid(Grid),
+    /// Owned float32 matrix.
+    Tensor(TensorMatrix),
+    /// Same matrix as [`Fixture::Tensor`]. Decode borrows the payload bytes.
+    TensorView(TensorMatrix),
+    Prompt(Prompt),
+    Shard(Shard),
+    Request(InferenceRequest),
 }
 
 impl Fixture {
@@ -998,6 +1379,11 @@ impl Fixture {
                     "grid"
                 }
             }
+            Fixture::Tensor(_) => "tensor",
+            Fixture::TensorView(_) => "tensor_view",
+            Fixture::Prompt(_) => "prompt",
+            Fixture::Shard(_) => "shard",
+            Fixture::Request(_) => "request",
             Fixture::Rows(rows) => rows.first().map(|r| r.name()).unwrap_or("rows"),
         }
     }
@@ -1040,6 +1426,11 @@ pub fn fidelity(a: &Fixture, b: &Fixture) -> bool {
         (Fixture::Signal(x), Fixture::Signal(y)) => x == y,
         (Fixture::Graph(x), Fixture::Graph(y)) => x == y,
         (Fixture::Grid(x), Fixture::Grid(y)) => x.values == y.values,
+        (Fixture::Tensor(x), Fixture::Tensor(y))
+        | (Fixture::TensorView(x), Fixture::TensorView(y)) => x == y,
+        (Fixture::Prompt(x), Fixture::Prompt(y)) => x == y,
+        (Fixture::Shard(x), Fixture::Shard(y)) => x == y,
+        (Fixture::Request(x), Fixture::Request(y)) => x == y,
         (Fixture::Rows(x), Fixture::Rows(y)) => {
             x.len() == y.len() && x.iter().zip(y.iter()).all(|(p, q)| fidelity(p, q))
         }
@@ -1090,7 +1481,11 @@ impl TableRow {
 ///
 /// `table_project` accepts only a single [`Fixture::Projected`] whose length is N.
 /// A full row, a batch of rows, or any other shape fails that check.
-pub fn check_cell_fidelity(type_id: &str, expected: &[Fixture], got: &[Fixture]) -> anyhow::Result<()> {
+pub fn check_cell_fidelity(
+    type_id: &str,
+    expected: &[Fixture],
+    got: &[Fixture],
+) -> anyhow::Result<()> {
     if type_id == "grid" || type_id == "grid_window" {
         if got.len() != 1 || expected.len() != 1 {
             anyhow::bail!("grid fidelity expects one value");
@@ -1129,11 +1524,7 @@ pub fn check_cell_fidelity(type_id: &str, expected: &[Fixture], got: &[Fixture])
             );
         };
         if actual.len() != expected.len() {
-            anyhow::bail!(
-                "table_project len {} != {}",
-                actual.len(),
-                expected.len()
-            );
+            anyhow::bail!("table_project len {} != {}", actual.len(), expected.len());
         }
         for (i, exp) in expected.iter().enumerate() {
             let want = match exp {
@@ -1266,7 +1657,12 @@ mod tests {
                 assert_eq!(sig.legs.len(), 4);
                 assert!(sig.legs.iter().all(|leg| leg.leg_pad == 0));
                 let value = serde_json::to_value(&sig).unwrap();
-                let keys: Vec<&str> = value.as_object().unwrap().keys().map(|k| k.as_str()).collect();
+                let keys: Vec<&str> = value
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str())
+                    .collect();
                 assert_eq!(
                     keys,
                     vec![
@@ -1466,5 +1862,74 @@ mod tests {
         assert!(!fidelity(&a, &unrolled));
 
         assert!(serde_json::to_vec(&a).is_err());
+    }
+
+    #[test]
+    fn tensor_view_matches_tensor_and_pins_specials() {
+        let cfg = TypeConfig::from_value(serde_json::json!({"rows": 4, "cols": 4}));
+        let tensor = make_one("tensor", 7, 0, &cfg).unwrap();
+        let view = make_one("tensor_view", 7, 0, &cfg).unwrap();
+        let Fixture::Tensor(matrix) = &tensor else {
+            panic!("{}", tensor.name());
+        };
+        let Fixture::TensorView(same) = &view else {
+            panic!("{}", view.name());
+        };
+        assert_eq!(matrix.values.len(), 16);
+        assert_eq!(matrix.values.bit(0), 0x8000_0000);
+        assert_eq!(matrix.values.bit(1), 0x7fc0_0000);
+        assert!(!matrix.values.is_borrowed());
+        assert_eq!(matrix, same);
+        assert!(fidelity(&tensor, &tensor));
+        let mut flipped = matrix.clone();
+        match &mut flipped.values {
+            F32Payload::Owned(values) => values[0] = 0.0,
+            F32Payload::Borrowed(_) => panic!("owned"),
+        }
+        assert!(!fidelity(&tensor, &Fixture::Tensor(flipped)));
+    }
+
+    #[test]
+    fn prompt_padding_and_shard_lengths() {
+        let cfg = TypeConfig::from_value(serde_json::json!({
+            "batch": 2, "seq": 4, "vocab": 32,
+            "hidden": 3, "ffn": 5,
+            "string_len": {"min": 4, "max": 6}
+        }));
+        let prompt = make_one("prompt", 42, 0, &cfg).unwrap();
+        let Fixture::Prompt(prompt) = prompt else {
+            panic!("prompt");
+        };
+        assert_eq!(prompt.input_ids.len(), 8);
+        assert_eq!(prompt.position_ids, vec![0, 1, 2, 3, 0, 1, 2, 3]);
+        for (token, mask) in prompt.input_ids.iter().zip(&prompt.attention_mask) {
+            if *mask == 1 {
+                assert!((1..=31).contains(token));
+            } else {
+                assert_eq!(*token, 0);
+            }
+        }
+        let shard_cfg = TypeConfig::from_value(serde_json::json!({
+            "vocab": 4, "hidden": 3, "ffn": 5
+        }));
+        let shard = make_one("shard", 3, 0, &shard_cfg).unwrap();
+        let Fixture::Shard(shard) = shard else {
+            panic!("shard");
+        };
+        assert_eq!(shard.tok_emb.len(), 12);
+        assert_eq!(shard.attn.len(), 9);
+        assert_eq!(shard.ffn_weight.len(), 15);
+        assert_eq!(shard.norm.len(), 3);
+        let request = make_one("request", 9, 1, &cfg).unwrap();
+        let Fixture::Request(request) = request else {
+            panic!("request");
+        };
+        assert!((1..=1_000_000_000).contains(&request.request_id));
+        assert!((4..=6).contains(&request.model.len()));
+        assert_eq!(request.inputs.input_ids.len(), 8);
+        assert!(fidelity(
+            &Fixture::Request(request.clone()),
+            &Fixture::Request(request)
+        ));
     }
 }

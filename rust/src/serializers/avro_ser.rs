@@ -21,8 +21,8 @@
 //! https://github.com/Ten0/serde_avro_fast
 
 use crate::data::{
-    is_columnar_id, Document, Event, Fixture, Message, NestedRow, Signal,
-    Strings, TableRow, Telemetry,
+    is_columnar_id, is_tensor_id, Document, Event, Fixture, Message, NestedRow, Signal, Strings,
+    TableRow, Telemetry,
 };
 use anyhow::{anyhow, Context, Result};
 use serde::de::DeserializeOwned;
@@ -159,11 +159,7 @@ fn schema_for(name: &str) -> Result<&'static Schema> {
     })
 }
 
-fn write_datum<W: Write>(
-    cfg: &mut SerializerConfig<'_>,
-    fixture: &Fixture,
-    w: W,
-) -> Result<W> {
+fn write_datum<W: Write>(cfg: &mut SerializerConfig<'_>, fixture: &Fixture, w: W) -> Result<W> {
     let written = match fixture {
         Fixture::Message(m) => to_datum(m, w, cfg),
         Fixture::Document(d) => to_datum(d, w, cfg),
@@ -183,6 +179,13 @@ fn write_datum<W: Write>(
         }
         Fixture::Grid(_) => {
             return Err(anyhow!("serde_avro_fast: grid is an array"));
+        }
+        Fixture::Tensor(_)
+        | Fixture::TensorView(_)
+        | Fixture::Prompt(_)
+        | Fixture::Shard(_)
+        | Fixture::Request(_) => {
+            return Err(anyhow!("serde_avro_fast: tensor set is gld-kiln only"));
         }
     };
     written.context("serde_avro_fast to_datum")
@@ -227,7 +230,7 @@ impl BenchSerializer for AvroFastSer {
     }
 
     fn supports(&self, test_data_name: &str) -> bool {
-        if test_data_name == "graph" {
+        if test_data_name == "graph" || is_tensor_id(test_data_name) {
             return false;
         }
         !is_columnar_id(test_data_name)
@@ -285,7 +288,8 @@ impl BenchSerializer for AvroFastSer {
                 from_datum_slice::<Document>(data, schema).context("serde_avro_fast from_datum")?,
             ),
             "telemetry" => Fixture::Telemetry(
-                from_datum_slice::<Telemetry>(data, schema).context("serde_avro_fast from_datum")?,
+                from_datum_slice::<Telemetry>(data, schema)
+                    .context("serde_avro_fast from_datum")?,
             ),
             "strings" => Fixture::Strings(
                 from_datum_slice::<Strings>(data, schema).context("serde_avro_fast from_datum")?,

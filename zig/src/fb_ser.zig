@@ -90,6 +90,7 @@ pub fn serialize(ctx: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
             const ref = try writeEvent(builder, aa, e);
             try builder.writeRoot(v2.Event, ref);
         },
+        else => return error.Unsupported,
     }
     var aw: std.Io.Writer.Allocating = .init(aa);
     try builder.write(&aw.writer);

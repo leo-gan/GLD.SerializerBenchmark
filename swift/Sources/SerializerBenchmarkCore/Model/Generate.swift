@@ -50,7 +50,9 @@ public func makeOne(
     seed: UInt64 = 42,
     instanceIndex: Int = 0
 ) throws -> any Codable {
-    let r = Rng(seed: mixSeed(seed, typeId: typeId, idx: instanceIndex))
+    // tensor_view is the same matrix as tensor for this seed and shape.
+    let seedId = typeId == "tensor_view" ? "tensor" : typeId
+    let r = Rng(seed: mixSeed(seed, typeId: seedId, idx: instanceIndex))
     switch typeId {
     case "message":
         return Message(
@@ -106,9 +108,91 @@ public func makeOne(
         )
     case "graph":
         return try makeGraph(r, typeConfig)
+    case "tensor", "tensor_view":
+        return makeTensor(r, typeConfig)
+    case "prompt":
+        return makePrompt(r, typeConfig)
+    case "shard":
+        return makeShard(r, typeConfig)
+    case "request":
+        return makeRequest(r, typeConfig)
     default:
         throw BenchError.unknownType(typeId)
     }
+}
+
+func fillF32(_ r: Rng, _ count: Int, pin: Bool) -> [Float] {
+    var values = [Float]()
+    values.reserveCapacity(count)
+    for _ in 0..<count {
+        values.append(Float(r.nextF64()))
+    }
+    if pin && count >= 2 {
+        values[0] = Float(bitPattern: 0x8000_0000)
+        values[1] = Float(bitPattern: 0x7FC0_0000)
+    }
+    return values
+}
+
+func makeTensor(_ r: Rng, _ cfg: [String: Any]) -> TensorMatrix {
+    let rows = cfgInt(cfg, "rows", 1024)
+    let cols = cfgInt(cfg, "cols", 1024)
+    return TensorMatrix(rows: Int32(rows), cols: Int32(cols), values: fillF32(r, rows * cols, pin: true))
+}
+
+func makePrompt(_ r: Rng, _ cfg: [String: Any]) -> Prompt {
+    let batch = cfgInt(cfg, "batch", 4)
+    let seq = cfgInt(cfg, "seq", 256)
+    let vocab = cfgInt(cfg, "vocab", 32000)
+    let n = batch * seq
+    var inputIds = [Int64]()
+    var mask = [Int64]()
+    var position = [Int64]()
+    inputIds.reserveCapacity(n)
+    mask.reserveCapacity(n)
+    position.reserveCapacity(n)
+    let lo = max(1, seq / 2)
+    for _ in 0..<batch {
+        let content = r.nextInt(lo, seq)
+        for col in 0..<seq {
+            if col < content {
+                inputIds.append(Int64(r.nextInt(1, vocab - 1)))
+                mask.append(1)
+            } else {
+                inputIds.append(0)
+                mask.append(0)
+            }
+            position.append(Int64(col))
+        }
+    }
+    return Prompt(
+        batch: Int32(batch), seq: Int32(seq),
+        input_ids: inputIds, attention_mask: mask, position_ids: position
+    )
+}
+
+func makeShard(_ r: Rng, _ cfg: [String: Any]) -> Shard {
+    let vocab = cfgInt(cfg, "vocab", 1024)
+    let hidden = cfgInt(cfg, "hidden", 256)
+    let ffn = cfgInt(cfg, "ffn", 512)
+    let tok = fillF32(r, vocab * hidden, pin: false)
+    let attn = fillF32(r, hidden * hidden, pin: false)
+    let ffnWeight = fillF32(r, ffn * hidden, pin: false)
+    let norm = fillF32(r, hidden, pin: false)
+    return Shard(
+        vocab: Int32(vocab), hidden: Int32(hidden), ffn: Int32(ffn),
+        tok_emb: tok, attn: attn, ffn_weight: ffnWeight, norm: norm
+    )
+}
+
+func makeRequest(_ r: Rng, _ cfg: [String: Any]) -> Request {
+    let (smin, smax) = cfgStringLen(cfg, min: 3, max: 16)
+    let requestId = Int64(r.nextInt(1, 1_000_000_000))
+    let model = r.word(minL: smin, maxL: smax)
+    let temperature = Float(r.nextF64() * 2)
+    return Request(
+        request_id: requestId, model: model, temperature: temperature, inputs: makePrompt(r, cfg)
+    )
 }
 
 /// Call order is the generator contract: every region (code, 64-char note, version),
@@ -261,6 +345,14 @@ private func boxFixture(name: String, value: any Codable, instanceCount: Int, ha
     case let v as Event:
         return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
     case let v as Book:
+        return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
+    case let v as TensorMatrix:
+        return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
+    case let v as Prompt:
+        return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
+    case let v as Shard:
+        return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
+    case let v as Request:
         return Fixture(name: name, value: v, instanceCount: instanceCount, typeConfigHash: hash)
     default:
         throw BenchError.unknownType(name)

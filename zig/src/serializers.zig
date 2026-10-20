@@ -14,6 +14,7 @@ const fb_ser = @import("fb_ser.zig");
 const capnp_ser = @import("capnp_ser.zig");
 const avro_ser = @import("avro_ser.zig");
 const arrow_ser = @import("arrow_ser.zig");
+const kiln_ser = @import("kiln_ser.zig");
 const jsonz = @import("jsonz").typed;
 
 pub const StreamMode = enum {
@@ -60,6 +61,9 @@ pub const Serializer = struct {
         serialize: *const fn (ctx: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) anyerror!void,
         deserialize: *const fn (ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) anyerror!data.Fixture,
         supports: *const fn (type_id: []const u8) bool = supportAll,
+        /// When set and N>1, the harness times one value instead of length-prefixed items.
+        encode_batch: ?*const fn (ctx: *anyopaque, fixtures: []const data.Fixture, out: *buf_mod.Buf) anyerror!void = null,
+        decode_batch: ?*const fn (ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) anyerror![]data.Fixture = null,
     };
 
     pub fn supports(self: Serializer, type_id: []const u8) bool {
@@ -161,21 +165,34 @@ const jsonz_vtable = Serializer.VTable{
     .deserialize = jsonzParseDeserialize,
 };
 
+fn jsonzSuite(comptime name: []const u8) bool {
+    return std.mem.eql(u8, name, "message") or
+        std.mem.eql(u8, name, "document") or
+        std.mem.eql(u8, name, "telemetry") or
+        std.mem.eql(u8, name, "strings") or
+        std.mem.eql(u8, name, "event");
+}
+
 fn jsonzSerialize(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
     var writer = out.takeWriter();
     defer out.restoreWriter(&writer);
     switch (fx) {
-        inline else => |payload| try jsonz.toWriter(&writer.writer, payload, .{}),
+        inline .message, .document, .telemetry, .strings, .event => |payload| {
+            try jsonz.toWriter(&writer.writer, payload, .{});
+        },
+        else => return error.Unsupported,
     }
 }
 
 fn jsonzParseDeserialize(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
     inline for (@typeInfo(data.Fixture).@"union".fields) |field| {
-        if (std.mem.eql(u8, type_id, field.name)) {
-            // The trial arena owns the result's pool and fallback allocations.
-            // Keep them alive through checkBatch; arena reset releases both.
-            const parsed = try jsonz.parse(field.type, allocator, bytes, .{});
-            return @unionInit(data.Fixture, field.name, parsed.value);
+        if (comptime jsonzSuite(field.name)) {
+            if (std.mem.eql(u8, type_id, field.name)) {
+                // The trial arena owns the result's pool and fallback allocations.
+                // Keep them alive through checkBatch; arena reset releases both.
+                const parsed = try jsonz.parse(field.type, allocator, bytes, .{});
+                return @unionInit(data.Fixture, field.name, parsed.value);
+            }
         }
     }
     return error.UnknownTypeId;
@@ -376,8 +393,17 @@ const gld_arrow_vtable = Serializer.VTable{
     .deserialize = arrow_ser.deserialize,
     .supports = arrow_ser.supports,
 };
+const gld_kiln_vtable = Serializer.VTable{
+    .prepare = kiln_ser.prepare,
+    .begin_encode = kiln_ser.beginEncode,
+    .serialize = kiln_ser.serialize,
+    .deserialize = kiln_ser.deserialize,
+    .supports = kiln_ser.supports,
+    .encode_batch = kiln_ser.encodeBatch,
+    .decode_batch = kiln_ser.decodeBatch,
+};
 
-pub fn allSerializers() [23]Serializer {
+pub fn allSerializers() [24]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -562,6 +588,14 @@ pub fn allSerializers() [23]Serializer {
             .native_kind = .message,
             .ctx = @ptrCast(&arrow_ser.state),
             .vtable = &gld_arrow_vtable,
+        },
+        .{
+            .name = "gld-kiln",
+            .version = kiln_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&kiln_ser.state),
+            .vtable = &gld_kiln_vtable,
         },
     };
 }
@@ -782,18 +816,21 @@ test "registry includes std.json" {
     var found_capnp = false;
     var found_avro = false;
     var found_arrow = false;
+    var found_kiln = false;
     for (tmp[0..n]) |s| {
         if (std.mem.eql(u8, s.name, "protobuf")) found_pb = true;
         if (std.mem.eql(u8, s.name, "flatbuffers")) found_fb = true;
         if (std.mem.eql(u8, s.name, "capnproto")) found_capnp = true;
         if (std.mem.eql(u8, s.name, "gld-avro")) found_avro = true;
         if (std.mem.eql(u8, s.name, "gld-arrow")) found_arrow = true;
+        if (std.mem.eql(u8, s.name, "gld-kiln")) found_kiln = true;
     }
     try std.testing.expect(found_pb);
     try std.testing.expect(found_fb);
     try std.testing.expect(found_capnp);
     try std.testing.expect(found_avro);
     try std.testing.expect(found_arrow);
+    try std.testing.expect(found_kiln);
     var found = false;
     for (tmp[0..n]) |s| {
         if (std.mem.eql(u8, s.name, "std.json")) found = true;

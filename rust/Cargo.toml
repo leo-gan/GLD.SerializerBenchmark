@@ -38,6 +38,8 @@ anyhow = "1"
 bson = "2"
 # Amazon Ion. experimental-serde is the supported serde path (to_binary / from_ion).
 ion-rs = { version = "1", features = ["experimental-serde"] }
+# Positional little-endian Kiln. Git tag, not a path dependency. Import name is `kiln`.
+gld-kiln = { git = "https://github.com/leo-gan/gld-kiln-rust", tag = "0.2.0" }
 nanoserde = "0.1.37"  # ^0.1.37 → latest 0.1.x only (0.2 is a separate minor line)
 speedy = "0.8"
 bytes = "1"

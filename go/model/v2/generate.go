@@ -3,6 +3,8 @@
 // Cross-language payload identity is not required.
 package v2
 
+import "math"
+
 // Message is a single-level mixed-primitive record.
 type Message struct {
 	FBool    bool    `json:"f_bool" avro:"f_bool" msgpack:"f_bool"`
@@ -147,6 +149,44 @@ type Book struct {
 	People []*Person `json:"people" avro:"people" msgpack:"people"`
 }
 
+// Tensor is one row-major float32 matrix. Values length is Rows*Cols.
+// Index 0 is negative zero (0x80000000) and index 1 is quiet NaN 0x7fc00000.
+// tensor_view uses the same bytes as tensor for a given seed.
+type Tensor struct {
+	Rows   int32     `json:"rows" avro:"rows" msgpack:"rows"`
+	Cols   int32     `json:"cols" avro:"cols" msgpack:"cols"`
+	Values []float32 `json:"values" avro:"values" msgpack:"values"`
+}
+
+// Prompt is one padded LLM input. Each list length is Batch*Seq, row-major.
+type Prompt struct {
+	Batch         int32   `json:"batch" avro:"batch" msgpack:"batch"`
+	Seq           int32   `json:"seq" avro:"seq" msgpack:"seq"`
+	InputIDs      []int64 `json:"input_ids" avro:"input_ids" msgpack:"input_ids"`
+	AttentionMask []int64 `json:"attention_mask" avro:"attention_mask" msgpack:"attention_mask"`
+	PositionIDs   []int64 `json:"position_ids" avro:"position_ids" msgpack:"position_ids"`
+}
+
+// Shard is one transformer block. Weights are row-major float32.
+// TokEmb is Vocab*Hidden, Attn is Hidden*Hidden, FFNWeight is FFN*Hidden, Norm is Hidden.
+type Shard struct {
+	Vocab     int32     `json:"vocab" avro:"vocab" msgpack:"vocab"`
+	Hidden    int32     `json:"hidden" avro:"hidden" msgpack:"hidden"`
+	FFN       int32     `json:"ffn" avro:"ffn" msgpack:"ffn"`
+	TokEmb    []float32 `json:"tok_emb" avro:"tok_emb" msgpack:"tok_emb"`
+	Attn      []float32 `json:"attn" avro:"attn" msgpack:"attn"`
+	FFNWeight []float32 `json:"ffn_weight" avro:"ffn_weight" msgpack:"ffn_weight"`
+	Norm      []float32 `json:"norm" avro:"norm" msgpack:"norm"`
+}
+
+// Request is one inference call: id, model name, temperature, and the prompt.
+type Request struct {
+	RequestID   int64   `json:"request_id" avro:"request_id" msgpack:"request_id"`
+	Model       string  `json:"model" avro:"model" msgpack:"model"`
+	Temperature float32 `json:"temperature" avro:"temperature" msgpack:"temperature"`
+	Inputs      Prompt  `json:"inputs" avro:"inputs" msgpack:"inputs"`
+}
+
 const baseTSMS int64 = 1704067200000
 
 // Deterministic xorshift64* (within-language only). Zero seed uses floor(2^64/φ)
@@ -206,7 +246,12 @@ func mixSeed(seed uint64, typeID string, idx int) uint64 {
 
 // MakeOne builds one instance for typeID. typeConfig keys match the Python catalog.
 func MakeOne(typeID string, typeConfig map[string]any, seed uint64, instanceIndex int) any {
-	r := newRNG(mixSeed(seed, typeID, instanceIndex))
+	seedID := typeID
+	if typeID == "tensor_view" {
+		// Same stream as tensor. Do not mix the name "tensor_view".
+		seedID = "tensor"
+	}
+	r := newRNG(mixSeed(seed, seedID, instanceIndex))
 	switch typeID {
 	case "message":
 		return makeMessage(r, typeConfig)
@@ -228,6 +273,14 @@ func MakeOne(typeID string, typeConfig map[string]any, seed uint64, instanceInde
 		return makeSignal(r, typeConfig)
 	case "graph":
 		return makeGraph(r, typeConfig)
+	case "tensor", "tensor_view":
+		return makeTensor(r, typeConfig)
+	case "prompt":
+		return makePrompt(r, typeConfig)
+	case "shard":
+		return makeShard(r, typeConfig)
+	case "request":
+		return makeRequest(r, typeConfig)
 	default:
 		return nil
 	}
@@ -475,6 +528,78 @@ func makeGraph(r *rng, cfg map[string]any) Book {
 		people[i].Next = people[(i+1)%ring]
 	}
 	return Book{Orders: orders, People: people}
+}
+
+// fillF32 draws count values, then overwrites index 0 and 1 when pin is set.
+// Those two draws stay consumed so later values keep the same stream position.
+func fillF32(r *rng, count int, pin bool) []float32 {
+	vals := make([]float32, count)
+	for i := range vals {
+		vals[i] = float32(r.nextF64())
+	}
+	if pin && count >= 2 {
+		vals[0] = math.Float32frombits(0x80000000)
+		vals[1] = math.Float32frombits(0x7fc00000)
+	}
+	return vals
+}
+
+func makeTensor(r *rng, cfg map[string]any) Tensor {
+	rows := cfgInt(cfg, "rows", 1024)
+	cols := cfgInt(cfg, "cols", 1024)
+	return Tensor{Rows: int32(rows), Cols: int32(cols), Values: fillF32(r, rows*cols, true)}
+}
+
+func makePrompt(r *rng, cfg map[string]any) Prompt {
+	batch := cfgInt(cfg, "batch", 4)
+	seq := cfgInt(cfg, "seq", 256)
+	vocab := cfgInt(cfg, "vocab", 32000)
+	n := batch * seq
+	input := make([]int64, n)
+	mask := make([]int64, n)
+	pos := make([]int64, n)
+	for row := 0; row < batch; row++ {
+		lo := seq / 2
+		if lo < 1 {
+			lo = 1
+		}
+		content := r.nextInt(lo, seq)
+		base := row * seq
+		for col := 0; col < seq; col++ {
+			if col < content {
+				input[base+col] = int64(r.nextInt(1, vocab-1))
+				mask[base+col] = 1
+			}
+			pos[base+col] = int64(col)
+		}
+	}
+	return Prompt{
+		Batch: int32(batch), Seq: int32(seq),
+		InputIDs: input, AttentionMask: mask, PositionIDs: pos,
+	}
+}
+
+func makeShard(r *rng, cfg map[string]any) Shard {
+	vocab := cfgInt(cfg, "vocab", 1024)
+	hidden := cfgInt(cfg, "hidden", 256)
+	ffn := cfgInt(cfg, "ffn", 512)
+	return Shard{
+		Vocab: int32(vocab), Hidden: int32(hidden), FFN: int32(ffn),
+		TokEmb:    fillF32(r, vocab*hidden, false),
+		Attn:      fillF32(r, hidden*hidden, false),
+		FFNWeight: fillF32(r, ffn*hidden, false),
+		Norm:      fillF32(r, hidden, false),
+	}
+}
+
+func makeRequest(r *rng, cfg map[string]any) Request {
+	smin, smax := slen(cfg, 3, 16)
+	return Request{
+		RequestID:   int64(r.nextInt(1, 1_000_000_000)),
+		Model:       r.word(smin, smax),
+		Temperature: float32(r.nextF64() * 2),
+		Inputs:      makePrompt(r, cfg),
+	}
 }
 
 // ProjectFFloat0 returns f_float_0 for one row or a batch.

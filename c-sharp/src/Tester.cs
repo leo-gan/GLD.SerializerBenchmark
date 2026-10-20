@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -331,6 +332,26 @@ namespace GLD.SerializerBenchmark
             }
 
             string errorText;
+            if (IsTensorType(original.Name))
+            {
+                if (log != null && log.Size == 0)
+                {
+                    error.ErrorText = "Validation Error: Seems serialization failed. Serialized object size = 0.";
+                    isRepeatedError = !error.TryAddTo(errors);
+                    if (log != null) log.FidelityScore = 0.0;
+                    return;
+                }
+                if (!TensorEqual(original.Name, original.Data, processed, out errorText))
+                {
+                    error.ErrorText = errorText;
+                    isRepeatedError = !error.TryAddTo(errors);
+                    if (log != null) log.FidelityScore = 0.0;
+                    return;
+                }
+                if (log != null) log.FidelityScore = 1.0;
+                logStorage.Write(log);
+                return;
+            }
             object expected = original.Data;
             if (string.Equals(original.Name, "table_project", StringComparison.Ordinal))
                 expected = ProjectFFloat0(original.Data);
@@ -361,6 +382,196 @@ namespace GLD.SerializerBenchmark
                 error.ErrorText = errorText;
                 isRepeatedError = !error.TryAddTo(errors);
             }
+        }
+
+        private static bool IsTensorType(string name) =>
+            name is "tensor" or "tensor_view" or "prompt" or "shard" or "request";
+
+        /// <summary>
+        /// Float32 payloads keep the sign of zero and the NaN payload. Ints and strings are exact.
+        /// </summary>
+        private static bool TensorEqual(string typeId, object expected, object actual, out string errorText)
+        {
+            switch (typeId)
+            {
+                case "tensor":
+                case "tensor_view":
+                    return EqualTensor(expected, actual, out errorText);
+                case "prompt":
+                    return EqualPrompt(expected as TestData.V2.Prompt, actual as TestData.V2.Prompt, out errorText);
+                case "shard":
+                    return EqualShard(expected, actual, out errorText);
+                case "request":
+                    return EqualRequest(expected, actual, out errorText);
+                default:
+                    errorText = "Comparison Error: unknown tensor type " + typeId;
+                    return false;
+            }
+        }
+
+        private static bool EqualTensor(object expected, object actual, out string errorText)
+        {
+            var mx = expected as TestData.V2.TensorMatrix;
+            if (mx == null)
+            {
+                errorText = "Comparison Error: tensor payload is not TensorMatrix";
+                return false;
+            }
+            if (actual is Serializers.KilnSerializerSer.BorrowedMatrix view)
+            {
+                if (view.Rows != mx.Rows || view.Cols != mx.Cols)
+                {
+                    errorText = string.Format(
+                        "Comparison Error: tensor_view shape {0}x{1} != {2}x{3}",
+                        view.Rows, view.Cols, mx.Rows, mx.Cols);
+                    return false;
+                }
+                return SameF32Bytes(mx.Values, view.Values.Span, out errorText);
+            }
+            var got = actual as TestData.V2.TensorMatrix;
+            if (got == null)
+            {
+                errorText = "Comparison Error: tensor decode type " +
+                    (actual == null ? "null" : actual.GetType().Name);
+                return false;
+            }
+            if (got.Rows != mx.Rows || got.Cols != mx.Cols)
+            {
+                errorText = string.Format(
+                    "Comparison Error: tensor shape {0}x{1} != {2}x{3}",
+                    got.Rows, got.Cols, mx.Rows, mx.Cols);
+                return false;
+            }
+            return SameF32(mx.Values, got.Values, out errorText);
+        }
+
+        private static bool EqualPrompt(TestData.V2.Prompt expected, TestData.V2.Prompt actual, out string errorText)
+        {
+            if (expected == null || actual == null)
+            {
+                errorText = "Comparison Error: prompt missing";
+                return false;
+            }
+            if (expected.Batch != actual.Batch || expected.Seq != actual.Seq)
+            {
+                errorText = string.Format(
+                    "Comparison Error: prompt shape {0}x{1} != {2}x{3}",
+                    actual.Batch, actual.Seq, expected.Batch, expected.Seq);
+                return false;
+            }
+            if (!SameI64(expected.InputIds, actual.InputIds, "input_ids", out errorText)) return false;
+            if (!SameI64(expected.AttentionMask, actual.AttentionMask, "attention_mask", out errorText)) return false;
+            return SameI64(expected.PositionIds, actual.PositionIds, "position_ids", out errorText);
+        }
+
+        private static bool EqualShard(object expected, object actual, out string errorText)
+        {
+            var src = expected as TestData.V2.Shard;
+            var got = actual as TestData.V2.Shard;
+            if (src == null || got == null)
+            {
+                errorText = "Comparison Error: shard missing";
+                return false;
+            }
+            if (src.Vocab != got.Vocab || src.Hidden != got.Hidden || src.Ffn != got.Ffn)
+            {
+                errorText = "Comparison Error: shard shape";
+                return false;
+            }
+            if (!SameF32(src.TokEmb, got.TokEmb, out errorText)) return false;
+            if (!SameF32(src.Attn, got.Attn, out errorText)) return false;
+            if (!SameF32(src.FfnWeight, got.FfnWeight, out errorText)) return false;
+            return SameF32(src.Norm, got.Norm, out errorText);
+        }
+
+        private static bool EqualRequest(object expected, object actual, out string errorText)
+        {
+            var src = expected as TestData.V2.InferenceRequest;
+            var got = actual as TestData.V2.InferenceRequest;
+            if (src == null || got == null)
+            {
+                errorText = "Comparison Error: request missing";
+                return false;
+            }
+            if (src.RequestId != got.RequestId || !string.Equals(src.Model, got.Model, StringComparison.Ordinal))
+            {
+                errorText = "Comparison Error: request id or model";
+                return false;
+            }
+            if (BitConverter.SingleToInt32Bits(src.Temperature) != BitConverter.SingleToInt32Bits(got.Temperature))
+            {
+                errorText = "Comparison Error: request temperature bits";
+                return false;
+            }
+            return EqualPrompt(src.Inputs, got.Inputs, out errorText);
+        }
+
+        private static bool SameF32(float[] expected, float[] actual, out string errorText)
+        {
+            if (expected == null || actual == null || expected.Length != actual.Length)
+            {
+                errorText = string.Format(
+                    "Comparison Error: float32 length {0} != {1}",
+                    expected == null ? -1 : expected.Length,
+                    actual == null ? -1 : actual.Length);
+                return false;
+            }
+            for (var i = 0; i < expected.Length; i++)
+            {
+                if (BitConverter.SingleToInt32Bits(expected[i]) != BitConverter.SingleToInt32Bits(actual[i]))
+                {
+                    errorText = string.Format("Comparison Error: float32 bits at {0}", i);
+                    return false;
+                }
+            }
+            errorText = null;
+            return true;
+        }
+
+        private static bool SameF32Bytes(float[] expected, ReadOnlySpan<byte> actual, out string errorText)
+        {
+            if (expected == null || (long)actual.Length != (long)expected.Length * 4L)
+            {
+                errorText = string.Format(
+                    "Comparison Error: tensor_view bytes {0} != {1}",
+                    actual.Length,
+                    expected == null ? -1 : expected.Length * 4);
+                return false;
+            }
+            for (var i = 0; i < expected.Length; i++)
+            {
+                var bits = BinaryPrimitives.ReadInt32LittleEndian(actual.Slice(i * 4, 4));
+                if (bits != BitConverter.SingleToInt32Bits(expected[i]))
+                {
+                    errorText = string.Format("Comparison Error: tensor_view bits at {0}", i);
+                    return false;
+                }
+            }
+            errorText = null;
+            return true;
+        }
+
+        private static bool SameI64(long[] expected, long[] actual, string name, out string errorText)
+        {
+            if (expected == null || actual == null || expected.Length != actual.Length)
+            {
+                errorText = string.Format(
+                    "Comparison Error: {0} length {1} != {2}",
+                    name,
+                    expected == null ? -1 : expected.Length,
+                    actual == null ? -1 : actual.Length);
+                return false;
+            }
+            for (var i = 0; i < expected.Length; i++)
+            {
+                if (expected[i] != actual[i])
+                {
+                    errorText = string.Format("Comparison Error: {0} at {1}", name, i);
+                    return false;
+                }
+            }
+            errorText = null;
+            return true;
         }
 
         /// <summary>

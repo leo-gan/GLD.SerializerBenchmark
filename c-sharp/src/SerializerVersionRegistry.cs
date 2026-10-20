@@ -56,6 +56,7 @@ namespace GLD.SerializerBenchmark
                 ["MemoryPack"] = "MemoryPack",
                 ["MessagePack-CSharp"] = "MessagePack",
                 ["Amazon.IonDotnet"] = "Amazon.IonDotnet",
+                ["gld-kiln"] = "Kiln",
                 ["Nerdbank.MessagePack"] = "Nerdbank.MessagePack",
                 ["Migrant"] = "Migrant",
                 ["ShapeShift.Cbor"] = "ShapeShift.Cbor",

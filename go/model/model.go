@@ -17,6 +17,9 @@ func Fidelity(expected, actual any) bool {
 	if equal, matched := graphFidelity(expected, actual); matched {
 		return equal
 	}
+	if equal, matched := tensorFidelity(expected, actual); matched {
+		return equal
+	}
 	return reflect.DeepEqual(expected, actual)
 }
 

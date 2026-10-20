@@ -62,6 +62,7 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
 | [fory](https://github.com/apache/fory) | Binary | `fory` | `ForyStruct` derive; native mode | adapted | Reused output buffer; suite types only |
 | [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) | Binary | `gld-kiln` 0.2.0 | Kiln `Value` built in `prepare` | adapted | One struct, or one `list` of that struct for N>1. Schema is not rebuilt. `encode_into` appends to the harness buffer. |
 | [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
 | [parquet](https://docs.rs/parquet) | Columnar | `parquet` 60.0.0 | `RecordBatch` in serialize; props in `prepare` | adapted | Snappy page codec. Encodings not overridden. `table_project`: `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
@@ -116,6 +117,10 @@ Apache Fory (formerly Fury) was created for high-performance, cross-language ser
 #### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.0.1`
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion).
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) · `0.2.0`
+
+gld-kiln is a positional little-endian codec ([spec](https://leo-gan.github.io/gld-kiln/spec/)). The problem was self-describing formats that spend the hot path on field names and tags. This row times crate 0.2.0 on the five suite structs. Prepare builds the schema and the value once. The timed path is `encode_into` into the reused buffer and `decode` back to those structs. A batch is one list of the struct. There are no field names on the wire.
 
 #### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
 

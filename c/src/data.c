@@ -1,4 +1,5 @@
 #include "bench.h"
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -46,6 +47,18 @@ static uint64_t mix_seed(uint64_t seed, test_data_kind_t kind, int idx) {
     return h ? h : 1;
 }
 
+/* Same FNV mix as the Python/Java/Swift tensor generators. Suite cells keep mix_seed. */
+static uint64_t mix_name(uint64_t seed, const char *type_id, int idx) {
+    uint64_t h = seed;
+    const unsigned char *p;
+    for (p = (const unsigned char *)type_id; *p; p++) {
+        h ^= (uint64_t)(*p);
+        h *= 0x100000001B3ULL;
+    }
+    h ^= (uint64_t)(uint32_t)idx * 0x9E3779B97F4A7C15ULL;
+    return h ? h : 1;
+}
+
 static const int64_t kBaseTsMs = 1704067200000LL;
 
 const char *test_data_name(test_data_kind_t k) {
@@ -57,6 +70,11 @@ const char *test_data_name(test_data_kind_t k) {
         case TD_EVENT: return "event";
         case TD_GRID: return "grid";
         case TD_GRID_WINDOW: return "grid_window";
+        case TD_TENSOR: return "tensor";
+        case TD_TENSOR_VIEW: return "tensor_view";
+        case TD_PROMPT: return "prompt";
+        case TD_SHARD: return "shard";
+        case TD_REQUEST: return "request";
         default: return "unknown";
     }
 }
@@ -145,16 +163,198 @@ void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, in
         case TD_GRID_WINDOW:
             data_fill_grid(out, kind, seed, instance_index, 512, 512, 128, 64, 256, 128);
             break;
+        case TD_TENSOR:
+        case TD_TENSOR_VIEW:
+            /* Small shape so suite round-trip tests stay under the 4 MiB buffer. */
+            data_fill_tensor(out, kind, seed, instance_index, 2, 2, 4, 256, 32000, 256, 512, 3, 16);
+            break;
+        case TD_PROMPT:
+            data_fill_tensor(out, kind, seed, instance_index, 1024, 1024, 2, 4, 32, 256, 512, 3, 16);
+            break;
+        case TD_SHARD:
+            data_fill_tensor(out, kind, seed, instance_index, 1024, 1024, 4, 256, 4, 3, 5, 3, 16);
+            break;
+        case TD_REQUEST:
+            data_fill_tensor(out, kind, seed, instance_index, 1024, 1024, 2, 4, 32, 256, 512, 3, 16);
+            break;
         default:
             break;
     }
 }
 
+static void free_prompt(prompt_t *p) {
+    if (!p) return;
+    free(p->input_ids);
+    free(p->attention_mask);
+    free(p->position_ids);
+    p->input_ids = NULL;
+    p->attention_mask = NULL;
+    p->position_ids = NULL;
+    p->n = 0;
+}
+
+static void free_shard(shard_t *s) {
+    if (!s) return;
+    free(s->tok_emb);
+    free(s->attn);
+    free(s->ffn_weight);
+    free(s->norm);
+    s->tok_emb = NULL;
+    s->attn = NULL;
+    s->ffn_weight = NULL;
+    s->norm = NULL;
+}
+
 void data_free_grid(test_fixture_t *fx) {
-    if (!fx || !fx->grid.values) return;
+    if (!fx) return;
     free(fx->grid.values);
     fx->grid.values = NULL;
     fx->grid.nvalues = 0;
+    if (fx->tensor.values_owned) free(fx->tensor.values);
+    fx->tensor.values = NULL;
+    fx->tensor.values_owned = 0;
+    fx->tensor.nvalues = 0;
+    free_prompt(&fx->prompt);
+    free_shard(&fx->shard);
+    free_prompt(&fx->request.inputs);
+}
+
+static void *alloc_bytes(size_t n) {
+    void *p;
+    if (n == 0) return NULL;
+    p = malloc(n);
+    if (!p) {
+        fprintf(stderr, "[ERROR] fixture OOM %zu bytes\n", n);
+        exit(1);
+    }
+    return p;
+}
+
+static int shape_n(int a, int b, int *out) {
+    long long n;
+    if (a < 1 || b < 1) return -1;
+    n = (long long)a * (long long)b;
+    if (n > 0x7fffffffLL) return -1;
+    *out = (int)n;
+    return 0;
+}
+
+static void f32_set_bits(float *p, uint32_t bits) {
+    memcpy(p, &bits, 4);
+}
+
+/* Draw every element, then pin index 0 and 1 when requested. */
+static void fill_f32(rng_t *r, float *dst, int n, int pin) {
+    int i;
+    for (i = 0; i < n; i++) dst[i] = (float)rng_f64(r);
+    if (pin && n >= 2) {
+        f32_set_bits(&dst[0], 0x80000000u);
+        f32_set_bits(&dst[1], 0x7fc00000u);
+    }
+}
+
+static float *make_f32(rng_t *r, int n, int pin) {
+    float *dst = (float *)alloc_bytes((size_t)n * sizeof(float));
+    fill_f32(r, dst, n, pin);
+    return dst;
+}
+
+static void fill_prompt(rng_t *r, prompt_t *p, int batch, int seq, int vocab) {
+    int n = 0;
+    int row;
+    int64_t *ids;
+    int64_t *mask;
+    int64_t *pos;
+    if (shape_n(batch, seq, &n) || vocab < 2) return;
+    ids = (int64_t *)alloc_bytes((size_t)n * sizeof(int64_t));
+    mask = (int64_t *)alloc_bytes((size_t)n * sizeof(int64_t));
+    pos = (int64_t *)alloc_bytes((size_t)n * sizeof(int64_t));
+    for (row = 0; row < batch; row++) {
+        int lo = seq / 2;
+        int content;
+        int col;
+        if (lo < 1) lo = 1;
+        content = rng_int(r, lo, seq);
+        for (col = 0; col < seq; col++) {
+            int i = row * seq + col;
+            if (col < content) {
+                ids[i] = rng_int(r, 1, vocab - 1);
+                mask[i] = 1;
+            } else {
+                ids[i] = 0;
+                mask[i] = 0;
+            }
+            pos[i] = col;
+        }
+    }
+    p->batch = batch;
+    p->seq = seq;
+    p->n = n;
+    p->input_ids = ids;
+    p->attention_mask = mask;
+    p->position_ids = pos;
+}
+
+void data_fill_tensor(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
+                      int rows, int cols, int batch, int seq, int vocab,
+                      int hidden, int ffn, int string_min, int string_max) {
+    rng_t r;
+    test_data_kind_t seed_kind = kind;
+    data_free_grid(out);
+    memset(out, 0, sizeof(*out));
+    out->kind = kind;
+    out->name = test_data_name(kind);
+    out->batch_n = 1;
+    /* tensor_view mixes the name "tensor", not "tensor_view". */
+    if (kind == TD_TENSOR_VIEW) seed_kind = TD_TENSOR;
+    if (rows <= 0) rows = 1024;
+    if (cols <= 0) cols = 1024;
+    if (batch <= 0) batch = 4;
+    if (seq <= 0) seq = 256;
+    if (vocab <= 1) vocab = 32000;
+    if (hidden <= 0) hidden = 256;
+    if (ffn <= 0) ffn = 512;
+    if (string_min <= 0) string_min = 3;
+    if (string_max < string_min) string_max = string_min;
+    rng_init(&r, mix_name(seed, test_data_name(seed_kind), instance_index));
+    if (kind == TD_TENSOR || kind == TD_TENSOR_VIEW) {
+        int n = 0;
+        if (shape_n(rows, cols, &n) || n < 2) return;
+        out->tensor.rows = rows;
+        out->tensor.cols = cols;
+        out->tensor.nvalues = n;
+        out->tensor.values = make_f32(&r, n, 1);
+        out->tensor.values_owned = 1;
+        return;
+    }
+    if (kind == TD_PROMPT) {
+        fill_prompt(&r, &out->prompt, batch, seq, vocab);
+        return;
+    }
+    if (kind == TD_SHARD) {
+        int n_tok = 0, n_attn = 0, n_ffn = 0;
+        if (shape_n(vocab, hidden, &n_tok) || shape_n(hidden, hidden, &n_attn) ||
+            shape_n(ffn, hidden, &n_ffn))
+            return;
+        out->shard.vocab = vocab;
+        out->shard.hidden = hidden;
+        out->shard.ffn = ffn;
+        out->shard.n_tok = n_tok;
+        out->shard.n_attn = n_attn;
+        out->shard.n_ffn = n_ffn;
+        out->shard.n_norm = hidden;
+        out->shard.tok_emb = make_f32(&r, n_tok, 0);
+        out->shard.attn = make_f32(&r, n_attn, 0);
+        out->shard.ffn_weight = make_f32(&r, n_ffn, 0);
+        out->shard.norm = make_f32(&r, hidden, 0);
+        return;
+    }
+    if (kind == TD_REQUEST) {
+        out->request.request_id = rng_int(&r, 1, 1000000000);
+        rng_word(&r, out->request.model, sizeof out->request.model, string_min, string_max);
+        out->request.temperature = (float)(rng_f64(&r) * 2.0);
+        fill_prompt(&r, &out->request.inputs, batch, seq, vocab);
+    }
 }
 
 void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,

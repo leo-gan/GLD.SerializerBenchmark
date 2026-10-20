@@ -112,6 +112,7 @@ namespace GLD.SerializerBenchmark
                 new FlatSharpSerializerSer(new FlatSharpDomainMap()),
                 new GoogleProtobufSerializerSer(new GoogleProtobufDomainMap()),
                 new ApacheAvroSerializerSer(),
+                new KilnSerializerSer(),
                 new HyperionSerializerSer(),
                 new NetSerializerSer(),
                 new SpanJsonSerializerSer(),

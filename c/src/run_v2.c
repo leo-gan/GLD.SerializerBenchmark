@@ -58,15 +58,32 @@ static test_data_kind_t kind_from_type_id(const char *type_id) {
     if (strcmp(type_id, "event") == 0) return TD_EVENT;
     if (strcmp(type_id, "grid") == 0) return TD_GRID;
     if (strcmp(type_id, "grid_window") == 0) return TD_GRID_WINDOW;
+    if (strcmp(type_id, "tensor") == 0) return TD_TENSOR;
+    if (strcmp(type_id, "tensor_view") == 0) return TD_TENSOR_VIEW;
+    if (strcmp(type_id, "prompt") == 0) return TD_PROMPT;
+    if (strcmp(type_id, "shard") == 0) return TD_SHARD;
+    if (strcmp(type_id, "request") == 0) return TD_REQUEST;
     return TD_MESSAGE;
 }
 
-static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed,
+static int kind_is_tensor(test_data_kind_t kind) {
+    return kind == TD_TENSOR || kind == TD_TENSOR_VIEW || kind == TD_PROMPT || kind == TD_SHARD ||
+           kind == TD_REQUEST;
+}
+
+static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed, int instance_index,
                             int children, int points, int str_count, int attr_count,
-                            int nx, int ny, int x0, int y0, int wx, int wy) {
+                            int nx, int ny, int x0, int y0, int wx, int wy,
+                            int rows, int cols, int batch, int seq, int vocab,
+                            int hidden, int ffn, int string_min, int string_max) {
     test_data_kind_t kind = kind_from_type_id(type_id);
     if (kind == TD_GRID || kind == TD_GRID_WINDOW) {
         data_fill_grid(fx, kind, (uint64_t)seed, 0, nx, ny, x0, y0, wx, wy);
+        return;
+    }
+    if (kind_is_tensor(kind)) {
+        data_fill_tensor(fx, kind, (uint64_t)seed, instance_index, rows, cols, batch, seq, vocab,
+                         hidden, ffn, string_min, string_max);
         return;
     }
     data_make_one(fx, kind, (uint64_t)seed, 0, children, points, str_count, attr_count);
@@ -161,7 +178,26 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
     return 0;
 }
 
-int run_benchmarks_v2(int repetitions, const char *log_dir) {
+static bool name_match(const char *name, const char *filter) {
+    size_t n, f, i, j;
+    if (!filter || !filter[0]) return true;
+    if (!name) return false;
+    n = strlen(name);
+    f = strlen(filter);
+    for (i = 0; i + f <= n; i++) {
+        for (j = 0; j < f; j++) {
+            char a = name[i + j], b = filter[j];
+            if (a >= 'A' && a <= 'Z') a = (char)(a + 32);
+            if (b >= 'A' && b <= 'Z') b = (char)(b + 32);
+            if (a != b) break;
+        }
+        if (j == f) return true;
+    }
+    return false;
+}
+
+int run_benchmarks_v2(int repetitions, const char *log_dir,
+                      const char *ser_filter, const char *data_filter) {
     char root_buf[512] = ".";
     if (getenv("BENCHMARK_REPO_ROOT") && getenv("BENCHMARK_REPO_ROOT")[0]) {
         snprintf(root_buf, sizeof root_buf, "%s", getenv("BENCHMARK_REPO_ROOT"));
@@ -209,6 +245,16 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     memset(sers, 0, sizeof sers);
     int ser_count = 0;
     register_all_serializers(sers, &ser_count);
+    if (ser_filter && ser_filter[0]) {
+        int matched = 0;
+        for (int si = 0; si < ser_count; si++)
+            if (name_match(sers[si].name, ser_filter)) matched++;
+        if (matched == 0) {
+            fprintf(stderr, "[ERROR] no serializer matches filter '%s'\n", ser_filter);
+            csv_logger_close(log);
+            return 1;
+        }
+    }
 
     uint64_t seed = 42;
     if (getenv("BENCHMARK_SEED") && getenv("BENCHMARK_SEED")[0])
@@ -254,6 +300,12 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             "          int((tc.get('window') or {}).get('y0', 0)),\n"
             "          int((tc.get('window') or {}).get('wx', 0)),\n"
             "          int((tc.get('window') or {}).get('wy', 0)),\n"
+            "          int(tc.get('rows', 1024)), int(tc.get('cols', 1024)),\n"
+            "          int(tc.get('batch', 4)), int(tc.get('seq', 256)),\n"
+            "          int(tc.get('vocab', 32000)), int(tc.get('hidden', 256)),\n"
+            "          int(tc.get('ffn', 512)),\n"
+            "          int((tc.get('string_len') or {}).get('min', 3)),\n"
+            "          int((tc.get('string_len') or {}).get('max', 16)),\n"
             "          sep='\\t')\n");
     fclose(cspf);
     char cells_cmd[512];
@@ -279,10 +331,13 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         int n = 1;
         int points = 32, children = 8, str_count = 32, attr_count = 4;
         int nx = 512, ny = 512, x0 = 0, y0 = 0, wx = 0, wy = 0;
-        /* type_id N hash points children count attr nx ny x0 y0 wx wy */
-        char *toks[16] = {0};
+        int rows = 1024, cols = 1024, batch = 4, seq = 256, vocab = 32000;
+        int hidden = 256, ffn = 512, string_min = 3, string_max = 16;
+        /* type_id N hash points children count attr nx ny x0 y0 wx wy
+         * rows cols batch seq vocab hidden ffn string_min string_max */
+        char *toks[32] = {0};
         int nt = 0;
-        for (char *t = strtok(line, "\t\r\n"); t && nt < 16; t = strtok(NULL, "\t\r\n"))
+        for (char *t = strtok(line, "\t\r\n"); t && nt < 32; t = strtok(NULL, "\t\r\n"))
             toks[nt++] = t;
         if (nt < 2) continue;
         strncpy(type_id, toks[0], sizeof type_id - 1);
@@ -304,7 +359,19 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             wx = atoi(toks[11]);
             wy = atoi(toks[12]);
         }
+        if (nt >= 22) {
+            rows = atoi(toks[13]);
+            cols = atoi(toks[14]);
+            batch = atoi(toks[15]);
+            seq = atoi(toks[16]);
+            vocab = atoi(toks[17]);
+            hidden = atoi(toks[18]);
+            ffn = atoi(toks[19]);
+            string_min = atoi(toks[20]);
+            string_max = atoi(toks[21]);
+        }
         if (n < 1) n = 1;
+        if (!name_match(type_id, data_filter)) continue;
         if (points < 0) points = 0;
         printf("[PROGRESS] Cell %s N=%d hash=%s points=%d\n",
                type_id, n, type_hash, points);
@@ -317,9 +384,19 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             continue;
         }
         for (int i = 0; i < n; i++) {
-            fill_v2_fixture(&items[i], type_id, (int)seed + cells * 1000 + i,
+            /* Suite keeps the historical per-cell seed. Tensor uses the suite seed
+             * and instance index, matching the other language generators. */
+            int draw_seed = (int)seed + cells * 1000 + i;
+            int draw_index = 0;
+            if (kind_is_tensor(kind_from_type_id(type_id))) {
+                draw_seed = (int)seed;
+                draw_index = i;
+            }
+            fill_v2_fixture(&items[i], type_id, draw_seed, draw_index,
                             children, points, str_count, attr_count,
-                            nx, ny, x0, y0, wx, wy);
+                            nx, ny, x0, y0, wx, wy,
+                            rows, cols, batch, seq, vocab, hidden, ffn,
+                            string_min, string_max);
             items[i].batch_n = 1;
             items[i].batch = NULL;
             items[i].name = type_id;
@@ -355,8 +432,10 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         memset(failed, 0, sizeof failed);
         for (int si = 0; si < ser_count; si++) {
             serializer_t *S = &sers[si];
+            if (!name_match(S->name, ser_filter)) continue;
             if (S->supports && !S->supports(fx.kind)) continue;
             const test_fixture_t *prep_fx = (n > 1 && fx.batch) ? &fx.batch[0] : &fx;
+            if (S->owns_batch) prep_fx = &fx;
             if (S->prepare && S->prepare(fx.kind, prep_fx) != 0) {
                 failed[si] = 1;
                 continue;

@@ -115,6 +115,13 @@ ResolvedRun load_resolved(const std::string& run_config_path, uint64_t seed) {
       if (tc.contains("duplication") && tc["duplication"].is_number()) {
         c.type_config.duplication = tc["duplication"].get<double>();
       }
+      if (tc.contains("rows")) c.type_config.rows = j_int(tc, "rows", 1024);
+      if (tc.contains("cols")) c.type_config.cols = j_int(tc, "cols", 1024);
+      if (tc.contains("batch")) c.type_config.batch = j_int(tc, "batch", 4);
+      if (tc.contains("seq")) c.type_config.seq = j_int(tc, "seq", 256);
+      if (tc.contains("vocab")) c.type_config.vocab = j_int(tc, "vocab", 32000);
+      if (tc.contains("hidden")) c.type_config.hidden = j_int(tc, "hidden", 256);
+      if (tc.contains("ffn")) c.type_config.ffn = j_int(tc, "ffn", 512);
       if (!c.type_id.empty()) rr.cells.push_back(std::move(c));
     }
   }

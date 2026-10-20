@@ -3,7 +3,7 @@
 #   BENCHMARK_RUN_CONFIG=config/library/tensor.yaml
 # An empty serializer filter selects serializer_data_sets for tensor
 # on runners whose comma filter is exact. A serializer on this set runs every
-# type below. Python: arrow-ipc, flatbuffers. Mojo: gld-kiln.
+# type below. Python: arrow-ipc, flatbuffers, gld-kiln. Mojo: gld-kiln.
 # Python applies the map in the runner. Other serializers skip these type ids.
 # N stays 1. The shape is the type config, not the instance count.
 id: tensor

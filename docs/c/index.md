@@ -65,6 +65,7 @@ The steps to install the toolchain and run the benchmark are in [`c/README.md`](
 | [ubj](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_ubj.c) | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 | [libyaml](https://github.com/yaml/libyaml) | Text | Official C YAML 1.1 emitter/parser (`yaml_emitter_*` / `yaml_parser_*`) |
 | [ion-c](https://github.com/amazon-ion/ion-c) | Binary | Official Ion binary writer/reader (`ion_writer_*` / `ion_reader_*`) via visitor ops; native `FILE*` stream |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-c) | Binary | Positional `kiln_encode_buf` / `kiln_decode` on the five suite structs; a batch is one list |
 
 ### Specifics
 
@@ -161,6 +162,10 @@ libyaml is the official C library for YAML 1.1, written so other languages (PyYA
 #### [ion-c](https://github.com/amazon-ion/ion-c) · `1.1.6`
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-c is the official C implementation. This row times the binary writer and reader on the suite visitor, including a native FILE* stream.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-c) · `0.2.0`
+
+gld-kiln is a positional little-endian codec: the schema is field order, so the wire carries no names and no tags. The problem was repeating those names on every record. This row builds the schema once, then times `kiln_encode_buf` into a reused buffer and `kiln_decode` back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 ### Caveats
 

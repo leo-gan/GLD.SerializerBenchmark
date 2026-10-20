@@ -75,6 +75,17 @@ fn loadCells(
             if (tc.object.get("points")) |v| cfg.points = @intCast(jsonInt(v));
             if (tc.object.get("count")) |v| cfg.count = @intCast(jsonInt(v));
             if (tc.object.get("attr_count")) |v| cfg.attr_count = @intCast(jsonInt(v));
+            if (tc.object.get("rows")) |v| setI32(&cfg.rows, v);
+            if (tc.object.get("cols")) |v| setI32(&cfg.cols, v);
+            if (tc.object.get("batch")) |v| setI32(&cfg.batch, v);
+            if (tc.object.get("seq")) |v| setI32(&cfg.seq, v);
+            if (tc.object.get("vocab")) |v| setI32(&cfg.vocab, v);
+            if (tc.object.get("hidden")) |v| setI32(&cfg.hidden, v);
+            if (tc.object.get("ffn")) |v| setI32(&cfg.ffn, v);
+            if (tc.object.get("string_len")) |sl| if (sl == .object) {
+                if (sl.object.get("min")) |v| setI32(&cfg.string_min, v);
+                if (sl.object.get("max")) |v| setI32(&cfg.string_max, v);
+            };
         }
         const fixtures = try data.instances(allocator, type_id, seed, @max(n, 1), cfg);
         try cells_list.append(allocator, .{
@@ -97,6 +108,10 @@ fn jsonInt(v: ?std.json.Value) i64 {
     };
 }
 
+fn setI32(dest: *i32, v: std.json.Value) void {
+    if (std.math.cast(i32, jsonInt(v))) |n| dest.* = n;
+}
+
 fn serializeCell(
     ser: serializers.Serializer,
     fixtures: []const data.Fixture,
@@ -104,6 +119,12 @@ fn serializeCell(
     scratch: *buf_mod.Buf,
 ) !void {
     ser.beginEncode();
+    if (fixtures.len != 1) {
+        if (ser.vtable.encode_batch) |encode_batch| {
+            try encode_batch(ser.ctx, fixtures, out);
+            return;
+        }
+    }
     if (fixtures.len == 1) {
         try ser.serialize(fixtures[0], out);
         return;
@@ -124,6 +145,11 @@ fn deserializeCell(
     bytes: []const u8,
     expected_n: usize,
 ) ![]data.Fixture {
+    if (expected_n != 1) {
+        if (ser.vtable.decode_batch) |decode_batch| {
+            return decode_batch(ser.ctx, allocator, type_id, bytes);
+        }
+    }
     if (expected_n == 1) {
         const one = try ser.deserialize(allocator, type_id, bytes);
         const out = try allocator.alloc(data.Fixture, 1);
