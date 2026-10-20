@@ -126,6 +126,11 @@
         "source_url": "https://github.com/NordicSemiconductor/zcbor",
         "version": "0.9",
         "specifics": "Nordic zcbor was created to generate C from CDDL and to encode/decode CBOR on constrained devices. The problem was writing CBOR by hand against a schema. zcbor solves it with a CBOR codec plus a CDDL code generator."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-c",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "cpp": {
@@ -336,6 +341,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses FORY_STRUCT with registered C++ structs and vectors in native mode."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-cpp",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "csharp": {
@@ -595,6 +605,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-csharp",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "fortran": {
@@ -803,6 +818,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-go",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "java": {
@@ -940,6 +960,11 @@
         "source_url": "https://github.com/aeron-io/simple-binary-encoding",
         "version": "1.40.2",
         "specifics": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Java flyweight inside serializeBytes. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-java",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "javascript": {
@@ -1096,6 +1121,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses @apache-fory/core with registered struct/list schemas and the bytes API."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-typescript",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "kotlin": {
@@ -1652,6 +1682,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-python",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "rust": {
@@ -1793,6 +1828,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-rust",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "swift": {
@@ -1903,6 +1943,11 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses ForyStruct macro-generated serializers on Swift value types."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-swift",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     },
     "zig": {
@@ -2013,6 +2058,11 @@
         "source_url": "https://github.com/leo-gan/gld-arrow-zig",
         "version": "0.2.0",
         "specifics": "gld-arrow-zig is a from-scratch Apache Arrow library for Zig. This suite row encodes one suite value as an Arrow IPC stream and reads it back with rowsFromBatch. It is not the columnar data set."
+      },
+      "gld-kiln": {
+        "source_url": "https://github.com/leo-gan/gld-kiln-zig",
+        "version": "0.2.0",
+        "specifics": "gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
       }
     }
   }

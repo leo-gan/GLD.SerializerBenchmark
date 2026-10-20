@@ -807,6 +807,28 @@ add("fortran", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
 add("fortran", "gld-arrow", ["arrow"], "https://github.com/leo-gan/gld-arrow-fortran",
     "gld-arrow-fortran 0.2.0: Arrow C Data Interface numeric buffers. Does not link libarrow.")
 
+# Kiln language ports. Mojo gld-kiln is registered in the Mojo section.
+for _lang, _repo in (
+    ("python", "gld-kiln-python"),
+    ("rust", "gld-kiln-rust"),
+    ("c", "gld-kiln-c"),
+    ("cpp", "gld-kiln-cpp"),
+    ("javascript", "gld-kiln-typescript"),
+    ("go", "gld-kiln-go"),
+    ("java", "gld-kiln-java"),
+    ("swift", "gld-kiln-swift"),
+    ("zig", "gld-kiln-zig"),
+    ("csharp", "gld-kiln-csharp"),
+):
+    add(
+        _lang,
+        "gld-kiln",
+        ["kiln"],
+        f"https://github.com/leo-gan/{_repo}",
+        "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. "
+        "Spec: https://leo-gan.github.io/gld-kiln/spec/",
+    )
+
 # --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
 for _lang in ("rust", "go", "swift", "javascript", "python", "mojo", "cpp"):
     for _row in ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed"):

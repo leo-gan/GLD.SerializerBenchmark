@@ -400,6 +400,16 @@ export const CATALOG = [
   { language: "rust", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
   { language: "cpp", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
   { language: "swift", name: "fory", formats: [], docs: "https://fory.apache.org/", evidence: "Apache Fory: not a cited RFC/IDL in this catalog." },
+  { language: "python", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-python", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "rust", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-rust", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "c", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-c", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "cpp", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-cpp", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "javascript", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-typescript", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "go", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-go", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "java", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-java", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "swift", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-swift", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "zig", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-zig", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
+  { language: "csharp", name: "gld-kiln", formats: ["kiln"], docs: "https://github.com/leo-gan/gld-kiln-csharp", evidence: "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. Spec: https://leo-gan.github.io/gld-kiln/spec/" },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

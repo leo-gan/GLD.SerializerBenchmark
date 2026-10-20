@@ -74,6 +74,9 @@
       ],
       "hdf5": [
         "hdf5"
+      ],
+      "gld-kiln": [
+        "kiln"
       ]
     },
     "python": {
@@ -171,7 +174,10 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "javascript": {
       "JSON.stringify": [
@@ -248,7 +254,10 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "go": {
       "encoding/json": [
@@ -329,7 +338,10 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "java": {
       "jackson": [
@@ -402,6 +414,9 @@
       ],
       "sbe": [
         "sbe"
+      ],
+      "gld-kiln": [
+        "kiln"
       ]
     },
     "kotlin": {
@@ -615,7 +630,10 @@
         "hdf5"
       ],
       "Jil": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "rust": {
       "serde_json": [
@@ -679,7 +697,10 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "cpp": {
       "nlohmann_json": [
@@ -783,7 +804,10 @@
       "dagr-regular": [],
       "dagr-frozen": [],
       "dagr-frozen-packed": [],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -837,7 +861,10 @@
       "gld-ion": [
         "ion"
       ],
-      "fory": []
+      "fory": [],
+      "gld-kiln": [
+        "kiln"
+      ]
     },
     "php": {
       "json": [
@@ -952,6 +979,9 @@
       ],
       "std.json.borrowed": [
         "json"
+      ],
+      "gld-kiln": [
+        "kiln"
       ]
     },
     "mojo": {
