@@ -9,7 +9,7 @@
 #define BENCH_MAX_SERIALIZERS 40
 #define BENCH_MAX_NAME 64
 
-/* Data Model v2 only — message / document / telemetry / strings / event */
+/* Data Model v2 — suite records, grids, and the tensor set. */
 
 #define V2_MAX_CHILDREN 16
 #define V2_MAX_POINTS 512
@@ -26,6 +26,11 @@ typedef enum {
     TD_EVENT,
     TD_GRID,
     TD_GRID_WINDOW,
+    TD_TENSOR,
+    TD_TENSOR_VIEW,
+    TD_PROMPT,
+    TD_SHARD,
+    TD_REQUEST,
     TD_COUNT
 } test_data_kind_t;
 
@@ -34,6 +39,38 @@ typedef struct {
     int nvalues;
     double *values;
 } grid_t;
+
+/* Float32 matrix. values_owned == 0 means values borrows payload bytes. */
+typedef struct {
+    int32_t rows, cols;
+    int nvalues;
+    float *values;
+    int values_owned;
+} tensor_t;
+
+typedef struct {
+    int32_t batch, seq;
+    int n;
+    int64_t *input_ids;
+    int64_t *attention_mask;
+    int64_t *position_ids;
+} prompt_t;
+
+typedef struct {
+    int32_t vocab, hidden, ffn;
+    int n_tok, n_attn, n_ffn, n_norm;
+    float *tok_emb;
+    float *attn;
+    float *ffn_weight;
+    float *norm;
+} shard_t;
+
+typedef struct {
+    int64_t request_id;
+    char model[V2_STR];
+    float temperature;
+    prompt_t inputs;
+} request_t;
 
 typedef struct {
     bool f_bool;
@@ -103,6 +140,10 @@ struct test_fixture {
     strings_t strings;
     event_t event;
     grid_t grid;
+    tensor_t tensor;
+    prompt_t prompt;
+    shard_t shard;
+    request_t request;
     /* Batch cell: batch_n==1 uses fields above; batch_n>1 uses heap array. */
     int batch_n;
     test_fixture_t *batch;
@@ -120,6 +161,8 @@ typedef struct {
     /* Optional native FILE* path. NULL → adapted encode-then-fwrite. */
     int (*serialize_fp)(const test_fixture_t *fx, FILE *f, size_t *out_len);
     int (*deserialize_fp)(FILE *f, test_fixture_t *out_fx, test_data_kind_t kind);
+    /* 1: N>1 is one value (a list), not the harness length-prefix frame. */
+    int owns_batch;
 } serializer_t;
 
 #ifdef __cplusplus
@@ -130,6 +173,10 @@ void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, in
                    int children, int points, int str_count, int attr_count);
 void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
                     int nx, int ny, int x0, int y0, int wx, int wy);
+/* rows/cols for tensor, batch/seq/vocab for prompt and request, shard dims, model string_len. */
+void data_fill_tensor(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
+                      int rows, int cols, int batch, int seq, int vocab,
+                      int hidden, int ffn, int string_min, int string_max);
 void data_free_grid(test_fixture_t *fx);
 const char *test_data_name(test_data_kind_t k);
 #ifdef __cplusplus
@@ -197,6 +244,7 @@ void bench_register_yaml(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 void bench_register_ionc(serializer_t *out, int *count);
 void bench_register_hdf5(serializer_t *out, int *count);
+void bench_register_kiln(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);

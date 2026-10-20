@@ -81,6 +81,7 @@ if [[ -x "${HOME}/.local/bin/protoc" ]]; then
   export PROTOC="${HOME}/.local/bin/protoc"
 fi
 
+bash "$SCRIPT_DIR/fetch-gld-kiln.sh"
 mvn -q -DskipTests package
 
 JAR="$JAVA_DIR/target/serializer-benchmark-java-1.0.0-SNAPSHOT.jar"

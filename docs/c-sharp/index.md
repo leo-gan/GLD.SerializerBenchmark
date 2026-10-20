@@ -54,7 +54,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
-- **52 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `fory`.
+- **53 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, `fory`, and `gld-kiln`.
 - **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar fixtures](#columnar-fixtures)); ORC; ParquetSharp
 
 ## Serializers
@@ -73,6 +73,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [fory](https://github.com/apache/fory) | Binary | Apache.Fory source-generated serializers on `[ForyStruct]` domain types; string mode is Base64; stream is adapted |
 | [FsPickler](https://github.com/mbraceproject/FsPickler) | Binary | FsPickler binary |
 | [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | JSON | FsPickler JSON |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) | Binary | `Gld.Kiln` 0.2.0 from git tag `0.2.0`; positional `Writer.Encode` / decode; a batch is one list; string mode is Base64 |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
 | [GroBuf](https://github.com/skbkontur/GroBuf) | Binary | GroBuf |
 | [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
@@ -193,6 +194,10 @@ FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET
 #### [FsPicklerJson](https://github.com/mbraceproject/FsPickler) · `5.3.2`
 
 FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. The schema is the struct field order, built once before timing, so the timed path does not write names or tags. `Writer.Encode` reuses one buffer; decode reads those bytes back into the suite structs. A batch of 100 is one list of that struct. String mode Base64-encodes the buffer inside the timer. The stream path copies that buffer onto the harness `Stream` (adapted). The package is NuGet id `Gld.Kiln` from git tag `0.2.0`. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [Google.Protobuf](https://github.com/protocolbuffers/protobuf) · `3.36.2`
 

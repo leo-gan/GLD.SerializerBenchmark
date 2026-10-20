@@ -6,6 +6,7 @@
  * (golden ratio; nothing-up-my-sleeve). Suite seed: BENCHMARK_SEED.
  * Wire via BENCHMARK_DATA_MODEL=v2 when the runner supports it.
  */
+import { FloatBits } from './serializers/kiln.js';
 
 const BASE_TS_MS = 1704067200000n;
 
@@ -70,6 +71,89 @@ function sharedVocab(seed, typeId, smin, smax, size = 32) {
   const vocab = [];
   for (let i = 0; i < size; i++) vocab.push(vocabRng.word(smin, smax));
   return vocab;
+}
+
+const f32Scratch = new DataView(new ArrayBuffer(4));
+
+function narrowF32(n) {
+  f32Scratch.setFloat32(0, n, true);
+  return f32Scratch.getFloat32(0, true);
+}
+
+// Quiet NaN payloads do not survive a JS number. FloatBits keeps the bits.
+function f32FromBits(bits) {
+  const u = bits >>> 0;
+  const frac = u & 0x7fffff;
+  if ((u >>> 23) === 0xff && frac !== 0) return new FloatBits('f32', BigInt(u));
+  f32Scratch.setUint32(0, u, true);
+  return f32Scratch.getFloat32(0, true);
+}
+
+function fillF32(rng, count, pin) {
+  const values = new Array(count);
+  for (let i = 0; i < count; i++) values[i] = narrowF32(rng.nextF64());
+  // Draws for index 0 and 1 are discarded. The pinned bits replace them.
+  if (pin && count >= 1) values[0] = f32FromBits(0x80000000);
+  if (pin && count >= 2) values[1] = f32FromBits(0x7fc00000);
+  return values;
+}
+
+function makeTensor(rng, cfg) {
+  const rows = cfg.rows ?? 1024;
+  const cols = cfg.cols ?? 1024;
+  return { rows, cols, values: fillF32(rng, rows * cols, true) };
+}
+
+function makePrompt(rng, cfg) {
+  const batch = cfg.batch ?? 4;
+  const seq = cfg.seq ?? 256;
+  const vocab = cfg.vocab ?? 32000;
+  const n = batch * seq;
+  const input_ids = new Array(n);
+  const attention_mask = new Array(n);
+  const position_ids = new Array(n);
+  const lo = Math.max(1, Math.floor(seq / 2));
+  let k = 0;
+  for (let row = 0; row < batch; row++) {
+    const content = rng.nextInt(lo, seq);
+    for (let col = 0; col < seq; col++) {
+      if (col < content) {
+        input_ids[k] = rng.nextInt(1, vocab - 1);
+        attention_mask[k] = 1;
+      } else {
+        input_ids[k] = 0;
+        attention_mask[k] = 0;
+      }
+      position_ids[k] = col;
+      k++;
+    }
+  }
+  return { batch, seq, input_ids, attention_mask, position_ids };
+}
+
+function makeShard(rng, cfg) {
+  const vocab = cfg.vocab ?? 1024;
+  const hidden = cfg.hidden ?? 256;
+  const ffn = cfg.ffn ?? 512;
+  return {
+    vocab,
+    hidden,
+    ffn,
+    tok_emb: fillF32(rng, vocab * hidden, false),
+    attn: fillF32(rng, hidden * hidden, false),
+    ffn_weight: fillF32(rng, ffn * hidden, false),
+    norm: fillF32(rng, hidden, false),
+  };
+}
+
+function makeRequest(rng, cfg) {
+  const [smin, smax] = slen(cfg, 3, 16);
+  return {
+    request_id: rng.nextInt(1, 1_000_000_000),
+    model: rng.word(smin, smax),
+    temperature: narrowF32(rng.nextF64() * 2),
+    inputs: makePrompt(rng, cfg),
+  };
 }
 
 function pickWord(rng, vocab, duplication, smin, smax) {
@@ -139,7 +223,9 @@ function makeSignal(rng, cfg) {
 }
 
 export function makeOne(typeId, typeConfig = {}, seed = 42, instanceIndex = 0) {
-  const r = new Rng(mixSeed(seed, typeId, instanceIndex));
+  // tensor_view is the same matrix as tensor for this seed and shape.
+  const mixId = typeId === 'tensor_view' ? 'tensor' : typeId;
+  const r = new Rng(mixSeed(seed, mixId, instanceIndex));
   const children = typeConfig.children ?? 8;
   const points = typeConfig.points ?? 32;
   const count = typeConfig.count ?? 32;
@@ -251,6 +337,15 @@ export function makeOne(typeId, typeConfig = {}, seed = 42, instanceIndex = 0) {
       for (let i = 0; i < ring; i++) people[i].next = people[(i + 1) % ring];
       return { orders, people };
     }
+    case 'tensor':
+    case 'tensor_view':
+      return makeTensor(r, typeConfig);
+    case 'prompt':
+      return makePrompt(r, typeConfig);
+    case 'shard':
+      return makeShard(r, typeConfig);
+    case 'request':
+      return makeRequest(r, typeConfig);
     default:
       throw new Error(`unknown type_id: ${typeId}`);
   }

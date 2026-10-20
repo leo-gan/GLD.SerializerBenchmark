@@ -76,6 +76,7 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
             for (fixtures, out) |fx, *slot| slot.* = try eventToC(aa, fx.event);
             break :blk .{ .event = out };
         },
+        else => return error.Unsupported,
     };
 }
 

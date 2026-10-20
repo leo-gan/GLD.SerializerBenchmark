@@ -19,7 +19,8 @@ using Value = std::variant<Message, Document, Telemetry, Strings, Event,
                            std::vector<Event>, Table, NestedRow, Signal,
                            std::vector<Table>, std::vector<NestedRow>,
                            std::vector<Signal>, std::vector<double>, Book,
-                           std::vector<Book>, Grid>;
+                           std::vector<Book>, Grid, TensorMatrix, TensorView, Prompt, Shard,
+                           Request>;
 
 template <typename T>
 inline constexpr bool is_columnar_alt_v =
@@ -34,6 +35,12 @@ inline constexpr bool is_graph_alt_v =
 
 template <typename T>
 inline constexpr bool is_array_alt_v = std::is_same_v<T, Grid>;
+
+// Tensor set is not a suite struct. Visitors must skip it the same way as grid.
+template <typename T>
+inline constexpr bool is_tensor_alt_v =
+    std::is_same_v<T, TensorMatrix> || std::is_same_v<T, TensorView> || std::is_same_v<T, Prompt> ||
+    std::is_same_v<T, Shard> || std::is_same_v<T, Request>;
 
 // Copy one row or the batch. Used inside timed serialize.
 template <typename T>
@@ -74,6 +81,14 @@ struct TypeConfig {
   int y0 = 64;
   int wx = 256;
   int wy = 128;
+  // Tensor shapes. Catalog defaults; load_resolved overwrites keys that are present.
+  int rows = 1024;
+  int cols = 1024;
+  int batch = 4;
+  int seq = 256;
+  int vocab = 32000;
+  int hidden = 256;
+  int ffn = 512;
 };
 
 // table_project compares the f_float_0 column (length N), not the full row(s).

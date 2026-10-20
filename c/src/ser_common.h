@@ -7,8 +7,9 @@
 #include <math.h>
 
 static inline bool supports_all(test_data_kind_t k) {
-    /* grid is opt-in. The suite codecs do not have an array model. */
-    return k != TD_GRID && k != TD_GRID_WINDOW;
+    /* grid and tensor are opt-in. Suite codecs have no array or tensor model. */
+    return k != TD_GRID && k != TD_GRID_WINDOW && k != TD_TENSOR && k != TD_TENSOR_VIEW &&
+           k != TD_PROMPT && k != TD_SHARD && k != TD_REQUEST;
 }
 
 static inline bool f64_close(double a, double b) {
@@ -274,6 +275,7 @@ int bench_tinycbor_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_
     (out)[*(count)].fidelity = (fid); \
     (out)[*(count)].serialize_fp = NULL; \
     (out)[*(count)].deserialize_fp = NULL; \
+    (out)[*(count)].owns_batch = 0; \
     (*(count))++; \
 } while (0)
 

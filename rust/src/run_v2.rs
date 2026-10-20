@@ -223,9 +223,9 @@ fn measure_trial(
 ) -> Result<(u128, u128, usize)> {
     ser_buf.clear();
     cell_scratch.clear();
-    if data::is_columnar_id(&cell.type_id) {
+    if data::is_columnar_id(&cell.type_id) || ser.one_cell_payload() {
         // One payload for the whole cell (bytes and stream). Not the old length-prefix frame.
-        // Cursor reset is untimed, same role as serialize_cell_into's begin_cell_encode.
+        // gld-kiln N>1 is one list of the struct. Cursor reset is untimed.
         ser.begin_cell_encode();
         let t0 = Instant::now();
         let size = if mode == "stream" && cell.fixtures.len() == 1 {

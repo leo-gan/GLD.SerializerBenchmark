@@ -66,6 +66,7 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 | [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
 | [gld-avro](https://github.com/leo-gan/gld-avro-swift) | Schema | leo-gan/gld-avro-swift 0.2.0 | adapted | `parseAvsc` once; `encodeGeneric` / `decodeGeneric` |
 | [gld-ion](https://github.com/leo-gan/gld-ion-swift) | Binary | leo-gan/gld-ion-swift 0.2.0 | adapted | Ion 1.0 binary `encode` / `decodeBinary` |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) | Binary | leo-gan/gld-kiln-swift 0.2.0 | adapted | Positional `Writer.encode` / `decode`; a batch is one list |
 | [SwiftBSON](https://github.com/mongodb/swift-bson) | Binary | swift-bson | adapted | Map-root wrap for N>1 |
 | [SwiftCbor](https://github.com/nnabeyang/swift-cbor) | Binary | swift-cbor | adapted | Codable CBOR |
 | [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack) | Binary | swift-msgpack | adapted | Codable MessagePack |
@@ -133,6 +134,10 @@ gld-avro is a registered serializer in the swift suite. This page links its upst
 #### [gld-ion](https://github.com/leo-gan/gld-ion-swift) · `0.2.0`
 
 gld-ion is a registered serializer in the swift suite. This page links its upstream source; the language inventory table describes the timed call path.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in prepare, so the timed path does not write names or tags. `Writer.encode` reuses one buffer; `decode` reads the bytes back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [SwiftBSON](https://github.com/mongodb/swift-bson) · `3.1.0`
 

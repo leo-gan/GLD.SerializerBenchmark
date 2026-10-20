@@ -1,5 +1,5 @@
 {
-  "originHash" : "d285b9ffeac9ef6509c4441d7f85465fc3c215a79f6e5f89f987836984536d5f",
+  "originHash" : "3c933cc206824b51d1e797acb6491a96930f19bb273402a9bccfbaa23a5a3523",
   "pins" : [
     {
       "identity" : "binarycodable",
@@ -43,6 +43,15 @@
       "location" : "https://github.com/leo-gan/gld-ion-swift.git",
       "state" : {
         "revision" : "09ba5ca35faf130aacb7559d5ea2790b4f420c0c",
+        "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "gld-kiln-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leo-gan/gld-kiln-swift.git",
+      "state" : {
+        "revision" : "1038ff38117396a94073073acce5bed384e65d16",
         "version" : "0.2.0"
       }
     },

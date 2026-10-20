@@ -21,6 +21,7 @@
 | avro-c | Apache Avro release-1.11.3 | Avro |
 | zcbor | main (Nordic) | CBOR structured API |
 | ion-c | v1.1.6 (git tag; in-tree CMake `project()` still says 1.1.3) | Ion binary (`ion-c`) |
+| gld-kiln-c | 0.2.0 | Kiln positional binary (`gld-kiln`) |
 
 Build artifacts live in `third_party/_build/` and `third_party/_prefix/` (gitignored).
 Run `c/scripts/fetch-and-build-deps.sh` to populate.

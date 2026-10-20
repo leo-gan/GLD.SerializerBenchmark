@@ -78,6 +78,7 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | [capnproto](https://github.com/capnproto/capnproto) | Schema | Cap’n Proto C++ 1.0.2 | adapted | Generated from `cpp/schemas/benchmark.capnp`. Official C++ runtime via a C ABI (same pattern as Swift). Zig 0.16 has no native plugin |
 | [gld-avro](https://github.com/leo-gan/gld-avro-zig) | Schema | leo-gan/gld-avro-zig 0.2.0 | adapted | `parseAvsc` in prepare; timed `Datum.encodeTo` / `decodeBin` |
 | [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) | Schema | leo-gan/gld-arrow-zig 0.2.0 | adapted | Arrow IPC stream for the five suite types; `rowsFromBatch` on decode |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-zig) | Binary | leo-gan/gld-kiln-zig 0.2.0 | adapted | Positional schema parsed once; timed `encodeReuse` / `decode`. N=1 is the struct; N>1 is one list |
 
 ### Specifics
 
@@ -166,6 +167,10 @@ gld-avro-zig is a from-scratch Apache Avro library for Zig. Avro exists for comp
 #### [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) · `0.2.0`
 
 gld-arrow-zig is a from-scratch Apache Arrow library for Zig. This suite row encodes one suite value as an Arrow IPC stream and reads it back with rowsFromBatch. It is not the columnar data set.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-zig) · `0.2.0`
+
+gld-kiln-zig is a from-scratch [Kiln](https://leo-gan.github.io/gld-kiln/spec/) codec for Zig. Kiln is a positional little-endian layout: field order is the wire order, and the bytes do not carry field names. Prepare parses the schema once and copies the fixture into a value. The timed path is `encodeReuse` on a reused writer and `decode`. One instance is the struct. A batch is one list of that struct. Graph is not timed.
 
 ## Not a `@bitCast` of the whole fixture
 

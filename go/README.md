@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (31)
+## Serializers (32)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -24,6 +24,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | encoding/gob | Native binary | stdlib | types registered once; buffer `Reset` |
 | mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; stream length-prefixed doc |
 | ion-go | Binary | `github.com/amazon-ion/ion-go` | `MarshalBinary` / `Unmarshal`; native binary encoder stream. Suite structs have no `ion` tags, so wire names are the Go field names |
+| gld-kiln | Schema | `github.com/leo-gan/gld-kiln-go` | Kiln v2 `Append` / `Decode`; schema once; reused buffer; maps in Prepare; `ToDomain` untimed; **stream adapted**. Five suite types only |
 | goccy/go-yaml | YAML | `github.com/goccy/go-yaml` | `Marshal`/`Unmarshal`; stream Encoder |
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
 | protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; **stream adapted** (bytes-only API) |

@@ -369,6 +369,15 @@ wheels = [
 ]
 
 [[package]]
+name = "gld-kiln"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/15/2297f4c9430b85ca72457796aa8a97a3ae8d43657adb92eaae41766c2f25/gld_kiln-0.2.0.tar.gz", hash = "sha256:4e94213e439f4071e048467bc4bcc510faf86009a61b6ef70d6ddede052f9833", size = 16395, upload-time = "2026-10-20T04:26:56.297Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/cc/45c753165c122fcdb92728c1f99b7aacda5d459ef6db023f208bd9536a77/gld_kiln-0.2.0-py3-none-any.whl", hash = "sha256:71ba9964474be2ae9e2cf264f3735676bddd9058265936f8dbd66aafefed8e86", size = 16314, upload-time = "2026-10-20T04:26:54.895Z" },
+]
+
+[[package]]
 name = "h5py"
 version = "3.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1428,6 +1437,7 @@ dependencies = [
     { name = "dill" },
     { name = "fastavro" },
     { name = "flatbuffers" },
+    { name = "gld-kiln" },
     { name = "h5py" },
     { name = "mashumaro" },
     { name = "msgpack" },
@@ -1470,6 +1480,7 @@ requires-dist = [
     { name = "dill", specifier = ">=0.3.9,<1" },
     { name = "fastavro", specifier = ">=1.10.0,<2" },
     { name = "flatbuffers", specifier = ">=25.12.19,<26" },
+    { name = "gld-kiln", specifier = ">=0.2.0,<0.3" },
     { name = "h5py", specifier = ">=3.16,<4" },
     { name = "mashumaro", specifier = ">=3.14,<4" },
     { name = "matplotlib", marker = "extra == 'analysis'", specifier = ">=3.7.0" },

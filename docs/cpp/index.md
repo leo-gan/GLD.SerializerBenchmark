@@ -51,7 +51,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 - Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
 - Apache Arrow 25.0.1: optional prebuilt prefix (`-DARROW_ROOT=` or `ARROW_ROOT`). Same feature set as the jammy apt packages `libarrow-dev` and `libparquet-dev` 25.0.1-1. Not FetchContent. ORC is inside `libarrow`. A missing prefix skips the Arrow rows and still builds the other serializers.
 - SBE 1.40.2: header-only codecs vendored in `cpp/gen/sbe/` from `schemas/v2/sbe/signal.xml`
-- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **40** codecs (**34** existing rows, Fory and the four Dagr rows included, plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
+- Registration: [`cpp/src/register.cpp`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/register.cpp). With Arrow present this machine registers **41** codecs (**35** existing rows, Fory, gld-kiln, and the four Dagr rows included, plus `sbe` and five Arrow rows). Without Arrow, `sbe` remains and the five Arrow rows are omitted.
 
 ## Serializers
 
@@ -73,6 +73,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | direct builder / lazy reader | Frozen+packed nodes; same call path as dagr-packed |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
 | [glaze](https://github.com/stephenberry/glaze) | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-cpp) | Binary | gld-kiln-cpp 0.2.0 | `Writer::encode` / `decode` | Positional little-endian schema, built once in prepare. A batch is one list. Stream **adapted** |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
 | [fory](https://github.com/apache/fory) | Binary | apache/fory 1.7.4 | `serialize` / `deserialize` on registered structs | Native mode. Suite types only. Stream adapted |
 | [jsoncons_bson](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
@@ -165,6 +166,10 @@ FlatBuffers was created at Google so games and clients could access serialized d
 #### [glaze](https://github.com/stephenberry/glaze) · `2.9.5`
 
 glaze was created for extremely fast, reflection-based JSON (and other formats) on modern C++. The problem was that C++ JSON usually meant a DOM or hand-written macros. glaze maps structs directly with compile-time reflection.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-cpp) · `0.2.0`
+
+gld-kiln is a positional little-endian codec. Field names and tags are not on the wire; the schema is the struct field order, built once in prepare. `Writer::encode` reuses one buffer. `decode` reads the bytes back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
 
 #### [flexbuffers](https://github.com/google/flatbuffers) · `flatbuffers-flex`
 

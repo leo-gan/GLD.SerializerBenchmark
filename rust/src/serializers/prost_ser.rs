@@ -450,7 +450,15 @@ impl BenchSerializer for ProstSer {
                     PreparedPb::Signal(rows)
                 }
             }
-            Fixture::Rows(_) | Fixture::Projected(_) | Fixture::Graph(_) | Fixture::Grid(_) => {
+            Fixture::Rows(_)
+            | Fixture::Projected(_)
+            | Fixture::Graph(_)
+            | Fixture::Grid(_)
+            | Fixture::Tensor(_)
+            | Fixture::TensorView(_)
+            | Fixture::Prompt(_)
+            | Fixture::Shard(_)
+            | Fixture::Request(_) => {
                 return Err(anyhow!("prost: unexpected fixture shape"));
             }
         };
@@ -486,16 +494,32 @@ impl BenchSerializer for ProstSer {
         let i = self.enc_i;
         self.enc_i += 1;
         match &self.prepared {
-            PreparedPb::Message(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
-            PreparedPb::Document(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
-            PreparedPb::Telemetry(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
-            PreparedPb::Strings(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
-            PreparedPb::Event(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
-            PreparedPb::Table(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
+            PreparedPb::Message(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
+            PreparedPb::Document(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
+            PreparedPb::Telemetry(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
+            PreparedPb::Strings(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
+            PreparedPb::Event(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
+            PreparedPb::Table(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
             PreparedPb::TableBatch(msg) => encode_msg(msg, out),
-            PreparedPb::Nested(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
+            PreparedPb::Nested(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
             PreparedPb::NestedBatch(msg) => encode_msg(msg, out),
-            PreparedPb::Signal(v) => encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out),
+            PreparedPb::Signal(v) => {
+                encode_msg(v.get(i).ok_or_else(|| anyhow!("prost: encode index"))?, out)
+            }
             PreparedPb::SignalBatch(msg) => encode_msg(msg, out),
         }
     }
@@ -526,7 +550,11 @@ impl BenchSerializer for ProstSer {
             "table" => {
                 if self.batch {
                     let m = <pb::BatchTable as ProstMessage>::decode(data)?;
-                    let rows = m.items.into_iter().map(|t| Fixture::Table(table_from_pb(t))).collect();
+                    let rows = m
+                        .items
+                        .into_iter()
+                        .map(|t| Fixture::Table(table_from_pb(t)))
+                        .collect();
                     Ok(Fixture::Rows(rows))
                 } else {
                     let m = <pb::Table as ProstMessage>::decode(data)?;

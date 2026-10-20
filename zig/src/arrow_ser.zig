@@ -101,6 +101,7 @@ fn build(aa: std.mem.Allocator, fx: data.Fixture) !arrow.Columnar {
         .telemetry => |t| try buildTelemetry(aa, t),
         .strings => |s| try buildStrings(aa, s),
         .event => |e| try buildEvent(aa, e),
+        else => error.Unsupported,
     };
 }
 

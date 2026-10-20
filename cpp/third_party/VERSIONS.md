@@ -18,6 +18,7 @@ Fetched by CMake `FetchContent` into `cpp/third_party/` (gitignored except this 
 | Cista++ | v0.15 | Offset / zero-copy oriented binary |
 | jsoncons | v0.177.0 | CBOR / BSON / MessagePack |
 | flatbuffers | v24.3.25 | FlatBuffers + FlexBuffers |
+| gld-kiln-cpp | 0.2.0 | Positional Kiln wire (`gld-kiln`) |
 
 Official Protobuf C++ (local sysroot, not FetchContent):
 

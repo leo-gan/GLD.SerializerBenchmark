@@ -47,6 +47,7 @@ SerializerPtr make_dagr_regular();
 SerializerPtr make_dagr_frozen();
 SerializerPtr make_dagr_frozen_packed();
 SerializerPtr make_highfive();
+SerializerPtr make_gld_kiln();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -99,6 +100,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_dagr_frozen());
   add(v, make_dagr_frozen_packed());
   add(v, make_highfive());
+  add(v, make_gld_kiln());
   return v;
 }
 

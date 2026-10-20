@@ -10,6 +10,7 @@ rust/src/serializers/
   kinded.rs        # shared kind-tracked direct codec macro
   json.rs          # serde_json, simd-json, sonic-rs
   binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson, ion-rs
+  kiln_ser.rs      # gld-kiln
   direct.rs        # minicbor, rkyv, nanoserde, speedy
   fory_ser.rs      # Apache Fory registered structs
   prost_ser.rs     # prost + fixture conversion
@@ -19,9 +20,9 @@ rust/src/serializers/
   sbe_ser.rs       # sbe-tool 1.40.2 flyweights (vendored rust/gen/sbe)
 ```
 
-## Serializers (28)
+## Serializers (29)
 
-`all_serializers()` registers 28 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
+`all_serializers()` registers 29 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -37,6 +38,7 @@ rust/src/serializers/
 | flexbuffers | FlexBuffers | Serde flexbuffers path |
 | bson | Document binary | `bson::to_vec` / `from_slice` |
 | ion-rs | Binary | `experimental-serde` `to_binary` / `from_ion` (allocating; stream adapted) |
+| gld-kiln | Binary | positional `encode_into` / `decode`; schema and value built in `prepare`; N>1 is one list |
 | minicbor | CBOR | direct `Encode`/`Decode` |
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |

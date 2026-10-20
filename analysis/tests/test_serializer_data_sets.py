@@ -43,6 +43,7 @@ _EXPECTED = {
         "h5py": ("array",),
         "netCDF4": ("array",),
         "adios2": ("array",),
+        "gld-kiln": ("suite", "tensor"),
     },
     "cpp": {
         "arrow-ipc": ("columnar",),
@@ -58,6 +59,7 @@ _EXPECTED = {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "highfive": ("array",),
+        "gld-kiln": ("suite", "tensor"),
     },
     "csharp": {
         "arrow-ipc": ("columnar",),
@@ -68,6 +70,7 @@ _EXPECTED = {
         "FlatSharp": ("suite", "columnar"),
         "Apache.Avro": ("suite", "columnar"),
         "PureHDF": ("array",),
+        "gld-kiln": ("suite", "tensor"),
     },
     "go": {
         "arrow-ipc": ("columnar",),
@@ -79,6 +82,7 @@ _EXPECTED = {
         "hamba/avro": ("suite", "columnar"),
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
+        "gld-kiln": ("suite", "tensor"),
     },
     "java": {
         "arrow-ipc": ("columnar",),
@@ -91,6 +95,7 @@ _EXPECTED = {
         "protobuf": ("suite", "columnar"),
         "flatbuffers": ("suite", "columnar"),
         "avro": ("suite", "columnar"),
+        "gld-kiln": ("suite", "tensor"),
     },
     "kotlin": {
         "arrow-ipc": ("columnar",),
@@ -115,6 +120,7 @@ _EXPECTED = {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "h5wasm": ("array",),
+        "gld-kiln": ("suite", "tensor"),
     },
     "rust": {
         "arrow-ipc": ("columnar",),
@@ -127,6 +133,7 @@ _EXPECTED = {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "hdf5-metno": ("array",),
+        "gld-kiln": ("suite", "tensor"),
     },
     "mojo": {
         "arrow-ipc": ("columnar",),
@@ -140,8 +147,10 @@ _EXPECTED = {
     "swift": {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
+        "gld-kiln": ("suite", "tensor"),
     },
-    "c": {"hdf5": ("array",)},
+    "c": {"hdf5": ("array",), "gld-kiln": ("suite", "tensor")},
+    "zig": {"gld-kiln": ("suite", "tensor")},
     "fortran": {
         "hdf5-fortran": ("array",),
         "netcdf-fortran": ("array",),
@@ -168,7 +177,8 @@ def test_absent_names_are_suite_only():
     assert data_sets_for_serializer("rust", "flexbuffers") == ("suite",)
     assert data_sets_for_serializer("csharp", "ProtoBuf") == ("suite",)
     assert "php" not in load_serializer_data_sets()
-    assert "zig" not in load_serializer_data_sets()
+    assert data_sets_for_serializer("zig", "gld-kiln") == ("suite", "tensor")
+    assert data_sets_for_serializer("zig", "gld-arrow") == ("suite",)
 
 
 def test_packed_dagr_is_not_on_graph_and_protobuf_is_not_on_tensor():
@@ -207,7 +217,7 @@ def test_specialized_filters_and_suite_skip():
         "hdf5-fortran,netcdf-fortran,adios2,gld-arrow"
     )
     assert default_filter("java", _LIB / "graph.yaml") == NONE_FILTER
-    assert default_filter("go", _LIB / "tensor.yaml") == NONE_FILTER
+    assert default_filter("go", _LIB / "tensor.yaml") == "gld-kiln"
     assert data_set_for_run_config(_LIB / "columnar.yaml") == "columnar"
     assert data_set_for_run_config(_LIB / "tensor-smoke.yaml") == "tensor"
 

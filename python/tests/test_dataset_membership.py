@@ -28,6 +28,9 @@ def test_python_membership_is_exact():
     assert dataset_allows("arrow-ipc", "tensor_view") is True
     assert dataset_allows("arrow-ipc", "message") is False
     assert dataset_allows("flatbuffers", "prompt") is True
+    assert dataset_allows("gld-kiln", "message") is True
+    assert dataset_allows("gld-kiln", "shard") is True
+    assert dataset_allows("gld-kiln", "table") is False
     assert dataset_allows("protobuf", "signal") is True
     assert dataset_allows("protobuf", "request") is False
     assert dataset_allows("msgspec", "document") is True

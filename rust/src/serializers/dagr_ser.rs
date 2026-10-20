@@ -119,8 +119,14 @@ macro_rules! direct_cell {
 
             impl Cell for Prepared {
                 fn empty() -> Self {
-                    Self { values: Values::None, _metas: Vec::new(), _items: Vec::new(), _attrs: Vec::new(),
-                           _strs: Vec::new(), _owner: Box::new([]) }
+                    Self {
+                        values: Values::None,
+                        _metas: Vec::new(),
+                        _items: Vec::new(),
+                        _attrs: Vec::new(),
+                        _strs: Vec::new(),
+                        _owner: Box::new([]),
+                    }
                 }
 
                 fn build(fixtures: &[Fixture]) -> Result<Self> {
@@ -134,52 +140,106 @@ macro_rules! direct_cell {
                     };
                     p.values = match owner.first() {
                         None => Values::None,
-                        Some(Fixture::Message(_)) => Values::Message(owner.iter().map(|f| match f {
-                            Fixture::Message(m) => Ok(msg_core::direct::Message {
-                                f_bool: Some(m.f_bool), f_int32: Some(m.f_int32), f_int64: Some(m.f_int64),
-                                f_float64: Some(m.f_float64), f_string: Some(&m.f_string), f_bool_2: Some(m.f_bool_2),
-                                f_int32_2: Some(m.f_int32_2), f_string_2: Some(&m.f_string_2),
-                            }),
-                            _ => Err(kind_err()),
-                        }).collect::<Result<_>>()?),
+                        Some(Fixture::Message(_)) => Values::Message(
+                            owner
+                                .iter()
+                                .map(|f| match f {
+                                    Fixture::Message(m) => Ok(msg_core::direct::Message {
+                                        f_bool: Some(m.f_bool),
+                                        f_int32: Some(m.f_int32),
+                                        f_int64: Some(m.f_int64),
+                                        f_float64: Some(m.f_float64),
+                                        f_string: Some(&m.f_string),
+                                        f_bool_2: Some(m.f_bool_2),
+                                        f_int32_2: Some(m.f_int32_2),
+                                        f_string_2: Some(&m.f_string_2),
+                                    }),
+                                    _ => Err(kind_err()),
+                                })
+                                .collect::<Result<_>>()?,
+                        ),
                         Some(Fixture::Document(_)) => {
                             let mut docs = Vec::with_capacity(owner.len());
                             for f in owner {
-                                let Fixture::Document(d) = f else { return Err(kind_err()) };
-                                p._metas.push(Box::new(dd::DocumentMeta { region: Some(&d.meta.region), version: Some(d.meta.version) }));
-                                p._items.push(d.items.iter().map(|it| dd::DocumentItem {
-                                    sku: Some(&it.sku), qty: Some(it.qty), price_minor: Some(it.price_minor) }).collect());
+                                let Fixture::Document(d) = f else {
+                                    return Err(kind_err());
+                                };
+                                p._metas.push(Box::new(dd::DocumentMeta {
+                                    region: Some(&d.meta.region),
+                                    version: Some(d.meta.version),
+                                }));
+                                p._items.push(
+                                    d.items
+                                        .iter()
+                                        .map(|it| dd::DocumentItem {
+                                            sku: Some(&it.sku),
+                                            qty: Some(it.qty),
+                                            price_minor: Some(it.price_minor),
+                                        })
+                                        .collect(),
+                                );
                                 let meta = unsafe { erase(&**p._metas.last().unwrap()) };
                                 let items = unsafe { erase(&**p._items.last().unwrap()) };
-                                docs.push(dd::Document { id: Some(&d.id), status: Some(d.status), meta: Some(meta), items });
+                                docs.push(dd::Document {
+                                    id: Some(&d.id),
+                                    status: Some(d.status),
+                                    meta: Some(meta),
+                                    items,
+                                });
                             }
                             Values::Document(docs)
                         }
                         Some(Fixture::Telemetry(_)) => {
                             let mut ts = Vec::with_capacity(owner.len());
                             for f in owner {
-                                let Fixture::Telemetry(t) = f else { return Err(kind_err()) };
+                                let Fixture::Telemetry(t) = f else {
+                                    return Err(kind_err());
+                                };
                                 let tags = strs(&mut p, &t.tags);
-                                ts.push(tel_core::direct::Telemetry { source: Some(&t.source), ts: Some(t.ts), tags, values: &t.values });
+                                ts.push(tel_core::direct::Telemetry {
+                                    source: Some(&t.source),
+                                    ts: Some(t.ts),
+                                    tags,
+                                    values: &t.values,
+                                });
                             }
                             Values::Telemetry(ts)
                         }
                         Some(Fixture::Strings(_)) => {
                             let mut ss = Vec::with_capacity(owner.len());
                             for f in owner {
-                                let Fixture::Strings(st) = f else { return Err(kind_err()) };
-                                ss.push(str_core::direct::Strings { items: strs(&mut p, &st.items) });
+                                let Fixture::Strings(st) = f else {
+                                    return Err(kind_err());
+                                };
+                                ss.push(str_core::direct::Strings {
+                                    items: strs(&mut p, &st.items),
+                                });
                             }
                             Values::Strings(ss)
                         }
                         Some(Fixture::Event(_)) => {
                             let mut es = Vec::with_capacity(owner.len());
                             for f in owner {
-                                let Fixture::Event(e) = f else { return Err(kind_err()) };
-                                p._attrs.push(e.attrs.iter().map(|a| ed::EventAttr { key: Some(&a.key), value: Some(&a.value) }).collect());
+                                let Fixture::Event(e) = f else {
+                                    return Err(kind_err());
+                                };
+                                p._attrs.push(
+                                    e.attrs
+                                        .iter()
+                                        .map(|a| ed::EventAttr {
+                                            key: Some(&a.key),
+                                            value: Some(&a.value),
+                                        })
+                                        .collect(),
+                                );
                                 let attrs = unsafe { erase(&**p._attrs.last().unwrap()) };
-                                es.push(ed::Event { event_id: Some(&e.event_id), event_type: Some(&e.event_type),
-                                    occurred_at: Some(e.occurred_at), producer: Some(&e.producer), attrs });
+                                es.push(ed::Event {
+                                    event_id: Some(&e.event_id),
+                                    event_type: Some(&e.event_type),
+                                    occurred_at: Some(e.occurred_at),
+                                    producer: Some(&e.producer),
+                                    attrs,
+                                });
                             }
                             Values::Event(es)
                         }
@@ -193,10 +253,16 @@ macro_rules! direct_cell {
                 fn write(&self, i: usize, b: &mut DagrBuilder) -> Result<(), DagrError> {
                     let missing = DagrError::InvalidData;
                     match &self.values {
-                        Values::Message(v) => msg_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+                        Values::Message(v) => {
+                            msg_core::direct::write_into(v.get(i).ok_or(missing)?, b)
+                        }
                         Values::Document(v) => dd::write_into(v.get(i).ok_or(missing)?, b),
-                        Values::Telemetry(v) => tel_core::direct::write_into(v.get(i).ok_or(missing)?, b),
-                        Values::Strings(v) => str_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+                        Values::Telemetry(v) => {
+                            tel_core::direct::write_into(v.get(i).ok_or(missing)?, b)
+                        }
+                        Values::Strings(v) => {
+                            str_core::direct::write_into(v.get(i).ok_or(missing)?, b)
+                        }
                         Values::Event(v) => ed::write_into(v.get(i).ok_or(missing)?, b),
                         Values::None => Err(missing),
                     }
@@ -479,24 +545,48 @@ mod adapt {
 
     pub mod packed {
         use super::R;
-        #[inline] pub fn sc<T: Default>(v: Option<T>) -> R<T> { Ok(v.unwrap_or_default()) }
-        #[inline] pub fn st(v: Option<&str>) -> R<String> { Ok(v.unwrap_or_default().to_owned()) }
-        #[inline] pub fn nd<A>(v: Option<A>) -> R<Option<A>> { Ok(v) }
+        #[inline]
+        pub fn sc<T: Default>(v: Option<T>) -> R<T> {
+            Ok(v.unwrap_or_default())
+        }
+        #[inline]
+        pub fn st(v: Option<&str>) -> R<String> {
+            Ok(v.unwrap_or_default().to_owned())
+        }
+        #[inline]
+        pub fn nd<A>(v: Option<A>) -> R<Option<A>> {
+            Ok(v)
+        }
     }
     pub mod regular {
         use super::R;
-        #[inline] pub fn sc<T: Default>(v: R<Option<T>>) -> R<T> { v.map(Option::unwrap_or_default) }
-        #[inline] pub fn st(v: R<Option<&str>>) -> R<String> { v.map(|s| s.unwrap_or_default().to_owned()) }
-        #[inline] pub fn nd<A>(v: R<Option<A>>) -> R<Option<A>> { v }
+        #[inline]
+        pub fn sc<T: Default>(v: R<Option<T>>) -> R<T> {
+            v.map(Option::unwrap_or_default)
+        }
+        #[inline]
+        pub fn st(v: R<Option<&str>>) -> R<String> {
+            v.map(|s| s.unwrap_or_default().to_owned())
+        }
+        #[inline]
+        pub fn nd<A>(v: R<Option<A>>) -> R<Option<A>> {
+            v
+        }
     }
     pub mod frozen {
         use super::R;
-        #[inline] pub fn sc<T>(v: R<T>) -> R<T> { v }
+        #[inline]
+        pub fn sc<T>(v: R<T>) -> R<T> {
+            v
+        }
         pub use super::regular::{nd, st};
     }
     pub mod frozen_packed {
         use super::R;
-        #[inline] pub fn sc<T>(v: R<T>) -> R<T> { v }
+        #[inline]
+        pub fn sc<T>(v: R<T>) -> R<T> {
+            v
+        }
         pub use super::packed::{nd, st};
     }
 }
@@ -768,10 +858,38 @@ macro_rules! layout {
     };
 }
 
-layout!(Packed, "dagr-packed", Direct, packed_cell, packed_dec, false);
-layout!(Regular, "dagr-regular", Message, regular_cell, regular_dec, true);
-layout!(Frozen, "dagr-frozen", Message, frozen_cell, frozen_dec, true);
-layout!(FrozenPacked, "dagr-frozen-packed", Direct, frozen_packed_cell, frozen_packed_dec, false);
+layout!(
+    Packed,
+    "dagr-packed",
+    Direct,
+    packed_cell,
+    packed_dec,
+    false
+);
+layout!(
+    Regular,
+    "dagr-regular",
+    Message,
+    regular_cell,
+    regular_dec,
+    true
+);
+layout!(
+    Frozen,
+    "dagr-frozen",
+    Message,
+    frozen_cell,
+    frozen_dec,
+    true
+);
+layout!(
+    FrozenPacked,
+    "dagr-frozen-packed",
+    Direct,
+    frozen_packed_cell,
+    frozen_packed_dec,
+    false
+);
 
 // ── BenchSerializer ─────────────────────────────────────────────────────────
 
@@ -825,7 +943,9 @@ impl<L: Layout> BenchSerializer for DagrLayoutSer<L> {
         self.prepare_many(std::slice::from_ref(fixture))
     }
     fn prepare_many(&mut self, fixtures: &[Fixture]) -> Result<()> {
-        let first = fixtures.first().ok_or_else(|| anyhow!("dagr: empty cell"))?;
+        let first = fixtures
+            .first()
+            .ok_or_else(|| anyhow!("dagr: empty cell"))?;
         self.decode = L::decoder(first);
         self.prepared = L::Prepared::build(fixtures)?;
         self.enc_i = 0;
@@ -890,7 +1010,12 @@ mod tests {
         ser.serialize_into(&fx, &mut buf).unwrap();
         assert!(!buf.is_empty());
         let got = ser.deserialize_bytes(&buf).unwrap();
-        check_cell_fidelity("graph", std::slice::from_ref(&fx), std::slice::from_ref(&got)).unwrap();
+        check_cell_fidelity(
+            "graph",
+            std::slice::from_ref(&fx),
+            std::slice::from_ref(&got),
+        )
+        .unwrap();
         let Fixture::Graph(book) = &got else {
             panic!("expected graph");
         };
@@ -912,19 +1037,35 @@ mod tests {
     /// The reused-builder arena encode must be byte-identical to the arena's own `to_bytes`.
     #[test]
     fn arena_encode_matches_to_bytes() {
-        for kind in ["message", "document", "telemetry", "strings", "event", "graph"] {
-            let fxs: Vec<Fixture> =
-                (0..3).map(|i| make_one(kind, 42, i, &crate::data::TypeConfig::default()).unwrap()).collect();
+        for kind in [
+            "message",
+            "document",
+            "telemetry",
+            "strings",
+            "event",
+            "graph",
+        ] {
+            let fxs: Vec<Fixture> = (0..3)
+                .map(|i| make_one(kind, 42, i, &crate::data::TypeConfig::default()).unwrap())
+                .collect();
             let mut b = DagrBuilder::with_capacity(16);
             let reg = regular_cell::Prepared::build(&fxs).unwrap();
             let frz = frozen_cell::Prepared::build(&fxs).unwrap();
             for i in 0..fxs.len() {
                 PackedSink::reset(&mut b);
                 reg.write(i, &mut b).unwrap();
-                assert_eq!(b.record_bytes(), regular_cell::arena_to_bytes(&reg, i).unwrap(), "regular {kind}[{i}]");
+                assert_eq!(
+                    b.record_bytes(),
+                    regular_cell::arena_to_bytes(&reg, i).unwrap(),
+                    "regular {kind}[{i}]"
+                );
                 PackedSink::reset(&mut b);
                 frz.write(i, &mut b).unwrap();
-                assert_eq!(b.record_bytes(), frozen_cell::arena_to_bytes(&frz, i).unwrap(), "frozen {kind}[{i}]");
+                assert_eq!(
+                    b.record_bytes(),
+                    frozen_cell::arena_to_bytes(&frz, i).unwrap(),
+                    "frozen {kind}[{i}]"
+                );
             }
         }
     }

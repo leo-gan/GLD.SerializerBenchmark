@@ -5,7 +5,7 @@ title: "Go"
 Go
 ===
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **31** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **32** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
 
@@ -63,6 +63,7 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
 | [hamba/avro](https://github.com/hamba/avro) | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
 | [ion-go](https://github.com/amazon-ion/ion-go) | Binary | ion-go | `MarshalBinary` / `Unmarshal` | **native** | Binary encoder stream; wire names are Go field names (no `ion` tags on the suite structs) |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-go) | Schema | gld-kiln-go | `Append` / `Decode` | **adapted** | Positional Kiln v2; schema once; buffer reused; five suite types |
 | [jsoniter](https://github.com/json-iterator/go) | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | [kelindar/binary](https://github.com/kelindar/binary) | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
 | [linkedin/goavro](https://github.com/linkedin/goavro) | Schema | goavro/v2 | BinaryFromNative maps | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed |
@@ -137,6 +138,10 @@ hamba/avro is a high-performance Avro library for Go. Avro was created for compa
 #### [ion-go](https://github.com/amazon-ion/ion-go) · `1.5.0`
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-go is the official Go implementation. This row times MarshalBinary / Unmarshal and the binary encoder stream.
+
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-go) · `0.2.0`
+
+Kiln is a positional little-endian binary format: field order is the schema, and the bytes carry no field names. [gld-kiln-go](https://github.com/leo-gan/gld-kiln-go) is a from-scratch Go implementation of [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/). This row times `Append` into a reused buffer and `Decode` on the five suite types. Domain maps are built in Prepare; `ToDomain` is untimed. There is no native stream API.
 
 #### [jsoniter](https://github.com/json-iterator/go) · `1.1.12`
 

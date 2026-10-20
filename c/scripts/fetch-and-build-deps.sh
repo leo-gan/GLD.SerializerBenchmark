@@ -43,6 +43,7 @@ download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/
 download avro "https://github.com/apache/avro/archive/refs/tags/release-1.11.3.tar.gz"
 download mongo-c-driver "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.27.5.tar.gz"
 download ion-c "https://github.com/amazon-ion/ion-c/archive/refs/tags/v1.1.6.tar.gz"
+download gld-kiln-c "https://github.com/leo-gan/gld-kiln-c/archive/refs/tags/0.2.0.tar.gz"
 
 echo "[build] jansson"
 mkdir -p "$TP/_build/jansson"
@@ -80,6 +81,9 @@ mkdir -p "$TP/_build/ion-c"
 cmake -S "$TP/ion-c" -B "$TP/_build/ion-c" -DCMAKE_BUILD_TYPE=Release \
   -DIONC_BUILD_TESTS=OFF
 cmake --build "$TP/_build/ion-c" -j"$(nproc 2>/dev/null || echo 2)" --target ionc decNumber
+
+echo "[build] gld-kiln-c"
+make -C "$TP/gld-kiln-c" build/libkiln.a
 
 echo "[build] avro-c"
 export PKG_CONFIG_PATH="$TP/_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"

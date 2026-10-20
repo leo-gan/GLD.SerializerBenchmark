@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (27)
+## Serializers (28)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -21,6 +21,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | jackson-cbor | CBOR | jackson-dataformat-cbor | `CBORMapper` |
 | jackson-smile | Binary JSON | jackson-dataformat-smile | `SmileMapper` |
 | ion | Document binary | jackson-dataformat-ion | `IonObjectMapper` (binary Ion) |
+| gld-kiln | Binary | gld-kiln-java 0.2.0 | Positional `Kiln.encodeTo` / `decode`; schema once; reused buffer. A batch is one list |
 | bson | Document | org.mongodb:bson | DocumentCodec wire; domain Document in prepare |
 | protobuf | Schema | protobuf-java | Timed `toByteArray`/`parseFrom`; domain convert untimed |
 | avro | Schema | avro | ReflectDatumWriter/Reader + BinaryEncoder reuse |

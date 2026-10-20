@@ -30,6 +30,123 @@ public struct Message: Codable, Equatable, Sendable {
     }
 }
 
+/// Owned row-major float32 matrix. `values.count` is `rows * cols`.
+public struct TensorMatrix: Codable, Sendable {
+    public var rows: Int32
+    public var cols: Int32
+    public var values: [Float]
+
+    public init(rows: Int32, cols: Int32, values: [Float]) {
+        self.rows = rows
+        self.cols = cols
+        self.values = values
+    }
+}
+
+/// `tensor_view` decode. `storage` is the encoded buffer; the f32 payload is a span at `offset`.
+public struct TensorView: Sendable {
+    public var rows: Int32
+    public var cols: Int32
+    public var storage: Data
+    public var offset: Int
+    public var count: Int
+
+    public init(rows: Int32, cols: Int32, storage: Data, offset: Int, count: Int) {
+        self.rows = rows
+        self.cols = cols
+        self.storage = storage
+        self.offset = offset
+        self.count = count
+    }
+}
+
+public struct Prompt: Codable, Equatable, Sendable {
+    public var batch: Int32
+    public var seq: Int32
+    public var input_ids: [Int64]
+    public var attention_mask: [Int64]
+    public var position_ids: [Int64]
+
+    public init(
+        batch: Int32, seq: Int32, input_ids: [Int64], attention_mask: [Int64], position_ids: [Int64]
+    ) {
+        self.batch = batch
+        self.seq = seq
+        self.input_ids = input_ids
+        self.attention_mask = attention_mask
+        self.position_ids = position_ids
+    }
+}
+
+public struct Shard: Codable, Sendable {
+    public var vocab: Int32
+    public var hidden: Int32
+    public var ffn: Int32
+    public var tok_emb: [Float]
+    public var attn: [Float]
+    public var ffn_weight: [Float]
+    public var norm: [Float]
+
+    public init(
+        vocab: Int32, hidden: Int32, ffn: Int32,
+        tok_emb: [Float], attn: [Float], ffn_weight: [Float], norm: [Float]
+    ) {
+        self.vocab = vocab
+        self.hidden = hidden
+        self.ffn = ffn
+        self.tok_emb = tok_emb
+        self.attn = attn
+        self.ffn_weight = ffn_weight
+        self.norm = norm
+    }
+}
+
+public struct Request: Codable, Sendable {
+    public var request_id: Int64
+    public var model: String
+    public var temperature: Float
+    public var inputs: Prompt
+
+    public init(request_id: Int64, model: String, temperature: Float, inputs: Prompt) {
+        self.request_id = request_id
+        self.model = model
+        self.temperature = temperature
+        self.inputs = inputs
+    }
+}
+
+func f32BitsEqual(_ lhs: [Float], _ rhs: [Float]) -> Bool {
+    if lhs.count != rhs.count { return false }
+    for i in 0..<lhs.count {
+        if lhs[i].bitPattern != rhs[i].bitPattern { return false }
+    }
+    return true
+}
+
+extension TensorMatrix: Equatable {
+    public static func == (lhs: TensorMatrix, rhs: TensorMatrix) -> Bool {
+        lhs.rows == rhs.rows && lhs.cols == rhs.cols && f32BitsEqual(lhs.values, rhs.values)
+    }
+}
+
+extension Shard: Equatable {
+    public static func == (lhs: Shard, rhs: Shard) -> Bool {
+        lhs.vocab == rhs.vocab && lhs.hidden == rhs.hidden && lhs.ffn == rhs.ffn
+            && f32BitsEqual(lhs.tok_emb, rhs.tok_emb)
+            && f32BitsEqual(lhs.attn, rhs.attn)
+            && f32BitsEqual(lhs.ffn_weight, rhs.ffn_weight)
+            && f32BitsEqual(lhs.norm, rhs.norm)
+    }
+}
+
+extension Request: Equatable {
+    public static func == (lhs: Request, rhs: Request) -> Bool {
+        lhs.request_id == rhs.request_id && lhs.model == rhs.model
+            && lhs.temperature.bitPattern == rhs.temperature.bitPattern
+            && lhs.inputs == rhs.inputs
+    }
+}
+
 @ForyStruct
 public struct DocumentMeta: Codable, Equatable, Sendable {
     public var region: String

@@ -13,7 +13,9 @@ public final class Generators {
 
   public static Object makeOne(
       String typeId, Map<String, Object> typeConfig, long seed, int instanceIndex) {
-    Rng r = new Rng(Rng.mixSeed(seed, typeId, instanceIndex));
+    // tensor_view is the same matrix as tensor for this seed and shape.
+    String seedId = "tensor_view".equals(typeId) ? "tensor" : typeId;
+    Rng r = new Rng(Rng.mixSeed(seed, seedId, instanceIndex));
     return switch (typeId) {
       case "message" -> makeMessage(r);
       case "document" -> makeDocument(r, typeConfig);
@@ -23,6 +25,10 @@ public final class Generators {
       case "table", "table_project" -> makeTable(r, typeConfig, seed, typeId);
       case "nested_table" -> makeNested(r, typeConfig);
       case "signal" -> makeSignal(r, typeConfig);
+      case "tensor", "tensor_view" -> makeTensor(r, typeConfig);
+      case "prompt" -> makePrompt(r, typeConfig);
+      case "shard" -> makeShard(r, typeConfig);
+      case "request" -> makeRequest(r, typeConfig);
       default -> throw new IllegalArgumentException("unknown type_id: " + typeId);
     };
   }
@@ -210,5 +216,79 @@ public final class Generators {
       row.legs.add(new Signal.SignalLeg(r.nextInt(0, 1_000_000), r.nextInt(0, 10_000), 0));
     }
     return row;
+  }
+
+  /**
+   * Draw every element, then pin index 0 to negative zero and index 1 to quiet NaN
+   * {@code 0x7fc00000}. The pins do not skip those RNG steps.
+   */
+  private static float[] f32Fill(Rng r, int count, boolean pin) {
+    float[] values = new float[count];
+    for (int i = 0; i < count; i++) {
+      values[i] = (float) r.nextF64();
+    }
+    if (pin && count >= 2) {
+      values[0] = Float.intBitsToFloat(0x80000000);
+      values[1] = Float.intBitsToFloat(0x7fc00000);
+    }
+    return values;
+  }
+
+  private static TensorMatrix makeTensor(Rng r, Map<String, Object> cfg) {
+    int rows = cfgInt(cfg, "rows", 1024);
+    int cols = cfgInt(cfg, "cols", 1024);
+    return new TensorMatrix(rows, cols, f32Fill(r, rows * cols, true));
+  }
+
+  /** Row-major. Position ids are the column index and do not draw from the RNG. */
+  private static Prompt makePrompt(Rng r, Map<String, Object> cfg) {
+    int batch = cfgInt(cfg, "batch", 4);
+    int seq = cfgInt(cfg, "seq", 256);
+    int vocab = cfgInt(cfg, "vocab", 32000);
+    int n = batch * seq;
+    long[] inputIds = new long[n];
+    long[] attentionMask = new long[n];
+    long[] positionIds = new long[n];
+    int lo = Math.max(1, seq / 2);
+    for (int row = 0; row < batch; row++) {
+      int content = r.nextInt(lo, seq);
+      for (int col = 0; col < seq; col++) {
+        int i = row * seq + col;
+        if (col < content) {
+          inputIds[i] = r.nextInt(1, vocab - 1);
+          attentionMask[i] = 1L;
+        } else {
+          inputIds[i] = 0L;
+          attentionMask[i] = 0L;
+        }
+        positionIds[i] = col;
+      }
+    }
+    return new Prompt(batch, seq, inputIds, attentionMask, positionIds);
+  }
+
+  /** Fill order: embedding, attention, feed-forward, norm. No pinned NaN. */
+  private static Shard makeShard(Rng r, Map<String, Object> cfg) {
+    int vocab = cfgInt(cfg, "vocab", 1024);
+    int hidden = cfgInt(cfg, "hidden", 256);
+    int ffn = cfgInt(cfg, "ffn", 512);
+    return new Shard(
+        vocab,
+        hidden,
+        ffn,
+        f32Fill(r, vocab * hidden, false),
+        f32Fill(r, hidden * hidden, false),
+        f32Fill(r, ffn * hidden, false),
+        f32Fill(r, hidden, false));
+  }
+
+  /** Call order: request id, model name, temperature, then the prompt. */
+  private static Request makeRequest(Rng r, Map<String, Object> cfg) {
+    int[] sl = slen(cfg, 3, 16);
+    return new Request(
+        r.nextInt(1, 1_000_000_000),
+        r.word(sl[0], sl[1]),
+        (float) (r.nextF64() * 2.0),
+        makePrompt(r, cfg));
   }
 }

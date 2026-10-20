@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -70,6 +72,95 @@ int resolve_children(const std::string& type_id, const TypeConfig& cfg) {
 int resolve_group(const TypeConfig& cfg) { return cfg.group_count >= 0 ? cfg.group_count : 4; }
 
 int resolve_or(int v, int def) { return v >= 0 ? v : def; }
+
+int dim_or(int v, int def) { return v > 0 ? v : def; }
+
+size_t mul_count(int a, int b, const char* what) {
+  const int64_t n = static_cast<int64_t>(a) * static_cast<int64_t>(b);
+  if (a < 1 || b < 1 || n > static_cast<int64_t>(std::numeric_limits<int32_t>::max())) {
+    throw std::runtime_error(std::string(what) + " shape");
+  }
+  return static_cast<size_t>(n);
+}
+
+std::vector<float> f32_fill(Rng& r, size_t count, bool pin) {
+  std::vector<float> values(count);
+  for (size_t i = 0; i < count; ++i) values[i] = static_cast<float>(r.next_f64());
+  if (pin) {
+    if (count < 2) throw std::runtime_error("tensor needs at least 2 elements");
+    values[0] = f32_from_bits(0x80000000u);
+    values[1] = f32_from_bits(0x7fc00000u);
+  }
+  return values;
+}
+
+TensorMatrix make_tensor(Rng& r, const TypeConfig& cfg) {
+  const int rows = dim_or(cfg.rows, 1024);
+  const int cols = dim_or(cfg.cols, 1024);
+  const size_t n = mul_count(rows, cols, "tensor");
+  if (n < 2) throw std::runtime_error("tensor needs at least 2 elements");
+  TensorMatrix m;
+  m.rows = rows;
+  m.cols = cols;
+  m.values = f32_fill(r, n, true);
+  return m;
+}
+
+Prompt make_prompt(Rng& r, const TypeConfig& cfg) {
+  const int batch = dim_or(cfg.batch, 4);
+  const int seq = dim_or(cfg.seq, 256);
+  const int vocab = dim_or(cfg.vocab, 32000);
+  if (vocab < 2) throw std::runtime_error("prompt vocab");
+  const size_t n = mul_count(batch, seq, "prompt");
+  Prompt p;
+  p.batch = batch;
+  p.seq = seq;
+  p.input_ids.reserve(n);
+  p.attention_mask.reserve(n);
+  p.position_ids.reserve(n);
+  const int lo = std::max(1, seq / 2);
+  for (int row = 0; row < batch; ++row) {
+    const int content = r.next_int(lo, seq);
+    for (int col = 0; col < seq; ++col) {
+      if (col < content) {
+        p.input_ids.push_back(r.next_int(1, vocab - 1));
+        p.attention_mask.push_back(1);
+      } else {
+        p.input_ids.push_back(0);
+        p.attention_mask.push_back(0);
+      }
+      p.position_ids.push_back(col);
+    }
+  }
+  return p;
+}
+
+Shard make_shard(Rng& r, const TypeConfig& cfg) {
+  const int vocab = dim_or(cfg.vocab, 1024);
+  const int hidden = dim_or(cfg.hidden, 256);
+  const int ffn = dim_or(cfg.ffn, 512);
+  Shard s;
+  s.vocab = vocab;
+  s.hidden = hidden;
+  s.ffn = ffn;
+  s.tok_emb = f32_fill(r, mul_count(vocab, hidden, "shard tok_emb"), false);
+  s.attn = f32_fill(r, mul_count(hidden, hidden, "shard attn"), false);
+  s.ffn_weight = f32_fill(r, mul_count(ffn, hidden, "shard ffn"), false);
+  s.norm = f32_fill(r, static_cast<size_t>(hidden), false);
+  return s;
+}
+
+Request make_request(Rng& r, const TypeConfig& cfg, const std::string& type_id) {
+  int smin = 3;
+  int smax = 16;
+  resolve_slen(type_id, cfg, smin, smax);
+  Request q;
+  q.request_id = r.next_int(1, 1000000000);
+  q.model = r.word(smin, smax);
+  q.temperature = static_cast<float>(r.next_f64() * 2.0);
+  q.inputs = make_prompt(r, cfg);
+  return q;
+}
 
 // Call order is the cross-language contract: regions, orders, names, then the ring.
 Book make_book(Rng& r, int order_count, int region_count, int ring_size, int smin, int smax) {
@@ -173,6 +264,11 @@ Signal make_signal(Rng& r, int group_count, int smin, int smax) {
 }
 
 Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed, int idx) {
+  // tensor_view is the same matrix as tensor for this seed and shape.
+  if (type_id == "tensor" || type_id == "tensor_view") {
+    Rng r(mix_seed(seed, "tensor", idx));
+    return make_tensor(r, cfg);
+  }
   Rng r(mix_seed(seed, type_id, idx));
   int smin = 3;
   int smax = 16;
@@ -221,6 +317,9 @@ Value make_one(const std::string& type_id, const TypeConfig& cfg, uint64_t seed,
     }
     return grid;
   }
+  if (type_id == "prompt") return make_prompt(r, cfg);
+  if (type_id == "shard") return make_shard(r, cfg);
+  if (type_id == "request") return make_request(r, cfg, type_id);
   throw std::runtime_error("unknown type_id: " + type_id);
 }
 
@@ -323,6 +422,9 @@ Fixture make_fixture(const std::string& type_id, const TypeConfig& cfg, uint64_t
   else if (type_id == "graph") fx.value = many_of<Book>(type_id, cfg, seed, fx.instance_count);
   else if (type_id == "grid" || type_id == "grid_window")
     throw std::runtime_error("grid N must be 1");
+  else if (type_id == "tensor" || type_id == "tensor_view" || type_id == "prompt" ||
+           type_id == "shard" || type_id == "request")
+    throw std::runtime_error(type_id + " N must be 1");
   else
     throw std::runtime_error("unknown type_id: " + type_id);
   return fx;
@@ -443,7 +545,16 @@ bool books_equal(const Book& a, const Book& b) {
 
 }  // namespace
 
+bool tensor_view_eq(const TensorMatrix& m, const TensorView& v) {
+  return m.rows == v.rows && m.cols == v.cols && f32_payload_eq(v.values, m.values);
+}
+
 bool fidelity(const Value& a, const Value& b) {
+  if (const auto* m = std::get_if<TensorMatrix>(&a)) {
+    if (const auto* v = std::get_if<TensorView>(&b)) return tensor_view_eq(*m, *v);
+  } else if (const auto* v = std::get_if<TensorView>(&a)) {
+    if (const auto* m = std::get_if<TensorMatrix>(&b)) return tensor_view_eq(*m, *v);
+  }
   if (a.index() != b.index()) return false;
   if (const auto* la = std::get_if<std::vector<double>>(&a)) {
     const auto& lb = std::get<std::vector<double>>(b);

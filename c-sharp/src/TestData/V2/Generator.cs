@@ -11,7 +11,9 @@ namespace GLD.SerializerBenchmark.TestData.V2
 
         public static object MakeOne(string typeId, JsonElement typeConfig, int seed, int instanceIndex = 0)
         {
-            var rng = new Rng(MixSeed((ulong)seed, typeId, instanceIndex));
+            // tensor_view is the same matrix as tensor for this seed and shape.
+            var seedId = typeId == "tensor_view" ? "tensor" : typeId;
+            var rng = new Rng(MixSeed((ulong)seed, seedId, instanceIndex));
             return typeId switch
             {
                 "message" => MakeMessage(rng, typeConfig),
@@ -23,6 +25,10 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 "nested_table" => MakeNestedTable(rng, typeConfig),
                 "signal" => MakeSignal(rng, typeConfig),
                 "grid" or "grid_window" => MakeGrid(rng, typeConfig, typeId == "grid_window"),
+                "tensor" or "tensor_view" => MakeTensor(rng, typeConfig),
+                "prompt" => MakePrompt(rng, typeConfig),
+                "shard" => MakeShard(rng, typeConfig),
+                "request" => MakeRequest(rng, typeConfig),
                 _ => throw new ArgumentException($"unknown type_id: {typeId}")
             };
         }
@@ -105,6 +111,31 @@ namespace GLD.SerializerBenchmark.TestData.V2
                     if (n != 1) throw new ArgumentException("grid N must be 1");
                     var grid = (Grid)MakeOne(typeId, typeConfig, seed, 0);
                     return (grid, typeof(Grid), new List<Type>());
+                }
+                case "tensor":
+                case "tensor_view":
+                {
+                    if (n != 1) throw new ArgumentException("tensor N must be 1");
+                    var row = (TensorMatrix)MakeOne(typeId, typeConfig, seed, 0);
+                    return (row, typeof(TensorMatrix), new List<Type>());
+                }
+                case "prompt":
+                {
+                    if (n != 1) throw new ArgumentException("prompt N must be 1");
+                    var row = (Prompt)MakeOne(typeId, typeConfig, seed, 0);
+                    return (row, typeof(Prompt), new List<Type>());
+                }
+                case "shard":
+                {
+                    if (n != 1) throw new ArgumentException("shard N must be 1");
+                    var row = (Shard)MakeOne(typeId, typeConfig, seed, 0);
+                    return (row, typeof(Shard), new List<Type>());
+                }
+                case "request":
+                {
+                    if (n != 1) throw new ArgumentException("request N must be 1");
+                    var row = (InferenceRequest)MakeOne(typeId, typeConfig, seed, 0);
+                    return (row, typeof(InferenceRequest), new List<Type> { typeof(Prompt) });
                 }
                 default:
                     throw new ArgumentException($"unknown type_id: {typeId}");
@@ -288,6 +319,100 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 Producer = r.Word(smin, smax),
                 Attrs = attrs,
             };
+        }
+
+        static TensorMatrix MakeTensor(Rng rng, JsonElement cfg)
+        {
+            var rows = GetInt(cfg, "rows", 1024);
+            var cols = GetInt(cfg, "cols", 1024);
+            return new TensorMatrix
+            {
+                Rows = rows,
+                Cols = cols,
+                Values = F32Fill(rng, rows * cols, pin: true),
+            };
+        }
+
+        static Prompt MakePrompt(Rng rng, JsonElement cfg)
+        {
+            var batch = GetInt(cfg, "batch", 4);
+            var seq = GetInt(cfg, "seq", 256);
+            var vocab = GetInt(cfg, "vocab", 32000);
+            var n = batch * seq;
+            var inputIds = new long[n];
+            var attention = new long[n];
+            var position = new long[n];
+            var k = 0;
+            for (var row = 0; row < batch; row++)
+            {
+                var lo = seq / 2;
+                if (lo < 1) lo = 1;
+                var content = rng.NextInt(lo, seq);
+                for (var col = 0; col < seq; col++)
+                {
+                    if (col < content)
+                    {
+                        inputIds[k] = rng.NextInt(1, vocab - 1);
+                        attention[k] = 1;
+                    }
+                    position[k] = col;
+                    k++;
+                }
+            }
+            return new Prompt
+            {
+                Batch = batch,
+                Seq = seq,
+                InputIds = inputIds,
+                AttentionMask = attention,
+                PositionIds = position,
+            };
+        }
+
+        static Shard MakeShard(Rng rng, JsonElement cfg)
+        {
+            var vocab = GetInt(cfg, "vocab", 1024);
+            var hidden = GetInt(cfg, "hidden", 256);
+            var ffn = GetInt(cfg, "ffn", 512);
+            return new Shard
+            {
+                Vocab = vocab,
+                Hidden = hidden,
+                Ffn = ffn,
+                TokEmb = F32Fill(rng, vocab * hidden, pin: false),
+                Attn = F32Fill(rng, hidden * hidden, pin: false),
+                FfnWeight = F32Fill(rng, ffn * hidden, pin: false),
+                Norm = F32Fill(rng, hidden, pin: false),
+            };
+        }
+
+        static InferenceRequest MakeRequest(Rng rng, JsonElement cfg)
+        {
+            var (smin, smax) = SLen(cfg);
+            return new InferenceRequest
+            {
+                RequestId = rng.NextInt(1, 1_000_000_000),
+                Model = rng.Word(smin, smax),
+                Temperature = (float)(rng.NextF64() * 2.0),
+                Inputs = MakePrompt(rng, cfg),
+            };
+        }
+
+        /// <summary>
+        /// <c>next_f64</c> narrowed to float32. Pin writes negative zero then
+        /// quiet NaN <c>0x7fc00000</c> after those draws.
+        /// </summary>
+        static float[] F32Fill(Rng rng, int count, bool pin)
+        {
+            var values = new float[count];
+            for (var i = 0; i < count; i++)
+                values[i] = (float)rng.NextF64();
+            if (pin)
+            {
+                values[0] = BitConverter.Int32BitsToSingle(unchecked((int)0x80000000));
+                values[1] = BitConverter.Int32BitsToSingle(unchecked((int)0x7FC00000));
+            }
+            return values;
         }
 
         static Grid MakeGrid(Rng rng, JsonElement cfg, bool window)

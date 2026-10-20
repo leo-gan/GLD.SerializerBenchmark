@@ -136,6 +136,7 @@ serializer_data_sets:
     h5py: [array]
     netCDF4: [array]
     adios2: [array]
+    gld-kiln: [suite, tensor]
   cpp:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -150,6 +151,7 @@ serializer_data_sets:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     highfive: [array]
+    gld-kiln: [suite, tensor]
   csharp:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -159,6 +161,7 @@ serializer_data_sets:
     FlatSharp: [suite, columnar]
     Apache.Avro: [suite, columnar]
     PureHDF: [array]
+    gld-kiln: [suite, tensor]
   go:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -169,6 +172,7 @@ serializer_data_sets:
     hamba/avro: [suite, columnar]
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
+    gld-kiln: [suite, tensor]
   java:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -180,6 +184,7 @@ serializer_data_sets:
     protobuf: [suite, columnar]
     flatbuffers: [suite, columnar]
     avro: [suite, columnar]
+    gld-kiln: [suite, tensor]
   kotlin:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -202,6 +207,7 @@ serializer_data_sets:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     h5wasm: [array]
+    gld-kiln: [suite, tensor]
   rust:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -213,6 +219,7 @@ serializer_data_sets:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     hdf5-metno: [array]
+    gld-kiln: [suite, tensor]
   mojo:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -224,8 +231,12 @@ serializer_data_sets:
   swift:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
+    gld-kiln: [suite, tensor]
   c:
     hdf5: [array]
+    gld-kiln: [suite, tensor]
+  zig:
+    gld-kiln: [suite, tensor]
   fortran:
     hdf5-fortran: [array]
     netcdf-fortran: [array]
@@ -605,6 +616,12 @@ languages:
         package: amazon-ion
         rationale: "Official Amazon Ion Python library (binary dump/load)"
         optimal_api: "simpleion.dumps/loads; stream dump/load on BytesIO"
+      - name: gld-kiln
+        category: binary
+        package: gld-kiln
+        version: "0.2.0"
+        rationale: "Positional little-endian Kiln for the five suite types"
+        optimal_api: "Writer.encode / decode on a positional schema; a batch is one list"
       - name: protobuf
         category: schema
         package: protobuf
@@ -668,6 +685,12 @@ languages:
         crate: fory
         version: "1.7.4"
         optimal_api: "ForyStruct; serialize_to / deserialize in native mode"
+      - name: gld-kiln
+        category: binary
+        crate: gld-kiln
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: serde_json
         category: json
         crate: serde_json
@@ -779,6 +802,12 @@ languages:
         library: cJSON
         rationale: "Ubiquitous lightweight C JSON"
         optimal_api: "cJSON_PrintUnformatted / cJSON_Parse"
+      - name: gld-kiln
+        category: binary
+        library: leo-gan/gld-kiln-c
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: yyjson
         category: json
         library: yyjson
@@ -908,6 +937,12 @@ languages:
         package: "@apache-fory/core"
         version: "1.7.4"
         optimal_api: "registered Type.struct / Type.list codecs"
+      - name: gld-kiln
+        category: binary
+        package: gld-kiln
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: JSON.stringify
         category: json
         package: builtin
@@ -1054,6 +1089,12 @@ languages:
         package: github.com/apache/fory/go/fory
         version: "1.7.4"
         optimal_api: "registered native structs; Serialize / Deserialize"
+      - name: gld-kiln
+        category: binary
+        package: github.com/leo-gan/gld-kiln-go
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: encoding/json
         category: json
         package: stdlib
@@ -1203,6 +1244,12 @@ languages:
         package: com.fasterxml.jackson.core:jackson-databind
         rationale: "De-facto standard JSON for Java (Spring, etc.)"
         optimal_api: "reuse ObjectMapper + ObjectWriter/ObjectReader; writeValueAsBytes/readValue"
+      - name: gld-kiln
+        category: binary
+        package: io.github.leo-gan:kiln
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: gson
         category: json
         package: com.google.code.gson:gson
@@ -1551,6 +1598,12 @@ languages:
         package: std.json
         rationale: "Official stdlib typed parseFromSlice + Stringify"
         optimal_api: "std.json.Stringify.value / std.json.parseFromSlice"
+      - name: gld-kiln
+        category: binary
+        package: leo-gan/gld-kiln-zig
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: std.json.scanner
         category: json
         package: std.json
@@ -1833,6 +1886,12 @@ languages:
         library: apache/fory
         version: "1.7.4"
         optimal_api: "FORY_STRUCT; registered native structs and vectors"
+      - name: gld-kiln
+        category: binary
+        library: leo-gan/gld-kiln-cpp
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: nlohmann_json
         category: json
         library: nlohmann/json
@@ -2019,6 +2078,12 @@ languages:
         package: apache/fory
         version: "1.7.4"
         optimal_api: "ForyStruct macro; serialize / deserialize"
+      - name: gld-kiln
+        category: binary
+        package: leo-gan/gld-kiln-swift
+        version: "0.2.0"
+        rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
+        optimal_api: "Reused writer. tensor_view borrows the f32 payload."
       - name: Foundation.JSONEncoder
         category: json
         package: Foundation

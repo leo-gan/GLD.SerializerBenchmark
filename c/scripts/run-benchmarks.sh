@@ -47,7 +47,7 @@ export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
 # Caller may override with BENCHMARK_RUN_CONFIG=...
 bench_export_run_config "$MODE"
 
-if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" ]]; then
+if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" || ! -f "$C_DIR/third_party/gld-kiln-c/build/libkiln.a" ]]; then
   echo "[INFO] C third_party deps missing; running fetch-and-build-deps.sh (first run may take several minutes)..."
   "$C_DIR/scripts/fetch-and-build-deps.sh"
 fi

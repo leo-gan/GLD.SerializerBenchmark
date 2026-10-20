@@ -36,12 +36,7 @@ impl Default for SbeSer {
 }
 
 fn table_size(row: &TableRow) -> usize {
-    ENCODED_LENGTH
-        + TABLE_BLOCK as usize
-        + 4
-        + row.f_str_0.len()
-        + 4
-        + row.f_str_1.len()
+    ENCODED_LENGTH + TABLE_BLOCK as usize + 4 + row.f_str_0.len() + 4 + row.f_str_1.len()
 }
 
 fn signal_size(sig: &Signal) -> usize {
@@ -66,7 +61,9 @@ fn encode_table(row: &TableRow, out: &mut Vec<u8>) -> Result<()> {
     let buf = WriteBuf::new(&mut out[start..]);
     let enc = TableEncoder::default().wrap(buf, ENCODED_LENGTH);
     let mut header = enc.header(0);
-    let mut enc = header.parent().map_err(|e| anyhow!("sbe table header: {e}"))?;
+    let mut enc = header
+        .parent()
+        .map_err(|e| anyhow!("sbe table header: {e}"))?;
     enc.f_float_0(row.f_float_0)
         .f_float_1(row.f_float_1)
         .f_float_2(row.f_float_2)
@@ -305,12 +302,9 @@ impl BenchSerializer for SbeSer {
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         match self.kind {
-            "table" | "table_project" => {
-                Ok(pack_tables(self.kind, walk(data, decode_table_at)?))
-            }
+            "table" | "table_project" => Ok(pack_tables(self.kind, walk(data, decode_table_at)?)),
             "signal" => Ok(pack_signals(walk(data, decode_signal_at)?)),
             other => Err(anyhow!("sbe: unsupported kind {other}")),
         }
     }
 }
-

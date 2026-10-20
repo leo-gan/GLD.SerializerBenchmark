@@ -38,7 +38,8 @@ impl BenchSerializer for SerdeJson {
     }
     fn supports(&self, test_data_name: &str) -> bool {
         // Every tree type, including columnar. `graph` is a reference cycle.
-        test_data_name != "graph"
+        // The tensor set is gld-kiln only.
+        test_data_name != "graph" && !crate::data::is_tensor_id(test_data_name)
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
         self.kind = fixture.name();

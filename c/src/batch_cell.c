@@ -23,7 +23,7 @@ int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len) {
     if (!S || !S->serialize || !fx || !buf || !out_len) return -1;
     int n = fx->batch_n > 0 ? fx->batch_n : 1;
-    if (n <= 1 || !fx->batch) {
+    if (S->owns_batch || n <= 1 || !fx->batch) {
         return S->serialize(fx, buf, buf_cap, out_len);
     }
     if (buf_cap < 4) return -1;
@@ -133,9 +133,11 @@ int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len
                            test_fixture_t *out_fx, test_data_kind_t kind) {
     if (!S || !S->deserialize || !buf || !out_fx) return -1;
     int expect_n = out_fx->batch_n > 0 ? out_fx->batch_n : 1;
-    if (expect_n <= 1) {
-        out_fx->batch_n = 1;
-        out_fx->batch = NULL;
+    if (S->owns_batch || expect_n <= 1) {
+        if (expect_n <= 1) {
+            out_fx->batch_n = 1;
+            out_fx->batch = NULL;
+        }
         return S->deserialize(buf, len, out_fx, kind);
     }
     if (len < 4) return -1;

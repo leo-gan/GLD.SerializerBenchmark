@@ -7,7 +7,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 - **Codable wrappers** under `Serializers/` only see the type-erased `Fixture` API.
 - **Schema codecs** (Protobuf, FlatBuffers, Avro, Cap’n Proto, Dagr) use a domain↔native bridge in prepare / post-decode (same idea as Go protobuf / Rust prost). Conversion is not the “optimal hot path”; timed work is the library encode/decode.
 
-## Serializers (21)
+## Serializers (22)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -27,6 +27,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | **SwiftAvroCore** | Schema | lynixliu/SwiftAvroCore | Schemaless binary + JSON schema |
 | **gld-avro** | Schema | leo-gan/gld-avro-swift 0.2.0 | `parseAvsc` outside the timer; `encodeGeneric` / `decodeGeneric` |
 | **gld-ion** | Binary | leo-gan/gld-ion-swift 0.2.0 | Ion 1.0 binary `encode`; `decodeBinary` then field compare |
+| **gld-kiln** | Binary | leo-gan/gld-kiln-swift 0.2.0 | Positional `Writer.encode` / `decode`; a batch is one list |
 | **CapnProto** | Schema | Cap’n Proto C++ | C ABI bridge (`CapnpBridge`) |
 | **dagr-packed** | Schema | local package `DagrGen/` (`dagr build`) | Generated from `schemas/v2/dagr/`; direct builder + lazy reader |
 | **dagr-regular** | Schema | local package `DagrGen/` | `<T>RegularGraph` (vtable nodes): generated arena → reused builder; lazy reader |
