@@ -115,8 +115,8 @@
       <artifactId>jackson-dataformat-ion</artifactId>
       <version>${jackson.version}</version>
     </dependency>
-    <!-- GitHub tag 0.2.0 (io.github.leo-gan:gld-kiln-java). Not on Maven Central.
-         java/scripts/fetch-gld-kiln.sh publishes that tag to the local repo before mvn. -->
+    <!-- io.github.leo-gan:gld-kiln-java 0.2.0 from main 888ad8f, not Maven Central.
+         java/scripts/fetch-gld-kiln.sh publishes that commit to the local repo before mvn. -->
     <dependency>
       <groupId>io.github.leo-gan</groupId>
       <artifactId>gld-kiln-java</artifactId>
