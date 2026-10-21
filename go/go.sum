@@ -57,8 +57,8 @@ github.com/klauspost/compress v1.19.2 h1:hMRETovs/pu/dVWN7zIT1PGG8t509MwT6bO7XSi
 github.com/klauspost/compress v1.19.2/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/klauspost/cpuid/v2 v2.4.0 h1:S6Hrbc7+ywsr0r+RLapfGBHfyefhCTwEh3A0tV913Dw=
 github.com/klauspost/cpuid/v2 v2.4.0/go.mod h1:19jmZ9mjzoF//ddRSUsv0zfBTJWh3QJh9FNxZTMrGxU=
-github.com/leo-gan/gld-kiln-go v0.0.0-20261020044241-3403821d9310 h1:ObNC3+2Hz3Jo40qSakRKbHtdiMadIjeaiGAiNZKLKsU=
-github.com/leo-gan/gld-kiln-go v0.0.0-20261020044241-3403821d9310/go.mod h1:aemlYZQdcR8c7uAbzmMzRILz6p3VDZYV79eHn5eyRL8=
+github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4 h1:bAIIJpAy0WpLRsI7bGwe+gPU56ELHQajtE8HPrz7YXo=
+github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4/go.mod h1:aemlYZQdcR8c7uAbzmMzRILz6p3VDZYV79eHn5eyRL8=
 github.com/linkedin/goavro/v2 v2.15.0 h1:pDj1UrjUOO62iXhgBiE7jQkpNIc5/tA5eZsgolMjgVI=
 github.com/linkedin/goavro/v2 v2.15.0/go.mod h1:KXx+erlq+RPlGSPmLF7xGo6SAbh8sCQ53x064+ioxhk=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=

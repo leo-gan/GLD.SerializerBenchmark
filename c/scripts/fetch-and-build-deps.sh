@@ -43,7 +43,7 @@ download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/
 download avro "https://github.com/apache/avro/archive/refs/tags/release-1.11.3.tar.gz"
 download mongo-c-driver "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.27.5.tar.gz"
 download ion-c "https://github.com/amazon-ion/ion-c/archive/refs/tags/v1.1.6.tar.gz"
-download gld-kiln-c "https://github.com/leo-gan/gld-kiln-c/archive/refs/tags/0.2.0.tar.gz"
+download gld-kiln-c "https://github.com/leo-gan/gld-kiln-c/archive/22a9fae5b5ec6888e713037ef01df8d641e7eafa.tar.gz"
 
 echo "[build] jansson"
 mkdir -p "$TP/_build/jansson"

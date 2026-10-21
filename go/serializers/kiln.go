@@ -341,19 +341,10 @@ func toKilnNative(v any) (any, error) {
 func kilnPromptMap(p modelv2.Prompt) map[string]any {
 	return map[string]any{
 		"batch": p.Batch, "seq": p.Seq,
-		"input_ids":      i64sToAny(p.InputIDs),
-		"attention_mask": i64sToAny(p.AttentionMask),
-		"position_ids":   i64sToAny(p.PositionIDs),
+		"input_ids":      p.InputIDs,
+		"attention_mask": p.AttentionMask,
+		"position_ids":   p.PositionIDs,
 	}
-}
-
-// Kiln list values are []any. int64 has no typed list encoder.
-func i64sToAny(xs []int64) []any {
-	out := make([]any, len(xs))
-	for i, n := range xs {
-		out[i] = n
-	}
-	return out
 }
 
 func fromKilnNative(typeID string, batch bool, decoded, proto any) (any, error) {

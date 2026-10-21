@@ -1,12 +1,12 @@
 //! gld-kiln adapter (leo-gan/gld-kiln-zig).
 //!
-//! Prepare parses each schema once. Suite fixtures are copied into kiln
-//! values (untimed); timed serialize is `encodeReuse` into a reused writer
-//! and timed deserialize is `decode`. Tensor values are large, so the timed
-//! path writes the same positional layout through that reused writer and does
-//! not rebuild the schema. `tensor` decode owns the float list. `tensor_view`
-//! decode borrows the f32 payload bytes. One instance is the struct. A batch
-//! is one list of that struct. Graph is not a suite type. N is 1 for tensors.
+//! Prepare parses each schema once and builds one kiln value. Numeric lists
+//! borrow the fixture slices (`f32s` / `f64s` / `i64s`, not one value per
+//! element). Timed serialize is `encodeReuse`. Timed deserialize is `decode`
+//! with `ListReuse`, so a million-float list is copied once into a buffer
+//! that the next decode overwrites. `tensor_view` borrows the encoded f32
+//! bytes and does not use that pool. One instance is the struct. A batch is
+//! one list of that struct. Graph is not a suite type. N is 1 for tensors.
 
 const std = @import("std");
 const data = @import("data.zig");
@@ -37,13 +37,6 @@ const Tag = enum {
             .prompt => .prompt,
             .shard => .shard,
             .request => .request,
-        };
-    }
-
-    fn direct(self: Tag) bool {
-        return switch (self) {
-            .tensor, .prompt, .shard, .request => true,
-            else => false,
         };
     }
 };
@@ -89,6 +82,7 @@ pub const State = struct {
     gpa: std.mem.Allocator = std.heap.page_allocator,
     arena: std.heap.ArenaAllocator = undefined,
     writer: kiln.Writer = .{},
+    reuse: kiln.ListReuse = .{},
     schemas: [tag_count]?*const kiln.Schema = .{null} ** tag_count,
     list_schemas: [tag_count]?*const kiln.Schema = .{null} ** tag_count,
     root: kiln.Value = .none,
@@ -137,14 +131,6 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
     for (fixtures) |fx| {
         if (Tag.of(fx) != tag) return error.MixedFixtures;
     }
-    if (tag.direct()) {
-        if (fixtures.len != 1) return error.KilnNotPrepared;
-        try bindDirect(self, tag);
-        self.tag = tag;
-        self.direct = true;
-        self.fixtures = fixtures;
-        return;
-    }
     const batch = fixtures.len > 1;
     const schema = try schemaFor(self, tag, batch);
     var root = if (batch)
@@ -166,13 +152,6 @@ pub fn beginEncode(ctx: *anyopaque) void {
 
 pub fn serialize(ctx: *anyopaque, _: data.Fixture, out: *buf_mod.Buf) !void {
     const self: *State = @ptrCast(@alignCast(ctx));
-    if (self.direct) {
-        if (!self.ready or self.active == null or self.fixtures.len != 1 or self.enc_i != 0) return error.KilnNotPrepared;
-        self.enc_i += 1;
-        const raw = try writeDirect(self, self.fixtures[0]);
-        try out.appendSlice(raw);
-        return;
-    }
     if (!self.ready or !self.has_root or self.batch or self.active == null) return error.KilnNotPrepared;
     if (self.enc_i != 0) return error.KilnNotPrepared;
     self.enc_i += 1;
@@ -197,13 +176,13 @@ pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     const self: *State = @ptrCast(@alignCast(ctx));
     self.ensure();
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
-    if (tag.direct()) {
-        // Schema was parsed in prepare. Reading does not rebuild it.
-        return readDirect(allocator, tag, std.mem.eql(u8, type_id, "tensor_view"), bytes);
-    }
+    const view = std.mem.eql(u8, type_id, "tensor_view");
     const schema = try schemaFor(self, tag, false);
-    var value = try kiln.decode(self.gpa, schema, bytes, .{});
+    // tensor_view must alias the caller's bytes. ListReuse would copy them.
+    const opts: kiln.Options = if (view) .{} else .{ .reuse = &self.reuse };
+    var value = try kiln.decode(self.gpa, schema, bytes, opts);
     defer value.deinit(self.gpa);
+    if (view) return .{ .tensor_view = try tensorViewFrom(value) };
     return fixtureFrom(allocator, tag, value);
 }
 
@@ -212,7 +191,10 @@ pub fn decodeBatch(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     self.ensure();
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
     const schema = try schemaFor(self, tag, true);
-    var value = try kiln.decode(self.gpa, schema, bytes, .{});
+    // Same pool as single-value decode. Numeric slices alias it until the next
+    // decode, which is after the fidelity check. Without the pool, deinit frees
+    // those slices before the check and telemetry N=100 faults.
+    var value = try kiln.decode(self.gpa, schema, bytes, .{ .reuse = &self.reuse });
     defer value.deinit(self.gpa);
     const items = switch (value) {
         .list => |xs| xs,
@@ -272,7 +254,11 @@ fn buildOne(gpa: std.mem.Allocator, fx: data.Fixture) !kiln.Value {
         .telemetry => |t| try buildTelemetry(gpa, t),
         .strings => |s| try buildStrings(gpa, s),
         .event => |e| try buildEvent(gpa, e),
-        else => error.KilnType,
+        .tensor => |t| try buildTensor(gpa, t),
+        .tensor_view => |t| try buildTensor(gpa, .{ .rows = t.rows, .cols = t.cols, .values = t.values }),
+        .prompt => |p| try buildPrompt(gpa, p),
+        .shard => |s| try buildShard(gpa, s),
+        .request => |r| try buildRequest(gpa, r),
     };
 }
 
@@ -321,15 +307,11 @@ fn buildTelemetry(gpa: std.mem.Allocator, t: data.Telemetry) !kiln.Value {
     errdefer gpa.free(tags);
     for (t.tags, tags) |s, *slot| slot.* = .{ .str = s };
 
-    const values = try gpa.alloc(kiln.Value, t.values.len);
-    errdefer gpa.free(values);
-    for (t.values, values) |n, *slot| slot.* = .{ .f64 = n };
-
     const fields = try gpa.alloc(kiln.FieldValue, 4);
     fields[0] = .{ .name = "source", .value = .{ .str = t.source } };
     fields[1] = .{ .name = "ts", .value = .{ .int = t.ts } };
     fields[2] = .{ .name = "tags", .value = .{ .list = tags } };
-    fields[3] = .{ .name = "values", .value = .{ .list = values } };
+    fields[3] = .{ .name = "values", .value = podF64(t.values) };
     return .{ .structure = fields };
 }
 
@@ -373,7 +355,10 @@ fn fixtureFrom(allocator: std.mem.Allocator, tag: Tag, value: kiln.Value) !data.
         .telemetry => .{ .telemetry = try telemetryFrom(allocator, fields) },
         .strings => .{ .strings = try stringsFrom(allocator, fields) },
         .event => .{ .event = try eventFrom(allocator, fields) },
-        else => error.KilnType,
+        .tensor => .{ .tensor = try tensorFrom(fields) },
+        .prompt => .{ .prompt = try promptFrom(fields) },
+        .shard => .{ .shard = try shardFrom(fields) },
+        .request => .{ .request = try requestFrom(allocator, fields) },
     };
 }
 
@@ -420,11 +405,9 @@ fn documentFrom(allocator: std.mem.Allocator, f: []const kiln.FieldValue) !data.
 fn telemetryFrom(allocator: std.mem.Allocator, f: []const kiln.FieldValue) !data.Telemetry {
     if (f.len != 4) return error.KilnType;
     const tag_vals = try asList(f[2].value);
-    const value_vals = try asList(f[3].value);
     const tags = try allocator.alloc([]const u8, tag_vals.len);
     for (tag_vals, tags) |v, *s| s.* = try dupe(allocator, try asStr(v));
-    const values = try allocator.alloc(f64, value_vals.len);
-    for (value_vals, values) |v, *n| n.* = try asF64(v);
+    const values = try f64Slice(f[3].value);
     return .{
         .source = try dupe(allocator, try asStr(f[0].value)),
         .ts = try asI64(f[1].value),
@@ -516,218 +499,143 @@ fn asStr(v: kiln.Value) ![]const u8 {
     };
 }
 
-fn bindDirect(self: *State, tag: Tag) !void {
-    const schema = try schemaFor(self, tag, false);
-    switch (tag) {
-        .tensor => {
-            try expectNames(schema, &.{ "rows", "cols", "values" });
-            try expectKind(schema.fields[0].schema, .i32);
-            try expectKind(schema.fields[1].schema, .i32);
-            try expectList(schema.fields[2].schema, .f32);
-        },
-        .prompt => try expectPrompt(schema),
-        .shard => {
-            try expectNames(schema, &.{ "vocab", "hidden", "ffn", "tok_emb", "attn", "ffn_weight", "norm" });
-            try expectKind(schema.fields[0].schema, .i32);
-            try expectKind(schema.fields[1].schema, .i32);
-            try expectKind(schema.fields[2].schema, .i32);
-            try expectList(schema.fields[3].schema, .f32);
-            try expectList(schema.fields[4].schema, .f32);
-            try expectList(schema.fields[5].schema, .f32);
-            try expectList(schema.fields[6].schema, .f32);
-        },
-        .request => {
-            try expectNames(schema, &.{ "request_id", "model", "temperature", "inputs" });
-            try expectKind(schema.fields[0].schema, .i64);
-            try expectKind(schema.fields[1].schema, .str);
-            try expectKind(schema.fields[2].schema, .f32);
-            try expectPrompt(schema.fields[3].schema);
-        },
-        else => return error.KilnType,
-    }
-    self.active = schema;
+fn podF32(xs: []const f32) kiln.Value {
+    return .{ .f32s = .{ .items = xs, .owned = false } };
 }
 
-fn expectNames(schema: *const kiln.Schema, names: []const []const u8) !void {
-    if (schema.kind != .structure or schema.fields.len != names.len) return error.KilnSchema;
-    for (names, schema.fields) |name, field| {
-        if (!std.mem.eql(u8, field.name, name)) return error.KilnSchema;
-    }
+fn podF64(xs: []const f64) kiln.Value {
+    return .{ .f64s = .{ .items = xs, .owned = false } };
 }
 
-fn expectKind(schema: *const kiln.Schema, kind: kiln.Kind) !void {
-    if (schema.kind != kind) return error.KilnSchema;
+fn podI64(xs: []const i64) kiln.Value {
+    return .{ .i64s = .{ .items = xs, .owned = false } };
 }
 
-fn expectList(schema: *const kiln.Schema, kind: kiln.Kind) !void {
-    if (schema.kind != .list) return error.KilnSchema;
-    const child = schema.child orelse return error.KilnSchema;
-    if (child.kind != kind) return error.KilnSchema;
+fn buildTensor(gpa: std.mem.Allocator, t: data.Tensor) !kiln.Value {
+    const fields = try gpa.alloc(kiln.FieldValue, 3);
+    fields[0] = .{ .name = "rows", .value = .{ .int = t.rows } };
+    fields[1] = .{ .name = "cols", .value = .{ .int = t.cols } };
+    fields[2] = .{ .name = "values", .value = podF32(t.values) };
+    return .{ .structure = fields };
 }
 
-fn expectPrompt(schema: *const kiln.Schema) !void {
-    try expectNames(schema, &.{ "batch", "seq", "input_ids", "attention_mask", "position_ids" });
-    try expectKind(schema.fields[0].schema, .i32);
-    try expectKind(schema.fields[1].schema, .i32);
-    try expectList(schema.fields[2].schema, .i64);
-    try expectList(schema.fields[3].schema, .i64);
-    try expectList(schema.fields[4].schema, .i64);
+fn buildPrompt(gpa: std.mem.Allocator, p: data.Prompt) !kiln.Value {
+    const fields = try gpa.alloc(kiln.FieldValue, 5);
+    fields[0] = .{ .name = "batch", .value = .{ .int = p.batch } };
+    fields[1] = .{ .name = "seq", .value = .{ .int = p.seq } };
+    fields[2] = .{ .name = "input_ids", .value = podI64(p.input_ids) };
+    fields[3] = .{ .name = "attention_mask", .value = podI64(p.attention_mask) };
+    fields[4] = .{ .name = "position_ids", .value = podI64(p.position_ids) };
+    return .{ .structure = fields };
 }
 
-fn resetWriter(self: *State) *kiln.Writer {
-    const cap = self.writer.cap;
-    self.writer.reset();
-    self.writer.cap = cap;
-    return &self.writer;
+fn buildShard(gpa: std.mem.Allocator, s: data.Shard) !kiln.Value {
+    const fields = try gpa.alloc(kiln.FieldValue, 7);
+    fields[0] = .{ .name = "vocab", .value = .{ .int = s.vocab } };
+    fields[1] = .{ .name = "hidden", .value = .{ .int = s.hidden } };
+    fields[2] = .{ .name = "ffn", .value = .{ .int = s.ffn } };
+    fields[3] = .{ .name = "tok_emb", .value = podF32(s.tok_emb) };
+    fields[4] = .{ .name = "attn", .value = podF32(s.attn) };
+    fields[5] = .{ .name = "ffn_weight", .value = podF32(s.ffn_weight) };
+    fields[6] = .{ .name = "norm", .value = podF32(s.norm) };
+    return .{ .structure = fields };
 }
 
-fn writeDirect(self: *State, fx: data.Fixture) ![]const u8 {
-    const w = resetWriter(self);
-    switch (fx) {
-        .tensor => |t| try writeTensor(w, self.gpa, t),
-        .tensor_view => |t| try writeTensor(w, self.gpa, .{ .rows = t.rows, .cols = t.cols, .values = t.values }),
-        .prompt => |p| try writePrompt(w, self.gpa, p),
-        .shard => |s| try writeShard(w, self.gpa, s),
-        .request => |r| try writeRequest(w, self.gpa, r),
-        else => return error.KilnType,
-    }
-    return w.slice();
+fn buildRequest(gpa: std.mem.Allocator, r: data.Request) !kiln.Value {
+    const fields = try gpa.alloc(kiln.FieldValue, 4);
+    fields[0] = .{ .name = "request_id", .value = .{ .int = r.request_id } };
+    fields[1] = .{ .name = "model", .value = .{ .str = r.model } };
+    fields[2] = .{ .name = "temperature", .value = .{ .f32 = r.temperature } };
+    fields[3] = .{ .name = "inputs", .value = try buildPrompt(gpa, r.inputs) };
+    return .{ .structure = fields };
 }
 
-fn writeTensor(w: *kiln.Writer, gpa: std.mem.Allocator, t: data.Tensor) !void {
-    try w.int(gpa, i32, t.rows);
-    try w.int(gpa, i32, t.cols);
-    try writeF32List(w, gpa, t.values);
-}
-
-fn writePrompt(w: *kiln.Writer, gpa: std.mem.Allocator, p: data.Prompt) !void {
-    try w.int(gpa, i32, p.batch);
-    try w.int(gpa, i32, p.seq);
-    try writeI64List(w, gpa, p.input_ids);
-    try writeI64List(w, gpa, p.attention_mask);
-    try writeI64List(w, gpa, p.position_ids);
-}
-
-fn writeShard(w: *kiln.Writer, gpa: std.mem.Allocator, s: data.Shard) !void {
-    try w.int(gpa, i32, s.vocab);
-    try w.int(gpa, i32, s.hidden);
-    try w.int(gpa, i32, s.ffn);
-    try writeF32List(w, gpa, s.tok_emb);
-    try writeF32List(w, gpa, s.attn);
-    try writeF32List(w, gpa, s.ffn_weight);
-    try writeF32List(w, gpa, s.norm);
-}
-
-fn writeRequest(w: *kiln.Writer, gpa: std.mem.Allocator, r: data.Request) !void {
-    try w.int(gpa, i64, r.request_id);
-    try w.str(gpa, r.model);
-    try w.float32(gpa, r.temperature);
-    try writePrompt(w, gpa, r.inputs);
-}
-
-fn writeF32List(w: *kiln.Writer, gpa: std.mem.Allocator, values: []const f32) !void {
-    if (values.len > w.cap) return error.LIMIT;
-    const count = std.math.cast(u32, values.len) orelse return error.LIMIT;
-    try w.int(gpa, u32, count);
-    try w.float32s(gpa, values);
-}
-
-fn writeI64List(w: *kiln.Writer, gpa: std.mem.Allocator, values: []const i64) !void {
-    if (values.len > w.cap) return error.LIMIT;
-    const count = std.math.cast(u32, values.len) orelse return error.LIMIT;
-    try w.int(gpa, u32, count);
-    try w.pod(gpa, i64, values);
-}
-
-fn readDirect(allocator: std.mem.Allocator, tag: Tag, view: bool, bytes: []const u8) !data.Fixture {
-    var reader = kiln.Reader.init(bytes, .{});
-    const fx: data.Fixture = switch (tag) {
-        .tensor => if (view)
-            .{ .tensor_view = try readTensorView(&reader) }
-        else
-            .{ .tensor = try readTensor(allocator, &reader) },
-        .prompt => .{ .prompt = try readPrompt(allocator, &reader) },
-        .shard => .{ .shard = try readShard(allocator, &reader) },
-        .request => .{ .request = try readRequest(allocator, &reader) },
-        else => return error.KilnType,
-    };
-    try reader.finish();
-    return fx;
-}
-
-fn readTensor(allocator: std.mem.Allocator, r: *kiln.Reader) !data.Tensor {
+fn tensorFrom(f: []const kiln.FieldValue) !data.Tensor {
+    if (f.len != 3) return error.KilnType;
     return .{
-        .rows = try r.int(i32),
-        .cols = try r.int(i32),
-        .values = try readF32List(allocator, r),
+        .rows = try asI32(f[0].value),
+        .cols = try asI32(f[1].value),
+        .values = try f32Slice(f[2].value),
     };
 }
 
-/// Payload aliases `r.buf`. Callers must not copy it.
-fn readTensorView(r: *kiln.Reader) !data.TensorView {
+fn tensorViewFrom(value: kiln.Value) !data.TensorView {
+    const f = try asStruct(value);
+    if (f.len != 3) return error.KilnType;
+    const items = switch (f[2].value) {
+        .f32s => |pod| pod.items,
+        else => return error.KilnType,
+    };
     return .{
-        .rows = try r.int(i32),
-        .cols = try r.int(i32),
+        .rows = try asI32(f[0].value),
+        .cols = try asI32(f[1].value),
         .values = &.{},
-        .payload = try takeF32Payload(r),
+        .payload = std.mem.sliceAsBytes(items),
     };
 }
 
-fn readPrompt(allocator: std.mem.Allocator, r: *kiln.Reader) !data.Prompt {
+fn promptFrom(f: []const kiln.FieldValue) !data.Prompt {
+    if (f.len != 5) return error.KilnType;
     return .{
-        .batch = try r.int(i32),
-        .seq = try r.int(i32),
-        .input_ids = try readI64List(allocator, r),
-        .attention_mask = try readI64List(allocator, r),
-        .position_ids = try readI64List(allocator, r),
+        .batch = try asI32(f[0].value),
+        .seq = try asI32(f[1].value),
+        .input_ids = try i64Slice(f[2].value),
+        .attention_mask = try i64Slice(f[3].value),
+        .position_ids = try i64Slice(f[4].value),
     };
 }
 
-fn readShard(allocator: std.mem.Allocator, r: *kiln.Reader) !data.Shard {
+fn shardFrom(f: []const kiln.FieldValue) !data.Shard {
+    if (f.len != 7) return error.KilnType;
     return .{
-        .vocab = try r.int(i32),
-        .hidden = try r.int(i32),
-        .ffn = try r.int(i32),
-        .tok_emb = try readF32List(allocator, r),
-        .attn = try readF32List(allocator, r),
-        .ffn_weight = try readF32List(allocator, r),
-        .norm = try readF32List(allocator, r),
+        .vocab = try asI32(f[0].value),
+        .hidden = try asI32(f[1].value),
+        .ffn = try asI32(f[2].value),
+        .tok_emb = try f32Slice(f[3].value),
+        .attn = try f32Slice(f[4].value),
+        .ffn_weight = try f32Slice(f[5].value),
+        .norm = try f32Slice(f[6].value),
     };
 }
 
-fn readRequest(allocator: std.mem.Allocator, r: *kiln.Reader) !data.Request {
+fn requestFrom(allocator: std.mem.Allocator, f: []const kiln.FieldValue) !data.Request {
+    if (f.len != 4) return error.KilnType;
     return .{
-        .request_id = try r.int(i64),
-        .model = try dupe(allocator, try r.str()),
-        .temperature = try r.float32(),
-        .inputs = try readPrompt(allocator, r),
+        .request_id = try asI64(f[0].value),
+        .model = try dupe(allocator, try asStr(f[1].value)),
+        .temperature = try asF32(f[2].value),
+        .inputs = try promptFrom(try asStruct(f[3].value)),
     };
 }
 
-fn readF32List(allocator: std.mem.Allocator, r: *kiln.Reader) ![]f32 {
-    const n = try r.listHeader(4);
-    const out = try allocator.alloc(f32, n);
-    errdefer allocator.free(out);
-    try r.float32s(out);
-    return out;
+fn f32Slice(v: kiln.Value) ![]f32 {
+    return switch (v) {
+        .f32s => |pod| @constCast(pod.items),
+        else => error.KilnType,
+    };
 }
 
-fn readI64List(allocator: std.mem.Allocator, r: *kiln.Reader) ![]i64 {
-    const n = try r.listHeader(8);
-    const out = try allocator.alloc(i64, n);
-    errdefer allocator.free(out);
-    try r.pod(i64, out);
-    return out;
+fn f64Slice(v: kiln.Value) ![]f64 {
+    return switch (v) {
+        .f64s => |pod| @constCast(pod.items),
+        else => error.KilnType,
+    };
 }
 
-fn takeF32Payload(r: *kiln.Reader) ![]const u8 {
-    const n = try r.listHeader(4);
-    const nbytes = std.math.mul(usize, @as(usize, n), 4) catch return error.LIMIT;
-    if (nbytes > r.buf.len - r.i) return error.EOF;
-    const start = r.i;
-    r.i += nbytes;
-    return r.buf[start..r.i];
+fn i64Slice(v: kiln.Value) ![]i64 {
+    return switch (v) {
+        .i64s => |pod| @constCast(pod.items),
+        else => error.KilnType,
+    };
 }
+
+fn asF32(v: kiln.Value) !f32 {
+    return switch (v) {
+        .f32 => |n| n,
+        else => error.KilnType,
+    };
+}
+
 
 test "gld-kiln round-trips suite structs and a batch list" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
@@ -755,6 +663,14 @@ test "gld-kiln round-trips suite structs and a batch list" {
     const back = try decodeBatch(@ptrCast(&state), aa, "document", batched.items());
     try std.testing.expectEqual(batch.len, back.len);
     for (batch, back) |want, got| try std.testing.expect(data.fidelity(want, got));
+
+    const tele = try data.instances(aa, "telemetry", 9, 4, .{});
+    var tele_buf = try buf_mod.Buf.initCapacity(aa, 65536);
+    try prepare(@ptrCast(&state), aa, tele);
+    try encodeBatch(@ptrCast(&state), tele, &tele_buf);
+    const tele_back = try decodeBatch(@ptrCast(&state), aa, "telemetry", tele_buf.items());
+    try std.testing.expectEqual(tele.len, tele_back.len);
+    for (tele, tele_back) |want, got| try std.testing.expect(data.fidelity(want, got));
 }
 
 const tiny_cfg = data.TypeConfig{
