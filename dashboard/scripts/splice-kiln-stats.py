@@ -60,8 +60,8 @@ RUNS = {
         "tensor": "logs/c/2026-10-19-225833.csv",
     },
     "cpp": {
-        "suite": "logs/cpp/2026-10-19-221802.csv",
-        "tensor": "logs/cpp/2026-10-19-224516.csv",
+        "suite": "logs/cpp/2026-10-20-191747.csv",
+        "tensor": "logs/cpp/2026-10-20-191756.csv",
     },
     "csharp": {
         "suite": "logs/csharp/2026-10-19-222030.csv",
@@ -72,24 +72,28 @@ RUNS = {
         "tensor": "logs/go/2026-10-19-223729.csv",
     },
     "java": {
-        "suite": "logs/java/2026-10-19-221540.csv",
-        "tensor": "logs/java/2026-10-19-224047.csv",
+        "suite": "logs/java/2026-10-20-191835.csv",
+        "tensor": "logs/java/2026-10-20-191851.csv",
     },
     "javascript": {
-        "suite": "logs/javascript/2026-10-19-222100.csv",
-        "tensor": "logs/javascript/2026-10-19-223652.csv",
+        "suite": "logs/javascript/2026-10-20-191908.csv",
+        "tensor": "logs/javascript/2026-10-20-191910.csv",
+    },
+    "mojo": {
+        "suite": "logs/mojo/2026-10-20-192824.csv",
+        "tensor": "logs/mojo/2026-10-20-192855.csv",
     },
     "python": {
-        "suite": "logs/python/2026-10-19-220344.csv",
-        "tensor": "logs/python/2026-10-19-233555.csv",
+        "suite": "logs/python/2026-10-20-191915.csv",
+        "tensor": "logs/python/2026-10-20-193042.csv",
     },
     "rust": {
-        "suite": "logs/rust/2026-10-19-222046.csv",
-        "tensor": "logs/rust/2026-10-19-225706.csv",
+        "suite": "logs/rust/2026-10-20-191702.csv",
+        "tensor": "logs/rust/2026-10-20-191723.csv",
     },
     "swift": {
-        "suite": "logs/swift/2026-10-19-221102.csv",
-        "tensor": "logs/swift/2026-10-19-224236.csv",
+        "suite": "logs/swift/2026-10-20-192404.csv",
+        "tensor": "logs/swift/2026-10-20-192723.csv",
     },
     "zig": {
         "suite": "logs/zig/2026-10-19-221613.csv",
