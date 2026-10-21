@@ -11,13 +11,10 @@ import benchmark.model.v2.Strings;
 import benchmark.model.v2.Telemetry;
 import benchmark.model.v2.TensorMatrix;
 import io.github.leogan.kiln.Kiln;
+import io.github.leogan.kiln.NumericPool;
 import io.github.leogan.kiln.Schema;
 import io.github.leogan.kiln.Wire;
 
-import java.lang.reflect.Field;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
-import sun.misc.Unsafe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -26,8 +23,8 @@ import java.util.Map;
 
 /**
  * gld-kiln 0.2.0 — positional little-endian structs. Schema is built once in {@link #prepare}.
- * Numeric lists are one little-endian copy. Other structs still use {@link Kiln#decode}
- * when this class does not write them directly. Domain maps are built in prepare.
+ * The timed path is {@link Kiln#encodeTo} and {@link Kiln#decode} with a {@link NumericPool}.
+ * Domain maps are built in prepare. {@code tensor_view} decode borrows the encoded bytes.
  *
  * <p>{@code tensor_view} decode returns a slice of the encoded buffer and does not copy the
  * float32 payload. Fidelity compares raw float32 bits, including negative zero and NaN.
@@ -144,32 +141,9 @@ public final class KilnSer implements BenchSerializer {
   private boolean batch;
   /** tensor_view at N=1 borrows the encoded f32 bytes instead of copying them. */
   private boolean borrow;
-  /** Timed path writes the wire itself instead of one boxed value per element. */
-  private boolean direct;
   private byte[] buf = new byte[256];
-  private int cursor;
-  private final float[][] f32Pool = new float[8][];
-  private int f32Used;
-  private final double[][] f64Pool = new double[4][];
-  private int f64Used;
-  private final long[][] i64Pool = new long[4][];
-  private int i64Used;
-  private static final boolean LITTLE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
-  private static final Unsafe UNSAFE = unsafe();
-  private static final long BYTE_OFF = UNSAFE.arrayBaseOffset(byte[].class);
-  private static final long FLOAT_OFF = UNSAFE.arrayBaseOffset(float[].class);
-  private static final long DOUBLE_OFF = UNSAFE.arrayBaseOffset(double[].class);
-  private static final long LONG_OFF = UNSAFE.arrayBaseOffset(long[].class);
-
-  private static Unsafe unsafe() {
-    try {
-      Field field = Unsafe.class.getDeclaredField("theUnsafe");
-      field.setAccessible(true);
-      return (Unsafe) field.get(null);
-    } catch (ReflectiveOperationException ex) {
-      throw new ExceptionInInitializerError(ex);
-    }
-  }
+  private final NumericPool pool = new NumericPool();
+  private final Kiln.Options pooled = Kiln.Options.defaults().withPool(pool);
 
   @Override
   public String name() {
@@ -205,10 +179,6 @@ public final class KilnSer implements BenchSerializer {
     typeId = fx.name;
     batch = TypeUtil.isList(fx.value);
     borrow = "tensor_view".equals(typeId) && !batch;
-    direct = switch (typeId) {
-      case "message", "telemetry", "tensor", "tensor_view", "prompt", "shard", "request" -> true;
-      default -> false;
-    };
     schema = batch ? Schema.list(base) : base;
     prepared = toKiln(fx.name, fx.value);
     fitBuffer();
@@ -216,15 +186,10 @@ public final class KilnSer implements BenchSerializer {
 
   @Override
   public byte[] serializeBytes(Fixture fx) {
-    if (direct) {
-      cursor = 0;
-      writePrepared();
-      if (cursor != buf.length) {
-        throw new IllegalStateException("gld-kiln frame");
-      }
+    int end = Kiln.encodeTo(schema, prepared, buf, 0);
+    if (end == buf.length) {
       return buf;
     }
-    int end = Kiln.encodeTo(schema, prepared, buf, 0);
     return Arrays.copyOf(buf, end);
   }
 
@@ -233,23 +198,12 @@ public final class KilnSer implements BenchSerializer {
     if (borrow) {
       return borrowTensor(data);
     }
-    if (direct) {
-      f32Used = 0;
-      f64Used = 0;
-      i64Used = 0;
-      cursor = 0;
-      Object value = readPrepared(data);
-      if (cursor != data.length) {
-        throw new IllegalArgumentException("TRAILING");
-      }
-      return value;
-    }
-    return Kiln.decode(schema, data);
+    return Kiln.decode(schema, data, pooled);
   }
 
   @Override
   public Object toDomain(Object decoded) {
-    if (borrow || direct) {
+    if (borrow) {
       return decoded;
     }
     if (batch) {
@@ -264,13 +218,6 @@ public final class KilnSer implements BenchSerializer {
   }
 
   private void fitBuffer() {
-    if (direct) {
-      int n = preparedSize();
-      if (buf.length != n) {
-        buf = new byte[n];
-      }
-      return;
-    }
     while (true) {
       try {
         int end = Kiln.encodeTo(schema, prepared, buf, 0);
@@ -471,416 +418,6 @@ public final class KilnSer implements BenchSerializer {
               promptFrom(map.get("inputs")));
       default -> throw new IllegalArgumentException(typeId);
     };
-  }
-
-  @SuppressWarnings("unchecked")
-  private int preparedSize() {
-    if (batch) {
-      int n = 4;
-      for (Object row : (List<?>) prepared) {
-        n += oneSize(typeId, (Map<String, Object>) row);
-      }
-      return n;
-    }
-    return oneSize(typeId, (Map<String, Object>) prepared);
-  }
-
-  @SuppressWarnings("unchecked")
-  private static int oneSize(String typeId, Map<String, Object> map) {
-    return switch (typeId) {
-      case "message" -> 26 + strSize(str(map.get("f_string"))) + strSize(str(map.get("f_string_2")));
-      case "telemetry" ->
-          strSize(str(map.get("source")))
-              + 8
-              + strListSize((List<String>) map.get("tags"))
-              + podSize(((double[]) map.get("values")).length, 8);
-      case "tensor", "tensor_view" -> 8 + podSize(((float[]) map.get("values")).length, 4);
-      case "prompt" -> promptSize(map);
-      case "shard" ->
-          12
-              + podSize(((float[]) map.get("tok_emb")).length, 4)
-              + podSize(((float[]) map.get("attn")).length, 4)
-              + podSize(((float[]) map.get("ffn_weight")).length, 4)
-              + podSize(((float[]) map.get("norm")).length, 4);
-      case "request" -> 8 + strSize(str(map.get("model"))) + 4 + promptSize((Map<String, Object>) map.get("inputs"));
-      default -> throw new IllegalArgumentException(typeId);
-    };
-  }
-
-  private static int promptSize(Map<String, Object> map) {
-    return 8
-        + podSize(((long[]) map.get("input_ids")).length, 8)
-        + podSize(((long[]) map.get("attention_mask")).length, 8)
-        + podSize(((long[]) map.get("position_ids")).length, 8);
-  }
-
-  private static int strSize(String s) {
-    int n = Wire.utf8Length(s);
-    if (n > Wire.DEFAULT_CAP) {
-      throw new IllegalArgumentException("LIMIT");
-    }
-    return 4 + n;
-  }
-
-  private static int strListSize(List<String> rows) {
-    int n = 4;
-    for (String row : rows) {
-      n += strSize(row);
-    }
-    return n;
-  }
-
-  private static int podSize(int count, int width) {
-    if (count > Wire.DEFAULT_CAP) {
-      throw new IllegalArgumentException("LIMIT");
-    }
-    return 4 + count * width;
-  }
-
-  @SuppressWarnings("unchecked")
-  private void writePrepared() {
-    if (batch) {
-      List<?> rows = (List<?>) prepared;
-      putCount(rows.size());
-      for (Object row : rows) {
-        writeOne((Map<String, Object>) row);
-      }
-      return;
-    }
-    writeOne((Map<String, Object>) prepared);
-  }
-
-  private void writeOne(Map<String, Object> map) {
-    switch (typeId) {
-      case "message" -> writeMessage(map);
-      case "telemetry" -> writeTelemetry(map);
-      case "tensor", "tensor_view" -> writeTensor(map);
-      case "prompt" -> writePrompt(map);
-      case "shard" -> writeShard(map);
-      case "request" -> writeRequest(map);
-      default -> throw new IllegalArgumentException(typeId);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private void writeMessage(Map<String, Object> map) {
-    putBool(bool(map.get("f_bool")));
-    putI32(i32(map.get("f_int32")));
-    putI64(i64(map.get("f_int64")));
-    putF64(f64(map.get("f_float64")));
-    putStr(str(map.get("f_string")));
-    putBool(bool(map.get("f_bool_2")));
-    putI32(i32(map.get("f_int32_2")));
-    putStr(str(map.get("f_string_2")));
-  }
-
-  @SuppressWarnings("unchecked")
-  private void writeTelemetry(Map<String, Object> map) {
-    putStr(str(map.get("source")));
-    putI64(i64(map.get("ts")));
-    List<String> tags = (List<String>) map.get("tags");
-    putCount(tags.size());
-    for (String tag : tags) {
-      putStr(tag);
-    }
-    putF64s((double[]) map.get("values"));
-  }
-
-  private void writeTensor(Map<String, Object> map) {
-    putI32(i32(map.get("rows")));
-    putI32(i32(map.get("cols")));
-    putF32s((float[]) map.get("values"));
-  }
-
-  private void writePrompt(Map<String, Object> map) {
-    putI32(i32(map.get("batch")));
-    putI32(i32(map.get("seq")));
-    putI64s((long[]) map.get("input_ids"));
-    putI64s((long[]) map.get("attention_mask"));
-    putI64s((long[]) map.get("position_ids"));
-  }
-
-  private void writeShard(Map<String, Object> map) {
-    putI32(i32(map.get("vocab")));
-    putI32(i32(map.get("hidden")));
-    putI32(i32(map.get("ffn")));
-    putF32s((float[]) map.get("tok_emb"));
-    putF32s((float[]) map.get("attn"));
-    putF32s((float[]) map.get("ffn_weight"));
-    putF32s((float[]) map.get("norm"));
-  }
-
-  @SuppressWarnings("unchecked")
-  private void writeRequest(Map<String, Object> map) {
-    putI64(i64(map.get("request_id")));
-    putStr(str(map.get("model")));
-    putF32(f32(map.get("temperature")));
-    writePrompt((Map<String, Object>) map.get("inputs"));
-  }
-
-  private void putBool(boolean value) {
-    buf[cursor++] = (byte) (value ? 1 : 0);
-  }
-
-  private void putI32(int value) {
-    Wire.putI32(buf, cursor, value);
-    cursor += 4;
-  }
-
-  private void putI64(long value) {
-    Wire.putI64(buf, cursor, value);
-    cursor += 8;
-  }
-
-  private void putF32(float value) {
-    Wire.putF32At(buf, cursor, value);
-    cursor += 4;
-  }
-
-  private void putF64(double value) {
-    Wire.putF64At(buf, cursor, value);
-    cursor += 8;
-  }
-
-  private void putCount(int count) {
-    if (count < 0 || count > Wire.DEFAULT_CAP) {
-      throw new IllegalArgumentException("LIMIT");
-    }
-    putI32(count);
-  }
-
-  private void putStr(String value) {
-    byte[] raw = Wire.utf8(value);
-    putCount(raw.length);
-    System.arraycopy(raw, 0, buf, cursor, raw.length);
-    cursor += raw.length;
-  }
-
-  private void putF32s(float[] values) {
-    putCount(values.length);
-    copyToWire(values, FLOAT_OFF, values.length * 4L);
-  }
-
-  private void putF64s(double[] values) {
-    putCount(values.length);
-    copyToWire(values, DOUBLE_OFF, values.length * 8L);
-  }
-
-  private void putI64s(long[] values) {
-    putCount(values.length);
-    copyToWire(values, LONG_OFF, values.length * 8L);
-  }
-
-  /** One memcpy of native little-endian numeric bits into the wire buffer. */
-  private void copyToWire(Object src, long srcOff, long bytes) {
-    if (!LITTLE) {
-      throw new IllegalStateException("gld-kiln numeric copy requires a little-endian host");
-    }
-    if (bytes == 0) {
-      return;
-    }
-    UNSAFE.copyMemory(src, srcOff, buf, BYTE_OFF + cursor, bytes);
-    cursor += (int) bytes;
-  }
-
-  private void copyFromWire(byte[] data, Object dest, long destOff, long bytes) {
-    if (!LITTLE) {
-      throw new IllegalStateException("gld-kiln numeric copy requires a little-endian host");
-    }
-    if (bytes == 0) {
-      return;
-    }
-    UNSAFE.copyMemory(data, BYTE_OFF + cursor, dest, destOff, bytes);
-  }
-
-  @SuppressWarnings("unchecked")
-  private Object readPrepared(byte[] data) {
-    if (!batch) {
-      return readOne(data);
-    }
-    int n = readCount(data, 1);
-    List<Object> rows = new ArrayList<>(n);
-    for (int i = 0; i < n; i++) {
-      rows.add(readOne(data));
-    }
-    return rows;
-  }
-
-  private Object readOne(byte[] data) {
-    return switch (typeId) {
-      case "message" -> readMessage(data);
-      case "telemetry" -> readTelemetry(data);
-      case "tensor", "tensor_view" -> readTensor(data);
-      case "prompt" -> readPrompt(data);
-      case "shard" -> readShard(data);
-      case "request" -> readRequest(data);
-      default -> throw new IllegalArgumentException(typeId);
-    };
-  }
-
-  private Message readMessage(byte[] data) {
-    return new Message(
-        readBool(data),
-        readI32(data),
-        readI64(data),
-        readF64(data),
-        readStr(data),
-        readBool(data),
-        readI32(data),
-        readStr(data));
-  }
-
-  private Telemetry readTelemetry(byte[] data) {
-    String source = readStr(data);
-    long ts = readI64(data);
-    int tags = readCount(data, 4);
-    List<String> names = new ArrayList<>(tags);
-    for (int i = 0; i < tags; i++) {
-      names.add(readStr(data));
-    }
-    return new Telemetry(source, ts, names, readF64s(data));
-  }
-
-  private TensorMatrix readTensor(byte[] data) {
-    return new TensorMatrix(readI32(data), readI32(data), readF32s(data));
-  }
-
-  private Prompt readPrompt(byte[] data) {
-    return new Prompt(readI32(data), readI32(data), readI64s(data), readI64s(data), readI64s(data));
-  }
-
-  private Shard readShard(byte[] data) {
-    return new Shard(
-        readI32(data), readI32(data), readI32(data), readF32s(data), readF32s(data), readF32s(data), readF32s(data));
-  }
-
-  private Request readRequest(byte[] data) {
-    return new Request(readI64(data), readStr(data), readF32(data), readPrompt(data));
-  }
-
-  private void need(byte[] data, int n) {
-    if (n < 0 || cursor < 0 || (long) cursor + n > data.length) {
-      throw new IllegalArgumentException("EOF");
-    }
-  }
-
-  private int readI32(byte[] data) {
-    need(data, 4);
-    int value = Wire.getI32(data, cursor);
-    cursor += 4;
-    return value;
-  }
-
-  private long readI64(byte[] data) {
-    need(data, 8);
-    long value = Wire.getI64(data, cursor);
-    cursor += 8;
-    return value;
-  }
-
-  private boolean readBool(byte[] data) {
-    need(data, 1);
-    int value = data[cursor++] & 0xFF;
-    if (value > 1) {
-      throw new IllegalArgumentException("TYPE");
-    }
-    return value == 1;
-  }
-
-  private float readF32(byte[] data) {
-    return Float.intBitsToFloat(readI32(data));
-  }
-
-  private double readF64(byte[] data) {
-    return Double.longBitsToDouble(readI64(data));
-  }
-
-  private int readCount(byte[] data, int width) {
-    int count = readI32(data);
-    if (count < 0 || count > Wire.DEFAULT_CAP) {
-      throw new IllegalArgumentException("LIMIT");
-    }
-    if (width > 0 && (long) count > (long) (data.length - cursor) / width) {
-      throw new IllegalArgumentException("EOF");
-    }
-    return count;
-  }
-
-  private String readStr(byte[] data) {
-    int n = readCount(data, 1);
-    need(data, n);
-    if (!Wire.isUtf8(data, cursor, n)) {
-      throw new IllegalArgumentException("UTF8");
-    }
-    String value = new String(data, cursor, n, StandardCharsets.UTF_8);
-    cursor += n;
-    return value;
-  }
-
-  private float[] readF32s(byte[] data) {
-    int count = readCount(data, 4);
-    int bytes = count * 4;
-    need(data, bytes);
-    float[] out = takeF32(count);
-    copyFromWire(data, out, FLOAT_OFF, bytes);
-    cursor += bytes;
-    return out;
-  }
-
-  private double[] readF64s(byte[] data) {
-    int count = readCount(data, 8);
-    int bytes = count * 8;
-    need(data, bytes);
-    double[] out = takeF64(count);
-    copyFromWire(data, out, DOUBLE_OFF, bytes);
-    cursor += bytes;
-    return out;
-  }
-
-  private long[] readI64s(byte[] data) {
-    int count = readCount(data, 8);
-    int bytes = count * 8;
-    need(data, bytes);
-    long[] out = takeI64(count);
-    copyFromWire(data, out, LONG_OFF, bytes);
-    cursor += bytes;
-    return out;
-  }
-
-  private float[] takeF32(int n) {
-    float[] block = f32Used < f32Pool.length ? f32Pool[f32Used] : null;
-    if (block == null || block.length != n) {
-      block = new float[n];
-      if (f32Used < f32Pool.length) {
-        f32Pool[f32Used] = block;
-      }
-    }
-    f32Used++;
-    return block;
-  }
-
-  private double[] takeF64(int n) {
-    double[] block = f64Used < f64Pool.length ? f64Pool[f64Used] : null;
-    if (block == null || block.length != n) {
-      block = new double[n];
-      if (f64Used < f64Pool.length) {
-        f64Pool[f64Used] = block;
-      }
-    }
-    f64Used++;
-    return block;
-  }
-
-  private long[] takeI64(int n) {
-    long[] block = i64Used < i64Pool.length ? i64Pool[i64Used] : null;
-    if (block == null || block.length != n) {
-      block = new long[n];
-      if (i64Used < i64Pool.length) {
-        i64Pool[i64Used] = block;
-      }
-    }
-    i64Used++;
-    return block;
   }
 
   /** Header plus a view of the f32 payload. Does not allocate the matrix. */

@@ -72,8 +72,8 @@ RUNS = {
         "tensor": "logs/go/2026-10-19-223729.csv",
     },
     "java": {
-        "suite": "logs/java/2026-10-20-191835.csv",
-        "tensor": "logs/java/2026-10-20-191851.csv",
+        "suite": "logs/java/2026-10-21-kiln-suite-pin.csv",
+        "tensor": "logs/java/2026-10-21-kiln-tensor-hot.csv",
     },
     "javascript": {
         "suite": "logs/javascript/2026-10-20-191908.csv",
