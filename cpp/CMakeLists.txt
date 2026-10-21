@@ -168,8 +168,8 @@ FetchContent_MakeAvailable(
 # gld-kiln has a Makefile, not CMake. Fetch the tag and compile the library sources.
 FetchContent_Declare(gld_kiln
   GIT_REPOSITORY https://github.com/leo-gan/gld-kiln-cpp.git
-  GIT_TAG 0.2.0
-  GIT_SHALLOW TRUE
+  GIT_TAG 4a843fa28edff401a4ebb40d1a4cf1f58a2e3d3d
+  GIT_SHALLOW FALSE
   SOURCE_DIR ${CPP_TP}/gld-kiln-cpp
 )
 FetchContent_GetProperties(gld_kiln)

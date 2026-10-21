@@ -14,9 +14,10 @@
 #include <utility>
 #include <vector>
 
-// gld-kiln (leo-gan/gld-kiln-cpp 0.2.0). The timed path writes and reads the
-// positional wire directly. Numeric lists are one little-endian copy, not one
-// kiln::Value per element. tensor_view borrows the f32 payload.
+// gld-kiln (leo-gan/gld-kiln-cpp 0.2.0). Message, document, strings, and event
+// still write the positional wire directly. Tensor, prompt, shard, and request
+// call kiln::Writer::encode and kiln::decode_into on f32/i64 views, so the
+// timed path is the library bulk copy. tensor_view borrows the f32 payload.
 // A batch is one list of the struct. One instance is the struct alone. Tensor N is 1.
 // https://leo-gan.github.io/gld-kiln/spec/
 //
@@ -241,14 +242,11 @@ kiln::Value telemetry_value(const Telemetry& row) {
   kiln::Value::List tags;
   tags.reserve(row.tags.size());
   for (const std::string& tag : row.tags) tags.push_back(kiln::Value::str(tag));
-  kiln::Value::List values;
-  values.reserve(row.values.size());
-  for (double value : row.values) values.push_back(kiln::Value::f64(value));
   return kiln::Value::dict({
       {"source", kiln::Value::str(row.source)},
       {"ts", kiln::Value::i64(row.ts)},
       {"tags", kiln::Value::list(std::move(tags))},
-      {"values", kiln::Value::list(std::move(values))},
+      {"values", kiln::Value::f64_view(row.values.data(), row.values.size())},
   });
 }
 
@@ -259,27 +257,25 @@ kiln::Value strings_value(const Strings& row) {
   return kiln::Value::dict({{"items", kiln::Value::list(std::move(items))}});
 }
 
-kiln::Value::List f32_list(const std::vector<float>& values) {
-  kiln::Value::List out;
-  out.reserve(values.size());
-  for (float value : values) out.push_back(kiln::Value::f32(value));
-  return out;
+kiln::Value f32_list(const std::vector<float>& values) {
+  return kiln::Value::f32_view(values.data(), values.size());
 }
 
-kiln::Value::List i64_list(const std::vector<int64_t>& values) {
-  kiln::Value::List out;
-  out.reserve(values.size());
-  for (int64_t value : values) out.push_back(kiln::Value::i64(value));
-  return out;
+kiln::Value i64_list(const std::vector<int64_t>& values) {
+  return kiln::Value::i64_view(values.data(), values.size());
+}
+
+kiln::Value f64_list(const std::vector<double>& values) {
+  return kiln::Value::f64_view(values.data(), values.size());
 }
 
 kiln::Value prompt_value(const Prompt& row) {
   return kiln::Value::dict({
       {"batch", kiln::Value::i64(row.batch)},
       {"seq", kiln::Value::i64(row.seq)},
-      {"input_ids", kiln::Value::list(i64_list(row.input_ids))},
-      {"attention_mask", kiln::Value::list(i64_list(row.attention_mask))},
-      {"position_ids", kiln::Value::list(i64_list(row.position_ids))},
+      {"input_ids", i64_list(row.input_ids)},
+      {"attention_mask", i64_list(row.attention_mask)},
+      {"position_ids", i64_list(row.position_ids)},
   });
 }
 
@@ -287,7 +283,7 @@ kiln::Value tensor_value(const TensorMatrix& row) {
   return kiln::Value::dict({
       {"rows", kiln::Value::i64(row.rows)},
       {"cols", kiln::Value::i64(row.cols)},
-      {"values", kiln::Value::list(f32_list(row.values))},
+      {"values", f32_list(row.values)},
   });
 }
 
@@ -296,10 +292,10 @@ kiln::Value shard_value(const Shard& row) {
       {"vocab", kiln::Value::i64(row.vocab)},
       {"hidden", kiln::Value::i64(row.hidden)},
       {"ffn", kiln::Value::i64(row.ffn)},
-      {"tok_emb", kiln::Value::list(f32_list(row.tok_emb))},
-      {"attn", kiln::Value::list(f32_list(row.attn))},
-      {"ffn_weight", kiln::Value::list(f32_list(row.ffn_weight))},
-      {"norm", kiln::Value::list(f32_list(row.norm))},
+      {"tok_emb", f32_list(row.tok_emb)},
+      {"attn", f32_list(row.attn)},
+      {"ffn_weight", f32_list(row.ffn_weight)},
+      {"norm", f32_list(row.norm)},
   });
 }
 
@@ -382,9 +378,14 @@ Telemetry telemetry_from(const kiln::Value& value) {
   const auto& tags = field_at(d, 2).as_list();
   out.tags.reserve(tags.size());
   for (const kiln::Value& tag : tags) out.tags.push_back(tag.as_str());
-  const auto& values = field_at(d, 3).as_list();
-  out.values.reserve(values.size());
-  for (const kiln::Value& item : values) out.values.push_back(item.as_f64());
+  if (field_at(d, 3).pod_kind() == kiln::PodKind::F64) {
+    const auto span = field_at(d, 3).as_f64s();
+    out.values.assign(span.begin(), span.end());
+  } else {
+    const auto& values = field_at(d, 3).as_list();
+    out.values.reserve(values.size());
+    for (const kiln::Value& item : values) out.values.push_back(item.as_f64());
+  }
   return out;
 }
 
@@ -398,6 +399,10 @@ Strings strings_from(const kiln::Value& value) {
 }
 
 std::vector<float> f32_from_list(const kiln::Value& value) {
+  if (value.pod_kind() == kiln::PodKind::F32) {
+    const auto span = value.as_f32s();
+    return std::vector<float>(span.begin(), span.end());
+  }
   const auto& items = value.as_list();
   std::vector<float> out(items.size());
   for (size_t i = 0; i < items.size(); ++i) out[i] = f32_from_bits(items[i].f32_bits());
@@ -405,6 +410,10 @@ std::vector<float> f32_from_list(const kiln::Value& value) {
 }
 
 std::vector<int64_t> i64_from_list(const kiln::Value& value) {
+  if (value.pod_kind() == kiln::PodKind::I64) {
+    const auto span = value.as_i64s();
+    return std::vector<int64_t>(span.begin(), span.end());
+  }
   const auto& items = value.as_list();
   std::vector<int64_t> out(items.size());
   for (size_t i = 0; i < items.size(); ++i) out[i] = items[i].as_i64();
@@ -992,6 +1001,12 @@ class KilnSer final : public ISerializer {
   std::vector<uint8_t> serialize_bytes(const Fixture& fx) override {
     if (!ready_) fail("prepare was not called");
     PoolOn pool;
+    if (library_cell()) {
+      // release() is the encoded buffer. The next encode allocates again;
+      // PoolOn recycles blocks of at least 256 KiB.
+      writer_.encode(active_schema(), library_value(fx));
+      return writer_.release();
+    }
     std::vector<uint8_t> out;
     out.reserve(wire_size(fx));
     write_fixture(out, fx);
@@ -1001,6 +1016,25 @@ class KilnSer final : public ISerializer {
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     if (!ready_) fail("prepare was not called");
     if (borrow_) return tensor_view_from(data);
+    if (library_cell()) {
+      // Domain vectors of at least 256 KiB go through PoolOn. decode_into keeps
+      // its own pod buffers and copies once; copying into the returned vector
+      // is the second copy.
+      PoolOn pool;
+      kiln::decode_into(active_schema(), std::span<const std::uint8_t>(data.data(), data.size()), slot_);
+      switch (cell_) {
+        case Cell::Tensor:
+          return tensor_from(slot_);
+        case Cell::Prompt:
+          return prompt_from(slot_);
+        case Cell::Shard:
+          return shard_from(slot_);
+        case Cell::Request:
+          return request_from(slot_);
+        default:
+          break;
+      }
+    }
     Cursor in(data);
     Value out = read_fixture(in);
     in.finish();
@@ -1112,10 +1146,46 @@ class KilnSer final : public ISerializer {
     return rows;
   }
 
+  bool library_cell() const {
+    return cell_ == Cell::Tensor || cell_ == Cell::Prompt || cell_ == Cell::Shard || cell_ == Cell::Request;
+  }
+
+  const kiln::Schema& active_schema() const {
+    switch (cell_) {
+      case Cell::Tensor:
+        return tensor_schema();
+      case Cell::Prompt:
+        return prompt_schema();
+      case Cell::Shard:
+        return shard_schema();
+      case Cell::Request:
+        return request_schema();
+      default:
+        fail("prepare was not called");
+    }
+  }
+
+  kiln::Value library_value(const Fixture& fx) const {
+    switch (cell_) {
+      case Cell::Tensor:
+        return tensor_value(std::get<TensorMatrix>(fx.value));
+      case Cell::Prompt:
+        return prompt_value(std::get<Prompt>(fx.value));
+      case Cell::Shard:
+        return shard_value(std::get<Shard>(fx.value));
+      case Cell::Request:
+        return request_value(std::get<Request>(fx.value));
+      default:
+        fail("prepare was not called");
+    }
+  }
+
   Cell cell_ = Cell::Message;
   bool batch_ = false;
   bool borrow_ = false;
   bool ready_ = false;
+  kiln::Writer writer_;
+  kiln::Value slot_;
 };
 
 }  // namespace

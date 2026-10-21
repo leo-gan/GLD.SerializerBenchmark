@@ -81,45 +81,43 @@ public final class GldKilnSerializer: BenchSerializer {
                 batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.event
             )
         case "tensor":
-            encodeFn = { fx in
-                guard let row = fx.value as? TensorMatrix else {
-                    throw BenchError.unsupported("gld-kiln tensor")
-                }
-                return GldKilnBridge.tensorData(row)
-            }
-            decodeFn = { data in try GldKilnBridge.readTensor(data) }
+            encodeFn = GldKilnBridge.bindEncode(
+                typeName: fixture.name, batch: batch, schema: schema,
+                writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
+            )
+            decodeFn = GldKilnBridge.bindDecode(
+                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.tensor
+            )
         case "tensor_view":
-            encodeFn = { fx in
-                guard let row = fx.value as? TensorMatrix else {
-                    throw BenchError.unsupported("gld-kiln tensor")
-                }
-                return GldKilnBridge.tensorData(row)
-            }
+            encodeFn = GldKilnBridge.bindEncode(
+                typeName: fixture.name, batch: batch, schema: schema,
+                writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
+            )
             decodeFn = { data in try GldKilnBridge.tensorView(data) }
         case "prompt":
-            encodeFn = { fx in
-                guard let row = fx.value as? Prompt else {
-                    throw BenchError.unsupported("gld-kiln prompt")
-                }
-                return GldKilnBridge.promptData(row)
-            }
-            decodeFn = { data in try GldKilnBridge.readPrompt(data) }
+            encodeFn = GldKilnBridge.bindEncode(
+                typeName: fixture.name, batch: batch, schema: schema,
+                writer: writer, buffers: buffers, write: GldKilnBridge.promptValue
+            )
+            decodeFn = GldKilnBridge.bindDecode(
+                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.prompt
+            )
         case "shard":
-            encodeFn = { fx in
-                guard let row = fx.value as? Shard else {
-                    throw BenchError.unsupported("gld-kiln shard")
-                }
-                return GldKilnBridge.shardData(row)
-            }
-            decodeFn = { data in try GldKilnBridge.readShard(data) }
+            encodeFn = GldKilnBridge.bindEncode(
+                typeName: fixture.name, batch: batch, schema: schema,
+                writer: writer, buffers: buffers, write: GldKilnBridge.shardValue
+            )
+            decodeFn = GldKilnBridge.bindDecode(
+                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.shard
+            )
         case "request":
-            encodeFn = { fx in
-                guard let row = fx.value as? Request else {
-                    throw BenchError.unsupported("gld-kiln request")
-                }
-                return GldKilnBridge.requestData(row)
-            }
-            decodeFn = { data in try GldKilnBridge.readRequest(data) }
+            encodeFn = GldKilnBridge.bindEncode(
+                typeName: fixture.name, batch: batch, schema: schema,
+                writer: writer, buffers: buffers, write: GldKilnBridge.requestValue
+            )
+            decodeFn = GldKilnBridge.bindDecode(
+                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.request
+            )
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -349,7 +347,7 @@ enum GldKilnBridge {
             "source": .string(t.source),
             "ts": .int(t.ts),
             "tags": .list(t.tags.map { .string($0) }),
-            "values": .list(t.values.map { .f64($0) }),
+            "values": .f64s(t.values),
         ])
     }
 
@@ -361,17 +359,11 @@ enum GldKilnBridge {
         for tag in rawTags {
             tags.append(try str(tag))
         }
-        let rawValues = try list(f["values"])
-        var values: [Double] = []
-        values.reserveCapacity(rawValues.count)
-        for item in rawValues {
-            values.append(try f64(item))
-        }
         return Telemetry(
             source: try str(f["source"]),
             ts: try i64(f["ts"]),
             tags: tags,
-            values: values
+            values: try f64s(f["values"])
         )
     }
 
@@ -663,9 +655,9 @@ enum GldKilnBridge {
         .object([
             "batch": .int(Int64(prompt.batch)),
             "seq": .int(Int64(prompt.seq)),
-            "input_ids": .list(prompt.input_ids.map { .int($0) }),
-            "attention_mask": .list(prompt.attention_mask.map { .int($0) }),
-            "position_ids": .list(prompt.position_ids.map { .int($0) }),
+            "input_ids": .i64s(prompt.input_ids),
+            "attention_mask": .i64s(prompt.attention_mask),
+            "position_ids": .i64s(prompt.position_ids),
         ])
     }
 
@@ -803,15 +795,11 @@ enum GldKilnBridge {
     }
 
     private static func f32List(_ values: [Float]) -> Value {
-        var items: [Value] = []
-        items.reserveCapacity(values.count)
-        for value in values {
-            items.append(.f32(value))
-        }
-        return .list(items)
+        .f32s(values)
     }
 
     private static func f32s(_ value: Value?) throws -> [Float] {
+        if case .f32s(let items)? = value { return items }
         let raw = try list(value)
         var out: [Float] = []
         out.reserveCapacity(raw.count)
@@ -821,7 +809,19 @@ enum GldKilnBridge {
         return out
     }
 
+    private static func f64s(_ value: Value?) throws -> [Double] {
+        if case .f64s(let items)? = value { return items }
+        let raw = try list(value)
+        var out: [Double] = []
+        out.reserveCapacity(raw.count)
+        for item in raw {
+            out.append(try f64(item))
+        }
+        return out
+    }
+
     private static func i64s(_ value: Value?) throws -> [Int64] {
+        if case .i64s(let items)? = value { return items }
         let raw = try list(value)
         var out: [Int64] = []
         out.reserveCapacity(raw.count)

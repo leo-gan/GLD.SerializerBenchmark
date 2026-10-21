@@ -56,20 +56,20 @@ WIRE_SIZE = {
 # Full runs already checked: fidelity 1, 100 repetitions, catalog wire size.
 RUNS = {
     "c": {
-        "suite": "logs/c/2026-10-19-221848.csv",
-        "tensor": "logs/c/2026-10-19-225833.csv",
+        "suite": "logs/c/2026-10-21-kiln-c-suite.csv",
+        "tensor": "logs/c/2026-10-21-kiln-c-tensor.csv",
     },
     "cpp": {
-        "suite": "logs/cpp/2026-10-20-191747.csv",
-        "tensor": "logs/cpp/2026-10-20-191756.csv",
+        "suite": "logs/cpp/2026-10-21-kiln-cpp-suite.csv",
+        "tensor": "logs/cpp/2026-10-21-kiln-cpp-tensor.csv",
     },
     "csharp": {
         "suite": "logs/csharp/2026-10-19-222030.csv",
         "tensor": "logs/csharp/2026-10-19-223813.csv",
     },
     "go": {
-        "suite": "logs/go/2026-10-19-221528.csv",
-        "tensor": "logs/go/2026-10-19-223729.csv",
+        "suite": "logs/go/2026-10-21-kiln-go-suite.csv",
+        "tensor": "logs/go/2026-10-21-kiln-go-tensor.csv",
     },
     "java": {
         "suite": "logs/java/2026-10-21-kiln-suite-pin.csv",
@@ -92,12 +92,12 @@ RUNS = {
         "tensor": "logs/rust/2026-10-20-191723.csv",
     },
     "swift": {
-        "suite": "logs/swift/2026-10-20-192404.csv",
-        "tensor": "logs/swift/2026-10-20-192723.csv",
+        "suite": "logs/swift/2026-10-21-kiln-swift-suite.csv",
+        "tensor": "logs/swift/2026-10-21-kiln-swift-tensor.csv",
     },
     "zig": {
-        "suite": "logs/zig/2026-10-19-221613.csv",
-        "tensor": "logs/zig/2026-10-19-224847.csv",
+        "suite": "logs/zig/2026-10-21-kiln-zig-suite.csv",
+        "tensor": "logs/zig/2026-10-21-kiln-zig-tensor.csv",
     },
 }
 
