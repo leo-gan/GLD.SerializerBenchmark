@@ -1379,6 +1379,10 @@ struct Fixture(Copyable, Movable):
     var shards: List[ShardValue]
     var requests: List[RequestValue]
     var view_ok: Bool
+    # tensor_view payload address. Valid only while the encoded buffer lives.
+    # Fidelity reads it after the deserialize timer stops.
+    var view_addr: Int
+    var view_nbytes: Int
 
     def __init__(
         out self,
@@ -1410,6 +1414,8 @@ struct Fixture(Copyable, Movable):
         self.shards = List[ShardValue]()
         self.requests = List[RequestValue]()
         self.view_ok = False
+        self.view_addr = 0
+        self.view_nbytes = 0
 
     @staticmethod
     def empty(type_id: String, n: Int, hash: String) -> Self:
@@ -2064,6 +2070,28 @@ def fidelity_signal(a: SignalRow, b: SignalRow) -> Bool:
     return True
 
 
+def _tensor_view_matches(expect: Fixture, got: Fixture) -> Bool:
+    """Compare a borrowed f32 payload. Called after the deserialize timer."""
+    if not got.view_ok or got.view_addr == 0 or len(expect.tensors) != 1:
+        return False
+    var n = len(expect.tensors[0].values)
+    if got.view_nbytes != n * 4:
+        return False
+    var p = Pointer[UInt8, ImmutAnyOrigin](unsafe_from_address=got.view_addr)
+    var i = 0
+    while i < n:
+        var bits = (
+            UInt32(p.unsafe_load(i * 4))
+            | (UInt32(p.unsafe_load(i * 4 + 1)) << 8)
+            | (UInt32(p.unsafe_load(i * 4 + 2)) << 16)
+            | (UInt32(p.unsafe_load(i * 4 + 3)) << 24)
+        )
+        if not _same_f32(Float32(from_bits=bits), expect.tensors[0].values[i]):
+            return False
+        i += 1
+    return True
+
+
 def fidelity(a: Fixture, b: Fixture) -> Bool:
     if a.type_id != b.type_id or a.n != b.n:
         return False
@@ -2149,7 +2177,7 @@ def fidelity(a: Fixture, b: Fixture) -> Bool:
             i += 1
         return True
     if a.type_id == "tensor_view":
-        return b.view_ok
+        return _tensor_view_matches(a, b)
     if a.type_id == "tensor":
         return _fidelity_tensor(a, b)
     if a.type_id == "prompt":

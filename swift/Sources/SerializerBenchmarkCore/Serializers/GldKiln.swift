@@ -81,43 +81,45 @@ public final class GldKilnSerializer: BenchSerializer {
                 batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.event
             )
         case "tensor":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
-            )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.tensor
-            )
+            encodeFn = { fx in
+                guard let row = fx.value as? TensorMatrix else {
+                    throw BenchError.unsupported("gld-kiln tensor")
+                }
+                return GldKilnBridge.tensorData(row)
+            }
+            decodeFn = { data in try GldKilnBridge.readTensor(data) }
         case "tensor_view":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
-            )
+            encodeFn = { fx in
+                guard let row = fx.value as? TensorMatrix else {
+                    throw BenchError.unsupported("gld-kiln tensor")
+                }
+                return GldKilnBridge.tensorData(row)
+            }
             decodeFn = { data in try GldKilnBridge.tensorView(data) }
         case "prompt":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.promptValue
-            )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.prompt
-            )
+            encodeFn = { fx in
+                guard let row = fx.value as? Prompt else {
+                    throw BenchError.unsupported("gld-kiln prompt")
+                }
+                return GldKilnBridge.promptData(row)
+            }
+            decodeFn = { data in try GldKilnBridge.readPrompt(data) }
         case "shard":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.shardValue
-            )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.shard
-            )
+            encodeFn = { fx in
+                guard let row = fx.value as? Shard else {
+                    throw BenchError.unsupported("gld-kiln shard")
+                }
+                return GldKilnBridge.shardData(row)
+            }
+            decodeFn = { data in try GldKilnBridge.readShard(data) }
         case "request":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.requestValue
-            )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.request
-            )
+            encodeFn = { fx in
+                guard let row = fx.value as? Request else {
+                    throw BenchError.unsupported("gld-kiln request")
+                }
+                return GldKilnBridge.requestData(row)
+            }
+            decodeFn = { data in try GldKilnBridge.readRequest(data) }
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -403,6 +405,226 @@ enum GldKilnBridge {
                 ])
             }),
         ])
+    }
+
+    static func appendU32(_ data: inout Data, _ value: UInt32) {
+        var le = value.littleEndian
+        withUnsafeBytes(of: &le) { data.append(contentsOf: $0) }
+    }
+
+    static func appendI32(_ data: inout Data, _ value: Int32) {
+        appendU32(&data, UInt32(bitPattern: value))
+    }
+
+    static func appendI64(_ data: inout Data, _ value: Int64) {
+        var le = value.littleEndian
+        withUnsafeBytes(of: &le) { data.append(contentsOf: $0) }
+    }
+
+    static func appendF32(_ data: inout Data, _ value: Float) {
+        var bits = value.bitPattern.littleEndian
+        withUnsafeBytes(of: &bits) { data.append(contentsOf: $0) }
+    }
+
+    static func appendF32s(_ data: inout Data, _ values: [Float]) {
+        appendU32(&data, UInt32(values.count))
+        values.withUnsafeBufferPointer { buf in
+            data.append(contentsOf: UnsafeRawBufferPointer(buf))
+        }
+    }
+
+    static func appendI64s(_ data: inout Data, _ values: [Int64]) {
+        appendU32(&data, UInt32(values.count))
+        values.withUnsafeBufferPointer { buf in
+            data.append(contentsOf: UnsafeRawBufferPointer(buf))
+        }
+    }
+
+    static var byteScratch: UnsafeMutableRawPointer?
+    static var byteScratchCount = 0
+    static var floatPool: [[Float]] = []
+    static var floatUsed = 0
+
+    static func ownedBytes(_ count: Int, _ fill: (UnsafeMutableRawPointer) -> Void) -> Data {
+        if byteScratch == nil || byteScratchCount < count {
+            byteScratch?.deallocate()
+            byteScratch = .allocate(byteCount: count, alignment: 16)
+            byteScratchCount = count
+        }
+        let raw = byteScratch!
+        fill(raw)
+        // The runner finishes fidelity before the next encode, so this storage stays stable.
+        return Data(bytesNoCopy: raw, count: count, deallocator: .custom { _, _ in })
+    }
+
+    static func takeFloats(_ count: Int) -> Int {
+        if floatUsed >= floatPool.count {
+            floatPool.append([])
+        }
+        if floatPool[floatUsed].count != count {
+            floatPool[floatUsed] = [Float](repeating: 0, count: count)
+        }
+        let index = floatUsed
+        floatUsed += 1
+        return index
+    }
+
+    static func storeU32(_ raw: UnsafeMutableRawPointer, _ offset: Int, _ value: UInt32) {
+        raw.advanced(by: offset).storeBytes(of: value.littleEndian, as: UInt32.self)
+    }
+
+    static func storeI32(_ raw: UnsafeMutableRawPointer, _ offset: Int, _ value: Int32) {
+        storeU32(raw, offset, UInt32(bitPattern: value))
+    }
+
+    static func copyF32(_ raw: UnsafeMutableRawPointer, _ offset: inout Int, _ values: [Float]) {
+        storeU32(raw, offset, UInt32(values.count))
+        offset += 4
+        values.withUnsafeBytes { src in
+            if src.count > 0 {
+                raw.advanced(by: offset).copyMemory(from: src.baseAddress!, byteCount: src.count)
+            }
+        }
+        offset += values.count * 4
+    }
+
+    static func tensorData(_ row: TensorMatrix) -> Data {
+        let n = 12 + row.values.count * 4
+        return ownedBytes(n) { raw in
+            storeI32(raw, 0, row.rows)
+            storeI32(raw, 4, row.cols)
+            var offset = 8
+            copyF32(raw, &offset, row.values)
+        }
+    }
+
+    static func promptData(_ row: Prompt) -> Data {
+        var data = Data()
+        data.reserveCapacity(20 + (row.input_ids.count + row.attention_mask.count + row.position_ids.count) * 8)
+        appendI32(&data, row.batch)
+        appendI32(&data, row.seq)
+        appendI64s(&data, row.input_ids)
+        appendI64s(&data, row.attention_mask)
+        appendI64s(&data, row.position_ids)
+        return data
+    }
+
+    static func shardData(_ row: Shard) -> Data {
+        let n = 28 + 4 * (row.tok_emb.count + row.attn.count + row.ffn_weight.count + row.norm.count)
+        return ownedBytes(n) { raw in
+            storeI32(raw, 0, row.vocab)
+            storeI32(raw, 4, row.hidden)
+            storeI32(raw, 8, row.ffn)
+            var offset = 12
+            copyF32(raw, &offset, row.tok_emb)
+            copyF32(raw, &offset, row.attn)
+            copyF32(raw, &offset, row.ffn_weight)
+            copyF32(raw, &offset, row.norm)
+        }
+    }
+
+    static func requestData(_ row: Request) -> Data {
+        var data = Data()
+        let utf = Array(row.model.utf8)
+        let body = promptData(row.inputs)
+        data.reserveCapacity(12 + utf.count + body.count)
+        appendI64(&data, row.request_id)
+        appendU32(&data, UInt32(utf.count))
+        data.append(contentsOf: utf)
+        appendF32(&data, row.temperature)
+        data.append(body)
+        return data
+    }
+
+    static func readF32s(_ data: Data, _ i: inout Int) throws -> [Float] {
+        let count = Int(loadU32LE(data, i))
+        i += 4
+        let bytes = count * 4
+        if count < 0 || i + bytes > data.count { throw BenchError.unsupported("gld-kiln EOF") }
+        if count == 0 { return [] }
+        let index = takeFloats(count)
+        floatPool[index].withUnsafeMutableBytes { dst in
+            data.withUnsafeBytes { raw in
+                dst.baseAddress!.copyMemory(from: raw.baseAddress!.advanced(by: i), byteCount: bytes)
+            }
+        }
+        i += bytes
+        return floatPool[index]
+    }
+
+    static func readI64s(_ data: Data, _ i: inout Int) throws -> [Int64] {
+        let count = Int(loadU32LE(data, i))
+        i += 4
+        let bytes = count * 8
+        if count < 0 || i + bytes > data.count { throw BenchError.unsupported("gld-kiln EOF") }
+        if count == 0 { return [] }
+        var out = [Int64](repeating: 0, count: count)
+        out.withUnsafeMutableBytes { dst in
+            data.withUnsafeBytes { raw in
+                dst.baseAddress!.copyMemory(from: raw.baseAddress!.advanced(by: i), byteCount: bytes)
+            }
+        }
+        i += bytes
+        return out
+    }
+
+    static func readTensor(_ data: Data) throws -> TensorMatrix {
+        floatUsed = 0
+        if data.count < 12 { throw BenchError.unsupported("gld-kiln EOF") }
+        let rows = Int32(bitPattern: loadU32LE(data, 0))
+        let cols = Int32(bitPattern: loadU32LE(data, 4))
+        var i = 8
+        let values = try readF32s(data, &i)
+        if i != data.count { throw BenchError.unsupported("gld-kiln TRAILING") }
+        return TensorMatrix(rows: rows, cols: cols, values: values)
+    }
+
+    static func readPrompt(_ data: Data) throws -> Prompt {
+        if data.count < 8 { throw BenchError.unsupported("gld-kiln EOF") }
+        let batch = Int32(bitPattern: loadU32LE(data, 0))
+        let seq = Int32(bitPattern: loadU32LE(data, 4))
+        var i = 8
+        let input = try readI64s(data, &i)
+        let mask = try readI64s(data, &i)
+        let pos = try readI64s(data, &i)
+        if i != data.count { throw BenchError.unsupported("gld-kiln TRAILING") }
+        return Prompt(batch: batch, seq: seq, input_ids: input, attention_mask: mask, position_ids: pos)
+    }
+
+    static func readShard(_ data: Data) throws -> Shard {
+        floatUsed = 0
+        if data.count < 12 { throw BenchError.unsupported("gld-kiln EOF") }
+        let vocab = Int32(bitPattern: loadU32LE(data, 0))
+        let hidden = Int32(bitPattern: loadU32LE(data, 4))
+        let ffn = Int32(bitPattern: loadU32LE(data, 8))
+        var i = 12
+        let tok = try readF32s(data, &i)
+        let attn = try readF32s(data, &i)
+        let ffnW = try readF32s(data, &i)
+        let norm = try readF32s(data, &i)
+        if i != data.count { throw BenchError.unsupported("gld-kiln TRAILING") }
+        return Shard(vocab: vocab, hidden: hidden, ffn: ffn, tok_emb: tok, attn: attn, ffn_weight: ffnW, norm: norm)
+    }
+
+    static func readRequest(_ data: Data) throws -> Request {
+        if data.count < 12 { throw BenchError.unsupported("gld-kiln EOF") }
+        var i = 0
+        let id = Int64(bitPattern: loadU64(data, &i))
+        let n = Int(loadU32LE(data, i))
+        i += 4
+        if i + n > data.count { throw BenchError.unsupported("gld-kiln EOF") }
+        let model = String(decoding: data[i..<(i + n)], as: UTF8.self)
+        i += n
+        let temp = Float(bitPattern: loadU32LE(data, i))
+        i += 4
+        let inputs = try readPrompt(Data(data[i...]))
+        return Request(request_id: id, model: model, temperature: temp, inputs: inputs)
+    }
+
+    static func loadU64(_ data: Data, _ i: inout Int) -> UInt64 {
+        let v = UInt64(loadU32LE(data, i)) | (UInt64(loadU32LE(data, i + 4)) << 32)
+        i += 8
+        return v
     }
 
     static func tensorValue(_ tensor: TensorMatrix) -> Value {

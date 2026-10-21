@@ -19,6 +19,27 @@ use std::rc::Rc;
 /// Epoch-ms base for generated timestamps (matches other language harnesses).
 pub const BASE_TS_MS: i64 = 1_704_067_200_000;
 
+thread_local! {
+    static STRING_POOL: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+pub(crate) fn take_string() -> String {
+    STRING_POOL.with(|pool| pool.borrow_mut().pop().unwrap_or_default())
+}
+
+pub(crate) fn recycle_string(mut value: String) {
+    if value.capacity() == 0 {
+        return;
+    }
+    value.clear();
+    STRING_POOL.with(|pool| {
+        let mut pool = pool.borrow_mut();
+        if pool.len() < 4096 {
+            pool.push(value);
+        }
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Domain types
 // ---------------------------------------------------------------------------
@@ -247,6 +268,63 @@ pub struct Event {
     pub producer: String,
     #[n(4)]
     pub attrs: Vec<EventAttr>,
+}
+
+impl Drop for Message {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.f_string));
+        recycle_string(std::mem::take(&mut self.f_string_2));
+    }
+}
+
+impl Drop for DocumentMeta {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.region));
+    }
+}
+
+impl Drop for DocumentItem {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.sku));
+    }
+}
+
+impl Drop for Document {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.id));
+    }
+}
+
+impl Drop for Telemetry {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.source));
+        for tag in std::mem::take(&mut self.tags) {
+            recycle_string(tag);
+        }
+    }
+}
+
+impl Drop for Strings {
+    fn drop(&mut self) {
+        for item in std::mem::take(&mut self.items) {
+            recycle_string(item);
+        }
+    }
+}
+
+impl Drop for EventAttr {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.key));
+        recycle_string(std::mem::take(&mut self.value));
+    }
+}
+
+impl Drop for Event {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.event_id));
+        recycle_string(std::mem::take(&mut self.event_type));
+        recycle_string(std::mem::take(&mut self.producer));
+    }
 }
 
 /// Wide flat row. Proto / Avro / SBE name this record Table.
@@ -1172,6 +1250,61 @@ pub enum F32Payload {
     Borrowed(F32Span),
 }
 
+thread_local! {
+    static F32_POOL: std::cell::RefCell<Vec<Vec<f32>>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Take a buffer with room for `n` floats.
+///
+/// A 4 MiB `Vec` is above glibc's mmap threshold, so dropping it every
+/// repetition returns the pages and the next decode pays for a fresh zeroed
+/// mapping. The pool keeps that block for the next owned tensor read.
+pub(crate) fn take_f32_buf(n: usize) -> Vec<f32> {
+    let mut buf = F32_POOL.with(|pool| {
+        let mut pool = pool.borrow_mut();
+        // Smallest buffer that fits, so a 16-float list does not steal the 4 MiB block.
+        let mut best: Option<usize> = None;
+        for (index, values) in pool.iter().enumerate() {
+            let cap = values.capacity();
+            if cap < n {
+                continue;
+            }
+            if best
+                .map(|picked| cap < pool[picked].capacity())
+                .unwrap_or(true)
+            {
+                best = Some(index);
+            }
+        }
+        match best {
+            Some(index) => pool.swap_remove(index),
+            None => Vec::with_capacity(n),
+        }
+    });
+    buf.clear();
+    buf
+}
+
+fn recycle_f32_buf(buf: Vec<f32>) {
+    if buf.capacity() < 4096 {
+        return;
+    }
+    F32_POOL.with(|pool| {
+        let mut pool = pool.borrow_mut();
+        if pool.len() < 8 {
+            pool.push(buf);
+        }
+    });
+}
+
+impl Drop for F32Payload {
+    fn drop(&mut self) {
+        if let F32Payload::Owned(values) = self {
+            recycle_f32_buf(std::mem::take(values));
+        }
+    }
+}
+
 impl F32Payload {
     pub fn len(&self) -> usize {
         match self {
@@ -1297,6 +1430,12 @@ pub struct InferenceRequest {
     pub model: String,
     pub temperature: f32,
     pub inputs: Prompt,
+}
+
+impl Drop for InferenceRequest {
+    fn drop(&mut self) {
+        recycle_string(std::mem::take(&mut self.model));
+    }
 }
 
 fn f32s_eq(left: &[f32], right: &[f32]) -> bool {

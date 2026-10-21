@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import array
 import math
 import struct
 from collections.abc import Mapping
@@ -50,6 +51,8 @@ def _norm(obj: Any) -> Any:
     # amazon.ion IonPyDict is a Mapping and not a dict.
     if isinstance(obj, Mapping):
         return {str(k): _norm(v) for k, v in obj.items()}
+    if isinstance(obj, array.array):
+        return list(obj)
     if isinstance(obj, (list, tuple)):
         return [_norm(v) for v in obj]
     if isinstance(obj, float):
@@ -234,6 +237,8 @@ def _f32_bits(value: Any) -> int | None:
 def _as_sequence(value: Any) -> list[Any] | None:
     if np is not None and isinstance(value, np.ndarray):
         return value.reshape(-1).tolist()
+    if isinstance(value, array.array):
+        return value
     if isinstance(value, memoryview):
         return list(value)
     if isinstance(value, (list, tuple)):
