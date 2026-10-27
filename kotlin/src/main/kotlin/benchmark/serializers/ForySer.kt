@@ -10,12 +10,17 @@ import benchmark.model.v2.Message
 import benchmark.model.v2.Strings
 import benchmark.model.v2.Telemetry
 import org.apache.fory.Fory
+import org.apache.fory.io.ForyInputStream
 import org.apache.fory.kotlin.ForyKotlin
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 
 /**
  * Apache Fory — JIT/codegen high-performance binary serialization.
  *
- * Hot path: reuse one [Fory] in native mode; register types before first use.
+ * Reuses one Fory instance and registers types before first use.
  */
 class ForySer : BenchSerializer {
     private val fory: Fory =
@@ -41,16 +46,34 @@ class ForySer : BenchSerializer {
 
     override fun version() = Versions.of(Fory::class.java)
 
-    override fun streamMode() = "adapted"
+    override fun streamMode() = "native"
 
     override fun nativeKind() = "message"
 
     override fun prepare(fx: Fixture) {
-        // Warm codegen for this root type (untimed).
-        fory.deserialize(fory.serialize(fx.value))
+        // Warm up the byte-array path.
+        val bytes = fory.serialize(fx.value)
+        fory.deserialize(bytes)
+
+        // Warm up the direct stream path outside the timed benchmark.
+        val output = ByteArrayOutputStream()
+        fory.serialize(output, fx.value)
+        fory.deserialize(ForyInputStream(ByteArrayInputStream(output.toByteArray())))
     }
 
-    override fun serializeBytes(fx: Fixture): ByteArray = fory.serialize(fx.value)
+    override fun serializeBytes(fx: Fixture): ByteArray =
+        fory.serialize(fx.value)
 
-    override fun deserializeBytes(data: ByteArray): Any = fory.deserialize(data)
+    override fun deserializeBytes(data: ByteArray): Any =
+        fory.deserialize(data)
+
+    override fun serializeStream(fx: Fixture, out: OutputStream): Int {
+        fory.serialize(out, fx.value)
+
+        // Main.measureStream treats a negative return as "use output size".
+        return -1
+    }
+
+    override fun deserializeStream(input: InputStream): Any =
+        fory.deserialize(ForyInputStream(input))
 }
