@@ -610,6 +610,13 @@ if [[ "$STATUS" -eq 0 ]]; then
         cp -f "$JSON_OUT" "$LOG_DIR/latest.json"
     fi
     if [[ ${#FORMATS[@]} -eq 0 && ${#ADAPTERS[@]} -eq 0 ]]; then
+        # Kiln 0.2.0 ports and Fortran gld-arrow are scored outside the
+        # language runners. Re-apply those rows after a runner rewrites
+        # latest-<lang>.json, then build the dashboard gzip once.
+        echo -e "${BLUE}Splicing Kiln ports and Fortran Arrow…${NC}"
+        python3 "$PROJECT_ROOT/compliance/scripts/publish_extra_compliance.py" \
+            "$PROJECT_ROOT/compliance/results" \
+            || echo -e "${YELLOW}⚠ Kiln/Arrow splice failed; syncing the reports as they stand${NC}"
         echo -e "${BLUE}Syncing Dashboard payload…${NC}"
         if python3 "$PROJECT_ROOT/dashboard/scripts/sync-compliance.py"; then
             echo -e "${GREEN}✓ Dashboard data/compliance.json updated${NC}"

@@ -56,7 +56,7 @@ NetCDF rows call `netCDF4.Dataset`, `nf90_open`, or gld-netcdf (`read_cdf1` / `r
 | --- | --- | --- |
 | `kiln` | `compliance/data/kiln/v2.json` | Version-2 tensor directory, a `tensors` field, the frame hash, and the list allocation check |
 
-`gld-kiln` 0.3.0 calls `decode` and `decode_framed`. The bytes were frozen from the Kiln reference codec. A language with no Kiln library has no cell.
+Mojo `gld-kiln` 0.3.0 and the 0.2.0 language ports call `decode` and `decode_framed`. The bytes were frozen from the Kiln reference codec. A language with no Kiln library has no cell.
 
 ## Python
 
