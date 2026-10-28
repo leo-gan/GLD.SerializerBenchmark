@@ -41,6 +41,10 @@ class ForySer : BenchSerializer {
 
     override fun version() = Versions.of(Fory::class.java)
 
+    /**
+     * Uses the interface's adapted stream methods, which bridge through byte arrays.
+     * This serializer implements the byte-array API directly.
+     */
     override fun streamMode() = "adapted"
 
     override fun nativeKind() = "message"
@@ -54,4 +58,3 @@ class ForySer : BenchSerializer {
 
     override fun deserializeBytes(data: ByteArray): Any = fory.deserialize(data)
 }
-// Native stream serialization path using OutputStream and ForyInputStream 
