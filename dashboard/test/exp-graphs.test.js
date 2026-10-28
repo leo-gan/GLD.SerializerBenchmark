@@ -4,6 +4,7 @@ import {
   ALL_LANG,
   compareLabel,
   displayTier,
+  librariesByDisplayTier,
   flattenLanguageRows,
   isAllLang,
   mixedLanguages,
@@ -96,6 +97,21 @@ test('skipReason explains msgspec is timed, not failed', () => {
   assert.match(skip.detail, /list/);
   assert.equal(compareLabel({ in_comparison: false, writes_named_fields: false }), 'By design — JSON list');
   assert.equal(skipReason({ in_comparison: true, writes_named_fields: true }), null);
+});
+
+test('librariesByDisplayTier fills A bit slower when Cliff tier is slower but the median is within 1.5×', () => {
+  // Rust starter-kit shape: top_group.close is [] while the table says A bit slower.
+  const rows = [
+    { library: 'prost', total_median_ns: 1566, tier: 'fastest', cliffs_label: 'reference', in_comparison: true, writes_named_fields: true },
+    { library: 'rmp-serde', total_median_ns: 2265, tier: 'slower', cliffs_delta_vs_fastest: 0.9673, in_comparison: true, writes_named_fields: true },
+    { library: 'serde_json', total_median_ns: 4000, tier: 'slower', cliffs_delta_vs_fastest: 1, in_comparison: true, writes_named_fields: true },
+  ];
+  assert.equal(compareLabel(rows[1], rows), 'A bit slower');
+  const tiers = librariesByDisplayTier(rows);
+  assert.deepEqual(tiers.fastest, ['prost']);
+  assert.deepEqual(tiers.close, ['rmp-serde']);
+  assert.deepEqual(tiers.slower, ['serde_json']);
+  assert.deepEqual(tiers.similar, []);
 });
 
 test('displayTier does not paint a 2% median gap as clearly slower', () => {

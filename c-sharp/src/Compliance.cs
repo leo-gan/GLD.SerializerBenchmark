@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Text.Json;
 using Amazon.IonDotnet;
 using Amazon.IonDotnet.Builders;
@@ -43,13 +44,15 @@ namespace GLD.SerializerBenchmark
                 suites = suites.Where(s => formats.Contains(s.Format.ToLowerInvariant())).ToList();
 
             var adapters = Adapters();
+            var adapterErrs = new List<string>();
+            // Check the full registry so a one-serializer run does not report
+            // every other library as a missing adapter.
+            adapters = FilterByMapping(root, "csharp", adapters, adapterErrs);
             if (only.Count > 0)
             {
                 var want = new HashSet<string>(only, StringComparer.OrdinalIgnoreCase);
                 adapters = adapters.Where(a => want.Contains(a.Name)).ToList();
             }
-            var adapterErrs = new List<string>();
-            adapters = FilterByMapping(root, "csharp", adapters, adapterErrs);
             var byFmt = adapters.GroupBy(a => a.Format).ToDictionary(g => g.Key, g => g.ToList());
             var by = new SortedDictionary<string, int[]>();
             var fmts = new HashSet<string>();
@@ -241,7 +244,14 @@ namespace GLD.SerializerBenchmark
                 new("Json.Net (Helper)", "json", SerializerVersionRegistry.Resolve("Json.Net (Helper)"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("SpanJson", "json", SerializerVersionRegistry.Resolve("SpanJson"), (b, _) => SpanJson.JsonSerializer.Generic.Utf8.Deserialize<object>(b), 8192),
                 new("Utf8Json", "json", SerializerVersionRegistry.Resolve("Utf8Json"), (b, _) => Utf8Json.JsonSerializer.Deserialize<object>(b), 8192),
-                new("NetJSON", "json", SerializerVersionRegistry.Resolve("NetJSON"), (b, _) => NetJSON.NetJSON.Deserialize<object>(Encoding.UTF8.GetString(b)), 4096),
+                // NetJSON can loop on a catalog input. A per-case limit records that
+                // case and continues, instead of dropping the whole row.
+                new("NetJSON", "json", SerializerVersionRegistry.Resolve("NetJSON"), (b, _) => NetJSON.NetJSON.Deserialize<object>(Encoding.UTF8.GetString(b)), 4096, 1500),
+                new("ShapeShift.Json", "json", SerializerVersionRegistry.Resolve("ShapeShift.Json"), ShapeShiftCompliance.DecodeJson, 65536, 1500),
+                new("ShapeShift.Cbor", "cbor", SerializerVersionRegistry.Resolve("ShapeShift.Cbor"), ShapeShiftCompliance.DecodeCbor, 65536, 1500),
+                new("ShapeShift.MsgPack", "msgpack", SerializerVersionRegistry.Resolve("ShapeShift.MsgPack"), ShapeShiftCompliance.DecodeMsgPack, 65536, 1500),
+                new("ShapeShift.Toml", "toml", SerializerVersionRegistry.Resolve("ShapeShift.Toml"), ShapeShiftCompliance.DecodeToml, 65536, 1500),
+                new("ShapeShift.Yaml", "yaml", SerializerVersionRegistry.Resolve("ShapeShift.Yaml"), ShapeShiftCompliance.DecodeYaml, 65536, 1500),
                 new("fastJson", "json", SerializerVersionRegistry.Resolve("fastJson"), (b, _) => fastJSON.JSON.ToObject(Encoding.UTF8.GetString(b)), 4096),
                 new("ServiceStack Json", "json", SerializerVersionRegistry.Resolve("ServiceStack Json"), (b, _) => ServiceStack.Text.JsonSerializer.DeserializeFromString<object>(Encoding.UTF8.GetString(b)), 4096),
                 new("FsPicklerJson", "json", SerializerVersionRegistry.Resolve("FsPicklerJson"), DecodeFsPicklerJson, 4096),
@@ -528,7 +538,18 @@ namespace GLD.SerializerBenchmark
                 // Ion binary uses those bytes as data, and Ion text uses them as containers.
                 if ((a.Format != "ion" && TooDeep(raw)) || raw.Length > a.MaxBytes)
                     throw new InvalidDataException("input too nested or large for this runner");
-                got = a.Decode(raw, SchemaText(c.Schema));
+                var schema = SchemaText(c.Schema);
+                if (a.TimeoutMs > 0)
+                {
+                    var work = Task.Run(() => a.Decode(raw, schema));
+                    if (!work.Wait(a.TimeoutMs))
+                        throw new TimeoutException("decode exceeded " + a.TimeoutMs + " ms");
+                    got = work.Result;
+                }
+                else
+                {
+                    got = a.Decode(raw, schema);
+                }
             }
             catch (Exception ex)
             {
@@ -816,10 +837,11 @@ namespace GLD.SerializerBenchmark
             public string Format { get; }
             public string Version { get; }
             public int MaxBytes { get; }
+            public int TimeoutMs { get; }
             public Func<byte[], string, object> Decode { get; }
-            public Adapter(string name, string format, string version, Func<byte[], string, object> decode, int maxBytes = 65536)
+            public Adapter(string name, string format, string version, Func<byte[], string, object> decode, int maxBytes = 65536, int timeoutMs = 0)
             {
-                Name = name; Format = format; Version = version; Decode = decode; MaxBytes = maxBytes;
+                Name = name; Format = format; Version = version; Decode = decode; MaxBytes = maxBytes; TimeoutMs = timeoutMs;
             }
         }
     }

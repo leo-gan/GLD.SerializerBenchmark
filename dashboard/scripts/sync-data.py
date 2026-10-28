@@ -50,6 +50,44 @@ def _serializer_names(stats):
     return found
 
 
+def _replace_flag(name):
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes")
+
+
+def _carry_spliced_groups(lang, existing_stats, new_stats):
+    """Keep publication splices the suite CSV does not measure.
+
+    Columnar, graph, array, tensor, and Dagr rows are appended by separate
+    scripts. A later suite sync must not erase them.
+    """
+    if not existing_stats or not new_stats or not new_stats.get("groups"):
+        return
+    new_types = _base_types(new_stats)
+    new_names = _serializer_names(new_stats)
+    keep_types = set()
+    if not _replace_flag("DASHBOARD_REPLACE_COLUMNAR"):
+        keep_types |= _COLUMNAR_TYPES
+    if not _replace_flag("DASHBOARD_REPLACE_GRAPH"):
+        keep_types |= _GRAPH_TYPES
+    if not _replace_flag("DASHBOARD_REPLACE_ARRAY"):
+        keep_types |= _ARRAY_TYPES
+    if not _replace_flag("DASHBOARD_REPLACE_TENSOR"):
+        keep_types |= _TENSOR_TYPES
+    keep_dagr = not _replace_flag("DASHBOARD_REPLACE_DAGR")
+    carried = []
+    for group in existing_stats.get("groups") or []:
+        base = str(group.get("test_data") or "").split("@n=")[0]
+        name = str(group.get("serializer") or "")
+        if base in keep_types and base not in new_types:
+            carried.append(group)
+        elif keep_dagr and name in _DAGR_SERIALIZERS and name not in new_names:
+            carried.append(group)
+    if not carried:
+        return
+    new_stats.setdefault("groups", []).extend(carried)
+    print(f"{lang}: carried {len(carried)} spliced groups from the previous snapshot")
+
+
 def _refuse_columnar_loss(lang, existing_stats, new_stats):
     """Abort when a sync would erase spliced columnar groups."""
     lost = (_base_types(existing_stats) & _COLUMNAR_TYPES) - _base_types(new_stats)
@@ -241,6 +279,7 @@ def main():
                     existing_stats = json.load(f)
             except Exception as e:
                 print(f"Warning: could not read existing stats for {lang}: {e}")
+        _carry_spliced_groups(lang, existing_stats, stats_data)
         _refuse_columnar_loss(lang, existing_stats, stats_data)
         _refuse_dagr_loss(lang, existing_stats, stats_data)
         _refuse_graph_loss(lang, existing_stats, stats_data)

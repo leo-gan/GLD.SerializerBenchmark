@@ -202,6 +202,34 @@ function builtinAdapters(): array
             return $rows;
         }];
     }
+    if (function_exists('simdjson_decode')) {
+        $out[] = ['name' => 'simdjson', 'format' => 'json', 'version' => phpversion('simdjson') ?: 'simdjson', 'decode' => function (string $b) {
+            return simdjson_decode($b, true);
+        }];
+    }
+    if (function_exists('msgpack_unpack')) {
+        $out[] = ['name' => 'msgpack-pecl', 'format' => 'msgpack', 'version' => phpversion('msgpack') ?: 'msgpack', 'decode' => function (string $b) {
+            return msgpack_unpack($b);
+        }];
+    }
+    if (function_exists('yaml_parse')) {
+        $out[] = ['name' => 'yaml-pecl', 'format' => 'yaml', 'version' => phpversion('yaml') ?: 'yaml', 'decode' => function (string $b) {
+            $v = yaml_parse($b);
+            if ($v === false) {
+                throw new RuntimeException('yaml_parse failed');
+            }
+            return $v;
+        }];
+    }
+    if (class_exists(\MongoDB\BSON\Document::class)) {
+        $out[] = ['name' => 'bson', 'format' => 'bson', 'version' => phpversion('mongodb') ?: 'ext-mongodb', 'decode' => function (string $b) {
+            return \MongoDB\BSON\Document::fromBSON($b)->toPHP([
+                'root' => 'array',
+                'document' => 'array',
+                'array' => 'array',
+            ]);
+        }];
+    }
     if (function_exists('Gld\\Ion\\decode')) {
         $out[] = ['name' => 'gld-ion', 'format' => 'ion', 'version' => packageVersion('leo-gan/gld-ion-php'), 'decode' => function (string $b) {
             return \Gld\Ion\decode($b);

@@ -381,6 +381,18 @@ test('live C# payload: All includes every Overview serializer', () => {
   );
 });
 
+test('live C# JSON payload scores NetJSON, SpanJson, and ShapeShift', () => {
+  const compliance = loadJsonGz('compliance.json.gz');
+  const totals = new Map();
+  for (const cell of compliance.matrix || []) {
+    if (cell.language !== 'csharp' || cell.format !== 'json') continue;
+    totals.set(cell.serializer, (totals.get(cell.serializer) || 0) + (Number(cell.total) || 0));
+  }
+  for (const name of ['NetJSON', 'SpanJson', 'ShapeShift.Json', 'System.Text.Json']) {
+    assert.ok((totals.get(name) || 0) > 0, `${name} must have JSON compliance cells`);
+  }
+});
+
 test('live payload: every language All = scored ∪ No public spec', () => {
   const compliance = loadJsonGz('compliance.json.gz');
   const langs = [...new Set((compliance.languages || []).map(String))];
