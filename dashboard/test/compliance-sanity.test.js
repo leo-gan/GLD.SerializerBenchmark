@@ -613,6 +613,32 @@ test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
   assert.deepEqual(listed, { name: 'gld-kiln', version: '0.2.0' });
 });
 
+test('live gld-kiln ports and Fortran gld-arrow have compliance cells', () => {
+  const compliance = loadJsonGz('compliance.json.gz');
+  const kilnLangs = ['c', 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'rust', 'swift', 'zig'];
+  for (const language of kilnLangs) {
+    const cells = compliance.matrix.filter(
+      (row) => row.language === language && row.serializer === 'gld-kiln' && row.format === 'kiln',
+    );
+    assert.equal(cells.length, 1, language);
+    assert.equal(cells[0].standard, 'Kiln wire v2');
+    assert.equal(cells[0].version, 'v2');
+    assert.equal(cells[0].serializer_version, '0.2.0', language);
+    assert.equal(cells[0].passed, 46, language);
+    assert.equal(cells[0].failed, 0, language);
+    assert.equal(cells[0].total, 46, language);
+  }
+  const arrow = compliance.matrix.filter(
+    (row) => row.language === 'fortran' && row.serializer === 'gld-arrow' && row.format === 'arrow',
+  );
+  assert.equal(arrow.length, 1);
+  assert.equal(arrow[0].standard, 'Arrow IPC stream');
+  assert.equal(arrow[0].passed, 3);
+  assert.equal(arrow[0].failed, 1);
+  assert.equal(arrow[0].total, 4);
+  assert.equal(arrow[0].serializer_version, '0.2.0');
+});
+
 test('live mojo gld-kiln has a scored Kiln wire v2 cell', () => {
   const compliance = loadJsonGz('compliance.json.gz');
   const cells = compliance.matrix.filter(

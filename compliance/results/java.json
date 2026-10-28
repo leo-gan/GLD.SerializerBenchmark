@@ -1,0 +1,286 @@
+{
+  "language": "java",
+  "serializer": "gld-kiln",
+  "serializer_version": "0.2.0",
+  "pin": "gld-kiln-java 888ad8f KilnV2CasesTest.fortySixCasesRoundTripOrReject",
+  "passed": 46,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "kiln-v2-empty",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f32",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f32-scalar",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f32-negzero",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f64-nan",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f16-named",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bf16",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-i8",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bool",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-u4",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-f8-pair",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-scales",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-scales-outer",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-opaque",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-in-struct",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-framed",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-pod-list-f32",
+      "outcome": "pass",
+      "observed": "ok",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bad-magic",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-empty-name-flag",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-le-clear",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-unknown-flag",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-reserved",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-directory-eof",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-count-cap",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-directory-mismatch",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-shape-overflow",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-length-mismatch",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-overlap",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-unaligned",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-nonzero-pad",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-duplicate-name",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bad-utf8",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bool-byte",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-scale-count",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-opaque-no-layout",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-trailing",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-high-nibble",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-shape-tail",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-dtype-zero",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-dtype-reserved",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-payload-overflow",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-list-struct-hostile",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-list-struct-short",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-list-str-short",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-pod-list-short",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    },
+    {
+      "id": "kiln-v2-bad-version",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": ""
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+name = "arrow-ipc-probe"
+version = "0.0.0"
+license = "MIT"
+author = "Leonid Ganeline"
+description = "Link gld-arrow-fortran and report that it has no IPC reader"
+
+[build]
+auto-executables = false
+auto-tests = false
+auto-examples = false
+
+[[executable]]
+name = "arrow_ipc_probe"
+source-dir = "app"
+main = "arrow_ipc_probe.f90"
+
+[dependencies]
+gld-arrow-fortran = { git = "https://github.com/leo-gan/gld-arrow-fortran.git", tag = "0.2.0" }
+
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"

@@ -805,7 +805,8 @@ add("fortran", "netcdf-fortran", ["netcdf"], "https://github.com/Unidata/netcdf-
 add("fortran", "adios2", ["adios2"], "https://github.com/ornladios/ADIOS2",
     "Official ADIOS2 Fortran binding. Serial BP5 directory, no bytes buffer.")
 add("fortran", "gld-arrow", ["arrow"], "https://github.com/leo-gan/gld-arrow-fortran",
-    "gld-arrow-fortran 0.2.0: Arrow C Data Interface numeric buffers. Does not link libarrow.")
+    "gld-arrow-fortran 0.2.0: Arrow C Data Interface numeric buffers. Does not link libarrow. "
+    "The IPC stream catalog is rejected because this library has no IPC reader.")
 
 # Kiln language ports. Mojo gld-kiln is registered in the Mojo section.
 for _lang, _repo in (
@@ -825,7 +826,7 @@ for _lang, _repo in (
         "gld-kiln",
         ["kiln"],
         f"https://github.com/leo-gan/{_repo}",
-        "gld-kiln 0.2.0 positional little-endian encode and decode of the suite structs and the tensor structs. "
+        "gld-kiln 0.2.0 scores Kiln wire v2 with decode and decode_framed. The timed row stays on 0.2.0. "
         "Spec: https://leo-gan.github.io/gld-kiln/spec/",
     )
 
