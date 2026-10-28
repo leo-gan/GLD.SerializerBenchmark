@@ -54,3 +54,4 @@ class ForySer : BenchSerializer {
 
     override fun deserializeBytes(data: ByteArray): Any = fory.deserialize(data)
 }
+// Native stream serialization path using OutputStream and ForyInputStream 
