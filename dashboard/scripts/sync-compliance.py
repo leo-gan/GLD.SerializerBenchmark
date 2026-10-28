@@ -191,6 +191,27 @@ def _normalize_results(results: list[dict], default_lang: str) -> list[dict]:
     return out
 
 
+def _sanitize(value):
+    """Drop lone surrogates so the dashboard gzip is valid UTF-8.
+
+    A JavaScript SyntaxError detail can contain a UTF-8 encoding of a
+    surrogate. Python's json loader keeps that code point, and writing it
+    back with surrogatepass makes JSON.parse fail in the browser.
+    """
+    if isinstance(value, str):
+        if not any(0xD800 <= ord(ch) <= 0xDFFF for ch in value):
+            return value
+        return "".join("\ufffd" if 0xD800 <= ord(ch) <= 0xDFFF else ch for ch in value)
+    if isinstance(value, list):
+        return [_sanitize(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            (_sanitize(key) if isinstance(key, str) else key): _sanitize(item)
+            for key, item in value.items()
+        }
+    return value
+
+
 def build_payload(raw: dict, source_name: str) -> dict:
     default_lang = raw.get("language") or "python"
     results = _normalize_results(
@@ -251,14 +272,12 @@ def main() -> int:
             print(f"{src} is not a JSON object", file=sys.stderr)
             return 1
         reports.append(raw)
-    merged = merge_reports(reports)
+    merged = _sanitize(merge_reports(reports))
     payload = build_payload(merged, "+".join(s.name for s in srcs))
     import gzip
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    blob = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode(
-        "utf-8", errors="surrogatepass"
-    )
+    blob = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     gz_path = out_path.with_suffix(out_path.suffix + ".gz")
     gz_path.write_bytes(gzip.compress(blob, compresslevel=6))
     if out_path.is_file():
