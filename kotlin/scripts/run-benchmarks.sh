@@ -60,6 +60,12 @@ if ! command -v java >/dev/null 2>&1; then
 fi
 
 JAVA_VER="$(java -version 2>&1 | head -1)"
+# jvmToolchain(21). JDK 17 cannot satisfy that toolchain.
+JAVA_MAJOR="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
+if [[ -z "$JAVA_MAJOR" || "$JAVA_MAJOR" -lt 21 ]]; then
+  echo "[ERROR] JDK 21+ required (found: ${JAVA_VER:-unknown}). Run: ./scripts/install-host-requirements.sh kotlin" >&2
+  exit 1
+fi
 echo "[INFO] Building Kotlin benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $JAVA_VER"
 cd "$KOTLIN_DIR"
 
