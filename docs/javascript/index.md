@@ -111,7 +111,7 @@ avsc brings Apache Avro to JavaScript. Avro was created for compact, schema-driv
 
 Bebop is a schema-driven binary format created as a simpler, faster alternative to protobuf-like IDL stacks for games and services. The problem was heavy generated code and slow encoders. Bebop solves it with a compact schema and generated writers.
 
-#### [bser](https://github.com/facebook/watchman) · `2.1.1`
+#### [bser](https://github.com/facebook/watchman) · `2.1.2`
 
 BSER is Facebook Watchman's binary protocol: a compact encoding for the watchman's client/server messages. The problem was JSON overhead in a local file-watching daemon. This row times the Node `bser` dump/load path.
 
@@ -123,7 +123,7 @@ BSON (Binary JSON) was created for MongoDB so documents could be stored and trav
 
 node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC.
 
-#### [cbor-x](https://github.com/kriszyp/cbor-x) · `1.6.6`
+#### [cbor-x](https://github.com/kriszyp/cbor-x) · `1.6.8`
 
 cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances.
 
@@ -143,7 +143,7 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [devalue](https://github.com/Rich-Harris/devalue) · `5.9.2`
+#### [devalue](https://github.com/Rich-Harris/devalue) · `5.9.4`
 
 devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows — dates, maps, cyclical graphs — without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format.
 
@@ -155,7 +155,7 @@ fast-json-stringify was created in the Fastify ecosystem to serialize JSON from 
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [fory](https://github.com/apache/fory)
+#### [fory](https://github.com/apache/fory) · `1.7.7`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses @apache-fory/core with registered struct/list schemas and the bytes API.
 
@@ -165,7 +165,7 @@ FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can h
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-typescript) · `0.2.0`
 
-gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in `prepare()`, so the timed path does not write names or tags. `Writer.encode` reuses one buffer; `decode` reads the bytes back into plain objects. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) · `3.21.4`
 
@@ -195,7 +195,7 @@ Apache Parquet was created as a columnar file for scans that touch a few fields 
 
 This is the same hyparquet-writer path as parquet, with codec UNCOMPRESSED. That switch changes the column codec metadata and the bytes. Encodings stay at the library default. It is the same writer, not a second Parquet library. No compliance decoder.
 
-#### [protobuf-es](https://github.com/bufbuild/protobuf-es) · `2.15.0`
+#### [protobuf-es](https://github.com/bufbuild/protobuf-es) · `2.16.0`
 
 protobuf-es is Buf's Protocol Buffers implementation for ECMAScript. The problem was that existing JS protobuf stacks did not match modern TypeScript and the official proto3 feature set. It generates TypeScript and times `toBinary` / `fromBinary`.
 

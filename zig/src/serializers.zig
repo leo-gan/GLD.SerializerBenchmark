@@ -97,7 +97,7 @@ fn supportAll(_: []const u8) bool {
 }
 
 fn yamlSupports(type_id: []const u8) bool {
-    // serde.zig 1.2.2 YAML still loses the fields of a struct nested in a list
+    // serde.zig 1.2.4 YAML still loses the fields of a struct nested in a list
     // (document items, event attrs). `telemetry` round-trips at the suite's
     // configured sizes and is measured; see zig/src/serde_ser.zig for the
     // round-trip test that pins which shapes fail and how.
@@ -431,7 +431,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.json",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
@@ -439,7 +439,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.msgpack",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .adapted,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_msgpack_state),
@@ -447,7 +447,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.yaml",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_yaml_state),
@@ -455,7 +455,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.toml",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_toml_state),
@@ -463,7 +463,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.zon",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_zon_state),
@@ -471,7 +471,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.xml",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_xml_state),
@@ -487,7 +487,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "zig-msgpack",
-            .version = "0.0.18",
+            .version = "0.0.19",
             .stream_mode = .adapted,
             .native_kind = .value_tree,
             .ctx = @ptrCast(&zig_msgpack_state),
@@ -559,7 +559,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "serde.json.borrowed",
-            .version = "1.2.2",
+            .version = "1.2.4",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
@@ -567,7 +567,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "jsonz",
-            .version = "0.9.2",
+            .version = "0.9.3",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&json_state),

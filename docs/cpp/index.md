@@ -119,7 +119,7 @@ Apache Avro was created for Hadoop-era pipelines: compact binary records with th
 
 Apache Avro was created for Hadoop-era data: a compact binary encoding with the schema stored out of band so field names are not repeated. avro-c is the official C implementation of that encoding.
 
-#### [bitsery](https://github.com/fraillt/bitsery) · `5.2.4`
+#### [bitsery](https://github.com/fraillt/bitsery) · `5.2.5`
 
 bitsery is an explicit-schema binary serializer for C++. The problem was that many C++ binaries were either reflection-slow or ad-hoc. bitsery makes the schema the API (`object` / `container`).
 
@@ -169,13 +169,13 @@ glaze was created for extremely fast, reflection-based JSON (and other formats) 
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-cpp) · `0.2.0`
 
-gld-kiln is a positional little-endian codec. Field names and tags are not on the wire; the schema is the struct field order, built once in prepare. `Writer::encode` reuses one buffer. `decode` reads the bytes back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [flexbuffers](https://github.com/google/flatbuffers) · `flatbuffers-flex`
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
-#### [fory](https://github.com/apache/fory)
+#### [fory](https://github.com/apache/fory) · `1.7.7`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses FORY_STRUCT with registered C++ structs and vectors in native mode.
 
@@ -247,7 +247,7 @@ RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and D
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside serialize_bytes. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
-#### [simdjson](https://github.com/simdjson/simdjson) · `3.10.1`
+#### [simdjson](https://github.com/simdjson/simdjson) · `3.13.0`
 
 simdjson was created to parse JSON at near memory bandwidth using SIMD. The problem was that conventional parsers left most of the CPU unused. This suite times parse; serialize is prepared minified JSON.
 
@@ -263,7 +263,7 @@ YAS (Yet Another Serializer) is a high-performance C++ binary archive library. I
 
 yyjson was written for high-performance JSON in ANSI C: fast parse and print without giving up a usable DOM. The problem was that lightweight C parsers were slow, and fast parsers were often C++ or SAX-only. yyjson solves that with a compact C implementation and mutable/immutable document APIs.
 
-#### [zpp_bits](https://github.com/eyalz800/zpp_bits) · `4.4.25`
+#### [zpp_bits](https://github.com/eyalz800/zpp_bits) · `4.7.6`
 
 zpp_bits is a compile-time binary serializer for modern C++. The problem was runtime reflection and verbose archive APIs. It uses template `out` / `in` over tuples and structs.
 

@@ -10,6 +10,7 @@ import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.avro.util.ClassSecurityValidator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -25,6 +26,19 @@ import java.io.OutputStream;
  * @see <a href="https://avro.apache.org/docs/current/">Avro docs</a>
  */
 public final class AvroSer implements BenchSerializer {
+  // Avro 1.12 rejects reflect schemas for classes outside its trust list.
+  static {
+    ClassSecurityValidator.setGlobal(clazz -> {
+      String name = clazz.getName();
+      if (name.startsWith("benchmark.model.")
+          || name.startsWith("java.util.")
+          || name.startsWith("kotlin.")) {
+        return true;
+      }
+      return ClassSecurityValidator.DEFAULT.isTrusted(clazz);
+    });
+  }
+
   private Schema schema;
   private ReflectDatumWriter<Object> writer;
   private ReflectDatumReader<Object> reader;

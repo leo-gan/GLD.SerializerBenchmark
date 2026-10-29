@@ -20,7 +20,7 @@
     Keep co-versioned pairs aligned (Bond, FlatSharp, FluentSerializer, MemoryPack, FsPickler).
   -->
   <ItemGroup>
-    <PackageReference Include="Apache.Fory" Version="1.7.4" />
+    <PackageReference Include="Apache.Fory" Version="1.7.7" />
     <!-- https://github.com/leo-gan/gld-kiln-csharp tag 0.2.0, package id Gld.Kiln -->
     <PackageReference Include="Gld.Kiln" Version="0.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />

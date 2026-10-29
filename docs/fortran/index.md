@@ -117,7 +117,7 @@ adios2 is the official ADIOS2 Fortran binding over the C++ core. The build is se
 
 #### [gld-arrow](https://github.com/leo-gan/gld-arrow-fortran) · `0.2.0`
 
-gld-arrow is a from-scratch Fortran layer over the Arrow C Data Interface. This row times arrow_export_float64 and arrow_import_float64 on one contiguous float64 grid. The byte size is the numeric buffer, 8 bytes per value. grid_window imports the grid and copies the interior window. The row does not time the five suite types and does not write an IPC file.
+gld-arrow is a registered serializer in the fortran suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 ## Not registered
 

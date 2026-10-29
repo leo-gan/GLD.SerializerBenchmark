@@ -10,6 +10,7 @@ import org.apache.avro.io.EncoderFactory
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.reflect.ReflectDatumReader
 import org.apache.avro.reflect.ReflectDatumWriter
+import org.apache.avro.util.ClassSecurityValidator
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -20,6 +21,19 @@ import java.io.OutputStream
  * Hot path: derive schema once via [ReflectData]; reuse writer/reader and encoder/decoder.
  */
 class AvroSer : BenchSerializer {
+    // Avro 1.12 rejects reflect schemas for classes outside its trust list.
+    companion object {
+        init {
+            ClassSecurityValidator.setGlobal { clazz ->
+                val name = clazz.name
+                name.startsWith("benchmark.model.")
+                    || name.startsWith("java.util.")
+                    || name.startsWith("kotlin.")
+                    || ClassSecurityValidator.DEFAULT.isTrusted(clazz)
+            }
+        }
+    }
+
     private lateinit var schema: Schema
     private lateinit var writer: ReflectDatumWriter<Any>
     private lateinit var reader: ReflectDatumReader<Any>

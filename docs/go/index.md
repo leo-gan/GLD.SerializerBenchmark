@@ -115,11 +115,11 @@ Go's `encoding/json` is the standard library JSON codec. It exists so every Go p
 
 `encoding/json/v2` is the Go 1.27 standard library JSON API with stricter defaults than `encoding/json`: invalid UTF-8 and duplicate object names are errors, and `<`, `>`, and `&` are not HTML-escaped. This row times `Marshal` / `Unmarshal` and `MarshalWrite` / `UnmarshalRead`.
 
-#### [fory](https://github.com/apache/fory)
+#### [fory](https://github.com/apache/fory) · `1.7.7`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices.
 
-#### [fxamacker/cbor](https://github.com/fxamacker/cbor) · `2.9.4`
+#### [fxamacker/cbor](https://github.com/fxamacker/cbor) · `2.10.0`
 
 fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values.
 
@@ -141,7 +141,7 @@ Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (te
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-go) · `0.2.0`
 
-Kiln is a positional little-endian binary format: field order is the schema, and the bytes carry no field names. [gld-kiln-go](https://github.com/leo-gan/gld-kiln-go) is a from-scratch Go implementation of [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/). This row times `Append` into a reused buffer and `Decode` on the five suite types. Domain maps are built in Prepare; `ToDomain` is untimed. There is no native stream API.
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [jsoniter](https://github.com/json-iterator/go) · `1.1.12`
 
@@ -155,7 +155,7 @@ kelindar/binary is a compact, Go-only packer. It was written for high-throughput
 
 LinkedIn goavro is an Avro binary codec for Go, used in Kafka/Avro pipelines. Avro exists so producers and consumers share a schema. goavro speaks BinaryFromNative maps (OCF is a different format).
 
-#### [mongo-bson](https://github.com/mongodb/mongo-go-driver) · `1.17.9`
+#### [mongo-bson](https://github.com/mongodb/mongo-go-driver) · `1.17.10`
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
@@ -187,15 +187,15 @@ SBE (Simple Binary Encoding) was created for word-aligned financial messages: a 
 
 segmentio/encoding/json is a production fork of a faster Go JSON stack, kept as a drop-in for `encoding/json`. The problem was stdlib JSON in large Go services. This row times that API.
 
-#### [shamaton/msgpack](https://github.com/shamaton/msgpack) · `3.2.3`
+#### [shamaton/msgpack](https://github.com/shamaton/msgpack) · `3.2.6`
 
 shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields.
 
-#### [shamaton/msgpack (array)](https://github.com/shamaton/msgpack) · `3.2.3`
+#### [shamaton/msgpack (array)](https://github.com/shamaton/msgpack) · `3.2.6`
 
 shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields. This row uses struct-as-array (no field-name keys) and the matching stream helpers.
 
-#### [sonic](https://github.com/bytedance/sonic) · `1.15.4`
+#### [sonic](https://github.com/bytedance/sonic) · `1.15.5`
 
 Bytedance sonic was written to push Go JSON through JIT and SIMD on the hot path. The problem was that even fast reflection JSON was not enough at ByteDance scale. sonic solves it with `ConfigDefault` plus optional Pretouch.
 

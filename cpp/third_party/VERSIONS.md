@@ -7,13 +7,13 @@ Fetched by CMake `FetchContent` into `cpp/third_party/` (gitignored except this 
 | nlohmann/json | v3.12.0 | JSON + MessagePack/CBOR/UBJSON/BSON binary |
 | glaze | v2.9.5 | Fast struct JSON (last C++20 release; v3+ needs C++23) |
 | RapidJSON | v1.1.0 | JSON DOM/SAX |
-| simdjson | v3.10.1 | SIMD JSON parse |
+| simdjson | v3.13.0 | SIMD JSON parse |
 | ArduinoJson | v7.4.3 | Embedded/IoT JSON |
 | yyjson | 0.10.0 | C JSON (dual C/C++) |
 | msgpack-c (cpp) | cpp-6.1.1 | MessagePack C++ API |
 | cereal | v1.3.2 | C++ binary archives |
-| bitsery | v5.2.4 | Binary schema codec |
-| zpp_bits | v4.4.25 | Ultra-fast binary |
+| bitsery | v5.2.5 | Binary schema codec |
+| zpp_bits | v4.7.6 | Ultra-fast binary |
 | YAS | 7.1.0 | Ultra-fast binary archives |
 | Cista++ | v0.15 | Offset / zero-copy oriented binary |
 | jsoncons | v0.177.0 | CBOR / BSON / MessagePack |

@@ -11,7 +11,7 @@ build = "build.rs"
 # Available *major* upgrades (bincode 3, bson 3, prost 0.14, simd-json 0.17, …)
 # are intentionally not taken without a harness compatibility pass.
 [dependencies]
-fory = "=1.7.4"
+fory = "=1.7.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 simd-json = { version = "0.14", features = ["serde_impl"] }
@@ -51,8 +51,8 @@ serde_yaml = "0.9"
 flate2 = "1"
 zstd = "0.13"
 # Columnar rows. Exact 60.0.0 (caret would float to 60.x).
-arrow = "=60.0.0"
-parquet = "=60.0.0"
+arrow = "=60.1.0"
+parquet = "=60.1.0"
 # SBE flyweights from schemas/v2/sbe/signal.xml (sbe-tool 1.40.2). Crate version stays 0.1.0.
 benchmark_v2 = { path = "gen/sbe" }
 # HDF5 array rows. System libhdf5 via pkg-config. No extra compression features.

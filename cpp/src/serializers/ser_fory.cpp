@@ -26,7 +26,7 @@ class ForySer final : public ISerializer {
     fory_.register_struct<Event>(8);
   }
   const char* name() const override { return "fory"; }
-  const char* version() const override { return "1.7.4"; }
+  const char* version() const override { return "1.7.7"; }
   void prepare(const Fixture& fx) override {
     std::visit([this](const auto& value) {
       using T = std::decay_t<decltype(value)>;
