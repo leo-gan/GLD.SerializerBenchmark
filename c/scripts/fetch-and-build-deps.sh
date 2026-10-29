@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Fetch and build vendored C serializer dependencies into c/third_party/
 set -euo pipefail
+# CMake 4 rejects cmake_minimum_required() older than 3.5. libcbor 0.11.0
+# still declares 3.0. CMake 3.x ignores this variable.
+export CMAKE_POLICY_VERSION_MINIMUM="${CMAKE_POLICY_VERSION_MINIMUM:-3.5}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 C_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TP="$C_DIR/third_party"
