@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Endianness: big-endian vs little-endian</title>
+  <desc id="desc">The 32-bit value 0x12345678 shown as four bytes in big-endian and little-endian order with addresses increasing left to right.</desc>
+  <defs>
+    <style type="text/css"><![CDATA[
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #37474f; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #607d8b; }
+      .small { font-size: 11px; fill: #607d8b; }
+      .row { font-size: 13px; font-weight: 600; }
+      .mono-lg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 15px; fill: #283593; }
+      .tag { font-size: 10px; fill: #607d8b; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#455a64"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="360" fill="#fafafa"/>
+  <rect x="40" y="28" width="920" height="304" rx="10" fill="#ffffff" stroke="#c5cae9" stroke-width="1.5"/>
+  <text class="label title" x="60" y="60">Endianness — byte order of a multi-byte integer</text>
+  <text class="label caption" x="60" y="80">Same value 0x12345678 · addresses increase left → right</text>
+  <text class="label row" x="60" y="118" fill="#37474f">Big-endian (BE)</text>
+  <text class="label caption" x="60" y="138">most significant byte</text>
+  <text class="label caption" x="60" y="154">at lowest address</text>
+  <text class="tag" x="315.0" y="100" text-anchor="middle">addr +0</text>
+  <rect x="280" y="110" width="70" height="52" rx="6" fill="#e3f2fd" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="315.0" y="134" text-anchor="middle">12</text>
+  <text class="tag" x="315.0" y="152" text-anchor="middle">MSB</text>
+  <text class="tag" x="397.0" y="100" text-anchor="middle">addr +1</text>
+  <rect x="362" y="110" width="70" height="52" rx="6" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="397.0" y="134" text-anchor="middle">34</text>
+  <text class="tag" x="479.0" y="100" text-anchor="middle">addr +2</text>
+  <rect x="444" y="110" width="70" height="52" rx="6" fill="#ede7f6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="479.0" y="134" text-anchor="middle">56</text>
+  <text class="tag" x="561.0" y="100" text-anchor="middle">addr +3</text>
+  <rect x="526" y="110" width="70" height="52" rx="6" fill="#f3e5f5" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="561.0" y="134" text-anchor="middle">78</text>
+  <text class="tag" x="561.0" y="152" text-anchor="middle">LSB</text>
+  <line x1="280" y1="180" x2="596" y2="180" stroke="#455a64" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text class="tag" x="438.0" y="196" text-anchor="middle">increasing addresses</text>
+  <text class="label row" x="60" y="238" fill="#37474f">Little-endian (LE)</text>
+  <text class="label caption" x="60" y="258">least significant byte</text>
+  <text class="label caption" x="60" y="274">at lowest address</text>
+  <text class="tag" x="315.0" y="220" text-anchor="middle">addr +0</text>
+  <rect x="280" y="230" width="70" height="52" rx="6" fill="#f3e5f5" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="315.0" y="254" text-anchor="middle">78</text>
+  <text class="tag" x="315.0" y="272" text-anchor="middle">LSB</text>
+  <text class="tag" x="397.0" y="220" text-anchor="middle">addr +1</text>
+  <rect x="362" y="230" width="70" height="52" rx="6" fill="#ede7f6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="397.0" y="254" text-anchor="middle">56</text>
+  <text class="tag" x="479.0" y="220" text-anchor="middle">addr +2</text>
+  <rect x="444" y="230" width="70" height="52" rx="6" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="479.0" y="254" text-anchor="middle">34</text>
+  <text class="tag" x="561.0" y="220" text-anchor="middle">addr +3</text>
+  <rect x="526" y="230" width="70" height="52" rx="6" fill="#e3f2fd" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="561.0" y="254" text-anchor="middle">12</text>
+  <text class="tag" x="561.0" y="272" text-anchor="middle">MSB</text>
+  <line x1="280" y1="300" x2="596" y2="300" stroke="#455a64" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text class="tag" x="438.0" y="316" text-anchor="middle">increasing addresses</text>
+  <rect x="720" y="110" width="210" height="172" rx="8" fill="#ffffff" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="label small" x="740" y="140" fill="#37474f">Without conversion:</text>
+  <text class="label small" x="740" y="166" fill="#37474f">LE writer → BE reader</text>
+  <text class="label small" x="740" y="190" fill="#37474f">reads a different number.</text>
+  <text class="label caption" x="740" y="226">Formats must document</text>
+  <text class="label caption" x="740" y="244">byte order — or use</text>
+  <text class="label caption" x="740" y="262">text / self-describing tags.</text>
+</svg>
