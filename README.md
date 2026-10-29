@@ -8,6 +8,9 @@
 
 Compare 300+ serialization libraries across **14 languages**.
 
+> Kiln, a frozen positional wire format implemented from scratch in 11
+> languages and benchmarked in this project: https://github.com/leo-gan/gld-kiln
+
 | Start here | |
 |------------|--|
 | **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
