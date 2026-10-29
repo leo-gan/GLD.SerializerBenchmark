@@ -55,7 +55,7 @@ let package = Package(
         .library(name: "SerializerBenchmarkCore", targets: ["SerializerBenchmarkCore"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apache/fory.git", exact: "1.7.4"),
+        .package(url: "https://github.com/apache/fory.git", exact: "1.7.7"),
         .package(url: "https://github.com/orlandos-nl/IkigaJSON.git", from: "2.0.0"),
         .package(url: "https://github.com/nnabeyang/swift-msgpack.git", from: "1.2.0"),
         .package(url: "https://github.com/nnabeyang/swift-cbor.git", from: "0.0.4"),

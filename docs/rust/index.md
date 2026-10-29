@@ -110,17 +110,17 @@ ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSO
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
-#### [fory](https://github.com/apache/fory)
+#### [fory](https://github.com/apache/fory) · `1.7.7`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer.
 
-#### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.0.1`
+#### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.2.0`
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion).
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) · `0.2.0`
 
-gld-kiln is a positional little-endian codec ([spec](https://leo-gan.github.io/gld-kiln/spec/)). The problem was self-describing formats that spend the hot path on field names and tags. This row times crate 0.2.0 on the five suite structs. Prepare builds the schema and the value once. The timed path is `encode_into` into the reused buffer and `decode` back to those structs. A batch is one list of the struct. There are no field names on the wire.
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
 
@@ -174,11 +174,11 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight inside serialize. The logged version is the generator, not the vendored crate 0.1.0. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
-#### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) · `2.1.1`
+#### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) · `2.1.2`
 
 serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-× slower on small records.
 
-#### [serde_json](https://github.com/serde-rs/json) · `1.0.151`
+#### [serde_json](https://github.com/serde-rs/json) · `1.0.154`
 
 serde_json is the standard JSON backend for Rust's serde. Serde was created so Rust types could implement Serialize/Deserialize once and plug in many formats. serde_json is the JSON instance of that idea.
 

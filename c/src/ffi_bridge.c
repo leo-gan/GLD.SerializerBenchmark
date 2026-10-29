@@ -143,7 +143,7 @@ void gld_ffi_version(const char *name, char *dst, int cap) {
     if (strcmp(name, "mpack") == 0) v = "1.1.1";
 #endif
 #ifdef HAS_TINYCBOR
-    if (strcmp(name, "tinycbor") == 0) v = "0.6.0";
+    if (strcmp(name, "tinycbor") == 0) v = "0.6.1";
 #endif
 #ifdef HAS_NANOPB
     if (strcmp(name, "nanopb") == 0) v = "0.4.9.2";
@@ -158,7 +158,7 @@ void gld_ffi_version(const char *name, char *dst, int cap) {
     if (strcmp(name, "libbson") == 0) v = BSON_VERSION_S;
 #endif
 #ifdef HAS_FLATCC
-    if (strcmp(name, "flatcc") == 0) v = "0.6.3";
+    if (strcmp(name, "flatcc") == 0) v = "0.6.4";
 #endif
 #ifdef HAS_IONC
     if (strcmp(name, "ion-c") == 0) v = "1.1.6";

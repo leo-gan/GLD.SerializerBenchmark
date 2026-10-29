@@ -274,6 +274,8 @@ if ej_dest.exists():
     shutil.rmtree(ej_dest)
 shutil.copytree(src_root / "ehsanmok-json" / "json", ej_dest)
 # Mojo 1.1 removed the InlineArray alias. The v0.4.0 tag still uses it.
+# v0.4.2 drops InlineArray but imports std.hash, which this Mojo 1.1 toolchain
+# cannot resolve, so the pin stays on v0.4.0.
 for path in ej_dest.rglob("*.mojo"):
     text = path.read_text(encoding="utf-8")
     updated = text.replace("InlineArray", "Array")

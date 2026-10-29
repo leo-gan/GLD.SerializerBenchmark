@@ -396,8 +396,8 @@ mod tests {
         }
         for ser in all_serializers() {
             match ser.name() {
-                "arrow-ipc" => assert_eq!(ser.version(), "60.0.0"),
-                "parquet" | "parquet-uncompressed" => assert_eq!(ser.version(), "60.0.0"),
+                "arrow-ipc" => assert_eq!(ser.version(), "60.1.0"),
+                "parquet" | "parquet-uncompressed" => assert_eq!(ser.version(), "60.1.0"),
                 "sbe" => {
                     assert_eq!(ser.version(), "1.40.2");
                     assert_ne!(ser.version(), "0.1.0");

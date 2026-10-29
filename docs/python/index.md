@@ -99,9 +99,9 @@ Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (te
 
 #### [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) · `25.0.1`
 
-Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. `request` is those prompt tensors plus one record batch in the same buffer. `tensor_view` returns a buffer inside the stream.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. request is those prompt tensors plus one record batch in the same buffer. tensor_view returns a buffer inside the stream.
 
-#### [avro](https://github.com/fastavro/fastavro) · `1.12.2`
+#### [avro](https://github.com/fastavro/fastavro) · `1.13.1`
 
 fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack.
 
@@ -121,7 +121,7 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
-#### [cbor2](https://github.com/agronholm/cbor2) · `6.1.4`
+#### [cbor2](https://github.com/agronholm/cbor2) · `6.1.5`
 
 cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a binary JSON-like format for constrained devices and IETF protocols. cbor2 solves the Python side with a widely used encoder/decoder.
 
@@ -135,25 +135,25 @@ dill extends pickle further for scientific Python: graphs, lambdas, and interpre
 
 #### [flatbuffers](https://github.com/google/flatbuffers) · `25.12.19`
 
-FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder writes `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. `tensor_view` reads the float vector in place.
+FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder runs every type: tensor, tensor_view, prompt, shard, and request. tensor_view reads the float vector in place.
+
+#### [fory](https://github.com/apache/fory) · `1.7.7`
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-python) · `0.2.0`
 
-gld-kiln is a positional little-endian codec. The schema is the struct field order, so the timed path does not write names or tags. `prepare_data` turns the suite dataclasses into dicts. `Writer.encode` and `decode` then walk `message`, `document`, `telemetry`, `strings`, and `event`. A batch of 100 is one list of that struct. The tensor data set uses the same structs as Mojo `gld-kiln`: `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. `tensor_view` returns a float32 view of the payload. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
-
-#### [fory](https://github.com/apache/fory)
-
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [json](https://github.com/python/cpython/tree/main/Lib/json) · `python-3.14.0`
 
 The CPython `json` module is the language's standard JSON encoder/decoder (RFC 8259). It was added so Python programs had a stdlib way to speak the web's data format. The implementation is a C-accelerated codec over Python objects; this suite times that path as the baseline.
 
-#### [mashumaro](https://github.com/Fatal1ty/mashumaro) · `3.22`
+#### [mashumaro](https://github.com/Fatal1ty/mashumaro) · `3.23`
 
 mashumaro was written to serialize Python dataclasses to JSON and other formats with code generation, not runtime reflection on every call. The problem was slow dataclass codecs. This row times the ORJSON encoder/decoder path.
 
-#### [msgpack](https://github.com/msgpack/msgpack-python) · `1.2.2`
+#### [msgpack](https://github.com/msgpack/msgpack-python) · `1.2.4`
 
 msgpack-python is the official MessagePack implementation for Python. MessagePack was created to be as compact as a binary format and as simple as JSON. The package exposes pack/unpack (and stream APIs) on Python objects.
 
@@ -173,7 +173,7 @@ Apache ORC was created at Hive as a columnar stripe file with indexes and compre
 
 This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib.
 
-#### [orjson](https://github.com/ijl/orjson) · `3.12.0`
+#### [orjson](https://github.com/ijl/orjson) · `3.13.0`
 
 orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types.
 
@@ -189,11 +189,11 @@ This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Enc
 
 pickle is CPython's native object serializer. It exists so Python processes can snapshot almost any object graph. That power is also the problem: loading untrusted pickle can run arbitrary code. This row times the stdlib C implementation.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `7.36.1`
+#### [protobuf](https://github.com/protocolbuffers/protobuf) · `7.36.2`
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [pydantic](https://github.com/pydantic/pydantic) · `2.13.5`
+#### [pydantic](https://github.com/pydantic/pydantic) · `2.14.2`
 
 Pydantic was created to validate and serialize Python data for APIs (later FastAPI). The problem was that ad-hoc dicts and hand-written validators were error-prone. Pydantic solves it with typed models and JSON dump/load (`model_dump_json` / TypeAdapter).
 
@@ -201,7 +201,7 @@ Pydantic was created to validate and serialize Python data for APIs (later FastA
 
 python-rapidjson wraps Tencent RapidJSON so CPython can use that C++ parser/generator. RapidJSON was written for speed with a SAX and DOM API. The Python binding exposes `dumps`/`loads` on dicts.
 
-#### [serpyco-rs](https://github.com/opengovsg/serpyco-rs) · `1.22.0`
+#### [serpyco-rs](https://github.com/opengovsg/serpyco-rs) · `1.23.0`
 
 serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The problem was that dataclass-to-JSON in pure Python is slow. It solves that by compiling the dump/load path and using orjson on the wire.
 

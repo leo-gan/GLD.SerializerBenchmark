@@ -298,7 +298,10 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.c == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 (GCC 15, CMake 4). avro-c 1.11.3 uses K&R
+    # callbacks that GCC 15 rejects, and libcbor still declares CMake 3.0.
+    # This job stays on 24.04, the image it last built on.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -541,7 +544,9 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.cpp == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 (resolute). Arrow 25.0.1 apt packages exist
+    # only for jammy and noble, so this job stays on 24.04.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

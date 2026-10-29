@@ -1,5 +1,5 @@
 {
-  "originHash" : "df619dbfccd7a5de80e44de141462fe40ebe18ebd32974460af38efc029d16c7",
+  "originHash" : "80d2e27c52d8cbbfa43f851623ad7038fd9d2a2b1f04041b11a6f7228bb9654c",
   "pins" : [
     {
       "identity" : "binarycodable",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apache/fory.git",
       "state" : {
-        "revision" : "f5e27882d85c459ba5355835ed36a5a4559cd70a",
-        "version" : "1.7.4"
+        "revision" : "04cbe11a86a640879e48fa7a8edee81056b37aab",
+        "version" : "1.7.7"
       }
     },
     {

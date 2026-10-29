@@ -100,7 +100,7 @@ gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln) · `0.2.0`
 
-gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs and of every type in the tensor data set. `tensor_view` reads the matrix with `Reader.take` and does not copy it. There are no field tags on the wire.
+gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire. On the tensor data set this row runs every type. encode writes the struct. tensor_view uses Reader.take and does not copy the matrix.
 
 #### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) · `0.7.0`
 
@@ -164,11 +164,11 @@ gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arr
 
 #### [gld-netcdf](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
 
-gld-netcdf is the NetCDF-4 writer in gld-hdf5. NetCDF exists for named scientific arrays. This library stores variables as float64, so integers ride as exact float64 values and strings ride as float64 bit patterns. Dimension names are not variable names.
+gld-netcdf is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [gld-adios2](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
 
-gld-adios2 is the BP5 writer in gld-hdf5. ADIOS2 BP5 is a step directory. This library writes one float64 variable and one string attribute, so the suite record is packed into that variable. The timed size is the directory files concatenated. bpls does not open this pure-Mojo metadata.
+gld-adios2 is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [arrow-ipc](https://github.com/leo-gan/gld-arrow) · `0.2.0`
 

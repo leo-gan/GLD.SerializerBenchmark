@@ -16,24 +16,24 @@ require (
 	dagrv2 v0.0.0
 	github.com/amazon-ion/ion-go v1.5.0
 	github.com/apache/arrow-go/v18 v18.8.0
-	github.com/apache/fory/go/fory v1.7.4
-	github.com/bytedance/sonic v1.15.4
-	github.com/fxamacker/cbor/v2 v2.9.4
+	github.com/apache/fory/go/fory v1.7.7
+	github.com/bytedance/sonic v1.15.5
+	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/goccy/go-json v0.10.6
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/flatbuffers v25.12.19+incompatible
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19 // stay on this pin; v1.0.20 is a separate bump
-	github.com/klauspost/compress v1.19.2
+	github.com/klauspost/compress v1.20.3
 	github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4 // main c2c91fa; tag 0.2.0 has no v prefix
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
-	github.com/shamaton/msgpack/v3 v3.2.3
+	github.com/shamaton/msgpack/v3 v3.2.6
 	github.com/ugorji/go/codec v1.3.2
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	go.mongodb.org/mongo-driver v1.17.9
+	go.mongodb.org/mongo-driver v1.17.10
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -41,7 +41,7 @@ require (
 	github.com/andybalholm/brotli v1.2.3 // indirect
 	github.com/apache/thrift v0.24.0 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
-	github.com/bytedance/sonic/loader v0.5.2 // indirect
+	github.com/bytedance/sonic/loader v0.5.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect

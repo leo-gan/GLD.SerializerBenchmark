@@ -9,7 +9,7 @@
 | json-c | system (pkg-config) | JSON |
 | mpack | v1.1.1 | MessagePack |
 | msgpack-c | c-6.0.1 | MessagePack |
-| tinycbor | v0.6.0 | CBOR (symbol-prefixed `tc_`) |
+| tinycbor | v0.6.1 | CBOR (symbol-prefixed `tc_`) |
 | libcbor | v0.11.0 | CBOR (`libcbor` DOM row, `libcbor-stream` streaming row) |
 | QCBOR | v1.6.1 / master | CBOR |
 | ubj | in-tree minimal UBJSON in `ser_ubj.c` | UBJSON |
@@ -17,10 +17,10 @@
 | nanopb | 0.4.9.2 | Linked library; suite log name `nanopb` currently times shared `fixture_pb_v2` wire (see docs/c) |
 | protobuf-c | v1.5.2 | Linked runtime; suite log name `protobuf-c` currently times shared `fixture_pb_v2` wire |
 | protobuf-wire | wire-v2 in-tree (`ser_upb.c`) | In-tree proto3 tags (`fixture_pb_v2`); **not** Google upb |
-| flatcc | v0.6.3 | FlatBuffers C |
+| flatcc | v0.6.4 | FlatBuffers C |
 | avro-c | Apache Avro release-1.11.3 | Avro |
 | zcbor | main (Nordic) | CBOR structured API |
-| ion-c | v1.1.6 (git tag; in-tree CMake `project()` still says 1.1.3) | Ion binary (`ion-c`) |
+| ion-c | v1.1.6 (git tag; 1.4.0's release archive still configures googletest when tests are off) | Ion binary (`ion-c`) |
 | gld-kiln-c | 0.2.0 | Kiln positional binary (`gld-kiln`) |
 
 Build artifacts live in `third_party/_build/` and `third_party/_prefix/` (gitignored).
