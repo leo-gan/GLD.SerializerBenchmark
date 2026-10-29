@@ -15,8 +15,8 @@ Kotlin is a programming language. This runner targets the **same JVM** as [Java]
 
 | | This suite |
 |---|---|
-| Target | JVM **21** (`jvmToolchain(21)`), Kotlin **2.1** |
-| Host JDK | JDK **17 or newer** is accepted. The same Temurin 21 install as Java is used. |
+| Target | JVM **21** (`jvmToolchain(21)`), Kotlin **2.3.20** |
+| Host JDK | JDK **21 or newer**. The same Temurin 21 install as Java is used. |
 | Build | Gradle wrapper in `kotlin/` (not Maven) |
 | Prepare | `./scripts/install-host-requirements.sh kotlin` |
 | Run | `kotlin/scripts/run-benchmarks.sh` (`./gradlew shadowJar`) |
@@ -24,7 +24,7 @@ Kotlin is a programming language. This runner targets the **same JVM** as [Java]
 
 ### What this suite runs
 
-Kotlin 2.1 compiles to Java 21 bytecode. The Gradle wrapper is checked into `kotlin/`, so you do not install Gradle yourself. Domain types are `@Serializable` data classes with `@JvmField`, so JVM reflection codecs such as Jackson, Kryo, and Moshi see public fields.
+Kotlin 2.3.20 compiles to Java 21 bytecode. The Gradle wrapper is checked into `kotlin/`, so you do not install Gradle yourself. Domain types are `@Serializable` data classes with `@JvmField`, so JVM reflection codecs such as Jackson, Kryo, and Moshi see public fields.
 
 ### What changes the numbers
 

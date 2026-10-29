@@ -120,13 +120,13 @@ check_kotlin() {
   if [[ -n "$java_bin" ]]; then
     ver="$("$java_bin" -version 2>&1 | head -1)"
     major="$("$java_bin" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
-    if [[ -n "$major" && "$major" -ge 17 ]]; then
+    if [[ -n "$major" && "$major" -ge 21 ]]; then
       ok "java $ver"
     else
-      miss "java 17+ (found: $ver) — ./scripts/install-host-requirements.sh kotlin"
+      miss "java 21+ (found: $ver) — ./scripts/install-host-requirements.sh kotlin"
     fi
   else
-    miss "java 17+ — ./scripts/install-host-requirements.sh kotlin"
+    miss "java 21+ — ./scripts/install-host-requirements.sh kotlin"
   fi
   if [[ -x "${PROJECT_ROOT}/kotlin/gradlew" ]]; then
     ok "kotlin/gradlew (in-tree Gradle wrapper)"
@@ -147,13 +147,13 @@ check_java() {
   if [[ -n "$java_bin" ]]; then
     ver="$("$java_bin" -version 2>&1 | head -1)"
     major="$("$java_bin" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
-    if [[ -n "$major" && "$major" -ge 17 ]]; then
+    if [[ -n "$major" && "$major" -ge 21 ]]; then
       ok "java $ver"
     else
-      miss "java 17+ (found: $ver) — ./scripts/install-host-requirements.sh java"
+      miss "java 21+ (found: $ver) — ./scripts/install-host-requirements.sh java"
     fi
   else
-    miss "java 17+ — ./scripts/install-host-requirements.sh java"
+    miss "java 21+ — ./scripts/install-host-requirements.sh java"
   fi
   if command -v mvn >/dev/null 2>&1 || [[ -x "${HOME}/.local/maven/bin/mvn" ]]; then
     ok "mvn"
@@ -199,9 +199,17 @@ check_swift() {
     export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
   fi
   if command -v swift >/dev/null 2>&1; then
-    ok "swift ($(swift --version 2>/dev/null | head -1))"
+    # Package.swift is `swift-tools-version: 6.0`. Swift 5.10 cannot parse it.
+    local swift_ver swift_major
+    swift_ver="$(swift --version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1)"
+    swift_major="${swift_ver%%.*}"
+    if [[ -n "$swift_major" && "$swift_major" -ge 6 ]]; then
+      ok "swift ${swift_ver} ($(swift --version 2>/dev/null | head -1))"
+    else
+      miss "swift 6.0+ (Package.swift tools version; found: ${swift_ver:-unknown}) — ./scripts/install-host-requirements.sh swift"
+    fi
   else
-    miss "swift — ./scripts/install-host-requirements.sh swift"
+    miss "swift 6.0+ — ./scripts/install-host-requirements.sh swift"
   fi
   local prefix="${HOME}/.local"
   if [[ -f "${prefix}/include/capnp/generated-header-support.h" ]]; then

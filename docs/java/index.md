@@ -18,7 +18,7 @@ The **JDK** (Java Development Kit) includes both the compiler (`javac`) and the 
 | | This suite |
 |---|---|
 | Target | Java **21** (`maven.compiler.release`) |
-| Host JDK | JDK **17 or newer** is accepted. The install script places **Temurin 21**. |
+| Host JDK | JDK **21 or newer**. `maven.compiler.release` is 21, so JDK 17 cannot compile this tree. The install script places **Temurin 21**. |
 | Build | Maven **3.9 or newer** |
 | Prepare | `./scripts/install-host-requirements.sh java` installs into `~/.local/jdk-21` and `~/.local/maven` |
 | Run | `java/scripts/run-benchmarks.sh` (`mvn package`) |

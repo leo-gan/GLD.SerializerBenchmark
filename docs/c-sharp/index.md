@@ -13,7 +13,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 C# is a programming language. It runs on **.NET**, a platform made of a virtual machine and a standard library. The virtual machine is called the **CLR** (Common Language Runtime). C# compiles first to an intermediate form named **IL**. The first time a method actually runs, the CLR translates that IL into native machine code. That late translation is called **JIT** (just-in-time compilation). Memory that the program no longer uses is reclaimed by a **garbage collector (GC)**. The programmer does not free objects by hand.
 
-The label “.NET 8” names the **target framework**: the set of runtime APIs the compiled program is allowed to call. The **SDK** is the compiler and the rest of the build tools. In this suite those two version numbers are not the same.
+The label “.NET 10” names the **target framework**: the set of runtime APIs the compiled program is allowed to call. The **SDK** is the compiler and the rest of the build tools. This suite’s target and SDK are both .NET 10.
 
 | | This suite |
 |---|---|
@@ -33,7 +33,7 @@ We build and run in the **Release** configuration, which turns on optimizations.
 
 The JIT compiles methods on first use, so the earliest repetitions are often slower than later ones. Analysis may drop those warmup rows. Creating many temporary strings or buffers makes the garbage collector pause the process. A library that looks faster on average can still lose on the slowest requests (the **latency tail**).
 
-Modern codecs such as MemoryPack, FlatSharp, and SpanJson avoid extra copies by using `Span<T>`: a window over memory that already exists, rather than a new array. Source generators (MemoryPack, LightProto) write the encode and decode methods at build time. They therefore need a new enough SDK even when the target framework is still net8. Libraries that discover types by **reflection** (inspecting objects at run time) are simpler to write and usually allocate more.
+Modern codecs such as MemoryPack, FlatSharp, and SpanJson avoid extra copies by using `Span<T>`: a window over memory that already exists, rather than a new array. Source generators (MemoryPack, LightProto) write the encode and decode methods at build time. They need the .NET 10 SDK, which is also what the `net10.0` target requires. Libraries that discover types by **reflection** (inspecting objects at run time) are simpler to write and usually allocate more.
 
 ### Suite-specific gotchas
 
@@ -79,7 +79,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
 | [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json |
 | [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json helper path |
-| [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
+| [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 10+** at build time (the `net10.0` target; Roslyn 4.14+) |
 | [MemoryPack](https://github.com/Cysharp/MemoryPack) | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
 | [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
 | [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) | Binary | Nerdbank.MessagePack with reflection-based POCO shapes and stable numeric keys; its default-value retention is retained |
@@ -108,7 +108,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) | TOML | ShapeShift's source-generated TOML serializer |
 | [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) | YAML | ShapeShift's source-generated YAML serializer |
 | [SpanJson](https://github.com/Tornhoof/SpanJson) | JSON | SpanJson |
-| [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (net8 built-in) |
+| [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (built into .NET 10) |
 | [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
 | [YamlDotNet](https://github.com/aaubry/YamlDotNet) | YAML | YamlDotNet |
 | [YAXLib](https://github.com/sinairv/YAXLib) | XML | YAXLib |

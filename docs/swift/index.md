@@ -15,7 +15,7 @@ Swift compiles to **native machine code**. Memory is managed with **ARC** (Autom
 
 | | This suite |
 |---|---|
-| Tools | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
+| Tools | Swift **6.0 or newer** (`// swift-tools-version: 6.0` in `Package.swift`). The install script places Swift **6.3.3** under `~/.local/swift` when Swift 6 is not already on `PATH`. |
 | Build | Swift Package Manager (`swift build -c release`) |
 | Prepare | `./scripts/install-host-requirements.sh swift` |
 | Run | `swift/scripts/run-benchmarks.sh` |

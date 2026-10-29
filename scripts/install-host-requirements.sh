@@ -198,7 +198,21 @@ install_swift() {
   if [[ -x "${HOME}/.local/swift/usr/bin/swift" ]]; then
     export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
   fi
+  local need_swift=0
   if ! command -v swift >/dev/null 2>&1; then
+    need_swift=1
+  else
+    local swift_ver swift_major
+    swift_ver="$(swift --version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1)"
+    swift_major="${swift_ver%%.*}"
+    if [[ -z "$swift_major" || "$swift_major" -lt 6 ]]; then
+      echo "[INFO] Swift ${swift_ver:-unknown} is older than Package.swift tools version 6.0."
+      need_swift=1
+    else
+      echo "[OK] swift already present: $(swift --version 2>/dev/null | head -1)"
+    fi
+  fi
+  if [[ "$need_swift" -eq 1 ]]; then
     local ver=6.3.3
     local arch
     arch="$(uname -m)"
@@ -251,8 +265,6 @@ install_swift() {
     rm -f /tmp/swift-install/swift.tar.gz
     export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
     echo "[OK] $(swift --version | head -1)"
-  else
-    echo "[OK] swift already present: $(swift --version 2>/dev/null | head -1)"
   fi
   # CapnpBridge links against system/user libcapnp (same version as generated headers: 1.0.2).
   install_capnp

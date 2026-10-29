@@ -64,7 +64,7 @@ Smoke filter default stays `message`. The six columnar rows support only the fou
 ./scripts/run-benchmarks.sh full
 ```
 
-Requires **JDK 17+** (21 recommended). The Gradle wrapper is in-tree.
+Requires **JDK 21+**. Kotlin is **2.3.20**. The Gradle wrapper is in-tree.
 
 ```bash
 ./scripts/install-host-requirements.sh kotlin
