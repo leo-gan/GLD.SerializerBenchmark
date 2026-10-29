@@ -503,7 +503,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "msgpack.zig",
-            .version = "0.9.0",
+            .version = "0.10.0",
             .stream_mode = .native,
             .native_kind = .direct,
             .ctx = @ptrCast(&msgpack_l_state),
@@ -511,7 +511,7 @@ pub fn allSerializers() [24]Serializer {
         },
         .{
             .name = "json.zig",
-            .version = "0.1.0",
+            .version = "0.2.0",
             .stream_mode = .native,
             .native_kind = .direct,
             .ctx = @ptrCast(&json_l_state),
