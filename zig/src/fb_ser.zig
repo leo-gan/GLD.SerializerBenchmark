@@ -13,7 +13,7 @@ const gen = @import("gen/flatbuffers/benchmark.zig");
 
 const v2 = gen.benchmark.v2;
 
-pub const version = "0.2.1";
+pub const version = "0.2.3";
 
 pub const State = struct {
     builder: ?flatbuffers.Builder = null,

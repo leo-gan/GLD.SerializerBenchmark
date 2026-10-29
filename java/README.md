@@ -55,7 +55,7 @@ Smoke filter default: `message`. Columnar runs are bytes-only and use an explici
 ./scripts/run-benchmarks.sh full
 ```
 
-Requires **JDK 17+** (21 recommended) and **Maven 3.9+**.
+Requires **JDK 21+** and **Maven 3.9+**.
 
 ```bash
 ./scripts/install-host-requirements.sh java

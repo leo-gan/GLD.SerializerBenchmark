@@ -20,6 +20,7 @@ import {
   flattenLanguageRows,
   isAllLang,
   isShapeSkip,
+  librariesByDisplayTier,
   mixedLanguages,
   peerRows,
   rowsToDelimited,
@@ -402,11 +403,15 @@ function bestAmong(row, rows, key) {
 
 function renderTopGroup(group, rows) {
   if (!group && !rows.length) return '';
-  const similar = group?.similar || rows.filter((r) => displayTier(r, rows) === 'similar' || displayTier(r, rows) === 'fastest').map((r) => r.library);
-  const close = group?.close || rows.filter((r) => displayTier(r, rows) === 'close').map((r) => r.library);
-  const slower = rows.filter((r) => displayTier(r, rows) === 'slower').map((r) => r.library);
-  const front = group?.time_size_front || rows.filter((r) => r.on_time_size_front).map((r) => r.library);
-  const fastest = group?.reference || rows.find((r) => displayTier(r, rows) === 'fastest')?.library;
+  // Chips follow the table's Vs fastest column. Stored top_group.close is often [].
+  const tiers = librariesByDisplayTier(rows);
+  const fastestNames = tiers.fastest.length ? tiers.fastest : group?.reference ? [group.reference] : [];
+  const similar = tiers.similar.filter((n) => !fastestNames.includes(n));
+  const close = tiers.close;
+  const slower = tiers.slower;
+  const front = group?.time_size_front?.length
+    ? group.time_size_front
+    : rows.filter((r) => r.on_time_size_front).map((r) => r.library);
   const skipped = rows.filter((r) => isShapeSkip(r));
   return `
     <div class="exp-groups glass-panel">
@@ -415,11 +420,11 @@ function renderTopGroup(group, rows) {
       </p>
       <div class="exp-group-row">
         <span class="exp-group-label">Fastest</span>
-        ${chips(fastest ? [fastest] : [], 'exp-tier-similar')}
+        ${chips(fastestNames, 'exp-tier-similar')}
       </div>
       <div class="exp-group-row">
         <span class="exp-group-label">About the same</span>
-        ${chips(similar.filter((n) => n !== fastest), 'exp-tier-similar')}
+        ${chips(similar, 'exp-tier-similar')}
       </div>
       <div class="exp-group-row">
         <span class="exp-group-label">A bit slower</span>

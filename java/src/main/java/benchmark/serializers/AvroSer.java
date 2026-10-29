@@ -25,6 +25,10 @@ import java.io.OutputStream;
  * @see <a href="https://avro.apache.org/docs/current/">Avro docs</a>
  */
 public final class AvroSer implements BenchSerializer {
+  static {
+    AvroClassTrust.install();
+  }
+
   private Schema schema;
   private ReflectDatumWriter<Object> writer;
   private ReflectDatumReader<Object> reader;

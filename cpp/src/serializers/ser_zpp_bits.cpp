@@ -7,7 +7,7 @@ namespace {
 class ZppBitsSer final : public ISerializer {
  public:
   const char* name() const override { return "zpp_bits"; }
-  const char* version() const override { return "4.4.25"; }
+  const char* version() const override { return "4.7.6"; }
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "struct"; }
   void prepare(const Fixture& fx) override {

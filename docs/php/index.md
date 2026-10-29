@@ -103,11 +103,11 @@ rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as 
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [symfony-json](https://github.com/symfony/serializer) · `v7.4.18`
+#### [symfony-json](https://github.com/symfony/serializer) · `v7.4.22`
 
 The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
 
-#### [symfony-xml](https://github.com/symfony/serializer) · `v7.4.18`
+#### [symfony-xml](https://github.com/symfony/serializer) · `v7.4.22`
 
 The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
 
@@ -123,11 +123,11 @@ BSON (Binary JSON) was created for MongoDB so documents could be stored and trav
 
 flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format).
 
-#### [cbor](https://github.com/Spomky-Labs/cbor-php) · `3.4.1`
+#### [cbor](https://github.com/Spomky-Labs/cbor-php) · `3.4.2`
 
 spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC.
 
-#### [yaml](https://github.com/symfony/yaml) · `v7.4.18`
+#### [yaml](https://github.com/symfony/yaml) · `v7.4.22`
 
 The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
 
@@ -137,11 +137,11 @@ ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config 
 
 #### [gld-arrow](https://github.com/leo-gan/gld-arrow-php) · `0.2.0`
 
-gld-arrow-php is a from-scratch Apache Arrow library for PHP. This row writes one IPC stream for a suite value or a batch and reads it back. It is not the columnar data set.
+gld-arrow is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [gld-ion](https://github.com/leo-gan/gld-ion-php) · `0.2.0`
 
-gld-ion-php is a from-scratch Amazon Ion library for PHP. Ion exists as a typed superset of JSON with a binary encoding. This row times Ion 1.0 binary encode and decode on the five suite types.
+gld-ion is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 ## Not in this suite (and why)
 

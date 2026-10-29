@@ -144,6 +144,29 @@ export function compareLabel(row, rows) {
   return COMPARE_LABEL[key] || COMPARE_LABEL[row.cliffs_label] || '—';
 }
 
+/**
+ * Library names in each Vs-fastest band, using the same displayTier as the table.
+ * Precomputed `top_group.close` is Cliff's delta only and is often empty when a
+ * consistent gap is still within 1.5× the fastest median.
+ */
+export function librariesByDisplayTier(rows) {
+  const out = { fastest: [], similar: [], close: [], slower: [] };
+  const seen = {
+    fastest: new Set(),
+    similar: new Set(),
+    close: new Set(),
+    slower: new Set(),
+  };
+  for (const row of rows || []) {
+    if (!row?.library || isShapeSkip(row)) continue;
+    const tier = displayTier(row, rows);
+    if (!out[tier] || seen[tier].has(row.library)) continue;
+    seen[tier].add(row.library);
+    out[tier].push(row.library);
+  }
+  return out;
+}
+
 /** Sample std in µs, or the same mean-CI reconstruction totalStdUs uses. */
 function spreadUs(stdNs, ciLowNs, ciHighNs, runs) {
   let ns = stdNs;

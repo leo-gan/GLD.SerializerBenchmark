@@ -31,6 +31,10 @@ import java.util.Set;
  * Snappy. {@code parquet-uncompressed} sets {@link CompressionCodecName#UNCOMPRESSED}.
  */
 public abstract class AbstractParquetSer implements BenchSerializer {
+  static {
+    AvroClassTrust.install();
+  }
+
   private static final Set<String> IDS =
       Set.of("table", "table_project", "nested_table", "signal");
 

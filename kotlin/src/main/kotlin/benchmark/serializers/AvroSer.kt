@@ -20,6 +20,12 @@ import java.io.OutputStream
  * Hot path: derive schema once via [ReflectData]; reuse writer/reader and encoder/decoder.
  */
 class AvroSer : BenchSerializer {
+    companion object {
+        init {
+            AvroClassTrust.install()
+        }
+    }
+
     private lateinit var schema: Schema
     private lateinit var writer: ReflectDatumWriter<Any>
     private lateinit var reader: ReflectDatumReader<Any>

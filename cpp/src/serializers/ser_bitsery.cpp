@@ -49,7 +49,7 @@ class BitserySer final : public ISerializer {
   using OutputAdapter = bitsery::OutputBufferAdapter<Buffer>;
   using InputAdapter = bitsery::InputBufferAdapter<Buffer>;
   const char* name() const override { return "bitsery"; }
-  const char* version() const override { return "5.2.4"; }
+  const char* version() const override { return "5.2.5"; }
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "struct"; }
   void prepare(const Fixture& fx) override {

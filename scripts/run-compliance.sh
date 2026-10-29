@@ -211,19 +211,21 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
     CS_PART="$LOG_DIR/csharp-parts"
     mkdir -p "$CS_PART"
     CS_SERS=(
-        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "SpanJson" "Utf8Json"
+        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "SpanJson" "Utf8Json" "NetJSON"
+        "ShapeShift.Json" "ShapeShift.Cbor" "ShapeShift.MsgPack" "ShapeShift.Toml" "ShapeShift.Yaml"
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
         "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
         "arrow-ipc" "parquet" "parquet-uncompressed" "PureHDF"
     )
-    # NetJSON hangs on some catalog cases; keep it out of the unattended loop.
+    # NetJSON and ShapeShift use a per-case timeout inside Compliance.cs.
     export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
     for s in "${CS_SERS[@]}"; do
         safe=$(echo "$s" | tr ' /()' '____')
         part="$CS_PART/${safe}.json"
         set +e
-        timeout 180 dotnet "$CS_DLL" compliance --serializer "$s" --json-out "$part" "${fmt_args[@]+"${fmt_args[@]}"}"
+        # NetJSON spends about seven minutes on the JSON catalogs. 180s drops the row.
+        timeout 900 dotnet "$CS_DLL" compliance --serializer "$s" --json-out "$part" "${fmt_args[@]+"${fmt_args[@]}"}"
         st=$?
         set -e
         if [[ $st -ne 0 || ! -s "$part" ]]; then
@@ -348,7 +350,7 @@ if want_lang zig && [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/build.zig" ]]; the
     if [[ -x "$ZIG_EXE" ]]; then
         ZIG_PART="$LOG_DIR/zig-parts"
         mkdir -p "$ZIG_PART"
-        ZIG_FMTS=(json protobuf msgpack capnp cbor flatbuffers zon)
+        ZIG_FMTS=(json yaml toml protobuf msgpack capnp cbor flatbuffers zon arrow avro)
         if [[ ${#FORMATS[@]} -gt 0 ]]; then
             ZIG_FMTS=("${FORMATS[@]}")
         fi
@@ -608,6 +610,13 @@ if [[ "$STATUS" -eq 0 ]]; then
         cp -f "$JSON_OUT" "$LOG_DIR/latest.json"
     fi
     if [[ ${#FORMATS[@]} -eq 0 && ${#ADAPTERS[@]} -eq 0 ]]; then
+        # Kiln 0.2.0 ports and Fortran gld-arrow are scored outside the
+        # language runners. Re-apply those rows after a runner rewrites
+        # latest-<lang>.json, then build the dashboard gzip once.
+        echo -e "${BLUE}Splicing Kiln ports and Fortran Arrow…${NC}"
+        python3 "$PROJECT_ROOT/compliance/scripts/publish_extra_compliance.py" \
+            "$PROJECT_ROOT/compliance/results" \
+            || echo -e "${YELLOW}⚠ Kiln/Arrow splice failed; syncing the reports as they stand${NC}"
         echo -e "${BLUE}Syncing Dashboard payload…${NC}"
         if python3 "$PROJECT_ROOT/dashboard/scripts/sync-compliance.py"; then
             echo -e "${GREEN}✓ Dashboard data/compliance.json updated${NC}"

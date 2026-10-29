@@ -1,0 +1,36 @@
+{
+  "language": "fortran",
+  "serializer": "gld-arrow",
+  "serializer_version": "0.2.0",
+  "format": "arrow",
+  "pin": "gld-arrow-fortran tag 0.2.0",
+  "passed": 3,
+  "failed": 1,
+  "stricter_failed": 0,
+  "cases": [
+    {
+      "id": "arrow-ipc-berth-rows",
+      "outcome": "fail",
+      "observed": "reject",
+      "detail": "gld-arrow 0.2.0 exports Arrow C Data Interface arrays (little_endian=true) and has no IPC stream reader. The buffer is rejected."
+    },
+    {
+      "id": "arrow-ipc-empty",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": "gld-arrow 0.2.0 exports Arrow C Data Interface arrays (little_endian=true) and has no IPC stream reader. The buffer is rejected."
+    },
+    {
+      "id": "arrow-ipc-bad-continuation",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": "gld-arrow 0.2.0 exports Arrow C Data Interface arrays (little_endian=true) and has no IPC stream reader. The buffer is rejected."
+    },
+    {
+      "id": "arrow-ipc-truncated-metadata",
+      "outcome": "pass",
+      "observed": "reject",
+      "detail": "gld-arrow 0.2.0 exports Arrow C Data Interface arrays (little_endian=true) and has no IPC stream reader. The buffer is rejected."
+    }
+  ]
+}

@@ -229,8 +229,18 @@ test('published compliance matrix scores Arrow, Parquet, ORC v1, and SBE', () =>
   const cells = doc.matrix.filter((cell) =>
     ['arrow', 'parquet', 'orc', 'sbe'].includes(cell.format),
   );
-  assert.equal(cells.length, 42);
-  assert.ok(cells.every((cell) => cell.passed === cell.total && cell.failed === 0));
+  assert.equal(cells.length, 43);
+  for (const cell of cells) {
+    if (cell.language === 'fortran' && cell.serializer === 'gld-arrow') {
+      assert.equal(cell.passed, 3);
+      assert.equal(cell.failed, 1);
+      assert.equal(cell.total, 4);
+      assert.equal(cell.serializer_version, '0.2.0');
+      continue;
+    }
+    assert.equal(cell.passed, cell.total, `${cell.language}/${cell.serializer}`);
+    assert.equal(cell.failed, 0, `${cell.language}/${cell.serializer}`);
+  }
   const orcStandards = [...new Set(cells.filter((cell) => cell.format === 'orc').map((cell) => cell.standard))];
   assert.deepEqual(orcStandards, ['ORC v1']);
   const javaOrc = cells.find((cell) => cell.language === 'java' && cell.serializer === 'orc');

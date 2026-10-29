@@ -234,16 +234,15 @@ pub fn main(init: std.process.Init) !void {
         .{ .dir = "toml", .sers = &.{"serde.toml"} },
         .{ .dir = "arrow", .sers = &.{"gld-arrow"} },
         .{ .dir = "avro", .sers = &.{"gld-avro"} },
-        // serde.msgpack is absent on purpose: serde.zig 1.2.2 decodes only into
-        // a known type, so there is no entry point that can answer "is this
-        // wire image valid MessagePack?". The row it used to fill was the
-        // hand-written `skipMsgpack` below, not the library.
+        // serde.msgpack stays unscored: serde.zig 1.2.4 decodes only into a
+        // comptime type, and Value itself does not deserialize. A hand-written
+        // skip would not be this library.
         .{ .dir = "msgpack", .sers = &.{ "zig-msgpack", "msgpack.zig" } },
         .{ .dir = "cbor", .sers = &.{"zbor"} },
         .{ .dir = "capnp", .sers = &.{"capnproto"} },
         .{ .dir = "flatbuffers", .sers = &.{"flatbuffers"} },
-        // serde.zon is absent for the same reason, and its row was `std.zig.Ast`
-        // -- the same parser already published under `std.zon`.
+        // serde.zon stays unscored for the same reason: union decode is rejected
+        // at compile time, so there is no dynamic ZON entry point.
         .{ .dir = "zon", .sers = &.{"std.zon"} },
     };
     for (extras) |ex| {
@@ -351,7 +350,7 @@ fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !voi
         return;
     }
     if (std.mem.eql(u8, ser, "serde.json") or std.mem.eql(u8, ser, "serde.json.borrowed")) {
-        // serde.zig 1.2.2 has no dynamic bytes-to-value entry point. fromSlice
+        // serde.zig 1.2.4 has no dynamic bytes-to-value entry point. fromSlice
         // and fromSliceBorrowed share this scanner: it tokenizes, validates
         // escapes, UTF-8 and control characters, and enforces the depth limit.
         // Borrowed only changes who owns the decoded strings.

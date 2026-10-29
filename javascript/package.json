@@ -1,6 +1,6 @@
 {
   "name": "serializer-benchmark-javascript",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Node.js harness for cross-language serializer benchmark",
   "type": "module",
   "main": "src/runner.js",
@@ -17,7 +17,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@apache-fory/core": "1.7.4",
+    "@apache-fory/core": "^1.7.7",
     "@bufbuild/protobuf": "^2.12.1",
     "@bufbuild/protoc-gen-es": "^2.12.1",
     "@jsonjoy.com/json-pack": "^18.28.0",

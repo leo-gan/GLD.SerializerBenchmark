@@ -15,7 +15,7 @@ Swift compiles to **native machine code**. Memory is managed with **ARC** (Autom
 
 | | This suite |
 |---|---|
-| Tools | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
+| Tools | Swift **6.0 or newer** (`// swift-tools-version: 6.0` in `Package.swift`). The install script places Swift **6.3.3** under `~/.local/swift` when Swift 6 is not already on `PATH`. |
 | Build | Swift Package Manager (`swift build -c release`) |
 | Prepare | `./scripts/install-host-requirements.sh swift` |
 | Run | `swift/scripts/run-benchmarks.sh` |
@@ -107,7 +107,7 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [fory](https://github.com/apache/fory)
+#### [fory](https://github.com/apache/fory) · `1.7.7`
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses ForyStruct macro-generated serializers on Swift value types.
 
@@ -137,7 +137,7 @@ gld-ion is a registered serializer in the swift suite. This page links its upstr
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) · `0.2.0`
 
-gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in prepare, so the timed path does not write names or tags. `Writer.encode` reuses one buffer; `decode` reads the bytes back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 #### [SwiftBSON](https://github.com/mongodb/swift-bson) · `3.1.0`
 

@@ -26,7 +26,7 @@ endif()
 include(FetchContent)
 FetchContent_Declare(fory
   GIT_REPOSITORY https://github.com/apache/fory.git
-  GIT_TAG v1.7.4
+  GIT_TAG v1.7.7
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR cpp
 )
@@ -61,7 +61,7 @@ set(RAPIDJSON_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 # simdjson
 FetchContent_Declare(simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG v3.10.1
+  GIT_TAG v3.13.0
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/simdjson
 )
@@ -111,7 +111,7 @@ set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 # bitsery
 FetchContent_Declare(bitsery
   GIT_REPOSITORY https://github.com/fraillt/bitsery.git
-  GIT_TAG v5.2.4
+  GIT_TAG v5.2.5
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/bitsery
 )
@@ -119,7 +119,7 @@ FetchContent_Declare(bitsery
 # zpp_bits (header-only single file)
 FetchContent_Declare(zpp_bits
   GIT_REPOSITORY https://github.com/eyalz800/zpp_bits.git
-  GIT_TAG v4.4.25
+  GIT_TAG v4.7.6
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/zpp_bits
 )

@@ -69,8 +69,13 @@ if ! command -v mvn >/dev/null 2>&1; then
   exit 1
 fi
 
-# Require Java 17+
+# maven.compiler.release is 21. JDK 17 cannot compile this tree.
 JAVA_VER="$(java -version 2>&1 | head -1)"
+JAVA_MAJOR="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
+if [[ -z "$JAVA_MAJOR" || "$JAVA_MAJOR" -lt 21 ]]; then
+  echo "[ERROR] JDK 21+ required (found: ${JAVA_VER:-unknown}). Run: ./scripts/install-host-requirements.sh java" >&2
+  exit 1
+fi
 echo "[INFO] Building Java benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $JAVA_VER"
 cd "$JAVA_DIR"
 
@@ -99,7 +104,7 @@ ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
 [[ -n "$FILTER_DATA" ]] && ARGS+=("--data" "$FILTER_DATA")
 
 export LOG_DIR
-# Kryo / FST need reflective access on JDK 17+
+# Kryo / FST need reflective access on JDK 21.
 JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/sun.misc=ALL-UNNAMED"
 echo "[INFO] Running: java $JAVA_OPTS -jar $JAR ${ARGS[*]}"
 # shellcheck disable=SC2086

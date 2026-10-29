@@ -56,20 +56,20 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | Name | Category | Package | Stream | Notes |
 |------|----------|---------|--------|-------|
 | [std.json](https://github.com/ziglang/zig) | JSON | std | text_on_stream | `Stringify.value` + `parseFromSlice` into the suite struct |
-| [std.json.borrowed](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `parseFromSliceLeaky` with `alloc_if_needed` |
+| [std.json.borrowed](https://ziglang.org/documentation/master/std/#std.json) | JSON | std | text_on_stream | Same stringify; decode is `parseFromSliceLeaky` with `alloc_if_needed` |
 | [std.json.scanner](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `Scanner` + `parseFromTokenSource` |
 | [std.zon](https://github.com/ziglang/zig) | ZON | std | text_on_stream | Official `std.zon.stringify` + `std.zon.parse.fromSliceAlloc` |
 | [comptime-bin](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md) | Binary | in-tree | adapted | Comptime field walk; LE ints; `u32` length + bytes for strings |
 | [serde.json](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | One comptime API, JSON path |
-| [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | Same encode; decode is `fromSliceBorrowed` |
+| [serde.json.borrowed](https://github.com/getty-zig/getty) | JSON | serde.zig 1.2.2 | text_on_stream | Same encode; decode is `fromSliceBorrowed` |
 | [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) | Binary | serde.zig 1.2.2 | text_on_stream | Same API, MessagePack |
 | [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, YAML. **no document / event** |
 | [serde.toml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, TOML |
 | [serde.zon](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, Zig Object Notation |
 | [serde.xml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, XML |
 | [zig-msgpack](https://github.com/zigcc/zig-msgpack) | Binary | zigcc/zig-msgpack 0.0.18 | adapted | Official MessagePack Payload API |
-| [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.9.0 | native | Typed `encode` / `decodeFromSlice` |
-| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.1.0 | native | Typed `encode` / `decodeFromSliceLeaky` into the cell arena |
+| [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.10.0 | native | Typed `encode` / `decodeFromSlice` |
+| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.2.0 | native | Typed `encode` / `decodeFromSliceLeaky` into the cell arena |
 | [jsonz](https://github.com/KercyDing/jsonz) | JSON | KercyDing/jsonz 0.9.2 | text_on_stream | `typed.toWriter` into the reused buffer / owning `typed.parse`; strings are copied |
 | [zbor](https://codeberg.org/r4gus/zbor) | Binary | r4gus/zbor 0.21.3 | adapted | Native Zig CBOR (`stringify` / `parse`) |
 | [s2s](https://github.com/ziglibs/s2s) | Binary | ziglibs/s2s | native | Native binary “struct to stream” |
@@ -88,6 +88,10 @@ Why each library exists, what problem it was written to solve, and how. Names li
 
 Zig's `std.json` is the standard-library JSON codec. It exists so Zig programs can speak JSON without a package. This suite times typed `parseFromSlice` and, separately, the Scanner path.
 
+#### [std.json.borrowed](https://ziglang.org/documentation/master/std/#std.json) · `0.16.0`
+
+std.json.borrowed is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
+
 #### [std.json.scanner](https://github.com/ziglang/zig) · `0.16.0`
 
 Zig's `std.json` is the standard-library JSON codec. It exists so Zig programs can speak JSON without a package. This suite times typed `parseFromSlice` and, separately, the Scanner path. Decode is `Scanner` + `parseFromTokenSource`; stringify is the same as `std.json`.
@@ -100,43 +104,47 @@ ZON (Zig Object Notation) is Zig's own data notation, in the standard library. I
 
 comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers).
 
-#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the JSON backend of serde.zig.
 
-#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.json.borrowed](https://github.com/getty-zig/getty) · `1.2.4`
+
+serde.json.borrowed is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
+
+#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the MessagePack backend of serde.zig.
 
-#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (message / strings only).
 
-#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the TOML backend of serde.zig.
 
-#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the ZON backend of serde.zig.
 
-#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.4`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig (message / strings only).
 
-#### [zig-msgpack](https://github.com/zigcc/zig-msgpack) · `0.0.18`
+#### [zig-msgpack](https://github.com/zigcc/zig-msgpack) · `0.0.19`
 
 zigcc/zig-msgpack is a MessagePack implementation for Zig. MessagePack exists as compact binary JSON. This package exposes a Payload encode/decode API.
 
-#### [msgpack.zig](https://github.com/lalinsky/msgpack.zig) · `0.9.0`
+#### [msgpack.zig](https://github.com/lalinsky/msgpack.zig) · `0.10.0`
 
 lalinsky/msgpack.zig is another MessagePack library for Zig with a typed encode/decode API. It exists as a native Zig implementation of the same MessagePack spec.
 
-#### [json.zig](https://github.com/lalinsky/json.zig)
+#### [json.zig](https://github.com/lalinsky/json.zig) · `0.2.0`
 
 lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes.
 
-#### [jsonz](https://github.com/KercyDing/jsonz) · `0.9.2`
+#### [jsonz](https://github.com/KercyDing/jsonz) · `0.9.3`
 
 jsonz is a native Zig JSON library with typed and DOM APIs. This row uses typed.toWriter into the reused output buffer and typed.parse into suite structs. Strings are copied; its pool and fallback allocations remain in the trial arena until fidelity checking. Allocation is timed; arena cleanup is outside decode timing.
 
@@ -152,7 +160,7 @@ s2s (struct to stream) is a Zig-only binary encoder that writes structs to a str
 
 Arwalk/zig-protobuf generates Zig from `.proto` files. Protocol Buffers exist as a language-neutral IDL. This package is the Zig implementation this suite uses.
 
-#### [flatbuffers](https://github.com/nDimensional/zig-flatbuffers) · `0.2.1`
+#### [flatbuffers](https://github.com/nDimensional/zig-flatbuffers) · `0.2.3`
 
 nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers exists so readers can use data without unpacking. This is the Zig codegen this suite times.
 
@@ -162,15 +170,15 @@ Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage co
 
 #### [gld-avro](https://github.com/leo-gan/gld-avro-zig) · `0.2.0`
 
-gld-avro-zig is a from-scratch Apache Avro library for Zig. Avro exists for compact, schema-driven records. Prepare parses the schema and builds a Datum. The timed path is Datum.encodeTo and decodeBin.
+gld-avro is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) · `0.2.0`
 
-gld-arrow-zig is a from-scratch Apache Arrow library for Zig. This suite row encodes one suite value as an Arrow IPC stream and reads it back with rowsFromBatch. It is not the columnar data set.
+gld-arrow is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-zig) · `0.2.0`
 
-gld-kiln-zig is a from-scratch [Kiln](https://leo-gan.github.io/gld-kiln/spec/) codec for Zig. Kiln is a positional little-endian layout: field order is the wire order, and the bytes do not carry field names. Prepare parses the schema once and copies the fixture into a value. The timed path is `encodeReuse` on a reused writer and `decode`. One instance is the struct. A batch is one list of that struct. Graph is not timed.
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 ## Not a `@bitCast` of the whole fixture
 

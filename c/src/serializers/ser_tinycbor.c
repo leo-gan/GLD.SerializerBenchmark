@@ -217,7 +217,7 @@ int bench_tinycbor_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_
 }
 
 void bench_register_tinycbor(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "tinycbor", "0.6.0", "binary", prep, ser, bench_tinycbor_de, fidelity_fx);
+    BENCH_ADD(o, c, "tinycbor", "0.6.1", "binary", prep, ser, bench_tinycbor_de, fidelity_fx);
 }
 
 /* gld-ffi-export */

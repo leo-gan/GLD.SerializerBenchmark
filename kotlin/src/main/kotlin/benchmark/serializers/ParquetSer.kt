@@ -126,6 +126,10 @@ abstract class AbstractParquetSer(
         }
 
     companion object {
+        init {
+            AvroClassTrust.install()
+        }
+
         fun footerCodec(data: ByteArray): CompressionCodecName {
             ParquetFileReader.open(MemInputFile(data)).use { reader ->
                 return reader.footer.blocks[0].columns[0].codec

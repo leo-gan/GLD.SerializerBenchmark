@@ -95,7 +95,7 @@ json-c is a long-running C implementation of JSON intended to be the practical l
 
 This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler.
 
-#### [flatcc](https://github.com/dvidelabs/flatcc) · `0.6.3`
+#### [flatcc](https://github.com/dvidelabs/flatcc) · `0.6.4`
 
 flatcc is the maintained C implementation of FlatBuffers. FlatBuffers was created at Google so games and other clients could read serialized data without a parsing/unpacking step. flatcc solves the C side with a schema compiler and a C builder/reader.
 
@@ -131,7 +131,7 @@ This row is the suite's in-tree proto3 tag reader/writer. It exists to measure t
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [tinycbor](https://github.com/intel/tinycbor) · `0.6.0`
+#### [tinycbor](https://github.com/intel/tinycbor) · `0.6.1`
 
 Intel TinyCBOR was written so constrained and systems software could speak IETF CBOR (RFC 7049 / 8949). The problem was that CBOR needed a small, well-specified C encoder/decoder. TinyCBOR solves it with a buffer-oriented C API.
 
@@ -165,7 +165,7 @@ Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (te
 
 #### [gld-kiln](https://github.com/leo-gan/gld-kiln-c) · `0.2.0`
 
-gld-kiln is a positional little-endian codec: the schema is field order, so the wire carries no names and no tags. The problem was repeating those names on every record. This row builds the schema once, then times `kiln_encode_buf` into a reused buffer and `kiln_decode` back into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
+gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 ### Caveats
 
