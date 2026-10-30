@@ -14,13 +14,12 @@ import org.apache.fory.io.ForyInputStream
 import org.apache.fory.kotlin.ForyKotlin
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.io.OutputStream
 
 /**
  * Apache Fory — JIT/codegen high-performance binary serialization.
  *
- * Reuses one Fory instance and registers types before first use.
+ * Hot path: reuse one [Fory] in native mode; register types before first use.
  */
 class ForySer : BenchSerializer {
     private val fory: Fory =
@@ -46,7 +45,7 @@ class ForySer : BenchSerializer {
 
     override fun version() = Versions.of(Fory::class.java)
 
-    override fun streamMode() = "native"
+    override fun streamMode() = "adapted"
 
     override fun nativeKind() = "message"
 
@@ -73,7 +72,4 @@ class ForySer : BenchSerializer {
         // Main.measureStream treats a negative return as "use output size".
         return -1
     }
-
-    override fun deserializeStream(input: InputStream): Any =
-        fory.deserialize(ForyInputStream(input))
 }

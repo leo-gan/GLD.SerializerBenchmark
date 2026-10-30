@@ -313,25 +313,29 @@ tasks.test {
         "--add-opens", "java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED",
         "--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED",
     )
-    maxHeapSize = "2g"
+    maxHeapSize = "512m"
     testLogging {
         showStandardStreams = true
     }
 }
+// Ensure Shadow distribution scripts have the regular JAR available.
+tasks.named("startShadowScripts") {
+    dependsOn(tasks.named("jar"))
+}
 
-tasks.shadowJar {
-    archiveBaseName.set("serializer-benchmark-kotlin")
-    archiveClassifier.set("")
-    archiveVersion.set("1.0.0-SNAPSHOT")
-    mergeServiceFiles()
-    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-    exclude("**/module-info.class")
-    manifest {
-        attributes["Main-Class"] = "benchmark.MainKt"
-    }
-    isZip64 = true
+// Ensure the distribution tasks run after the Shadow JAR is created.
+tasks.named("startScripts") {
+    dependsOn(tasks.named("shadowJar"))
+}
+
+tasks.named("distZip") {
+    dependsOn(tasks.named("shadowJar"))
+}
+
+tasks.named("distTar") {
+    dependsOn(tasks.named("shadowJar"))
 }
 
 tasks.named("build") {
-    dependsOn(tasks.shadowJar)
+    dependsOn(tasks.named("shadowJar"))
 }
