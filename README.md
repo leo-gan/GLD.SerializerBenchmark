@@ -10,9 +10,6 @@
 
 Compare 300+ serialization libraries across **14 languages**.
 
-> Kiln, a frozen positional wire format implemented from scratch in 11
-> languages and benchmarked in this project: https://github.com/leo-gan/gld-kiln
-
 | Start here | |
 |------------|--|
 | **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
@@ -45,9 +42,9 @@ Compare 300+ serialization libraries across **14 languages**.
 
 ## Supported languages
 
-- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 52 serializers registered
-- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 40 with Arrow (35 without; sbe still registers)
+- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21 serializers
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 52
+- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 40
 - [Fortran](https://leo-gan.github.io/GLD.SerializerBenchmark/fortran/) — 9
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 31
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 27
@@ -127,10 +124,19 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 ## Test data
 
-Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event` are the row matrix. Dashboard `all@all` averages those five only. `table`, `table_project`, `nested_table`, and `signal` are separate data types, timed by `config/library/columnar.yaml` and appended to the published snapshot by `dashboard/scripts/splice-columnar-stats.py`. `graph` is its own data set and data type (shared nodes and one reference cycle), timed by `config/library/graph.yaml`. Tree codecs skip it. `grid` and `grid_window` are the array data set (one dense float64 grid, and a window of that grid), timed by `config/library/array.yaml`. Fortran HDF5, NetCDF, and ADIOS2 use that set. `tensor`, `tensor_view`, `prompt`, `shard`, and `request` are the tensor data set (one float32 matrix, a borrowed read of that matrix, an LLM prompt, a weight shard, and a request envelope), timed by `config/library/tensor.yaml`.
+Every language serializes the same samples. A **data set** is the group measured in one run. A **data type** is one shape inside that group. The Suite is the default set, and each set is scored on its own.
 
-Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
-Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
+| Data set | Data types |
+|----------|------------|
+| **Suite** | Five everyday records: a flat message, a nested document, numeric telemetry, a block of strings, and an event |
+| **Columnar** | Wide tables: a full row, a single-column read, a nested table, and an aligned record |
+| **Graph** | One network of shared objects, including a cycle |
+| **Array** | One dense grid of numbers, and a window read from that grid |
+| **Tensor** | Machine-learning payloads: a float matrix, a borrowed read of that matrix, a prompt, a weight shard, and a request |
+
+A library is measured on the sets it can carry.
+
+[Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/) has the catalog and the run matrices.
 
 ---
 
@@ -140,3 +146,6 @@ Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/tes
 - [Metrics catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/)
 
 Compare serializers **within one language** (and ideally one category). Cross-language absolute times are directional only — runtimes and GCs differ.
+
+> Kiln, a frozen positional wire format implemented from scratch in 11
+> languages and benchmarked in this project: https://github.com/leo-gan/gld-kiln
