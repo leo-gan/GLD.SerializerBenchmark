@@ -31,7 +31,7 @@ If your goal is to **implement** a codec, that work belongs in [Serialization 40
 
 | Type | Requirement |
 |------|-------------|
-| **Hard** | [Serialization 101](../101/index.md) — trade-off axes and at least one of the three lenses |
+| **Hard** | [Serialization 101](../101/index.md) — the model, and at least one of the three lenses |
 | **Hard** | [Serialization 201](../201/index.md) — especially schema identity, evolution, dynamic versus IDL (interface definition language) binary formats, encode cost, zero-copy, and compression versus format *(or equivalent experience)* |
 
 This course does **not** re-teach the mechanisms from 201. When you need a mechanism model, open the matching 201 article. Then return here for multi-constraint judgment.
@@ -46,7 +46,7 @@ By the end of this course you should be able to:
 2. **Distinguish** operational schema cultures without re-deriving wire rules from scratch. One example is Avro-style writer and reader resolution. Another is Protobuf field-number discipline.
 3. **Evaluate** workload fit. That includes row versus columnar storage at system scale. It includes multi-language (*polyglot*) contracts across languages. It also includes the different shapes of **RPC** versus messaging payloads. **RPC** means remote procedure call. It is a synchronous request and response between services.
 4. **Critique** benchmark claims. Use this suite’s rule: same language, same standard, same data set, and same data type.
-5. **Recommend** a format family, then name the standard inside it. **Justify** the recommendation with serialization categories and the Dashboard.
+5. **Recommend** a standard for the workload, then a library. The family map on [Serialization categories](../../analysis/serialization_categories.md) is only a map. **Justify** the recommendation with that map and the Dashboard.
 6. **Identify** what this benchmark runner cannot answer. That skill stops you from over-claiming.
 
 ---
@@ -55,7 +55,7 @@ By the end of this course you should be able to:
 
 | Course | Role |
 |--------|------|
-| [101](../101/index.md) | Foundations — what serialization is; trade-off axes and lenses |
+| [101](../101/index.md) | Foundations — workload, standard, implementation, and evaluation |
 | [201](../201/index.md) | Mechanisms — how formats work under the hood |
 | **301 (this course)** | Production judgment — what to ship under real constraints |
 | [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |

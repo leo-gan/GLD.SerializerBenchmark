@@ -62,6 +62,12 @@ Processing is **per group**. A group is one combination of:
 (Language, SerializerName, TestDataName, StringOrStream)
 ```
 
+That key is how trials are cleaned. It includes I/O mode. It does not include the standard.
+
+The published row uses a different key. Analysis stamps **Standard** and **Data set** onto each group after the trials are summarized. The published identity is language, serializer, standard, data set, data type, and batch size. I/O mode is not part of that key. The field list is in [Metrics](METRICS.md).
+
+Effect sizes on this page compare serializers inside one language, one data type, one batch size, and one I/O mode. That peer set does not slice by standard. A fastest-in-group effect can name a library on a different standard. The implementation comparison to quote is the Dashboard cell: one language, one standard, one data set, and one data type.
+
 One function, `prepare_analysis_records` in `stats.py`, performs steps 1–3. **Tables and charts both consume that output**, so they cannot disagree about which trials were kept or which units were used.
 
 | Step | What happens | Why |
@@ -169,7 +175,7 @@ Produced only when the post-filter sample size is at least `min_samples_for_infe
 
 ### Effect sizes versus the fastest in the group
 
-When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> story of the suite.
+When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The standard is not part of that peer set. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> story of the suite.
 
 | Method | Role in plain language |
 |--------|------------------------|

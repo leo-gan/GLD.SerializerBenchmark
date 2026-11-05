@@ -218,7 +218,9 @@ Also: [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob
 
 ## How to rank
 
-Compare serializers **inside the same family** only (JSON with JSON, not JSON with a zero-copy schema codec). Rank in **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). Stream mode is left out of this ranking.
+Compare libraries inside one language and one standard. JSON with JSON is an implementation comparison. JSON with Protocol Buffers or SBE is a standard comparison. Rank in **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). Stream mode is left out of this ranking.
+
+The table is a family map of this roster. It is not the ranking key.
 
 | Family | Members |
 |--------|---------|

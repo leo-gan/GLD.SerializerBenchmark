@@ -12,11 +12,9 @@ This multi-language suite is built to support **fair, local** comparisons. It an
 
 Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
 
-The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. Data set is Suite or Columnar. The Suite types are `message`, `document`, `telemetry`, `strings`, and `event`. Published averages such as `all@all` use only those five types. The Columnar types are `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only `f_float_0`.
+The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. The shapes are on the [test data](../../analysis/test_data_configuration.md) page. Choosing a standard prefers a data set that standard is measured on. You can still change the data set. Which question a chart answers is on [Serialization 101](../101/index.md#how-to-compare).
 
-The Dashboard sets the data set from the standard. Where a language registers them on both sets, JSON, Avro, Protocol Buffers, and FlatBuffers still need a matching data type. Arrow IPC, Parquet, and ORC are Columnar only. SBE (Simple Binary Encoding) is Columnar only as a data set. It is schema-driven. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet.
-
-A **family** is a teaching cut. It groups formats that solve roughly the same product job: JSON text, schemaless binary, schema-driven, language-native, or columnar. See [Serialization categories](../../analysis/serialization_categories.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
+A **family** is a teaching cut. It groups formats that solve roughly the same product job. See [Serialization categories](../../analysis/serialization_categories.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
 
 A cross-language or cross-standard chart needs the workload stated again before it becomes architecture policy. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are one part of the argument. See the rest of Serialization 301.
 
@@ -45,11 +43,12 @@ This matters because a mixed chart can look like a tournament. The honest use is
 Use this checklist **before** quoting a Dashboard number:
 
 1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
-2. **Same standard?** This is the Dashboard **Standard** control. Cross-standard only when the product question is which contract. Then speed is one axis among others. The family is the teaching cut that led you to the standard. See [Serialization categories](../../analysis/serialization_categories.md).
-3. **Same data set?** Suite or Columnar. The Dashboard sets this from the standard. When a standard has both, read the label and then check the data type.
-4. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
-5. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
-6. **Still missing?** Compression on the wire, authentication, schema registry behavior, and multi-hop delivery of one message to many consumers (*fan-out*) sit outside the core tables. Design a separate experiment for those.
+2. **Same standard?** This is the Dashboard **Standard** control. A cross-standard chart is allowed when the product question is which contract. Speed is then one axis among others.
+3. **Conformance?** If the question is whether the library follows the specification, open [Compliance](../../dashboard/#compliance) for that standard. A speed row does not answer it. **No public spec** has no score.
+4. **Same data set?** The sets are on the [test data](../../analysis/test_data_configuration.md) page. A standard can appear on more than one set. Read the data set, then the data type.
+5. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
+6. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
+7. **Still missing?** Compression on the wire, authentication, schema registry behavior, and multi-hop delivery of one message to many consumers (*fan-out*) sit outside the core tables. Design a separate experiment for those.
 
 Bytes versus stream is a caveat on languages that still publish a stream row. Keep that row off the parent-row chart. It is a language Overview note, and it is a separate axis from the four filters above.
 
@@ -127,7 +126,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 ### Procedure
 
-1. Apply the checklist in **Decision frame**. Check language, then standard, then data set, then data type, then metric.
+1. Apply the checklist in **Decision frame**. Check language, then standard. If the question is the specification, stop at conformance. Otherwise check data set, then data type, then metric.
 2. Pull only the matching rows from the Dashboard. Leave cross-standard and cross-language ranks out of the policy claim.
 3. Record which metric column you will use. Examples include encode versus decode versus size versus operations per second.
 4. List product constraints the suite does **not** measure. Examples include trust, registry, and network RTT.

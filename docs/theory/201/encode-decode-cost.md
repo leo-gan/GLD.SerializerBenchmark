@@ -125,11 +125,11 @@ The shape of the data also matters a great deal. Two messages with the same logi
 | One flat record: a few large integers and one large binary blob | Fewer objects; more bulk memory-copy bandwidth |
 | A deep tree: hundreds of small nested objects and short strings | Many allocations; poor locality (scattered memory access) |
 
-**Shape can matter as much as the choice of format family.** Nested structures and many small objects cost more to encode than simple flat records. This suite uses controlled fixtures so comparisons stay interpretable within a language. See [Test Data](../../analysis/test_data_configuration.md).
+**Shape can matter as much as the choice of standard.** Nested structures and many small objects cost more to encode than simple flat records. This suite uses controlled fixtures so comparisons stay interpretable within a language. See [Test Data](../../analysis/test_data_configuration.md).
 
 ### Implementation quality
 
-The label “JSON” covers both pedagogical recursive parsers and highly optimized libraries. The label “Protocol Buffers” covers both reflection-based paths and fully code-generated paths. Reflection means the program discovers field structure at runtime. Code generation means the structure is known at compile time. Comparisons should fix **language**, **implementation**, and **payload**. Do not compare only the marketing name of a format.
+The label “JSON” covers both pedagogical recursive parsers and highly optimized libraries. The label “Protocol Buffers” covers both reflection-based paths and fully code-generated paths. Reflection means the program discovers field structure at runtime. Code generation means the structure is known at compile time. Comparisons should fix **language**, **standard**, **implementation**, and **payload**. Do not compare only the marketing name of a format.
 
 ---
 
@@ -138,7 +138,7 @@ The label “JSON” covers both pedagogical recursive parsers and highly optimi
 | Axis | Factors that often dominate | Attribution that is often too coarse |
 |------|------------------------------|--------------------------------------|
 | Processor time | Numeric parse and print; token scanning; UTF-8 handling; varint loops | Treating “we used JSON” as a single yes/no fact |
-| Memory / allocations | Per-field objects; intermediate strings; map nodes | Blaming only the format family |
+| Memory / allocations | Per-field objects; intermediate strings; map nodes | Blaming only the standard |
 | Size / bandwidth | Repeated keys; decimal digits; optional whitespace | Assuming binary is always better on a high-speed local network |
 | Latency tails | Garbage-collection pauses after allocation spikes | Looking only at mean encode time |
 | Operability | Text logs versus the need for binary decoders | — |

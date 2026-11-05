@@ -28,7 +28,7 @@ In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serial
 | **Model artifacts** | Weights plus preprocessing graph | Load speed, versioning, who is allowed to load the file |
 | **Feature interchange** | Training and serving feature payloads | Stable types, low training/serving skew, predictable nulls |
 
-Different workloads want different points on the [core trade-off axes](index.md#core-trade-offs). Those axes include text versus binary, schema versus schemaless, row versus columnar, and portable versus language-native.
+Different workloads want different points on [how standards differ](index.md#how-standards-differ). Those properties include text versus binary, schema versus schemaless, row versus columnar, and portable versus language-native.
 
 ---
 
@@ -190,6 +190,8 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ## Decision guide
 
+The shape and the access pattern choose the standard. The library is the next question, inside one language. See [how to compare](index.md#how-to-compare).
+
 **What is the primary access pattern?**
 
 | If you need… | Prefer… |
@@ -200,12 +202,13 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 | Application or API interchange, semi-structured, multi-language | **JSON** (plus schema or validation if the contract matters) |
 | Compact internal dynamic payloads (not a lake table) | **MessagePack** or **CBOR** (still validate at boundaries) |
 | Online low-latency service contract (features, inference input/output) | **Schema-driven** formats (Protocol Buffers and similar)—see the [engineering perspective](engineer_perspective.md) |
+| A dense numeric grid, or a tensor a reader may borrow | **HDF5**, **NetCDF**, or **ADIOS2** for arrays. **Kiln**, **Arrow IPC**, or **FlatBuffers** for tensors |
 | Python-only, trusted, short-lived object graph | **pickle** or **joblib** only with eyes open; plan a portable exit path |
 
 ### Quick comparison
 
-| Format family | Human-readable | Best at | Weak at |
-|---------------|----------------|---------|---------|
+| Contract | Human-readable | Best at | Weak at |
+|----------|----------------|---------|---------|
 | CSV | Yes | Exchange with humans and tools | Types, nesting, evolution |
 | JSON / JSON Lines | Yes | Universal semi-structured glue | Huge analytic tables |
 | pickle / native | No | Rich Python graphs | Trust, portability, longevity |
@@ -219,9 +222,9 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ## How this suite helps (and what it does not)
 
-This repository benchmarks **serializers** across languages. A family is a teaching cut: text, schemaless binary, schema-driven, language-native, or columnar. The comparison cell is language, standard, data set, and data type. The Suite data set is `message`, `document`, `telemetry`, `strings`, and `event`. Published `all@all` averages only those five types. The Columnar data set is `table`, `table_project`, `nested_table`, and `signal`. On `table_project`, serialize writes the full row and deserialize reads only `f_float_0`.
+These measurements are the encode and decode cost of one fixture. [How to compare](index.md#how-to-compare) states which questions a number can answer. The [Dashboard](../../dashboard/) shows the numbers for one language, one standard, one data set, and one data type. The shapes are on the [test data](../../analysis/test_data_configuration.md) page.
 
-Those measurements are the encode and decode cost of a fixture. Data platform success also depends on input/output layout, compression, partitioning, cluster execution, and schema governance. Those topics are larger than a single serialize call. Use the [Dashboard](../../dashboard/) inside one comparison cell. Use this page to choose the job before you micro-optimize a library.
+Data platform success also depends on input/output layout, compression, partitioning, cluster execution, and schema governance. Those topics are larger than a single serialize call. Use this page to choose the workload and the standard. Choose the library after that, inside one language.
 
 ---
 

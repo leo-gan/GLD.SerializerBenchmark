@@ -24,7 +24,7 @@ Compare 300+ serialization libraries across **14 languages**.
     <img src="docs/assets/dashboard-overview.jpg" alt="Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking" width="780" />
   </a>
   <br />
-  <sub>The live <strong>Dashboard</strong>: pick a language and data type, then read speed vs size and the ranking.</sub>
+  <sub>The live <strong>Dashboard</strong>: pick a language, a standard, and a data type, then read speed vs size and the ranking.</sub>
 </p>
 
 ---
@@ -145,7 +145,7 @@ A library is measured on the sets it can carry.
 - [Analysis methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/)
 - [Metrics catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/)
 
-Compare serializers **within one language** (and ideally one category). Cross-language absolute times are directional only — runtimes and GCs differ.
+Compare serializers **within one language and one standard**. Cross-language absolute times are directional only — runtimes and GCs differ.
 
 > Kiln, a frozen positional wire format implemented from scratch in 11
 > languages and benchmarked in this project: https://github.com/leo-gan/gld-kiln

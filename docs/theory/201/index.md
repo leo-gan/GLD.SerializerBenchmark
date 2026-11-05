@@ -16,12 +16,12 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 
 ## How to use this track
 
-1. Skim [Serialization 101](../101/index.md) so the basic definitions and trade-off axes feel familiar.
+1. Skim [Serialization 101](../101/index.md) so the model and the trade-off axes feel familiar.
 2. Optionally read one lens that matches your work: [Historical](../101/historical_perspective.md), [Data science](../101/data_science_perspective.md), or [Engineering](../101/engineer_perspective.md).
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
+**Honesty rules (same as Serialization 101).** There are no universal winners. The standard bounds the wire. The library is how close that language gets. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
 
 ---
 
@@ -59,7 +59,7 @@ These articles explain where the meaning of a field lives, and how systems stay 
 - [Self-describing vs schema](self-describing-vs-schema-dependent.md)
 - [Schema evolution](schema-evolution.md)
 
-### Families in practice
+### Mechanisms
 
 These articles compare common binary mechanisms and specialized layout designs you will meet in real systems. MessagePack, CBOR, Protocol Buffers, and FlatBuffers are **standards**. A family groups them. The spec for each name is the [compliance catalog](../../compliance/). These articles stay about mechanisms.
 
