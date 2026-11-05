@@ -24,7 +24,7 @@ Check real numbers on the [Dashboard](../../dashboard/). Language **Overview** p
 
 **Serialization** is the process of turning an in-memory data structure into a **linear sequence of bytes**. Those bytes can be stored on disk, held in a cache, or sent across a network. **Deserialization** rebuilds a usable structure from those bytes. The rebuilt structure may live in another process, on another machine, or in another programming language.
 
-Inside a running program, data is often a web of pointers and types. A record may point to an array, that array to strings, and those strings to characters. Networks and disks only store and transmit bytes in order. Every serialization format is a **contract** between a writer and a reader. The contract says how meaning is flattened into bytes, and how those bytes are rebuilt.
+Inside a running program, data is often a web of pointers and types. A record may point to an array, that array to strings, and those strings to characters. Networks and disks only store and transmit bytes in order. A pointer is a promise that the rest of the object is still nearby. A byte on a disk has no nearby. Every serialization format is a **contract** between a writer and a reader. The contract says how meaning is flattened into bytes, and how those bytes are rebuilt. Deserialization is the moment you find out whether the two sides still recognize each other.
 
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract.svg#only-light)
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract-dark.svg#only-dark)

@@ -84,7 +84,9 @@ Object-oriented runtimes introduced **graphs**. Shared references, cycles, and i
 
 The public web needed something **language-neutral, hierarchical, and human-inspectable**. **XML 1.0** was published by the [W3C](https://en.wikipedia.org/wiki/World_Wide_Web_Consortium "W3C — World Wide Web Consortium")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> in 1998. Editors included **[Tim Bray](https://en.wikipedia.org/wiki/Tim_Bray "Tim Bray — co-editor of XML 1.0")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** and **[Jean Paoli](https://en.wikipedia.org/wiki/Jean_Paoli "Jean Paoli — co-editor of XML 1.0")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**. XML has roots in [SGML](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language "SGML — Standard Generalized Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. It wrapped data in named tags. Tooling exploded. [XSD](https://en.wikipedia.org/wiki/XML_Schema_%28W3C%29 "XSD — XML Schema Definition")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [XPath](https://en.wikipedia.org/wiki/XPath "XPath — query language for XML trees")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [XSLT](https://en.wikipedia.org/wiki/XSLT "XSLT — XML transformations")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, and namespaces all appeared.
 
-Enterprise systems layered **SOAP** and the WS-\* stack on XML over [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. In theory this was universal. In practice it was verbose and complex. Parse cost and document weight became obvious at scale.
+Enterprise systems layered **SOAP** and the WS-\* stack on XML over [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. In theory this was universal. In practice it was verbose and complex. Parse cost and document weight became obvious at scale. SOAP 1.1 expanded the name as Simple Object Access Protocol. SOAP 1.2 gave up and said the name no longer stands for anything. The protocol did not get simpler. It just stopped promising to.
+
+One famous hostile XML document is called the **billion laughs** attack. A tiny file expands into a billion copies of the word `lol`. The joke is in the name. The outage is not. Do not learn it by pasting it into a parser.
 
 **Lesson:** **self-description and universality have real processor and bandwidth costs.** The industry spent the following decades trying to keep interoperability while reducing that “XML tax.”
 
@@ -176,6 +178,20 @@ History does not converge on a single winner. It accumulates niches along recurr
 | **Flexible & ad hoc** (JSON / pickle / MessagePack) | | **Evolvable & explicit** (Avro / Protobuf + process) |
 | **Whole-record access** (messages / documents) | | **Wide-table analytics** (Parquet / Arrow) |
 | **Safe across trust boundaries** (portable + validated) | | **Max power in one runtime** (native pickle / Java serialization) |
+
+---
+
+## Stories the era table skips
+
+The era map above is the serious version. These are the same ideas, caught misbehaving.
+
+**JSON has no comments, on purpose.** [Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford "Douglas Crockford — popularized JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> took them out. People were hiding parsing instructions inside comments, and a comment one parser ignores is a command another parser obeys. He wrote that the lack of comments makes some people sad, and that it should not. His suggested cure was to comment anyway, then run the file through a minifier before parsing. The sadness was relocated, not cured.
+
+**Norway is sometimes false.** In YAML 1.1, an unquoted `no` is a boolean, in several capitalizations. A list of country codes can therefore contain Sweden, Finland, and `false`. YAML 1.2's core schema stopped treating those words as booleans. Many parsers still in use, including older PyYAML defaults, did not get the memo. If the config says Norway and the program says false, you are not having a geography argument.
+
+**pickle is a program that happens to look like data.** The byte stream is opcodes for a tiny virtual machine. Loading it runs those opcodes. That is why Python's warning fits in two sentences and does not negotiate. A checkpoint from your own training job is a convenience. A checkpoint from a link in a chat is a guest who brought their own interpreter.
+
+**CSV has a specification, and also a spreadsheet.** [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) describes the commas. Excel, opened on a laptop in another country, may decide that `00123` is the number 123, and that `2024-03-01` is a date or a subtraction, depending on the locale. The bytes did not change. The reader developed a personality.
 
 ---
 

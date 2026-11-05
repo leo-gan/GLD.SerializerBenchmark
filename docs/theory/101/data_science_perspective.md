@@ -72,7 +72,7 @@ CSV is not “wrong.” It is a **lossy social format**. It is easy to share and
   - **No** → do not unpickle and do not use other native “deserialize anything” APIs.
   - **Yes** → still prefer portable formats for anything long-lived or multi-language.
 
-A **trust boundary** is any place where data may come from outside your fully controlled environment.
+A **trust boundary** is any place where data may come from outside your fully controlled environment. Unpickling a file you did not write is how a notebook grows a shell. The longer version is in [Stories the era table skips](historical_perspective.md#stories-the-era-table-skips).
 
 | Approach | Strength | Risk |
 |----------|----------|------|

@@ -56,7 +56,7 @@ Work through these questions in order:
 
 **XML** remains in enterprise and document systems. Prefer it when the ecosystem already demands it. Do not pick it as a greenfield API default.
 
-**YAML** and **[TOML](https://en.wikipedia.org/wiki/TOML "TOML — Tom’s Obvious Minimal Language (config format)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** are configuration formats more than wire formats. YAML’s complexity has a long security history with “load untrusted YAML” mistakes. Prefer safe loaders and locked-down schemas for untrusted input.
+**YAML** and **[TOML](https://en.wikipedia.org/wiki/TOML "TOML — Tom’s Obvious Minimal Language (config format)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** are configuration formats more than wire formats. YAML’s complexity has a long security history with “load untrusted YAML” mistakes. Prefer safe loaders and locked-down schemas for untrusted input. In YAML 1.1, unquoted `NO` is the boolean false. Quote the country. Norway would appreciate it. The longer version is in [Stories the era table skips](historical_perspective.md#stories-the-era-table-skips).
 
 ## Schemaless binary
 
