@@ -10,6 +10,8 @@
 
 Compare 300+ serialization libraries across **14 languages**.
 
+Your favorite one is probably fast. The one it beat may have been writing different bytes, in a different language, about a different object. That is a parade. A race is one language, one standard, and one shape of data.
+
 | Start here | |
 |------------|--|
 | **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
