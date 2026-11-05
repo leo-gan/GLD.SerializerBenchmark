@@ -19,13 +19,13 @@ Even as a first-year student, you can use this page to see how format choice aff
 
 ---
 
-## Four families (aligned with this suite)
+## Formats you meet on a service
 
-The benchmark suite groups serializers into families for orientation. A family is a teaching cut. The Dashboard comparison cell is **language, standard, data set, and data type**. Different families solve different problems. JSON and YAML can share the text family and still be different standards. Columnar formats such as Arrow IPC, Parquet, and ORC are the fifth family on [Serialization categories](../../analysis/serialization_categories.md). This lens is about services, so the table stays with the four families you meet on an API or an RPC hop.
+The essays below are grouped by family. A family is a teaching cut, not a Dashboard filter. JSON and YAML can share the text family and still be different standards. Decide the workload, then the standard, then the library. Columnar standards are on [Serialization categories](../../analysis/serialization_categories.md). Comparison rules are on [Serialization 101](index.md#how-to-compare).
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
-| **Text / [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> family** | JSON; sometimes [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> or [YAML](https://en.wikipedia.org/wiki/YAML "YAML — human-friendly data serialization language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> at edges | Optional or external | Yes | Public APIs, configuration, debug-friendly logs |
+| **Text** | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; sometimes [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> or [YAML](https://en.wikipedia.org/wiki/YAML "YAML — human-friendly data serialization language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> at edges | Optional or external | Yes | Public APIs, configuration, debug-friendly logs |
 | **Schemaless binary** | [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, many “binary JSON” codecs | Type tags or field names often present | No | Internal services, caches, queues |
 | **Schema-driven** | [Protocol Buffers](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, Bond, many [interface description language (IDL)](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> tools | Numbers or layout from a schema | No | Stable contracts, high-throughput RPC and streams |
 | **Language-native** | [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Java serialization](https://en.wikipedia.org/wiki/Java_serialization "Java object serialization — JVM native object encoding")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, legacy .NET binary formatters | Runtime type metadata | No | Same-stack caches and graphs (**trust carefully**) |
@@ -37,15 +37,16 @@ An **IDL** (interface description language) is a small language used to describe
 Work through these questions in order:
 
 1. **Do people need to read or edit the payload on the wire?**  
-   - **Yes** → stay in the JSON family. Add JSON Schema or OpenAPI when contracts matter.  
+   - **Yes** → JSON. Add JSON Schema or OpenAPI when the contract matters.  
    - **No** → continue.  
 2. **Do you need a shared IDL or schema and multi-language evolution rules?**  
-   - **Yes** → schema-driven. Protocol Buffers-like, Avro-like, or zero-copy IDL designs fit here.  
+   - **Yes** → name the standard. Protocol Buffers, Avro, FlatBuffers, and similar contracts fit here.  
    - **No** → continue.  
 3. **Is this a single language and runtime, with complex graphs and fully trusted data?**  
-   - **Yes** → language-native formats only inside a hard trust boundary.  
+   - **Yes** → a language-native library, only inside a hard trust boundary.  
    - **Shared nodes that another language must read** → the graph data set (`dagr-regular` or `dagr-frozen`). Packed Dagr cannot store the cycle.  
-   - **No** → schemaless binary such as MessagePack or CBOR, **and** validation at the edges.
+   - **No** → a schemaless binary standard such as MessagePack or CBOR, **and** validation at the edges.  
+4. **Which library?** Open the [Dashboard](../../dashboard/) with **Language** and **Standard** set, on the same data set and data type. That is an implementation comparison. If the question is the specification, open [Compliance](../../dashboard/#compliance) for that standard.
 
 ---
 
@@ -214,7 +215,7 @@ user2.ParseFromString(data)
 
 ## Key takeaways
 
-1. **Pick a family, then a standard, then a library.** A family is a teaching cut. [Serialization categories](../../analysis/serialization_categories.md) is that map. A library is one implementation of a standard. The Dashboard comparison cell is language, standard, data set, and data type.  
+1. **Choose the workload, then the standard, then the library.** [Serialization categories](../../analysis/serialization_categories.md) is the family map. A library is one implementation of a standard. Compare on one language, one standard, one data set, and one data type.  
 2. **Public edge is not the same as the internal code that runs on every request under load.** JSON at the boundary and binary inside is a normal, historical pattern.  
 
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  

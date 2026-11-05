@@ -137,7 +137,7 @@ The **Dashboard** is the published interactive view of those summaries. An **Ove
 
 ## Standard
 
-A **standard** is the compliance format id for a serializer. The ids live in [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json). They include `json`, `yaml`, `toml`, `avro`, `protobuf`, `parquet`, `orc`, `arrow`, `sbe`, `hdf5`, and the other ids in that file. The Dashboard **Standard** filter uses them. **All** lists every serializer for the selected languages.
+A **standard** is the contract a library claims to implement: the rules for what the bytes mean. This suite stores that contract as the compliance format id. The ids live in [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json). They include `json`, `yaml`, `toml`, `avro`, `protobuf`, `parquet`, `orc`, `arrow`, `sbe`, `hdf5`, and the other ids in that file. The Dashboard **Standard** filter uses them. **All** lists every serializer for the selected languages.
 
 An empty compliance list is the standard `custom`. The Dashboard label is **No public spec**. Those serializers stay on the speed table and stay unscored in compliance.
 
@@ -145,7 +145,7 @@ A serializer that lists two ids keeps one timed row. C# `MS Bond Json` lists `js
 
 A **family** is a teaching group: JSON, schemaless binary, schema-driven, language-native, or columnar. A family is coarser than a standard. `yaml` is its own standard. Rankings use the standard, together with the language, the data set, and the data type.
 
-The categories page calls this grouping a **family**. Older sentences say **category** for the same grouping.
+The categories page calls this grouping a **family**.
 
 The family name Columnar and the data set `columnar` answer different questions. SBE sits in the schema-driven family, its data set is `columnar`, and its standard is `sbe`.
 

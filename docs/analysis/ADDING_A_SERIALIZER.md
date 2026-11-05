@@ -100,11 +100,11 @@ Before `full` / publishing Dashboard data:
 cd c-sharp && ./scripts/run-benchmarks.sh custom 30 YourSerializerName message
 ```
 
-Then compare **order of magnitude** against an existing peer in the **same family** (e.g. other schema codecs: protobuf / Bond / FlatBuffers peers — not MemoryPack vs YAML).
+Then compare **order of magnitude** against an existing peer on the **same standard** (other JSON libraries with JSON, other Protocol Buffers libraries with Protocol Buffers). A same-family size glance is only a sanity hint when no second library implements that standard. MemoryPack versus YAML is not a useful hint.
 
 | Signal | Action |
 |--------|--------|
-| Size matches family peers; ops within ~2–3× of a peer of similar design | Good enough to proceed to full |
+| Size matches a same-standard peer; ops within ~2–3× of a peer of similar design | Good enough to proceed to full |
 | Size wrong (0/1, or ≪ peers) | Fix harness / batch framing first (LABEL≠WORK) |
 | Size OK but ops ≪ peers by ~5–10× | Re-check docs for reuse, typed API, prepare placement — **do not publish full numbers yet** |
 | Still slow after hot-path audit | Document as expected library cost; cite docs |
@@ -237,7 +237,7 @@ From the repo root (toolchains via `./scripts/install-host-requirements.sh <lang
 # Peer-smoke: your serializer only, enough reps to ignore warmup (example: C#)
 cd c-sharp && ./scripts/run-benchmarks.sh custom 30 YourSerializerName message
 
-# Spot-check size + ops vs a same-family peer already in the suite, then:
+# Spot-check size + ops vs a same-standard peer already in the suite, then:
 
 # Full matrix for the language (preferred before merge)
 cd ..
@@ -252,7 +252,7 @@ Confirm:
 - CSV has rows for your `SerializerName` with non-empty `SerializerVersion`.
 - `FidelityScore` is `1.00` (or document known limitations).
 - No new unexpected rows in `*.errors.csv`.
-- **Ops/s (or total time) is not an unexplained multi-× outlier** vs same-family peers after the hot-path audit.
+- **Ops/s (or total time) is not an unexplained multi-× outlier** vs same-standard peers after the hot-path audit.
 - `size(n=100)/size(n=1)` roughly scales with N for binary codecs.
 - Dashboard Details / Compare: `python3 dashboard/scripts/sync-data.py` (commit `dashboard/public/data/<lang>_latest.json.gz` if you publish dashboard data).
 - Compliance: `logs/compliance/latest-<lang>.json` exists for this language; `sync-compliance.py` refreshed `dashboard/public/data/compliance.json.gz`. Library misses are report-only (not a red build).
@@ -340,9 +340,9 @@ cd c-sharp
 
 | Signal | Healthy | Suspicious |
 |--------|---------|------------|
-| Size vs peer same family | Same order of magnitude (e.g. protobuf / Avro peers agree) | Size 0/1 with fidelity 1.0 |
+| Size vs a peer on the same standard | Same order of magnitude (a same-family glance is only a hint) | Size 0/1 with fidelity 1.0 |
 | `size(n=100)/size(n=1)` | Roughly ~50–150 for real batches | Ratio ≈ 1 (LABEL≠WORK) |
-| Ops/s vs same-family peer | Within a few × of a similar design (after hot-path audit) | Multi-× slower with “new encoder every call” still in the wrapper |
+| Ops/s vs a same-standard peer | Within a few × of a similar design (after hot-path audit) | Multi-× slower with “new encoder every call” still in the wrapper |
 | Fidelity | 1.0 | Failures or skipped checks |
 | Version | Semver / package version | Empty |
 | Stream vs string (binary) | String size ≈ 4/3 stream if Base64 | Identical size and identical code path without docs |
@@ -359,4 +359,4 @@ Deeper audit process: maintainers may run the repo’s **review-suspicious-resul
 - [Modes](modes.md) — bytes/string vs stream
 - [Test data](test_data_configuration.md) — suite type ids and batch cells
 - [Metrics](METRICS.md) — CSV columns including `SerializerVersion`
-- [Serialization categories](serialization_categories.md) — compare within family when judging “too slow”
+- [Serialization categories](serialization_categories.md) — family map; judge “too slow” inside one standard

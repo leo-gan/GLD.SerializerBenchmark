@@ -10,6 +10,8 @@ Programs hold **rich structure in memory**. Nested records, arrays, graphs of ob
 
 Every major format is a bet on which constraints matter most. Human readability is one bet. Portability across CPU architectures is another. Schema evolution means changing the data layout without breaking old readers. Processor cost, memory pressure, and analytics input/output are further bets. History is the story of those bets.
 
+Three kinds of change show up in that story. A **new contract** is a new set of rules for what bytes mean. JSON, Protocol Buffers, and Parquet are contracts. A **new implementation** is a faster or safer library for a contract that already exists. A SIMD JSON parser does not invent a new standard. A **new workload** is a job the older contracts fit badly, such as scanning huge tables, sharing an object graph, or moving a tensor. A later name is not automatically a faster library for the previous contract. The model for these layers is on [Serialization 101](index.md#the-serialization-model).
+
 ---
 
 ## Era map

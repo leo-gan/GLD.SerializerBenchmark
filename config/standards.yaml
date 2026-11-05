@@ -9,7 +9,7 @@ standards:
       All lists every serializer measured for the languages you picked, public
       formats and private ones together. The value exists so the whole field
       is visible in one place when you are choosing a library. Choosing a named
-      standard narrows that list to codecs that speak one format.
+      standard narrows that list to codecs that implement that standard.
 
   custom:
     label: No public spec

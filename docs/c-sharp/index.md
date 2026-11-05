@@ -609,7 +609,7 @@ When stream ≈ string within a few percent on the Dashboard, check which kind a
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
 - Benchmark runner no longer prints per-repetition DEBUG lines (measurement noise).
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
-- Rankings: use generated reports (`analyze-benchmarks`), not this list. Prefer [same category](../analysis/serialization_categories.md) and same I/O mode.
+- Rankings: use generated reports (`analyze-benchmarks`), not this list. Compare inside one [standard](../analysis/terminology.md#standard), and keep the same I/O mode.
 
 Benchmark runner: [`c-sharp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 

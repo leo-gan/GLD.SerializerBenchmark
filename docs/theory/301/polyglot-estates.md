@@ -50,7 +50,7 @@ This page assumes [trust boundaries](trust-boundaries.md). Language-native inter
 ```text
   List languages that must speak the boundary
         → eliminate codecs without a multi-language story
-        → pick a family (JSON / schemaless binary / schema-driven)
+        → pick one standard (JSON, a schemaless binary contract, or a schema-driven contract)
         → pick ONE evolution process
         → implement and run tests that check every language implements the same contract
         → use per-language Dashboard only to pick libraries

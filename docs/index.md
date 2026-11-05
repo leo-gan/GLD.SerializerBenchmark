@@ -19,8 +19,8 @@ within-language rankings—not marketing microbenchmarks.
 
 This suite runs the **same data shapes** through serializers in many programming
 languages, writes a **shared CSV contract**, and analyzes results with one
-statistics pipeline. Use it to compare libraries **inside one language** (and
-ideally one format family), not to crown a single global winner.
+statistics pipeline. Use it to compare libraries **inside one language and one
+standard**, not to crown a single global winner.
 
 | You want… | Go here |
 |-----------|---------|
@@ -37,7 +37,7 @@ ideally one format family), not to crown a single global winner.
 ## Same data · same pipeline
 
 The live **Dashboard** is the published home for measured numbers. Pick a
-language and a data type, then read speed vs size and the ranking. Language
+language, a standard, and a data type, then read speed vs size and the ranking. Language
 indexes list the roster and caveats.
 
 [![Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking](assets/dashboard-overview.jpg){ width="780" }](dashboard/)
@@ -73,7 +73,7 @@ C++ is 35 when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five
 
 If you are new to serialization, start with the course under **Learn**:
 
-1. [Serialization 101](theory/101/) — what serialization is; three lenses  
+1. [Serialization 101](theory/101/) — workload, standard, implementation, and evaluation  
 2. [Serialization 201](theory/201/) — how formats work under the hood  
 3. [Serialization 301](theory/301/) — production judgment  
 4. [Serialization 401](theory/401/) — wire formats and labs  

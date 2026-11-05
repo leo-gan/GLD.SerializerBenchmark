@@ -120,7 +120,7 @@ If stream and bytes (or string) times are almost the same, check the language **
 |-------|----------------|
 | Raw CSV | Column `StringOrStream` |
 | Published group | Language + serializer + **standard** + **data set** + data type + batch size. I/O is not part of the key |
-| Dashboard | **Standard** filter (default All). Data types are grouped under Suite and Columnar. An **I/O** control opens child rows when a second level was stored |
+| Dashboard | **Standard** filter (default All). Data types are grouped under their data set. An **I/O** control opens child rows when a second level was stored |
 | Fair ranking | Compare serializers in the **same** language, same **standard**, same **data set**, same data type. Rankings use the parent row |
 
 ### Fair comparison checklist (I/O)
