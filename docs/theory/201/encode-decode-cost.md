@@ -26,7 +26,7 @@ The cost of encoding and decoding is the sum of several mechanisms. It is not on
 
 Text formats such as JSON spend work on several tasks. They scan character encodings such as UTF-8. They recognize structural tokens. They unescape strings. They also convert **decimal digit sequences** into the binary integer and floating-point forms the processor actually uses. Binary formats usually avoid decimal text. They often omit repeated field *names*. Yet they still pay for length prefixes, type tags or field numbers, validation, and construction of language-level objects.
 
-In managed runtimes, **allocation rate and garbage collection** often dominate. Garbage collection (GC) is automatic reclamation of unused memory. That work can cost more time than the encode or decode routine itself. A carefully engineered JSON implementation may outperform an inefficient binary stack. A payload made of many small, pointer-linked objects stresses every codec.
+The processor has not agreed to accept exposure as payment. Encode and decode both send a bill. In managed runtimes, **allocation rate and garbage collection** often dominate. Garbage collection (GC) is automatic reclamation of unused memory. That work can cost more time than the encode or decode routine itself. A carefully engineered JSON implementation may outperform an inefficient binary stack. A payload made of many small, pointer-linked objects stresses every codec.
 
 This matters because format choice alone rarely explains performance. Implementation quality and data shape often matter as much or more.
 

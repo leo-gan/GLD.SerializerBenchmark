@@ -17,7 +17,7 @@ In this section we treat **trust** as first-class. Performance stays secondary u
 
 ## Short answer
 
-Treat **language-native** formats as **unsafe by default**. Use them only inside one process that you fully control. You may also use them on a tightly controlled same-stack path with authenticated peers and no untrusted input. Prefer **portable** formats whenever data is stored long-term. Prefer them when data is shared across languages. Prefer them when data is accepted from clients. Prefer them when data is exposed to multi-tenant input. Portable formats may be text or binary. They may be self-describing or schema-driven.
+A colleague can be trustworthy. The laptop that forwarded the file might not be. Do not unpickle a gift. Treat **language-native** formats as **unsafe by default**. Use them only inside one process that you fully control. You may also use them on a tightly controlled same-stack path with authenticated peers and no untrusted input. Prefer **portable** formats whenever data is stored long-term. Prefer them when data is shared across languages. Prefer them when data is accepted from clients. Prefer them when data is exposed to multi-tenant input. Portable formats may be text or binary. They may be self-describing or schema-driven.
 
 A **portable** format is one that many languages and tools can read using documented rules. Examples include JSON, MessagePack, and Protocol Buffers. A **language-native** format is built for one runtime’s object model. It is not a general interchange language.
 

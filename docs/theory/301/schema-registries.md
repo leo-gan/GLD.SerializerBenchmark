@@ -10,7 +10,7 @@ Without a **schema registry** (or an equivalent process), “we use Avro” or �
 
 ## Short answer
 
-A **schema registry** stores versioned schemas. One shared code repository for many projects plus continuous integration can play the same role. The registry evaluates **compatibility** before a new version is accepted. Common modes include **BACKWARD**, **FORWARD**, and **FULL**. There are also *transitive* variants of those modes. The modes encode which gradual-upgrade stories you support (old and new service versions running at the same time).
+A registry is a counselor for producers and consumers. It makes them agree on the bytes before they blame each other. A **schema registry** stores versioned schemas. One shared code repository for many projects plus continuous integration can play the same role. The registry evaluates **compatibility** before a new version is accepted. Common modes include **BACKWARD**, **FORWARD**, and **FULL**. There are also *transitive* variants of those modes. The modes encode which gradual-upgrade stories you support (old and new service versions running at the same time).
 
 **Compatibility** means this: a combination of old and new software can still exchange data correctly. The mode you pick is a product decision. It is about deploy order and data lifetime. It is not a universal ranking of formats.
 

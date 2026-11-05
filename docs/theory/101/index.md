@@ -1,6 +1,10 @@
 # Serialization 101
 
-Welcome to Serialization 101. This course is a starting point for anyone who wants to understand data serialization. You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
+Serialization is the attempt to make computers agree on what bytes mean.
+
+Your program has objects, arrays, strings, and pointers. Your network card has no interest in any of that. It speaks bytes. Your disk speaks bytes. Another programming language speaks bytes, with a slightly different accent. Getting them to agree is surprisingly expensive.
+
+You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
 
 | Jump | |
 |------|--|
@@ -42,7 +46,7 @@ Inside a running program, data is often a web of pointers and types. A record ma
 
 A serialization standard defines what the bytes mean. An implementation determines how efficiently and correctly those rules are realized. A workload determines whether the standard is appropriate.
 
-The standard bounds the wire. The library is how close that language gets to reading and writing it.
+The standard bounds the wire. The library is how close that language gets to reading and writing it. A library that writes the wrong contract in 2 nanoseconds is not a performance breakthrough. It is a very fast bug.
 
 A **family** is a teaching group: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map. A family is not a Dashboard filter. YAML is its own standard. **SBE** (Simple Binary Encoding) is schema-driven, its data set is columnar, and its standard is SBE. It is not a columnar file format like Parquet.
 

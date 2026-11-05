@@ -72,7 +72,7 @@ CSV is not “wrong.” It is a **lossy social format**. It is easy to share and
   - **No** → do not unpickle and do not use other native “deserialize anything” APIs.
   - **Yes** → still prefer portable formats for anything long-lived or multi-language.
 
-A **trust boundary** is any place where data may come from outside your fully controlled environment. Unpickling a file you did not write is how a notebook grows a shell. The longer version is in [Stories the era table skips](historical_perspective.md#stories-the-era-table-skips).
+A **trust boundary** is any place where data may come from outside your fully controlled environment. Unpickling a file you did not write is how a notebook grows a shell. The longer version is in the [history of native graphs](historical_perspective.md#native-graphs).
 
 | Approach | Strength | Risk |
 |----------|----------|------|
@@ -204,6 +204,8 @@ The shape and the access pattern choose the standard. The library is the next qu
 | Online low-latency service contract (features, inference input/output) | **Schema-driven** formats (Protocol Buffers and similar)—see the [engineering perspective](engineer_perspective.md) |
 | A dense numeric grid, or a tensor a reader may borrow | **HDF5**, **NetCDF**, or **ADIOS2** for arrays. **Kiln**, **Arrow IPC**, or **FlatBuffers** for tensors |
 | Python-only, trusted, short-lived object graph | **pickle** or **joblib** only with eyes open; plan a portable exit path |
+
+[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) describes the commas in CSV. A spreadsheet may still decide that `00123` is the number 123. The bytes did not change. The reader developed a personality.
 
 ### Quick comparison
 

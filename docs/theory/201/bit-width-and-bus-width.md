@@ -32,7 +32,7 @@ The order of those narrow values is a separate decision. The [FastLanes](https:/
 
 The coding a network link uses to send those bytes belongs to the link controller. The application still hands that controller a sequence of bytes.
 
-Choose the encoding from how many bits each value needs, and from how the reader will use the values. The bus already moves the bytes in wide transfers.
+Choose the encoding from how many bits each value needs, and from how the reader will use the values. The bus already moves the bytes in wide transfers. A 3-bit integer does not become a 3-bit packet. The wire still wants bytes.
 
 ---
 

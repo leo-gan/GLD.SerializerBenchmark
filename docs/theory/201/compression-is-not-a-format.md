@@ -22,7 +22,7 @@ In this section we separate two different mechanisms. One is choosing how values
 
 **Serialization** defines *which bytes* represent which values. Types, field identity, and layout are part of that definition. **Compression** is a largely **semantics-agnostic** transform. It exploits redundancy in a byte sequence without understanding the fields.
 
-Compression can shrink verbose encodings substantially. JSON with repeated keys is a common example. Compression also consumes processor time. It can increase latency on small messages. It does not provide schema evolution, type safety, or zero-copy field access. Format-aware techniques remove redundancy **using knowledge of the data model**. Variable-length integers, dictionary encoding, columnar layouts, and omission of field names are examples.
+Compression makes the payload smaller by making the processor sweat. An accountant is pleased. The CPU was not consulted. Compression can shrink verbose encodings substantially. JSON with repeated keys is a common example. Compression also consumes processor time. It can increase latency on small messages. It does not provide schema evolution, type safety, or zero-copy field access. Format-aware techniques remove redundancy **using knowledge of the data model**. Variable-length integers, dictionary encoding, columnar layouts, and omission of field names are examples.
 
 Prefer first to select a format suited to the contract and access pattern. **Then** apply compression when the network or storage tier still needs it and measurement supports the trade-off.
 

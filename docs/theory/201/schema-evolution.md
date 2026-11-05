@@ -18,7 +18,7 @@ Safe evolution means defining what **writers may add, remove, or change** while 
 
 In practice you prefer **additive** optional fields with explicit defaults. You never repurpose identifiers. Protocol Buffers field numbers, Avro names under a stated compatibility mode, and API property names without versioning are all identifiers in this sense. You document nullability and defaults as product semantics. When more than one team shares the contract, you enforce policy in continuous integration or a **schema registry**. A schema registry is a service that stores versioned schemas. It often checks whether a proposed change is compatible.
 
-“Forward” and “backward” compatibility are **directional**. You need to know which direction matters before you delete fields. In other words: “compatible” is not a single yes/no property. It depends on who advances first.
+Adding a field is the easy part. A service that has been running for five years has to accept that field without inventing a new meaning for an old one. “Forward” and “backward” compatibility are **directional**. You need to know which direction matters before you delete fields. In other words: “compatible” is not a single yes/no property. It depends on who advances first.
 
 ---
 

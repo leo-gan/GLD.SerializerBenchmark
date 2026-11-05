@@ -12,7 +12,7 @@ Codecs that “win” microbenchmarks by allocating per field can lose the relia
 
 ## Short answer
 
-Treat **allocation and copy behavior** as first-class when choosing among implementations of one standard. See [implementation variance](implementation-variance.md). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point. Validate under concurrency with **your** runtime GC settings and payload shape. See 201 [encode/decode cost](../201/encode-decode-cost.md). Format brand does not determine GC pressure. Implementation and shape do.
+The average is how the chart stays cheerful. The 99th percentile is how the meeting ends. Treat **allocation and copy behavior** as first-class when choosing among implementations of one standard. See [implementation variance](implementation-variance.md). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point. Validate under concurrency with **your** runtime GC settings and payload shape. See 201 [encode/decode cost](../201/encode-decode-cost.md). Format brand does not determine GC pressure. Implementation and shape do.
 
 In other words: a library that is slightly slower on the mean but allocates far less can win the production latency budget.
 

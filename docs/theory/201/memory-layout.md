@@ -14,7 +14,7 @@ In other words: what is efficient for one process on one machine is not, by itse
 
 Compilers and language runtimes place fields in memory for **the local processor and operating environment**. That placement includes native integer widths, pointer sizes, and **alignment padding**. Alignment padding is unused bytes inserted so fields sit on convenient addresses. Placement also often includes **host byte order**. Host byte order is the order in which multi-byte numbers are stored. Those rules exist so *this* machine can run efficiently. They are not designed so that another machine can understand the same bytes.
 
-Networks and durable storage only exchange a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and **endianness**. Endianness is the byte order for multi-byte values. Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.
+Your struct looks organized in the source file. The compiler may insert padding the diagram forgot to mention. Networks and durable storage only exchange a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and **endianness**. Endianness is the byte order for multi-byte values. Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.
 
 ---
 
