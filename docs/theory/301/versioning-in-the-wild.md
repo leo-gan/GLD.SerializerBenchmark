@@ -10,7 +10,7 @@ This page is that playbook. In other words, it answers a practical question. Whe
 
 ## Short answer
 
-Prefer **additive, backward-compatible** changes first. An **additive** change introduces new optional information. It does not remove or redefine existing fields. When a break is unavoidable, use an explicit **versioning surface**. That surface may be a URL, a header, a content type, a topic name, or a schema subject version. Also use a **migration window**. During that window you dual-read and/or dual-write. You watch metrics on old-path usage. Only then do you remove the old path.
+Backward compatibility means the new reader still understands old data. Forward compatibility means the old reader survives new data. Both fail when someone reuses a field and quietly changes what it means. Prefer **additive, backward-compatible** changes first. An **additive** change introduces new optional information. It does not remove or redefine existing fields. When a break is unavoidable, use an explicit **versioning surface**. That surface may be a URL, a header, a content type, a topic name, or a schema subject version. Also use a **migration window**. During that window you dual-read and/or dual-write. You watch metrics on old-path usage. Only then do you remove the old path.
 
 - **Dual-write** means writers emit both the old and the new shape. They keep doing that until all readers understand the new one.
 - **Dual-read** means readers understand both shapes. They keep doing that until writers stop sending the old one.

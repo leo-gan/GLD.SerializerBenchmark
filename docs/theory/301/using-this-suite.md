@@ -10,7 +10,7 @@ This multi-language suite is built to support **fair, local** comparisons. It an
 
 ## Short answer
 
-Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
+Before declaring a winner, check that both libraries ran the same race. Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
 
 The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. The shapes are on the [test data](../../analysis/test_data_configuration.md) page. Choosing a standard prefers a data set that standard is measured on. You can still change the data set. Which question a chart answers is on [Serialization 101](../101/index.md#how-to-compare).
 

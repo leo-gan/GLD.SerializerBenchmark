@@ -6,6 +6,8 @@ It answers one practical question:
 
 > **After I look at the Dashboard, what am I allowed to say out loud?**
 
+If the result looks too good to say out loud, name the part of the race you left out. Same language, same standard, same data set, same data type, and the claim level below.
+
 Different amounts of evidence support different claim strengths. We call those levels **L1**, **L2**, and **L3**.
 
 ---

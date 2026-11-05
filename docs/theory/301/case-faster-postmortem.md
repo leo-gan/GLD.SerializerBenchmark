@@ -12,7 +12,7 @@ A **postmortem** is a structured review after an incident or failed change. It a
 
 **Goals of this postmortem:** Separate **wrong benchmark**, **wrong paradigm**, and **wrong payload**. The next fix should be targeted.
 
-In other words, the first job is diagnosis. Format rewrites are expensive. They should follow evidence, not slogans.
+In other words, the first job is diagnosis. Format rewrites are expensive. They should follow evidence, not slogans. The serializer that matters in production is the one that does not page the person on call. A benchmark score is not that person.
 
 ---
 

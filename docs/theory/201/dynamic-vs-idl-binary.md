@@ -21,7 +21,7 @@ Selections are often driven by popularity or by a single latency chart. A durabl
 
 **IDL binary** encodings move names into a schema. They encode **field numbers** (or equivalent identifiers). They support code generation, higher density, and multi-language stubs. The cost is schema design, generation in continuous integration, and a process for change.
 
-Prefer dynamic binary when document shapes vary and consumers are loosely coupled. Prefer IDL binary when the record shape is a product interface that will be versioned for years across languages.
+A dynamic format lets you discover the shape at runtime. Sometimes that discovery is scheduled for 3 a.m. Prefer dynamic binary when document shapes vary and consumers are loosely coupled. Prefer IDL binary when the record shape is a product interface that will be versioned for years across languages.
 
 In other words: after you leave text JSON, the main fork is “flexible documents” versus “stable multi-language records.” It is not merely “which library is popular.”
 

@@ -1,6 +1,10 @@
 # Serialization 101
 
-Welcome to Serialization 101. This course is a starting point for anyone who wants to understand data serialization. You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
+Serialization is the attempt to make computers agree on what bytes mean.
+
+Your program has objects, arrays, strings, and pointers. Your network card has no interest in any of that. It speaks bytes. Your disk speaks bytes. Another programming language speaks bytes, with a slightly different accent. Getting them to agree is surprisingly expensive.
+
+You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
 
 | Jump | |
 |------|--|
@@ -24,7 +28,7 @@ Check real numbers on the [Dashboard](../../dashboard/). Language **Overview** p
 
 **Serialization** is the process of turning an in-memory data structure into a **linear sequence of bytes**. Those bytes can be stored on disk, held in a cache, or sent across a network. **Deserialization** rebuilds a usable structure from those bytes. The rebuilt structure may live in another process, on another machine, or in another programming language.
 
-Inside a running program, data is often a web of pointers and types. A record may point to an array, that array to strings, and those strings to characters. Networks and disks only store and transmit bytes in order. Every serialization format is a **contract** between a writer and a reader. The contract says how meaning is flattened into bytes, and how those bytes are rebuilt.
+Inside a running program, data is often a web of pointers and types. A record may point to an array, that array to strings, and those strings to characters. Networks and disks only store and transmit bytes in order. A pointer is a promise that the rest of the object is still nearby. A byte on a disk has no nearby. Every serialization format is a **contract** between a writer and a reader. The contract says how meaning is flattened into bytes, and how those bytes are rebuilt. Deserialization is the moment you find out whether the two sides still recognize each other.
 
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract.svg#only-light)
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract-dark.svg#only-dark)
@@ -42,7 +46,7 @@ Inside a running program, data is often a web of pointers and types. A record ma
 
 A serialization standard defines what the bytes mean. An implementation determines how efficiently and correctly those rules are realized. A workload determines whether the standard is appropriate.
 
-The standard bounds the wire. The library is how close that language gets to reading and writing it.
+The standard bounds the wire. The library is how close that language gets to reading and writing it. A library that writes the wrong contract in 2 nanoseconds is not a performance breakthrough. It is a very fast bug.
 
 A **family** is a teaching group: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map. A family is not a Dashboard filter. YAML is its own standard. **SBE** (Simple Binary Encoding) is schema-driven, its data set is columnar, and its standard is SBE. It is not a columnar file format like Parquet.
 
