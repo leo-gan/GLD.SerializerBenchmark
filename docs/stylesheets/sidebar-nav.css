@@ -1,0 +1,49 @@
+/**
+ * Submenu inside a tab section (Benchmarks → Data sets).
+ * navigation.sections pulls every section's children back to the root indent,
+ * so Suite / Columnar / Graph / Array / Tensor read as more root links.
+ * Course sections (Learn → 101 …) do not get .md-nav__item--submenu.
+ */
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__item--submenu {
+    margin-top: 0.2rem;
+    margin-bottom: 0.15rem;
+  }
+
+  /* Parent row: a menu label, not a second tab title. */
+  .md-sidebar--primary .md-nav__item--submenu > .md-nav__link[for] {
+    color: var(--md-default-fg-color);
+    font-weight: 600;
+  }
+
+  /* Drop the -0.6rem pull that aligns section children with root links. */
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu > .md-nav {
+    margin-left: 0;
+  }
+
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu > .md-nav {
+    margin-right: 0;
+  }
+
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu > .md-nav > .md-nav__list {
+    margin-left: 0.45rem;
+    padding: 0.1rem 0 0.25rem 0.75rem;
+    border-left: 2px solid color-mix(in srgb, var(--md-default-fg-color) 22%, transparent);
+  }
+
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu > .md-nav > .md-nav__list {
+    margin-right: 0.45rem;
+    padding: 0.1rem 0.75rem 0.25rem 0;
+    border-right: 2px solid color-mix(in srgb, var(--md-default-fg-color) 22%, transparent);
+  }
+
+  /* On a data-set page the open group tracks the accent, same as the active link. */
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu.md-nav__item--active > .md-nav > .md-nav__list {
+    border-left-color: var(--md-accent-fg-color);
+  }
+
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu.md-nav__item--active > .md-nav > .md-nav__list {
+    border-right-color: var(--md-accent-fg-color);
+  }
+}

@@ -91,6 +91,7 @@ markdown_extensions:
 # Languages sidebar: compact "Lang · Dashboard" rows (see languages-nav.*).
 extra_css:
   - stylesheets/languages-nav.css
+  - stylesheets/sidebar-nav.css
   - stylesheets/site-home.css
 extra_javascript:
   - javascripts/languages-nav.js
