@@ -1,6 +1,6 @@
 # Data sets
 
-This page describes the **sample data** every language benchmark runner serializes. The catalog is five **data sets**. Each set holds one or more **data types**, with the size knobs, the run matrix, and the generator rules for that type.
+This page is the shared rules for the sample data every language benchmark runner serializes. The catalog is five **data sets**. Each set has its own page for its data types and their size knobs.
 
 Think of it as the **shared homework assignment**. Each language implements the same types so comparisons stay fair.
 
@@ -8,11 +8,11 @@ Think of it as the **shared homework assignment**. Each language implements the 
 
 | Data set | Data types | Run config |
 | --- | --- | --- |
-| [Suite](#suite) | `message`, `document`, `telemetry`, `strings`, `event` | [`default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml), [`smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
-| [Columnar](#columnar) | `table`, `table_project`, `nested_table`, `signal` | [`columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) |
-| [Graph](#graph) | `graph` | [`graph.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/graph.yaml) |
-| [Array](#array) | `grid`, `grid_window` | [`array.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/array.yaml). Writers: [Array bindings](array_bindings.md). |
-| [Tensor](#tensor) | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | [`tensor.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/tensor.yaml) |
+| [Suite](suite.md) | `message`, `document`, `telemetry`, `strings`, `event` | [`default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml), [`smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
+| [Columnar](columnar.md) | `table`, `table_project`, `nested_table`, `signal` | [`columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) |
+| [Graph](graph.md) | `graph` | [`graph.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/graph.yaml) |
+| [Array](array.md) | `grid`, `grid_window` | [`array.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/array.yaml). Who is measured is on that page. |
+| [Tensor](tensor.md) | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | [`tensor.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/tensor.yaml) |
 
 Suite is the publication matrix. Columnar, graph, array, and tensor run only from their own configs, and `all@` does not include them. Which serializers are measured on each set is `serializer_data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). A name that is absent is suite only. On a specialized run config, runners whose comma filter is exact fill an empty serializer filter from that map. A filter you pass still narrows the run. Python applies the same map inside the runner.
 
@@ -32,7 +32,7 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 By the end of this page you should be able to:
 
 1. Define **data set**, **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Name the five data sets, list the data types in each, and say what each type stresses.
+2. Name the five data sets and open the page that explains the types in each.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
 ---
@@ -108,203 +108,44 @@ payload = instances[0] if N == 1 and adapter prefers a scalar else instances
 
 ---
 
+
 ## Suite
 
-Five data types. These cells are the publication matrix (`default.yaml` and `smoke.yaml`).
+<a id="message"></a>
+<a id="document"></a>
+<a id="telemetry"></a>
+<a id="strings"></a>
+<a id="event"></a>
 
-### message
-
-A flat record of mixed primitives. **No** nested objects; **no** arrays of objects. Good baseline for “simple struct” cost.
-
-| Field (logical) | Type | Notes |
-|-----------------|------|--------|
-| Keys `f0`…`f{field_count-1}` | cycled from `primitive_types` | Deterministic key names |
-| Values | bool / int32 / int64 / float64 / utf8_string | From the resolved primitive set |
-
-Default `type_config`: `field_count: 8`, `primitive_types: all_available`, `string_len: {min:3,max:16}`, `int_range: {min:0,max:1000000}`.
-
-### document
-
-A nested structure (id, status, meta map, list of line items). Scale is controlled by `children`, `fields_per_child`, and `max_depth`.
-
-```text
-Document {
-  id: utf8_string
-  status: int32
-  meta: { region: string, version: int32 }
-  items: [ { sku: string, qty: int32, price_minor: int64 }, ... ]  // length = children
-}
-```
-
-Default: `children: 8`, `fields_per_child: 3`, `max_depth: 2`.
-
-### telemetry
-
-Mostly numeric sensor-style data.
-
-```text
-Telemetry {
-  source: utf8_string
-  ts: int64          // epoch milliseconds
-  tags: [string, ...]  // length = tag_count
-  values: [float64 or int64, ...]  // length = points
-}
-```
-
-Default: `points: 32`, `number_type: float64`, `tag_count: 2`.
-
-### strings
-
-Text bulk only—useful for string encoding cost.
-
-```text
-Strings {
-  items: [utf8_string, ...]  // length = count
-}
-```
-
-Default: `count: 32`, `string_len: {min:3,max:16}`, `duplication: 0.1`.
-
-### event
-
-A stream-style envelope (one event instance; batch via `data_type_instance_count`).
-
-```text
-Event {
-  event_id: utf8_string
-  event_type: utf8_string
-  occurred_at: int64     // epoch milliseconds
-  producer: utf8_string
-  attrs: map or list of {key, value} string pairs  // length = attr_count
-}
-```
-
-Default: `attr_count: 4`, `include_payload_bytes: 0`.
+Five data types: `message`, `document`, `telemetry`, `strings`, and `event`. This is the publication matrix. Shapes and defaults are on [Suite](suite.md).
 
 ## Columnar
 
-Four data types. These cells run from `columnar.yaml` and `columnar-smoke.yaml`. They are not in the publication matrix. `signal` is the aligned record that SBE can store.
+<a id="table"></a>
+<a id="table_project"></a>
+<a id="nested_table"></a>
+<a id="signal"></a>
 
-### table
-
-A wide flat row of named scalars. One instance is one row. `data_type_instance_count` is the table’s row count. Strings are last so the same record is a legal SBE body.
-
-| Fields | Type |
-|--------|------|
-| `f_float_0` … `f_float_15` | float64 |
-| `f_int_0` … `f_int_3` | int64 |
-| `f_str_0`, `f_str_1` | utf8 string |
-
-Default: `string_len: {min:3,max:16}`, `int_range: {min:0,max:1000000}`, `duplication: 0.5`.
-
-`duplication` repeats string values **across rows**. The vocabulary is built from `(seed, type_id)` only. Each instance index then draws from that vocabulary. There are no nulls.
-
-Fidelity is full-row equality after materializing domain rows.
-
-### table_project
-
-The same fields and the same default `type_config` as `table`, so `TypeConfigHash` matches. Serialize writes all 22 columns. Deserialize returns `f_float_0` as `float64[N]`, including when N is 1. Fidelity compares that vector. A full-row result fails fidelity.
-
-Read `TimeDeser` for this type. `TimeSer` is still the full-table write, so `TimeSerAndDeser` is dominated by the write.
-
-### nested_table
-
-A struct plus a list of structs. This is the shredding case for Arrow, Parquet, and ORC.
-
-```text
-NestedRow {
-  id: utf8
-  status: int32
-  meta: { region: string, version: int32 }
-  items: [ { sku: string, qty: int32, price_minor: int64 }, ... ]  // length = children
-}
-```
-
-Default: `children: 4`. SBE does not implement this type.
-
-### signal
-
-A fixed block, then variable strings, then one repeating group. This is the SBE record. Arrow, Parquet, and the row peers on the allow-list also encode it.
-
-```text
-Signal {
-  seq: int64
-  ts: int64
-  price_mantissa: int64
-  qty: int32
-  flags: int32
-  symbol: utf8
-  venue: utf8
-  legs: [ { leg_id: int64, leg_qty: int32, leg_pad: int32 }, ... ]  // length = group_count
-}
-```
-
-`leg_pad` is 0. It keeps each group body a fixed 16-byte block. Default: `group_count: 4`. Wire schemas are `schemas/v2/protobuf/benchmark_v2.proto`, `schemas/v2/avro/signal.avsc`, and `schemas/v2/sbe/signal.xml`. Protobuf and Avro keep the strings before `legs`. The SBE message puts the `legs` group before `symbol` and `venue`, because sbe-tool rejects a repeating group after variable-length data. Field ids are unchanged.
+Four data types: `table`, `table_project`, `nested_table`, and `signal`. Shapes are on [Columnar](columnar.md). How this set differs from the Columnar family is on [Families](families.md).
 
 ## Graph
 
-One instance is one graph. The data set and the only data type inside it share the name `graph`. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression), with an explicit serializer allow-list.
-
-```text
-Region { code: utf8, note: utf8, version: int32 }   // note is 64 characters
-Order  { sku: utf8, qty: int32, region: Region }    // reference, not a copy
-Person { name: utf8, next: Person }                 // reference
-Book   { orders: Order[], people: Person[] }
-```
-
-Default: `order_count: 32`, `region_count: 4`, `ring_size: 8`, `string_len: {min:8,max:16}`.
-
-Generator order, after the usual `(seed, type_id, instance_index)` mix:
-
-1. For each region: `code` from `string_len`, then `note` of length 64, then `version` in 1…10.
-2. For each order: `sku` from `string_len`, then `qty` in 1…100. Order `i` references region `i % region_count` (the same object, eight times when the defaults divide evenly).
-3. For each person: `name` from `string_len`. Then `people[i].next` is `people[(i+1) % ring_size]`.
-
-`region` and `next` are references. An inlined copy is a different graph. Tree codecs (JSON, Protocol Buffers, MessagePack, and the rest of the suite types) return unsupported and are skipped. They are not fidelity failures.
-
-Fidelity is identity inside the restored graph, not `asdict` and not a walk that copies each child. The eight orders that name one region must point at one region object. Walking `next` eight times returns to the start, and `people[i].next` is the same object as `people[(i+1) % 8]`. A duplicated region or an unrolled ring scores 0. Field values still have to match. N>1 compares each graph on its own; nodes are not shared across the batch.
-
-Dagr emits this shape as `Book` from `schemas/v2/dagr/schema.py` for the regular and frozen layouts only. Packed and frozen+packed inline a node reference, so a `Person.next` cycle is not a legal packed graph. `dagr-packed` and `dagr-frozen-packed` do not support this data type. The timed path is still full materialize (`to_bytes` / `restore`).
+One data type, also named `graph`. The shape, the shared nodes, and the cycle check are on [Graph](graph.md).
 
 ## Array
 
-Two data types. These cells run from `array.yaml` and `array-smoke.yaml`. [Array bindings](array_bindings.md) lists the languages that time them with a maintained library. `all@` does not include them.
+<a id="grid-and-grid_window"></a>
 
-### grid and grid_window
-
-One dense float64 array, and an interior window of that array. Fortran times `hdf5-fortran`, `netcdf-fortran`, and `adios2`. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
-
-```text
-grid {
-  values: float64[y][x]    // nx = 512, ny = 512
-}
-grid_window {
-  same write
-  read: values[y0 : y0+wy][x0 : x0+wx]
-  // x0 = 128, y0 = 64, wx = 256, wy = 128
-}
-```
-
-Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. Fidelity is bit-identical float64. The size column is the full file. N stays 1. The array is one value.
+Two data types: `grid` and `grid_window`. The shapes, and which languages are measured on this set, are on [Array](array.md).
 
 ## Tensor
 
-Five data types: `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. These cells run from `tensor.yaml` and `tensor-smoke.yaml`. N stays 1. `all@` does not include them.
+<a id="tensor-tensor_view-prompt-shard-and-request"></a>
 
-```text
-tensor        float32[1024, 1024]     owned read
-tensor_view   the same matrix         borrowed read
-prompt        input_ids, attention_mask, position_ids   int64[4, 256]
-shard         tok_emb float32[1024, 256]
-              attn    float32[256, 256]
-              ffn     float32[512, 256]
-              norm    float32[256]
-request       request_id: int64, model: utf8, temperature: float32, inputs: prompt
-```
-
-Floats are row-major float32. Index 0 of `tensor` is negative zero and index 1 is the quiet NaN `0x7fc00000`. `tensor_view` uses that same matrix for the same seed. A borrowed read must return bytes inside the encoded buffer. An owned copy is not a `tensor_view` result. `prompt` pads each row with zeros after a content prefix. `shard` is one transformer block. `request` is one buffer: the id, the model name, the temperature, and the prompt. Fidelity is bit-identical float32, including the sign of zero and the NaN payload, and exact integers and strings. N stays 1.
+Five data types: `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. Shapes are on [Tensor](tensor.md).
 
 ---
+
 
 ## Primitives
 

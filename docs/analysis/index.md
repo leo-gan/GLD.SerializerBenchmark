@@ -28,13 +28,13 @@ Every published number is for one **data set** and one **data type** inside it. 
 
 | Data set | Data types | Shapes |
 |----------|------------|--------|
-| Suite | `message`, `document`, `telemetry`, `strings`, `event` | [Suite](test_data_configuration.md#suite) |
-| Columnar | `table`, `table_project`, `nested_table`, `signal` | [Columnar](test_data_configuration.md#columnar) |
-| Graph | `graph` | [Graph](test_data_configuration.md#graph) |
-| Array | `grid`, `grid_window` | [Array](test_data_configuration.md#array). [Array bindings](array_bindings.md) names the languages with a maintained writer. |
-| Tensor | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | [Tensor](test_data_configuration.md#tensor) |
+| Suite | `message`, `document`, `telemetry`, `strings`, `event` | [Suite](suite.md) |
+| Columnar | `table`, `table_project`, `nested_table`, `signal` | [Columnar](columnar.md) |
+| Graph | `graph` | [Graph](graph.md) |
+| Array | `grid`, `grid_window` | [Array](array.md) |
+| Tensor | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | [Tensor](tensor.md) |
 
-Size knobs, generator rules, and run configs are on [Data sets](test_data_configuration.md). The word itself is defined on [Terminology](terminology.md#data-set).
+Generator rules and the run-config table are on [Data sets](test_data_configuration.md). The shapes are on each set’s page. The word itself is defined on [Terminology](terminology.md#data-set).
 
 ---
 
@@ -77,8 +77,8 @@ Data set, data type, runner, and the prohibited words are defined on [Terminolog
 The left sidebar is the reading order. Each page assumes you have read the ones above it.
 
 1. Read **[Terminology](terminology.md)** for the words, including data set and data type.
-2. Read **[Data sets](test_data_configuration.md)** for the five sets and the types inside them. Read **[Array bindings](array_bindings.md)** for which languages time the array set with a maintained writer.
-3. Read **[Categories](serialization_categories.md)** for the family map, and for how a family differs from a data set.
+2. Read **[Data sets](test_data_configuration.md)** for the shared rules, then the page for one set: **[Suite](suite.md)**, **[Columnar](columnar.md)**, **[Graph](graph.md)**, **[Array](array.md)**, or **[Tensor](tensor.md)**. The Array page also says which languages are measured on that set.
+3. Read **[Families](families.md)** for the teaching map, and for how a family differs from a data set.
 4. Read **[Architecture](architecture.md)** for how the repository times a library.
 5. Read **[Timing honesty](TIMING_HONESTY.md)** for what `prepare` may do and what `serialize` must do.
 6. Read **[Modes](modes.md)** for bytes versus stream, and for smoke through research.
@@ -91,9 +91,9 @@ Contributor checklists come after that path: **[Adding a serializer](ADDING_A_SE
 | Page | What you will learn | Start here if you want… |
 |------|---------------------|-------------------------|
 | **[Terminology](terminology.md)** | Data set, data type, runner, and the words this site does not use | A term is unclear, or an older page says “fixture” |
-| **[Data sets](test_data_configuration.md)** | The five data sets, the types inside each, and how sizes are chosen | What we serialize |
-| **[Array bindings](array_bindings.md)** | Which languages time `grid` with a maintained library | The array set’s writers |
-| **[Categories](serialization_categories.md)** | Family map: text, schemaless binary, schema-driven, language-native, columnar | Which standard a product question points at |
+| **[Data sets](test_data_configuration.md)** | The five sets, the shared knobs, and links to each set’s page | What we serialize |
+| **[Suite](suite.md)**, **[Columnar](columnar.md)**, **[Graph](graph.md)**, **[Array](array.md)**, **[Tensor](tensor.md)** | The types in one set, and what each one stresses. Array also lists who is measured. | One data set |
+| **[Families](families.md)** | Teaching map: JSON, schemaless binary, schema-driven, language-native, columnar | Which standard a product question points at |
 | **[Architecture](architecture.md)** | How the repository is organized and how timing works | The measurement design |
 | **[Timing honesty](TIMING_HONESTY.md)** | What belongs in `prepare` vs the timed encode/decode | “Is this row measuring a real encode?” |
 | **[Modes](modes.md)** | I/O modes (bytes/stream) and run modes (smoke…research) | Why the Dashboard Mode filter has two paths; which run preset to use |

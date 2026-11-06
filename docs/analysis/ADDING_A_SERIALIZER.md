@@ -359,4 +359,4 @@ Deeper audit process: maintainers may run the repo’s **review-suspicious-resul
 - [Modes](modes.md) — bytes/string vs stream
 - [Data sets](test_data_configuration.md) — the five sets, their type ids, and batch cells
 - [Metrics](METRICS.md) — CSV columns including `SerializerVersion`
-- [Serialization categories](serialization_categories.md) — family map; judge “too slow” inside one standard
+- [Families](families.md) — family map; judge “too slow” inside one standard

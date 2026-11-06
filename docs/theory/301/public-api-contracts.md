@@ -72,7 +72,7 @@ In other words, the contract stayed stable while the implementation improved. Th
 | Resource | Role |
 |----------|------|
 | JSON-family **Dashboard** slice | Pick implementations per language |
-| [Categories](../../analysis/serialization_categories.md) | JSON versus other families |
+| [Families](../../analysis/families.md) | JSON versus other families |
 | [Using this suite](using-this-suite.md) | Fair comparisons inside a family |
 
 ---

@@ -238,7 +238,7 @@ for rep:
 - The four **dagr** rows have no Batch wrapper in their schema: multi-instance cells use the suite's cross-language frame (`u32 LE count` + `u32 LE len` + record, per instance — same as the Rust/C runners). Like **protobuf** (message built in Prepare), dagr-packed builds its direct value structs in Prepare. Unlike protobuf (`ToDomain` untimed), every dagr row materializes the domain value from the lazy reader **inside** the timer, so their decode does strictly more work at the suite boundary. **dagr-regular** and **dagr-frozen** have no direct builder (it exists only for packed-rooted graphs): their native model is the generated arena, built in Prepare, and the timed encode is the generated `AppendTo<Graph>(b, dst, root)` into one reused `dagr.Builder` (it resets the builder, stores the arena, frames the record and appends it to `dst`).
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
-Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Families](../analysis/families.md).
 
 ## Numbers
 

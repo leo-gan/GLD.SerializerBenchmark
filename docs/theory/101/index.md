@@ -48,7 +48,7 @@ A serialization standard defines what the bytes mean. An implementation determin
 
 The standard bounds the wire. The library is how close that language gets to reading and writing it. A library that writes the wrong contract in 2 nanoseconds is not a performance breakthrough. It is a very fast bug.
 
-A **family** is a teaching group: text, schemaless binary, schema-driven, language-native, or columnar. [Serialization categories](../../analysis/serialization_categories.md) is that map. A family is not a Dashboard filter. YAML is its own standard. **SBE** (Simple Binary Encoding) is schema-driven, its data set is columnar, and its standard is SBE. It is not a columnar file format like Parquet.
+A **family** is a teaching group: text, schemaless binary, schema-driven, language-native, or columnar. [Families](../../analysis/families.md) is that map. A family is not a Dashboard filter. YAML is its own standard. **SBE** (Simple Binary Encoding) is schema-driven, its data set is columnar, and its standard is SBE. It is not a columnar file format like Parquet.
 
 A **library** is one implementation of a standard in one language. `orjson` and Python’s `json` module are both the JSON standard. The speed gap between them is the library.
 
@@ -137,7 +137,7 @@ Each lens reads the same model for a different job.
 | **A lens** | [Historical](historical_perspective.md) · [Data science](data_science_perspective.md) · [Engineering](engineer_perspective.md) |
 | **Mechanisms** | [Serialization 201](../201/index.md) |
 | **Production judgment** | [Serialization 301](../301/index.md) |
-| **Family map** | [Serialization categories](../../analysis/serialization_categories.md) |
+| **Family map** | [Families](../../analysis/families.md) |
 | **Numbers** | [Dashboard](../../dashboard/) — set **Language**, **Standard**, **Data set**, and **Data type** |
 
 ## Lab notebooks (Python / Colab)

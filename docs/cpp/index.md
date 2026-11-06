@@ -351,7 +351,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 - Stream mode is **native** where the library exposes streams/buffers and the benchmark runner uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).
 
-Also: [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

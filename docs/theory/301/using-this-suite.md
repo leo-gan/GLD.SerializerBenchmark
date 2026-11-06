@@ -14,7 +14,7 @@ Before declaring a winner, check that both libraries ran the same race. Treat ev
 
 The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. The shapes are on the [test data](../../analysis/test_data_configuration.md) page. Choosing a standard prefers a data set that standard is measured on. You can still change the data set. Which question a chart answers is on [Serialization 101](../101/index.md#how-to-compare).
 
-A **family** is a teaching cut. It groups formats that solve roughly the same product job. See [Serialization categories](../../analysis/serialization_categories.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
+A **family** is a teaching cut. It groups formats that solve roughly the same product job. See [Families](../../analysis/families.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
 
 A cross-language or cross-standard chart needs the workload stated again before it becomes architecture policy. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are one part of the argument. See the rest of Serialization 301.
 
@@ -98,7 +98,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 
 | Resource | Use it for |
 |----------|------------|
-| [Serialization categories](../../analysis/serialization_categories.md) | Families as orientation, then the named standard |
+| [Families](../../analysis/families.md) | Families as orientation, then the named standard |
 | Language **Overview** | Registered names, categories, fidelity caveats (inventory source of truth) |
 | [Dashboard](../../dashboard/) | Published timings and sizes (filter by language) |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
@@ -121,7 +121,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 ### Setup
 
 1. Write the decision question in one sentence. One example is “Which JSON library in Python for message-shaped RPC?”
-2. Open [categories](../../analysis/serialization_categories.md) and the language **Overview** / [Dashboard](../../dashboard/) for the runtime you will ship.
+2. Open [Families](../../analysis/families.md) and the language **Overview** / [Dashboard](../../dashboard/) for the runtime you will ship.
 3. Note analysis configuration from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables. Include warmup and outlier policy.
 
 ### Procedure

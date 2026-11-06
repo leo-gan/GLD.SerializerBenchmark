@@ -402,7 +402,7 @@ When stream ≈ string within a few percent on the Dashboard, check which kind a
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list. Compare inside one [standard](../analysis/terminology.md#standard), and keep the same I/O mode.
 
-Benchmark runner: [`c-sharp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`c-sharp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/README.md). Format trade-offs: [Families](../analysis/families.md).
 
 ## Numbers
 

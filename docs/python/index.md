@@ -250,7 +250,7 @@ For `table`, `table_project`, `nested_table`, and `signal` only, rule 8 of [Timi
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 
-Benchmark runner: [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

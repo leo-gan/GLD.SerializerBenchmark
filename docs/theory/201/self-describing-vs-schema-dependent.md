@@ -131,7 +131,7 @@ The suite’s families are a teaching cut. They line up roughly with this axis:
 
 SBE (Simple Binary Encoding) is schema-driven, and its data set in this suite is Columnar. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file like Parquet.
 
-See [Serialization categories](../../analysis/serialization_categories.md) and language **Overview** pages for registered examples. Claims about density and speed belong on the **Dashboard**, inside one language, standard, data set, and data type. They do not belong on the family label alone.
+See [Families](../../analysis/families.md) and language **Overview** pages for registered examples. Claims about density and speed belong on the **Dashboard**, inside one language, standard, data set, and data type. They do not belong on the family label alone.
 
 ---
 

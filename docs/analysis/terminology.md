@@ -111,7 +111,7 @@ The **type catalog** is `schemas/data_catalog_v2.yaml`. A **run config** is the 
 | `shard` | `tensor` | Named float32 weights: embedding, attention, feed-forward, and norm. |
 | `request` | `tensor` | Request id, model name, temperature, and the prompt. |
 
-Field lists, defaults, and fidelity rules for each type are on [Data sets](test_data_configuration.md). Array libraries are on [Array bindings](array_bindings.md).
+Field lists, defaults, and fidelity rules for each type are on that set’s page: [Suite](suite.md), [Columnar](columnar.md), [Graph](graph.md), [Array](array.md), and [Tensor](tensor.md). The Array page also says which languages are measured on that set.
 
 A tree codec that cannot store a shared node returns unsupported on `graph`. The runner skips that serializer for the cell, and fidelity stays unused.
 
@@ -144,8 +144,6 @@ An empty compliance list is the standard `custom`. The Dashboard label is **No p
 A serializer that lists two ids keeps one timed row. C# `MS Bond Json` lists `json` and `bond`. The timed row uses the primary id `json`, from the dimension contract.
 
 A **family** is a teaching group: JSON, schemaless binary, schema-driven, language-native, or columnar. A family is coarser than a standard. `yaml` is its own standard. Rankings use the standard, together with the language, the data set, and the data type.
-
-The categories page calls this grouping a **family**.
 
 The family name Columnar and the data set `columnar` answer different questions. SBE sits in the schema-driven family, its data set is `columnar`, and its standard is `sbe`.
 
@@ -293,7 +291,7 @@ An **experiment** answers one everyday question. It keeps the libraries that cou
 | Bytes, stream, and run presets | [Modes](modes.md) |
 | Folder layout and the runner contract | [Architecture](architecture.md) |
 | Prepare versus the timed calls | [Timing honesty](TIMING_HONESTY.md) |
-| Families | [Categories](serialization_categories.md) |
+| Families | [Families](families.md) |
 | Warmup, IQR, and effect sizes | [Methodology](ANALYSIS_METHODOLOGY.md) |
 | Column names | [Metrics](METRICS.md) |
 | L1, L2, and L3 | [Claims and replication](CLAIMS_AND_REPLICATION.md) |

@@ -10,7 +10,7 @@ Architecture discussions often stop at the format name. People say “we use JSO
 
 ## Short answer
 
-After the **standard** is fixed, choose a **concrete library** (and version) per language. See [categories](../../analysis/serialization_categories.md). Use Dashboard numbers for the same data set and the same data type. Read Overview caveats. The standard sets interoperability *possibility*. The implementation sets cost and engineering quality on that runtime. One language’s winning JSON library can behave differently from another language’s JSON library. See [multi-language systems (polyglot estates)](polyglot-estates.md).
+After the **standard** is fixed, choose a **concrete library** (and version) per language. See [Families](../../analysis/families.md). Use Dashboard numbers for the same data set and the same data type. Read Overview caveats. The standard sets interoperability *possibility*. The implementation sets cost and engineering quality on that runtime. One language’s winning JSON library can behave differently from another language’s JSON library. See [multi-language systems (polyglot estates)](polyglot-estates.md).
 
 Choose the workload, then the standard, then the library. The library is one implementation of that standard.
 
@@ -82,7 +82,7 @@ An architecture decision record says “use JSON for the public API.” Three se
 |----------|------|
 | Language **Overview** | Registered `SerializerName` values and categories |
 | [Dashboard](../../dashboard/) | Within-language, within-fixture comparisons |
-| [Categories](../../analysis/serialization_categories.md) | Family map. The standard is the filter |
+| [Families](../../analysis/families.md) | Family map. The standard is the filter |
 | [Metrics](../../analysis/METRICS.md) / [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | What means and confidence intervals mean |
 | [Using this suite](using-this-suite.md) | Anti-leaderboard checklist |
 

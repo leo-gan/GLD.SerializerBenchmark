@@ -217,7 +217,7 @@ These notes explain odd-looking correctness or speed edges on Rust only:
 - **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
 - Stream mode is **native** only where noted; others are adapted bytes+cursor.
 
-Also: [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/rust/README.md). [Families](../analysis/families.md).
 
 ## How to rank
 

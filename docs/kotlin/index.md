@@ -260,7 +260,7 @@ for rep:
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - **arrow-ipc**, **parquet**, **parquet-uncompressed**, **orc**, **orc-uncompressed**, and **sbe** support only `table`, `table_project`, `nested_table`, and `signal`. **sbe** does not support `nested_table`. There is no compliance decoder for these rows. This page does not report a full columnar publish.
 
-Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

@@ -233,7 +233,7 @@ for rep:
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - Some JSON codecs (e.g. **jsoniter**) shorten floating-point digits; fidelity uses float tolerance.
 
-Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

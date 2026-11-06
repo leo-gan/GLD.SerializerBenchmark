@@ -259,7 +259,7 @@ If stream and bytes look almost equal, open [stream honesty](#three-levels-of-st
 | Column dictionary | [Metrics](METRICS.md) |
 | Data types and batch size N | [Data sets](test_data_configuration.md) |
 | C# string / Base64 / envelopes | [C# overview](../c-sharp/index.md) |
-| Fair format families | [Categories](serialization_categories.md) |
+| Fair format families | [Families](families.md) |
 
 
 ## Timed-trial order (serializers)

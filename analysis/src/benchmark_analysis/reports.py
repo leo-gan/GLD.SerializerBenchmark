@@ -1329,7 +1329,7 @@ def generate_language_results_pages(
             "## How to read these tables",
             "",
             "Compare serializers **inside this language**. Prefer the same "
-            "[category](../analysis/serialization_categories.md) "
+            "[family](../analysis/families.md) "
             "(for example JSON with JSON) and the same "
             "[I/O mode](../analysis/modes.md) "
             "so the comparison stays fair.",

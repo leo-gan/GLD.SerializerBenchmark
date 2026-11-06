@@ -1,4 +1,4 @@
-# Serialization categories
+# Families
 
 Families are a teaching map. They group contracts by the job they are built for. A family is coarser than a standard. The Dashboard filters by **Standard**, not by family. A language **Overview** lists that language’s roster. The Standard control lists who claims a given contract.
 

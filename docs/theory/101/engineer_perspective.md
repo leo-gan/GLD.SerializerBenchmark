@@ -21,7 +21,7 @@ Even as a first-year student, you can use this page to see how format choice aff
 
 ## Formats you meet on a service
 
-The essays below are grouped by family. A family is a teaching cut, not a Dashboard filter. JSON and YAML can share the text family and still be different standards. Decide the workload, then the standard, then the library. Columnar standards are on [Serialization categories](../../analysis/serialization_categories.md). Comparison rules are on [Serialization 101](index.md#how-to-compare).
+The essays below are grouped by family. A family is a teaching cut, not a Dashboard filter. JSON and YAML can share the text family and still be different standards. Decide the workload, then the standard, then the library. Columnar standards are on [Families](../../analysis/families.md). Comparison rules are on [Serialization 101](index.md#how-to-compare).
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
@@ -215,7 +215,7 @@ user2.ParseFromString(data)
 
 ## Key takeaways
 
-1. **Choose the workload, then the standard, then the library.** [Serialization categories](../../analysis/serialization_categories.md) is the family map. A library is one implementation of a standard. Compare on one language, one standard, one data set, and one data type.  
+1. **Choose the workload, then the standard, then the library.** [Families](../../analysis/families.md) is the family map. A library is one implementation of a standard. Compare on one language, one standard, one data set, and one data type.  
 2. **Public edge is not the same as the internal code that runs on every request under load.** JSON at the boundary and binary inside is a normal, historical pattern.  
 
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  
