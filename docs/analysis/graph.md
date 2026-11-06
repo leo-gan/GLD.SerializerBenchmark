@@ -1,6 +1,12 @@
 # Graph
 
-The **graph** data set has one data type, and that type is also named `graph`: one graph with shared nodes and one reference cycle. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression). An empty serializer filter selects the serializers mapped to this set. Tree codecs are not in that map.
+The **graph** data set has one data type, and that type is also named `graph`. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression). An empty serializer filter selects the serializers mapped to this set. Tree codecs are not in that map.
+
+## Why this set
+
+The graph set is one object network with shared nodes and a cycle. It exists because most codecs store trees, and a tree cannot represent two fields that point at the same object, or a pointer that comes back to its start. Those libraries are absent from this set. A missing row here is “this codec does not store a graph.” It is not a fidelity failure.
+
+The set has one data type because the question is that one network. The shape uses both failures at once. Several orders share one region object, and the people form a ring. An encoding that copies each child, or that unrolls the ring into a list, is a different value. Packed layouts inline a reference, so a cycle is not a legal packed graph, and those rows are absent too. Typical uses are object graphs inside one process, such as a document whose records share a child.
 
 The generator contract and the other sets are on [Data sets](test_data_configuration.md).
 

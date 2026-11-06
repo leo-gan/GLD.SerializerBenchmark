@@ -1,14 +1,18 @@
 # Columnar
 
-The **columnar** data set is four data types for table-shaped values. They run from `columnar.yaml` and `columnar-smoke.yaml`. They are not in the publication matrix. `signal` is the aligned record that SBE can store.
+The **columnar** data set is four data types for table-shaped values. They run from `columnar.yaml` and `columnar-smoke.yaml`. They are not in the publication matrix.
 
-This set is not the Columnar family. A family is a teaching group of standards. SBE’s family is schema-driven, its standard is SBE, and its data set is columnar. That distinction is on [Families](families.md).
+## Why this set
+
+The columnar set is wide tables and one aligned record. It exists because a five-field message does not show the difference between a row serializer and a column file. At one small record, a column file pays a header and then looks slow for a reason that has little to do with a scan. On a wide row, a one-column read, and a nested row, the column layout is doing the job it was built for. Typical uses are scans over many rows, reading one column out of a wide table, nested rows, and market-data messages. Only libraries that can carry these shapes are measured here.
+
+This set is not the Columnar family. A family is a teaching group of standards. SBE’s family is schema-driven, its standard is SBE, and its data set is columnar. That distinction is on [Families](families.md). The production version of the same split is [Row vs columnar](../theory/301/row-vs-columnar.md).
 
 The generator contract and the other sets are on [Data sets](test_data_configuration.md).
 
 ## table
 
-A wide flat row of named scalars. One instance is one row. `data_type_instance_count` is the table’s row count. Strings are last so the same record is a legal SBE body.
+A table row is a wide flat record: sixteen floats, four integers, and two strings. It exists so columnar files and row codecs can be timed on a scan-shaped row, not on a tiny message. One instance is one row, and `data_type_instance_count` is the table’s row count, so N=100 is one hundred rows. Strings are last so the same record is a legal SBE body. Typical uses are a feature row, a measurement row, or a warehouse record.
 
 | Fields | Type |
 |--------|------|
@@ -24,13 +28,13 @@ Fidelity is full-row equality after materializing domain rows.
 
 ## table_project
 
-The same fields and the same default `type_config` as `table`, so `TypeConfigHash` matches. Serialize writes all 22 columns. Deserialize returns `f_float_0` as `float64[N]`, including when N is 1. Fidelity compares that vector. A full-row result fails fidelity.
+Table project writes the same wide row as `table`, and the read returns only the first float column. It exists because columnar formats are built to skip the columns a query does not need, and a full-row read hides that. The type config matches `table`, so `TypeConfigHash` matches: the write is the same cell, and the read is the new question. Serialize writes all 22 columns. Deserialize returns `f_float_0` as `float64[N]`, including when N is 1. A row codec may decode every column and then slice. That decode stays on the clock. Fidelity compares the returned vector. A full-row result fails fidelity. Typical uses are a query that needs one measure from a wide table.
 
 Read `TimeDeser` for this type. `TimeSer` is still the full-table write, so `TimeSerAndDeser` is dominated by the write.
 
 ## nested_table
 
-A struct plus a list of structs. This is the shredding case for Arrow, Parquet, and ORC.
+A nested table is one struct plus a list of structs. It exists because column formats shred that nesting into columns, which the flat `table` row does not exercise. This is the shredding case for Arrow, Parquet, and ORC. Typical uses are an order with line items, or an event with a repeated group, stored as a table.
 
 ```text
 NestedRow {
@@ -45,7 +49,7 @@ Default: `children: 4`. SBE does not implement this type.
 
 ## signal
 
-A fixed block, then variable strings, then one repeating group. This is the SBE record. Arrow, Parquet, and the row peers on the allow-list also encode it.
+A signal is a fixed header, then short strings, then a repeating group. It exists as the aligned record Simple Binary Encoding was designed to pack, and as a check that other codecs can carry the same shape. Arrow, Parquet, and the row peers on the allow-list also encode it. Typical uses are a market-data tick or an order update.
 
 ```text
 Signal {

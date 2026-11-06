@@ -1,14 +1,14 @@
 # Array
 
-The **array** data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. These cells run from `array.yaml` and `array-smoke.yaml`. `all@` does not include them. N stays 1.
+The **array** data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. These cells run from `array.yaml` and `array-smoke.yaml`. `all@` does not include them. N stays 1. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
+
+## Why this set
+
+The array set is one dense grid of numbers, plus a read of a window inside that grid. It exists so scientific file formats are compared on the job they were built for, instead of on a small message. A message of a few fields does not show the cost of writing 262,144 floats (2 MiB), or of reading a rectangle out of them. Typical uses are images, maps, and simulation grids. The five suite records are not part of this set. N stays 1 because the array is one value. The batch size is not a row count here.
 
 A language is measured on this set when a maintained library writes that array and reads the window through its own API. A one-off call into the C library, written only for this benchmark, is not a member of the set.
 
 The generator contract and the other sets are on [Data sets](test_data_configuration.md).
-
-## grid and grid_window
-
-One dense float64 array, and an interior window of that array. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
 
 ```text
 grid {
@@ -21,7 +21,15 @@ grid_window {
 }
 ```
 
-Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. Fidelity is bit-identical float64. The size column is the full file. The array is one value.
+Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. Fidelity is bit-identical float64. The size column is the full file.
+
+## grid
+
+A grid is one 512 by 512 array of 64-bit floats, written and read in full. That is 2 MiB of numbers before any file wrapper. It exists so array file formats are timed on a real grid rather than on a handful of fields. Typical uses are a raster, a map layer, or a simulation field.
+
+## grid_window
+
+Grid window writes the same array as `grid`, and the read returns only an interior rectangle. It exists because scientific formats can fetch a window without copying the whole array. A second type is required for that question. One score for `grid` would mix a full read and a window read. A full read followed by a slice on the host is not a `grid_window` result. Typical uses are viewing a region of a map or a tile of a larger field. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection.
 
 ## Measured on this set
 
