@@ -8,7 +8,7 @@ In this track you will learn **how serialization mechanisms work**. You will not
 | **After this** | [301 production judgment](../301/index.md) · [Dashboard](../../dashboard/) |
 | **Lab depth** | [401 wire formats](../401/index.md) |
 
-These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the suite [categories](../../analysis/serialization_categories.md) page and the [Dashboard](../../dashboard/).
+These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the [Families](../../analysis/families.md) page and the [Dashboard](../../dashboard/).
 
 Theory alone does not decide what you should ship. Use these pages to build clear mental models of the mechanisms. Then check those models against real libraries. When you must choose under several production constraints at once, continue into the advanced courses as they become available.
 
@@ -19,7 +19,7 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 1. Skim [Serialization 101](../101/index.md) so the model and the trade-off axes feel familiar.
 2. Optionally read one lens that matches your work: [Historical](../101/historical_perspective.md), [Data science](../101/data_science_perspective.md), or [Engineering](../101/engineer_perspective.md).
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
-4. Open [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
+4. Open [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/) for numbers measured on *this* benchmark runner.
 
 **Honesty rules (same as Serialization 101).** There are no universal winners. The standard bounds the wire. The library is how close that language gets. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
 
@@ -92,4 +92,4 @@ Install notes live in the [notebooks README](../notebooks/README.md).
 
 - **Core path:** [Serialization 301](../301/index.md) — production judgment when several constraints pull at once.
 - **Implementer elective:** [Serialization 401](../401/index.md) — wire formats, language-specific paths, and a hands-on lab.
-- Related reference pages: [Serialization categories](../../analysis/serialization_categories.md), [Engineering](../101/engineer_perspective.md), [Data science](../101/data_science_perspective.md), [Benchmarks](../../analysis/index.md), and the [Dashboard](../../dashboard/).
+- Related reference pages: [Families](../../analysis/families.md), [Engineering](../101/engineer_perspective.md), [Data science](../101/data_science_perspective.md), [Benchmarks](../../analysis/index.md), and the [Dashboard](../../dashboard/).

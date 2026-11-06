@@ -114,7 +114,7 @@ The approach fits poorly for small, frequently mutated documents when builder co
 
 ## In this suite
 
-Where FlatBuffers or a similar row zero-copy codec is registered for a language, compare it with other libraries on the same language, standard, data set, and data type. rkyv’s timed decode materializes an owned value, so do not read that row as an in-place access time. See [rkyv versus Speedy](../401/rust-rkyv-vs-speedy.md). Absence from a language benchmark runner means the suite did not measure that library here. Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
+Where FlatBuffers or a similar row zero-copy codec is registered for a language, compare it with other libraries on the same language, standard, data set, and data type. rkyv’s timed decode materializes an owned value, so do not read that row as an in-place access time. See [rkyv versus Speedy](../401/rust-rkyv-vs-speedy.md). Absence from a language benchmark runner means the suite did not measure that library here. The [family map](../../analysis/families.md) and the language overviews record what is wired today.
 
 ---
 

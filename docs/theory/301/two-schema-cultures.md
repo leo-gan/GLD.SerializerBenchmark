@@ -95,7 +95,7 @@ Swapping habits recreates classic outages. Treating Protobuf field names as the 
 | Resource | Role |
 |----------|------|
 | Language **Overview** | Where Avro, Protobuf, or similar **implementations** are registered |
-| [Serialization categories](../../analysis/serialization_categories.md) | Both sit in the **schema-driven** family—do not rank cultures with a mixed chart |
+| [Families](../../analysis/families.md) | Both sit in the **schema-driven** family—do not rank cultures with a mixed chart |
 | [Using this suite](using-this-suite.md) | Same language, standard, data set, and data type before comparing libraries |
 | 201 [schema evolution](../201/schema-evolution.md) | Mechanism vocabulary |
 

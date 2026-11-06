@@ -13,6 +13,8 @@ Kotlin’s serialization landscape spans the **kotlinx.serialization format fami
 
 Kotlin is a programming language. This runner targets the **same JVM** as [Java](../java/): bytecode on HotSpot, just-in-time compilation, and garbage collection. Kotlin can also compile to native code or to JavaScript. This suite does not measure those backends. It measures Kotlin running on the JVM.
 
+The language is specified by the [Kotlin language specification](https://kotlinlang.org/spec/). That text covers Kotlin/Core and is still marked experimental. A short overview is [Kotlin](https://en.wikipedia.org/wiki/Kotlin_(programming_language)). The bytecode this suite runs is specified by the [Java Virtual Machine Specification](https://docs.oracle.com/javase/specs/jvms/se21/html/index.html) for Java SE 21.
+
 | | This suite |
 |---|---|
 | Target | JVM **21** (`jvmToolchain(21)`), Kotlin **2.3.20** |
@@ -91,139 +93,140 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [arrow-ipc](https://arrow.apache.org/docs/java/) · `19.0.0`
+#### [arrow-ipc](https://arrow.apache.org/docs/java/)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This Kotlin row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serialize. table_project loads f_float_0 only. No compliance decoder.
 
-#### [avro](https://github.com/apache/avro) · `1.12.2`
+#### [avro](https://github.com/apache/avro)
 
 Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
 
-#### [avro4k](https://github.com/avro-kotlin/avro4k) · `2.9.0`
+#### [avro4k](https://github.com/avro-kotlin/avro4k)
 
 avro4k brings Apache Avro to kotlinx.serialization. Avro exists for compact, schema-driven records. avro4k generates the Avro path from `@Serializable` types instead of Java reflect.
 
-#### [capnproto](https://github.com/capnproto/capnproto-java) · `0.1.16`
+#### [capnproto](https://github.com/capnproto/capnproto-java)
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
 
-#### [flatbuffers](https://github.com/google/flatbuffers) · `24.3.25`
+#### [flatbuffers](https://github.com/google/flatbuffers)
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes.
 
-#### [gson](https://github.com/google/gson) · `2.15.0`
+#### [gson](https://github.com/google/gson)
 
 Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
 
-#### [jackson](https://github.com/FasterXML/jackson-module-kotlin) · `2.22.4`
+#### [jackson](https://github.com/FasterXML/jackson-module-kotlin)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
 
-#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.22.4`
+#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
 
-#### [kaml](https://github.com/charleskorn/kaml) · `0.72.0`
+#### [kaml](https://github.com/charleskorn/kaml)
 
 kaml is YAML for kotlinx.serialization. YAML exists as a human-friendly config language. kaml solves Kotlin YAML by implementing a format on the same `@Serializable` types.
 
-#### [kbson](https://github.com/jershell/kbson) · `0.5.0`
+#### [kbson](https://github.com/jershell/kbson)
 
 kbson is BSON for kotlinx.serialization. BSON exists for MongoDB documents. kbson lets Kotlin `@Serializable` types dump/load BSON without a separate mapper.
 
-#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization) · `1.12.0`
+#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization)
 
 kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
-#### [kotlinx-hocon](https://github.com/lightbend/config) · `1.12.0`
+#### [kotlinx-hocon](https://github.com/lightbend/config)
 
 HOCON (Human-Optimized Config Object Notation) was created at Typesafe/Lightbend for Play/Akka configuration. The problem was JSON/YAML config that was awkward for humans. kotlinx-serialization-hocon speaks that format.
 
-#### [kotlinx-ion](https://github.com/amazon-ion/ion-java) · `1.12.1`
+#### [kotlinx-ion](https://github.com/amazon-ion/ion-java)
 
 Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
 
-#### [gld-ion](https://github.com/leo-gan/gld-ion-kotlin) · `0.2.0`
+#### [gld-ion](https://github.com/leo-gan/gld-ion-kotlin)
 
 gld-ion is a registered serializer in the kotlin suite. This page links its upstream source; the language inventory table describes the timed call path.
 
-#### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization) · `1.12.0`
+#### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization)
 
 kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
-#### [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization) · `1.12.0`
+#### [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization)
 
 kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
-#### [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization) · `1.12.0`
+#### [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization)
 
 kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
-#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.7.1`
+#### [kryo](https://github.com/EsotericSoftware/kryo)
 
 Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
 
-#### [moshi-codegen](https://github.com/square/moshi) · `1.15.2`
+#### [moshi-codegen](https://github.com/square/moshi)
 
 Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times KSP-generated JsonAdapters on the same domain types as moshi-reflect.
 
-#### [moshi-reflect](https://github.com/square/moshi) · `1.15.2`
+#### [moshi-reflect](https://github.com/square/moshi)
 
 Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times reflection adapters (`KotlinJsonAdapterFactory`) on the same types as moshi-codegen.
 
-#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.12`
+#### [msgpack](https://github.com/msgpack/msgpack-java)
 
 msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
 
-#### [obor](https://github.com/orandja/obor) · `2.1.3`
+#### [obor](https://github.com/orandja/obor)
 
 obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one.
 
-#### [orc](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
+#### [orc](https://orc.apache.org/specification/ORCv1/)
 
 Apache ORC was created as a columnar file with stripe indexes for scans. This Kotlin row times orc-core 2.3.1 (classifier nohive) and orc-format 1.1.1 nohive. OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder.
 
-#### [orc-uncompressed](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
+#### [orc-uncompressed](https://orc.apache.org/specification/ORCv1/)
 
 This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder.
 
-#### [parquet](https://parquet.apache.org/docs/file-format/) · `1.18.1`
+#### [parquet](https://parquet.apache.org/docs/file-format/)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This Kotlin row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder.
 
-#### [parquet-uncompressed](https://parquet.apache.org/docs/file-format/) · `1.18.1`
+#### [parquet-uncompressed](https://parquet.apache.org/docs/file-format/)
 
 This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.36.2`
+#### [protobuf](https://github.com/protocolbuffers/protobuf)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) · `4.36.2`
+#### [protobuf-kotlin](https://github.com/protocolbuffers/protobuf)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format. This row uses the generated Kotlin DSL builders on the same protobuf wire types as the Java API row.
 
-#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
+#### [protostuff](https://github.com/protostuff/protostuff)
 
 protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
 
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding)
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java flyweight inside serialize. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
-#### [thrift](https://github.com/apache/thrift) · `0.21.0`
+#### [thrift](https://github.com/apache/thrift)
 
 Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol.
 
-#### [tomlkt](https://github.com/Peanuuutz/tomlkt) · `0.5.0`
+#### [tomlkt](https://github.com/Peanuuutz/tomlkt)
 
 tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config language. tomlkt encodes `@Serializable` types to TOML text.
+
 
 ### Columnar and SBE
 
@@ -234,138 +237,6 @@ The six columnar rows support `table`, `table_project`, `nested_table`, and `sig
 `table_project` serializes the full row and deserializes `f_float_0` only, including when N is 1. The runner compares that column (`Fidelity.expectedForFidelity`), not the full rows. Arrow reads that column with `MessageChannelReader`, `MessageSerializer.deserializeRecordBatch`, and `VectorLoader` on a one-field schema. Parquet sets `AvroReadSupport.setRequestedProjection` and `setAvroReadSchema`. ORC sets `Reader.Options.include` with the root and `f_float_0` column ids. Peers full-decode, then slice inside `deserialize`.
 
 `orc` and `orc-uncompressed` both set `blockPadding(false)`. Default padding would extend a small file toward the 256MB HDFS block. That flag is not a compression override. ORC 2.3.1's own default compression is ZSTD (`OrcConf.COMPRESS`), so `orc` does not call `compress()`. `orc-uncompressed` sets `CompressionKind.NONE`. The `nohive` jars relocate Hive vectors to `org.apache.orc.storage` and protobuf to `org.apache.orc.protobuf`. `orc-core` nohive is paired with `orc-format` nohive 1.1.1; the default `orc-format` jar is compiled against `com.google.protobuf` and does not link. parquet-java 1.18.1 defaults to UNCOMPRESSED, so `parquet` sets `CompressionCodecName.SNAPPY` and `parquet-uncompressed` sets `UNCOMPRESSED`.
-
-### Specifics
-
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
-
-#### [arrow-ipc](https://github.com/apache/arrow-java) · `19.0.0`
-
-Apache Arrow was created so analytic engines could share a columnar memory layout. Arrow IPC is the stream of that layout. This row writes an IPC stream (not the Arrow file format and not Arrow Dataset) and, for `table_project`, loads only the `f_float_0` buffers. There is no compliance decoder.
-
-#### [avro](https://github.com/apache/avro) · `1.12.1`
-
-Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
-
-#### [avro4k](https://github.com/avro-kotlin/avro4k) · `2.9.0`
-
-avro4k brings Apache Avro to kotlinx.serialization. Avro exists for compact, schema-driven records. avro4k generates the Avro path from `@Serializable` types instead of Java reflect.
-
-#### [capnproto](https://github.com/capnproto/capnproto-java) · `0.1.16`
-
-Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
-
-#### [flatbuffers](https://github.com/google/flatbuffers) · `24.3.25`
-
-FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
-
-#### [fory](https://github.com/apache/fory) · `1.3.0`
-
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
-
-#### [gson](https://github.com/google/gson) · `2.14.0`
-
-Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
-
-#### [jackson](https://github.com/FasterXML/jackson-module-kotlin) · `2.19.0`
-
-Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
-
-#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
-
-Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
-
-#### [kaml](https://github.com/charleskorn/kaml) · `0.72.0`
-
-kaml is YAML for kotlinx.serialization. YAML exists as a human-friendly config language. kaml solves Kotlin YAML by implementing a format on the same `@Serializable` types.
-
-#### [kbson](https://github.com/jershell/kbson) · `0.5.0`
-
-kbson is BSON for kotlinx.serialization. BSON exists for MongoDB documents. kbson lets Kotlin `@Serializable` types dump/load BSON without a separate mapper.
-
-#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kotlinx-hocon](https://github.com/lightbend/config) · `1.8.1`
-
-HOCON (Human-Optimized Config Object Notation) was created at Typesafe/Lightbend for Play/Akka configuration. The problem was JSON/YAML config that was awkward for humans. kotlinx-serialization-hocon speaks that format.
-
-#### [kotlinx-ion](https://github.com/amazon-ion/ion-java) · `1.11.11`
-
-Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
-
-#### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.6.2`
-
-Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
-
-#### [moshi-codegen](https://github.com/square/moshi) · `1.15.2`
-
-Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times KSP-generated JsonAdapters on the same domain types as moshi-reflect.
-
-#### [moshi-reflect](https://github.com/square/moshi) · `1.15.2`
-
-Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times reflection adapters (`KotlinJsonAdapterFactory`) on the same types as moshi-codegen.
-
-#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.8`
-
-msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
-
-#### [obor](https://github.com/orandja/obor) · `2.1.3`
-
-obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one.
-
-#### [orc](https://github.com/apache/orc) · `2.3.1`
-
-ORC was created for Hive as a columnar file with indexes and compression. This row uses `orc-core` and `orc-format` with the `nohive` classifier so vectors live in `org.apache.orc.storage` and the writer calls `org.apache.orc.protobuf`. The default `orc-format` jar is compiled against `com.google.protobuf` and does not link. ORC 2.3.1 defaults to ZSTD, so this row does not call `compress()`. Both ORC rows set `blockPadding(false)`. `table_project` uses `Reader.Options.include`. There is no compliance decoder.
-
-#### [orc-uncompressed](https://github.com/apache/orc) · `2.3.1`
-
-Same ORC writer as `orc`, with `CompressionKind.NONE` and `blockPadding(false)`. The payload differs from the ZSTD default row.
-
-#### [parquet](https://github.com/apache/parquet-java) · `1.18.1`
-
-Apache Parquet was created as a columnar file for analytic scans. This row uses parquet-avro. parquet-java 1.18.1's default codec is UNCOMPRESSED, so this row sets `CompressionCodecName.SNAPPY`. `table_project` sets an Avro requested projection on `f_float_0`. There is no compliance decoder.
-
-#### [parquet-uncompressed](https://github.com/apache/parquet-java) · `1.18.1`
-
-Same Parquet writer as `parquet`, with `CompressionCodecName.UNCOMPRESSED`. The footer codec and the bytes differ from the Snappy row.
-
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.35.0`
-
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
-
-#### [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) · `4.35.0`
-
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format. This row uses the generated Kotlin DSL builders on the same protobuf wire types as the Java API row.
-
-#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
-
-protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
-
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
-
-Simple Binary Encoding was created for low-latency finance messages: a schema compiler emits flyweights over a direct buffer instead of allocating a message object. This row times sbe-tool 1.40.2 with Agrona at runtime. Codegen is untimed. The flyweight fill is inside timed serialize. `nested_table` is not an SBE body. There is no compliance decoder.
-
-#### [thrift](https://github.com/apache/thrift) · `0.21.0`
-
-Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol.
-
-#### [tomlkt](https://github.com/Peanuuutz/tomlkt) · `0.5.0`
-
-tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config language. tomlkt encodes `@Serializable` types to TOML text.
 
 ### Call-path contract (same idea as Java/Go/Python/Rust)
 
@@ -389,7 +260,7 @@ for rep:
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - **arrow-ipc**, **parquet**, **parquet-uncompressed**, **orc**, **orc-uncompressed**, and **sbe** support only `table`, `table_project`, `nested_table`, and `signal`. **sbe** does not support `nested_table`. There is no compliance decoder for these rows. This page does not report a full columnar publish.
 
-Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

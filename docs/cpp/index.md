@@ -13,6 +13,8 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, 
 
 C++ compiles to **native machine code**. There is no virtual machine. This runner requires **C++20**. Memory is mostly handled by **RAII** (Resource Acquisition Is Initialization): an object frees its resources in its destructor when it goes out of scope. That is still not a garbage collector. Leaks and extra copies remain the programmer’s problem, and the library’s.
 
+The language is defined by ISO/IEC 14882. The readable C++20 draft is [N4861](https://timsong-cpp.github.io/cppwp/n4861/). A short overview is [C++](https://en.wikipedia.org/wiki/C%2B%2B).
+
 | | This suite |
 |---|---|
 | Language | **C++20** (required) |
@@ -101,25 +103,25 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [arduinojson](https://github.com/bblanchon/ArduinoJson) · `7.4.3`
+#### [arduinojson](https://github.com/bblanchon/ArduinoJson)
 
 ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model.
 
-#### [arrow-ipc](https://arrow.apache.org/docs/cpp/ipc.html) · `25.0.1`
+#### [arrow-ipc](https://arrow.apache.org/docs/cpp/ipc.html)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Arrow C++ 25.0.1 ipc::MakeStreamWriter into a buffer: the IPC stream inside the bytes API, not the Arrow file format. The record batch is built inside serialize_bytes. table_project sets IpcReadOptions.included_fields to f_float_0. The row is omitted when ARROW_ROOT is unset. No compliance decoder.
 
-#### [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `binary-1.11`
+#### [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md)
 
 Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
 
-#### [avro_c](https://github.com/apache/avro) · `avro-c`
+#### [avro_c](https://github.com/apache/avro)
 
 Apache Avro was created for Hadoop-era data: a compact binary encoding with the schema stored out of band so field names are not repeated. avro-c is the official C implementation of that encoding.
 
-#### [bitsery](https://github.com/fraillt/bitsery) · `5.2.5`
+#### [bitsery](https://github.com/fraillt/bitsery)
 
 bitsery is an explicit-schema binary serializer for C++. The problem was that many C++ binaries were either reflection-slow or ad-hoc. bitsery makes the schema the API (`object` / `container`).
 
@@ -127,145 +129,146 @@ bitsery is an explicit-schema binary serializer for C++. The problem was that ma
 
 Boost.Serialization is the classic C++ archive framework. It was created so C++ programs could persist object graphs portably across Boost archives. This row times the binary archive.
 
-#### [capnproto](https://github.com/capnproto/capnproto) · `1.0.x`
+#### [capnproto](https://github.com/capnproto/capnproto)
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
 
-#### [cereal](https://github.com/USCiLab/cereal) · `1.3.2`
+#### [cereal](https://github.com/USCiLab/cereal)
 
 cereal was created as a C++11 header-only archive library (binary, JSON, XML) in the Boost.Serialization design space, but simpler. The problem was Boost.Serialization's weight. cereal uses output/input archives on existing types.
 
-#### [cista](https://github.com/felixguendling/cista) · `0.15`
+#### [cista](https://github.com/felixguendling/cista)
 
 Cista++ serializes C++ object graphs as offset-based, pointer-free images. The problem was that pointer graphs are not portable or mmap-friendly. Cista writes a relocatable layout.
 
-#### [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `harness`
+#### [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md)
 
 This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type. The C++ code is header-only (`cpp/dagr_gen/`).
 
-#### [flatbuffers](https://github.com/google/flatbuffers) · `flatbuffers`
+#### [flatbuffers](https://github.com/google/flatbuffers)
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [glaze](https://github.com/stephenberry/glaze) · `2.9.5`
+#### [glaze](https://github.com/stephenberry/glaze)
 
 glaze was created for extremely fast, reflection-based JSON (and other formats) on modern C++. The problem was that C++ JSON usually meant a DOM or hand-written macros. glaze maps structs directly with compile-time reflection.
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-cpp) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-cpp)
 
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
-#### [flexbuffers](https://github.com/google/flatbuffers) · `flatbuffers-flex`
+#### [flexbuffers](https://github.com/google/flatbuffers)
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses FORY_STRUCT with registered C++ structs and vectors in native mode.
 
-#### [jsoncons_bson](https://github.com/danielaparker/jsoncons) · `0.177.0`
+#### [jsoncons_bson](https://github.com/danielaparker/jsoncons)
 
 jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `bson::encode` / `decode`.
 
-#### [jsoncons_cbor](https://github.com/danielaparker/jsoncons) · `0.177.0`
+#### [jsoncons_cbor](https://github.com/danielaparker/jsoncons)
 
 jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `cbor::encode` / `decode`.
 
-#### [jsoncons_msgpack](https://github.com/danielaparker/jsoncons) · `0.177.0`
+#### [jsoncons_msgpack](https://github.com/danielaparker/jsoncons)
 
 jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `msgpack::encode` / `decode`.
 
-#### [msgpack](https://github.com/msgpack/msgpack-c) · `msgpack-cxx`
+#### [msgpack](https://github.com/msgpack/msgpack-c)
 
 msgpack-c is the official C/C++ implementation of MessagePack. MessagePack was created to be as small and fast as a binary format while staying as simple as JSON. The C library solves that with pack/unpack APIs (and a separate C++ API in the same repository).
 
-#### [nlohmann_bson](https://github.com/nlohmann/json) · `3.12.0`
+#### [nlohmann_bson](https://github.com/nlohmann/json)
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_bson` / `from_bson`.
 
-#### [nlohmann_cbor](https://github.com/nlohmann/json) · `3.12.0`
+#### [nlohmann_cbor](https://github.com/nlohmann/json)
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_cbor` / `from_cbor`.
 
-#### [nlohmann_json](https://github.com/nlohmann/json) · `3.12.0`
+#### [nlohmann_json](https://github.com/nlohmann/json)
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON.
 
-#### [nlohmann_msgpack](https://github.com/nlohmann/json) · `3.12.0`
+#### [nlohmann_msgpack](https://github.com/nlohmann/json)
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_msgpack` / `from_msgpack`.
 
-#### [nlohmann_ubjson](https://github.com/nlohmann/json) · `3.12.0`
+#### [nlohmann_ubjson](https://github.com/nlohmann/json)
 
 nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`.
 
-#### [orc](https://arrow.apache.org/docs/cpp/orc.html) · `25.0.1`
+#### [orc](https://arrow.apache.org/docs/cpp/orc.html)
 
 Apache ORC was created as a columnar file with stripe indexes for scans. Arrow C++ 25.0.1 ORC adapter WriteOptions default to UNCOMPRESSED, which is not the Apache ORC Zlib default, so this row sets Compression::GZIP. The adapter stores that value as ORC ZLIB. table_project calls Read of f_float_0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder.
 
-#### [orc-uncompressed](https://arrow.apache.org/docs/cpp/orc.html) · `25.0.1`
+#### [orc-uncompressed](https://arrow.apache.org/docs/cpp/orc.html)
 
 This is the same Arrow C++ ORC adapter as orc, with WriteOptions.compression set to UNCOMPRESSED. The name is the override. No compliance decoder.
 
-#### [parquet](https://arrow.apache.org/docs/cpp/parquet.html) · `25.0.1`
+#### [parquet](https://arrow.apache.org/docs/cpp/parquet.html)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Arrow C++ 25.0.1 parquet::arrow::WriteTable. WriterProperties on 25.0.1 default to UNCOMPRESSED, so this row sets Compression::SNAPPY. table_project reads leaf column 0. The batch is built inside serialize_bytes. Optional on ARROW_ROOT. No compliance decoder.
 
-#### [parquet-uncompressed](https://arrow.apache.org/docs/cpp/parquet.html) · `25.0.1`
+#### [parquet-uncompressed](https://arrow.apache.org/docs/cpp/parquet.html)
 
 This is the same Arrow C++ Parquet writer as parquet, with WriterProperties compression set to UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `3.12.4`
+#### [protobuf](https://github.com/protocolbuffers/protobuf)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp) · `wire-v2`
+#### [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp)
 
 This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`.
 
-#### [rapidjson](https://github.com/Tencent/rapidjson) · `1.1.0`
+#### [rapidjson](https://github.com/Tencent/rapidjson)
 
 RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator.
 
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding)
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 C++ flyweight inside serialize_bytes. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
-#### [simdjson](https://github.com/simdjson/simdjson) · `3.13.0`
+#### [simdjson](https://github.com/simdjson/simdjson)
 
 simdjson was created to parse JSON at near memory bandwidth using SIMD. The problem was that conventional parsers left most of the CPU unused. This suite times parse; serialize is prepared minified JSON.
 
-#### [thrift](https://github.com/apache/thrift) · `TBinaryProtocol`
+#### [thrift](https://github.com/apache/thrift)
 
 Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol.
 
-#### [yas](https://github.com/niXman/yas) · `7.x`
+#### [yas](https://github.com/niXman/yas)
 
 YAS (Yet Another Serializer) is a high-performance C++ binary archive library. It was written as a microbenchmark staple: serialize structs with very little abstraction cost.
 
-#### [yyjson](https://github.com/ibireme/yyjson) · `0.10.0`
+#### [yyjson](https://github.com/ibireme/yyjson)
 
 yyjson was written for high-performance JSON in ANSI C: fast parse and print without giving up a usable DOM. The problem was that lightweight C parsers were slow, and fast parsers were often C++ or SAX-only. yyjson solves that with a compact C implementation and mutable/immutable document APIs.
 
-#### [zpp_bits](https://github.com/eyalz800/zpp_bits) · `4.7.6`
+#### [zpp_bits](https://github.com/eyalz800/zpp_bits)
 
 zpp_bits is a compile-time binary serializer for modern C++. The problem was runtime reflection and verbose archive APIs. It uses template `out` / `in` over tuples and structs.
+
 
 ### Call-path contract
 
@@ -348,7 +351,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 - Stream mode is **native** where the library exposes streams/buffers and the benchmark runner uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).
 
-Also: [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

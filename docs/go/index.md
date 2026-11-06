@@ -13,6 +13,8 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 
 Go compiles to **native machine code** before the process starts. There is no Java-style virtual machine and no intermediate language such as .NET IL. The compiler still embeds a small **runtime** in every binary. That runtime includes a concurrent garbage collector, a scheduler for goroutines (Go’s lightweight threads), and the stacks those goroutines use. You do not install a separate “Go VM” in order to run the benchmark.
 
+The language is specified by the [Go Programming Language Specification](https://go.dev/ref/spec). Sharing memory between goroutines is specified by the [Go memory model](https://go.dev/ref/mem).
+
 | | This suite |
 |---|---|
 | Language / module | Go **1.27** (`go.mod` toolchain `go1.27.1`) |
@@ -85,135 +87,136 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
-#### [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) · `go1.27.1`
+#### [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob)
 
 encoding/gob is Go's native binary stream for Go types. It was created so Go programs can RPC and persist values without an IDL. It is not a cross-language wire format.
 
-#### [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) · `go1.27.1`
+#### [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json)
 
 Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat. On Go 1.27 the package keeps v1 semantics. The stricter defaults are the separate `encoding/json/v2` row.
 
-#### [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2) · `go1.27.1`
+#### [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2)
 
 `encoding/json/v2` is the Go 1.27 standard library JSON API with stricter defaults than `encoding/json`: invalid UTF-8 and duplicate object names are errors, and `<`, `>`, and `&` are not HTML-escaped. This row times `Marshal` / `Unmarshal` and `MarshalWrite` / `UnmarshalRead`.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices.
 
-#### [fxamacker/cbor](https://github.com/fxamacker/cbor) · `2.10.0`
+#### [fxamacker/cbor](https://github.com/fxamacker/cbor)
 
 fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values.
 
-#### [goccy/go-json](https://github.com/goccy/go-json) · `0.10.6`
+#### [goccy/go-json](https://github.com/goccy/go-json)
 
 goccy/go-json was written as a faster drop-in for `encoding/json`. The problem was stdlib JSON cost in high-QPS Go services. It keeps the same API and implements a faster encode/decode path.
 
-#### [goccy/go-yaml](https://github.com/goccy/go-yaml) · `1.19.2`
+#### [goccy/go-yaml](https://github.com/goccy/go-yaml)
 
 goccy/go-yaml is a high-performance YAML 1.2 library for Go. The problem was that go-yaml v2/v3 was often the slow path in config-heavy services. It aims at a faster Marshal/Unmarshal.
 
-#### [hamba/avro](https://github.com/hamba/avro) · `2.31.0`
+#### [hamba/avro](https://github.com/hamba/avro)
 
 hamba/avro is a high-performance Avro library for Go. Avro was created for compact, schema-driven records. hamba focuses on a frozen API and schema cache so the timed path is encode/decode, not schema parse.
 
-#### [ion-go](https://github.com/amazon-ion/ion-go) · `1.5.0`
+#### [ion-go](https://github.com/amazon-ion/ion-go)
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-go is the official Go implementation. This row times MarshalBinary / Unmarshal and the binary encoder stream.
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-go) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-go)
 
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
-#### [jsoniter](https://github.com/json-iterator/go) · `1.1.12`
+#### [jsoniter](https://github.com/json-iterator/go)
 
 json-iterator/go was created as a high-performance, stdlib-compatible JSON library for Go. The problem was the same stdlib bottleneck. It solves it with a compatible config and a faster implementation.
 
-#### [kelindar/binary](https://github.com/kelindar/binary) · `1.0.19`
+#### [kelindar/binary](https://github.com/kelindar/binary)
 
 kelindar/binary is a compact, Go-only packer. It was written for high-throughput in-process and Go-to-Go payloads where a public schema is not required. Encoder.Reset is the reuse path.
 
-#### [linkedin/goavro](https://github.com/linkedin/goavro) · `2.15.0`
+#### [linkedin/goavro](https://github.com/linkedin/goavro)
 
 LinkedIn goavro is an Avro binary codec for Go, used in Kafka/Avro pipelines. Avro exists so producers and consumers share a schema. goavro speaks BinaryFromNative maps (OCF is a different format).
 
-#### [mongo-bson](https://github.com/mongodb/mongo-go-driver) · `1.17.10`
+#### [mongo-bson](https://github.com/mongodb/mongo-go-driver)
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [pelletier/go-toml](https://github.com/pelletier/go-toml) · `2.4.3`
+#### [pelletier/go-toml](https://github.com/pelletier/go-toml)
 
 pelletier/go-toml is a TOML 1.0 parser/encoder for Go. TOML was created as an obvious config language. This library is a common Go implementation of that spec.
 
-#### [arrow-ipc](https://github.com/apache/arrow-go) · `18.8.0`
+#### [arrow-ipc](https://github.com/apache/arrow-go)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-go's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Record batches are built inside SerializeBytes. table_project reads the f_float_0 value buffer only, because arrow-go's ipc.Reader has no included-fields option. No compliance decoder.
 
-#### [parquet](https://github.com/apache/arrow-go) · `18.8.0`
+#### [parquet](https://github.com/apache/arrow-go)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-go pqarrow. arrow-go WriterProperties defaults to uncompressed, so this row sets Snappy, which is the suite's parquet page codec. table_project passes column index 0 to GetRecordReader. The schema is prepared untimed. The batch is built inside SerializeBytes. No compliance decoder.
 
-#### [parquet-uncompressed](https://github.com/apache/arrow-go) · `18.8.0`
+#### [parquet-uncompressed](https://github.com/apache/arrow-go)
 
 This is the same arrow-go pqarrow writer as parquet, with compression left off (Codecs.Uncompressed). Encodings stay at the library default. The name is the override. No compliance decoder.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf-go) · `1.36.12`
+#### [protobuf](https://github.com/protocolbuffers/protobuf-go)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding)
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Go flyweight inside SerializeBytes. It encodes table, table_project, and signal. nested_table is not an SBE body. No compliance decoder.
 
-#### [segmentio/encoding/json](https://github.com/segmentio/encoding) · `0.5.4`
+#### [segmentio/encoding/json](https://github.com/segmentio/encoding)
 
 segmentio/encoding/json is a production fork of a faster Go JSON stack, kept as a drop-in for `encoding/json`. The problem was stdlib JSON in large Go services. This row times that API.
 
-#### [shamaton/msgpack](https://github.com/shamaton/msgpack) · `3.2.6`
+#### [shamaton/msgpack](https://github.com/shamaton/msgpack)
 
 shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields.
 
-#### [shamaton/msgpack (array)](https://github.com/shamaton/msgpack) · `3.2.6`
+#### [shamaton/msgpack (array)](https://github.com/shamaton/msgpack)
 
 shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields. This row uses struct-as-array (no field-name keys) and the matching stream helpers.
 
-#### [sonic](https://github.com/bytedance/sonic) · `1.15.5`
+#### [sonic](https://github.com/bytedance/sonic)
 
 Bytedance sonic was written to push Go JSON through JIT and SIMD on the hot path. The problem was that even fast reflection JSON was not enough at ByteDance scale. sonic solves it with `ConfigDefault` plus optional Pretouch.
 
-#### [ugorji/cbor](https://github.com/ugorji/go) · `1.3.2`
+#### [ugorji/cbor](https://github.com/ugorji/go)
 
 ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the CborHandle.
 
-#### [ugorji/json](https://github.com/ugorji/go) · `1.3.2`
+#### [ugorji/json](https://github.com/ugorji/go)
 
 ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the JsonHandle.
 
-#### [ugorji/msgpack](https://github.com/ugorji/go) · `1.3.2`
+#### [ugorji/msgpack](https://github.com/ugorji/go)
 
 ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the MsgpackHandle.
 
-#### [vmihailenco/msgpack](https://github.com/vmihailenco/msgpack) · `5.4.1`
+#### [vmihailenco/msgpack](https://github.com/vmihailenco/msgpack)
 
 vmihailenco/msgpack is a popular MessagePack library for Go. MessagePack exists as compact binary JSON. This implementation emphasizes a familiar Encoder/Decoder API with buffer reuse.
+
 
 ### Call-path contract (same idea as Python/Rust)
 
@@ -235,7 +238,7 @@ for rep:
 - The four **dagr** rows have no Batch wrapper in their schema: multi-instance cells use the suite's cross-language frame (`u32 LE count` + `u32 LE len` + record, per instance — same as the Rust/C runners). Like **protobuf** (message built in Prepare), dagr-packed builds its direct value structs in Prepare. Unlike protobuf (`ToDomain` untimed), every dagr row materializes the domain value from the lazy reader **inside** the timer, so their decode does strictly more work at the suite boundary. **dagr-regular** and **dagr-frozen** have no direct builder (it exists only for packed-rooted graphs): their native model is the generated arena, built in Prepare, and the timed encode is the generated `AppendTo<Graph>(b, dst, root)` into one reused `dagr.Builder` (it resets the builder, stores the arena, frames the record and appends it to `dst`).
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
-Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Families](../analysis/families.md).
 
 ## Numbers
 

@@ -1,4 +1,4 @@
-# Serialization categories
+# Families
 
 Families are a teaching map. They group contracts by the job they are built for. A family is coarser than a standard. The Dashboard filters by **Standard**, not by family. A language **Overview** lists that language’s roster. The Standard control lists who claims a given contract.
 
@@ -50,7 +50,7 @@ Work through these questions in order:
    - **No** → continue.
 3. **Single language and runtime, complex graphs, and fully trusted data?**
    - **Yes** → a language-native library, only inside a hard trust boundary.
-   - **No, but the payload really is a shared graph** → the **graph** data set. See [Test data](test_data_configuration.md).
+   - **No, but the payload really is a shared graph** → the **graph** data set. See [Data sets](test_data_configuration.md).
    - **No** → a schemaless binary standard such as MessagePack or CBOR.
 4. **Which standard inside that family?** JSON, YAML, and TOML are different contracts. Protocol Buffers, Avro, and FlatBuffers are different contracts. Arrow IPC, Parquet, and ORC are different contracts. Open the [Dashboard](../dashboard/) with that standard selected, then compare libraries.
 
@@ -66,7 +66,7 @@ Product-oriented guidance: [engineering perspective](../theory/101/engineer_pers
 
 **Dagr** has no public specification. The Dashboard standard is **No public spec**. One schema, four node layouts. Packed layouts cannot store a cycle, so they are absent from the graph data set.
 
-**Graph, array, and tensor** are data sets, not families. The shapes and the run configs are on the [test data](test_data_configuration.md) page.
+**Graph, array, and tensor** are data sets, not families. The shapes and the run configs are on the [Data sets](test_data_configuration.md) page.
 
 ---
 

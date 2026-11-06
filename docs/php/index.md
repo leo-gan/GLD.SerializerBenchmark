@@ -13,6 +13,8 @@ PHP’s suite rows cover **stdlib JSON**, **native `serialize`**, optional **PEC
 
 PHP is often described as a language for web pages. This suite runs the **CLI** (command-line) binary, not PHP-FPM or Apache. The engine is **Zend**. It compiles a script to opcodes, which are an intermediate instruction set, and then executes those opcodes. The short, request-scoped life cycle of a web page does not apply here. One process runs many timed repetitions.
 
+PHP has no current formal specification. The definition this suite follows is the [language reference](https://www.php.net/manual/en/langref.php). A short overview is [PHP](https://en.wikipedia.org/wiki/PHP).
+
 | | This suite |
 |---|---|
 | Language | PHP **8.2 or newer** (`composer.json`). The install script offers a static **8.3** CLI. |
@@ -73,9 +75,9 @@ PECL rows register only when the extension is loaded. This host’s static PHP C
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [json](https://github.com/php/php-src/tree/master/ext/json) · `8.3.19`
+#### [json](https://github.com/php/php-src/tree/master/ext/json)
 
 PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They exist so PHP can speak the web's data format without a package. This row times the bundled ext-json.
 
@@ -83,7 +85,7 @@ PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They 
 
 ext-simdjson binds the simdjson parser to PHP. simdjson was created to parse JSON at memory-bandwidth speeds. This row uses SIMD only for decode; encode is `json_encode`.
 
-#### [serialize](https://github.com/php/php-src) · `8.3.19`
+#### [serialize](https://github.com/php/php-src)
 
 PHP `serialize` / `unserialize` is the language's native object format. It exists so PHP can persist values across requests. It is PHP-only and unsafe for untrusted input.
 
@@ -95,23 +97,23 @@ igbinary is a PECL replacement for PHP `serialize` with a more compact binary. T
 
 ext-msgpack is the official PECL MessagePack extension for PHP. MessagePack exists as compact binary JSON. The C extension is the fast path versus userland MessagePack.
 
-#### [rybakit-msgpack](https://github.com/rybakit/msgpack.php) · `v0.9.2`
+#### [rybakit-msgpack](https://github.com/rybakit/msgpack.php)
 
 rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as compact binary JSON. This package is the userland baseline versus the PECL extension.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `v4.33.6+php`
+#### [protobuf](https://github.com/protocolbuffers/protobuf)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [symfony-json](https://github.com/symfony/serializer) · `v7.4.22`
+#### [symfony-json](https://github.com/symfony/serializer)
 
 The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
 
-#### [symfony-xml](https://github.com/symfony/serializer) · `v7.4.22`
+#### [symfony-xml](https://github.com/symfony/serializer)
 
 The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
 
-#### [jms-json](https://github.com/schmittjoh/serializer) · `3.32.9`
+#### [jms-json](https://github.com/schmittjoh/serializer)
 
 JMS Serializer was created for PHP applications that needed annotation-driven object serialization (especially APIs). The problem was mapping rich object graphs to JSON. This row times the JSON encoder.
 
@@ -119,15 +121,15 @@ JMS Serializer was created for PHP applications that needed annotation-driven ob
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [avro](https://github.com/flix-tech/avro-php) · `5.2.0`
+#### [avro](https://github.com/flix-tech/avro-php)
 
 flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format).
 
-#### [cbor](https://github.com/Spomky-Labs/cbor-php) · `3.4.2`
+#### [cbor](https://github.com/Spomky-Labs/cbor-php)
 
 spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC.
 
-#### [yaml](https://github.com/symfony/yaml) · `v7.4.22`
+#### [yaml](https://github.com/symfony/yaml)
 
 The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
 
@@ -135,13 +137,14 @@ The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a hu
 
 ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML.
 
-#### [gld-arrow](https://github.com/leo-gan/gld-arrow-php) · `0.2.0`
+#### [gld-arrow](https://github.com/leo-gan/gld-arrow-php)
 
 gld-arrow is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
 
-#### [gld-ion](https://github.com/leo-gan/gld-ion-php) · `0.2.0`
+#### [gld-ion](https://github.com/leo-gan/gld-ion-php)
 
 gld-ion is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
+
 
 ## Not in this suite (and why)
 

@@ -10,8 +10,8 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 |--------------|---------|
 | What the benchmark runner times / suite layout | [Benchmark architecture](architecture.md) |
 | I/O modes and run modes | [Modes](modes.md) |
-| Data-type meanings | [Test data](test_data_configuration.md) |
-| Paradigms | [Serialization categories](serialization_categories.md) |
+| Data-type meanings | [Data sets](test_data_configuration.md) |
+| Paradigms | [Families](families.md) |
 | How to regenerate published numbers | [Dashboard](../dashboard/) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.

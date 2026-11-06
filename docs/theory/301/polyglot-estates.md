@@ -88,7 +88,7 @@ A team proposes MessagePack everywhere because it looked strong on one language 
 | Resource | Role |
 |----------|------|
 | Multi-language Dashboard | Evidence for **library choice per language** under one family |
-| [Serialization categories](../../analysis/serialization_categories.md) | Shared family vocabulary |
+| [Families](../../analysis/families.md) | Shared family vocabulary |
 | Shared `schemas/` (for example `.proto` files) where present | Example of one contract, many benchmark runners |
 | [Using this suite](using-this-suite.md) | Never crown cross-language winners |
 

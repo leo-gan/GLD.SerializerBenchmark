@@ -46,7 +46,7 @@ By the end of this course you should be able to:
 2. **Distinguish** operational schema cultures without re-deriving wire rules from scratch. One example is Avro-style writer and reader resolution. Another is Protobuf field-number discipline.
 3. **Evaluate** workload fit. That includes row versus columnar storage at system scale. It includes multi-language (*polyglot*) contracts across languages. It also includes the different shapes of **RPC** versus messaging payloads. **RPC** means remote procedure call. It is a synchronous request and response between services.
 4. **Critique** benchmark claims. Use this suite’s rule: same language, same standard, same data set, and same data type.
-5. **Recommend** a standard for the workload, then a library. The family map on [Serialization categories](../../analysis/serialization_categories.md) is only a map. **Justify** the recommendation with that map and the Dashboard.
+5. **Recommend** a standard for the workload, then a library. The family map on [Families](../../analysis/families.md) is only a map. **Justify** the recommendation with that map and the Dashboard.
 6. **Identify** what this benchmark runner cannot answer. That skill stops you from over-claiming.
 
 ---
@@ -166,5 +166,5 @@ Treat the capstone case studies as the course exam. Under fixed constraints, rec
 ## Where to go next
 
 - Finish or skim [Serialization 201](../201/index.md) if the mechanisms feel rusty.
-- Use [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for suite evidence.
+- Use [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/) for suite evidence.
 - Move to [Serialization 401](../401/index.md) if you build or deeply integrate codecs.

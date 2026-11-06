@@ -36,7 +36,7 @@ The architecture page keeps an old HTML anchor, `harness-contract-summary`, so l
 | The sentence is about | Write |
 | --- | --- |
 | The kind of object (`message`, `table`, `graph`, `grid`) | **Data type** |
-| The parent of that kind (`suite`, `columnar`, `graph`, `array`) | **Data set** |
+| The parent of that kind (`suite`, `columnar`, `graph`, `array`, `tensor`) | **Data set** |
 | The program that times libraries and writes the CSV | **Benchmark runner** |
 | How many objects go into one serialize call (`1` or `100`) | **Batch size** |
 | How many times the timed loop runs | **Repetition**, or a **run mode** when you mean the preset |
@@ -47,7 +47,7 @@ The architecture page keeps an old HTML anchor, `harness-contract-summary`, so l
 | The binding that runs one library on the compliance cases | **Adapter** |
 | A teaching group of formats | **Family** |
 | Which trials remain after warmup | **Samples** |
-| A page that lists the shapes and the size knobs | **Test data** (the page). In a sentence about one kind of object, write **data type**. |
+| A page that lists the shapes and the size knobs | **Data sets** (the page). In a sentence about one kind of object, write **data type**. |
 
 ---
 
@@ -65,7 +65,7 @@ A **data set** is the parent of a data type. The Dashboard filter keeps the tabl
 
 Columnar, graph, array, and tensor do not appear in the default matrix. A runner measures them only from those configs.
 
-This project is often called **the suite**. That is the repository and the measurement rules together. The data set id `suite` is narrower: it is only the five publication types. A sentence about sample data uses the data-set meaning. A sentence about the repository uses the project meaning.
+This project is often called **the suite**. That is the repository and the measurement rules together. The data set id `suite` is narrower: it is only the five data types in that set. A sentence about sample data uses the data-set meaning. A sentence about the repository uses the project meaning.
 
 `graph` is both a data set and the only data type inside that set. `array` is a data set. The data types inside it are `grid` and `grid_window`.
 
@@ -111,7 +111,7 @@ The **type catalog** is `schemas/data_catalog_v2.yaml`. A **run config** is the 
 | `shard` | `tensor` | Named float32 weights: embedding, attention, feed-forward, and norm. |
 | `request` | `tensor` | Request id, model name, temperature, and the prompt. |
 
-Field lists, defaults, and fidelity rules for each type are on [Test data](test_data_configuration.md). Array libraries are on [Array bindings](array_bindings.md).
+Field lists, defaults, and fidelity rules for each type are on that set’s page: [Suite](suite.md), [Columnar](columnar.md), [Graph](graph.md), [Array](array.md), and [Tensor](tensor.md). The Array page also says which languages are measured on that set.
 
 A tree codec that cannot store a shared node returns unsupported on `graph`. The runner skips that serializer for the cell, and fidelity stays unused.
 
@@ -144,8 +144,6 @@ An empty compliance list is the standard `custom`. The Dashboard label is **No p
 A serializer that lists two ids keeps one timed row. C# `MS Bond Json` lists `json` and `bond`. The timed row uses the primary id `json`, from the dimension contract.
 
 A **family** is a teaching group: JSON, schemaless binary, schema-driven, language-native, or columnar. A family is coarser than a standard. `yaml` is its own standard. Rankings use the standard, together with the language, the data set, and the data type.
-
-The categories page calls this grouping a **family**.
 
 The family name Columnar and the data set `columnar` answer different questions. SBE sits in the schema-driven family, its data set is `columnar`, and its standard is `sbe`.
 
@@ -289,11 +287,11 @@ An **experiment** answers one everyday question. It keeps the libraries that cou
 
 | Topic | Page |
 | --- | --- |
-| Shapes, knobs, and generators | [Test data](test_data_configuration.md) |
+| Shapes, knobs, and generators | [Data sets](test_data_configuration.md) |
 | Bytes, stream, and run presets | [Modes](modes.md) |
 | Folder layout and the runner contract | [Architecture](architecture.md) |
 | Prepare versus the timed calls | [Timing honesty](TIMING_HONESTY.md) |
-| Families | [Categories](serialization_categories.md) |
+| Families | [Families](families.md) |
 | Warmup, IQR, and effect sizes | [Methodology](ANALYSIS_METHODOLOGY.md) |
 | Column names | [Metrics](METRICS.md) |
 | L1, L2, and L3 | [Claims and replication](CLAIMS_AND_REPLICATION.md) |

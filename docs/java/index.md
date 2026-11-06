@@ -15,6 +15,8 @@ Java compiles to **bytecode**, which is an intermediate instruction set. A **Jav
 
 The **JDK** (Java Development Kit) includes both the compiler (`javac`) and the JVM. A **JRE** (Java Runtime Environment) is the virtual machine without the compiler. This suite needs a JDK because it compiles the runner before it times anything.
 
+The language is specified by the [Java Language Specification](https://docs.oracle.com/javase/specs/jls/se21/html/index.html) for Java SE 21. The virtual machine is specified by the [Java Virtual Machine Specification](https://docs.oracle.com/javase/specs/jvms/se21/html/index.html) for the same release. A short overview is [Java](https://en.wikipedia.org/wiki/Java_(programming_language)).
+
 | | This suite |
 |---|---|
 | Target | Java **21** (`maven.compiler.release`) |
@@ -88,119 +90,120 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [avro](https://github.com/apache/avro) · `1.12.2`
+#### [avro](https://github.com/apache/avro)
 
 Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
 
-#### [bson](https://github.com/mongodb/mongo-java-driver) · `5.5.1`
+#### [bson](https://github.com/mongodb/mongo-java-driver)
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [dsl-json](https://github.com/ngs-doo/dsl-json) · `2.0.2`
+#### [dsl-json](https://github.com/ngs-doo/dsl-json)
 
 dsl-json was written for very high-performance JSON on the JVM with compile-time binding. The problem was reflection mappers allocating too much. It reuses a JsonWriter buffer on the hot path.
 
-#### [fastjson2](https://github.com/alibaba/fastjson2) · `2.0.66`
+#### [fastjson2](https://github.com/alibaba/fastjson2)
 
 fastjson2 is Alibaba's rewrite of fastjson for high-performance JSON on the JVM. The problem was JSON cost in large Java services (and security issues in fastjson 1.x). fastjson2 solves it with a new FieldBased API.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-java) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-java)
 
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
-#### [gson](https://github.com/google/gson) · `2.15.0`
+#### [gson](https://github.com/google/gson)
 
 Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
 
-#### [hessian](https://github.com/ebourg/hessian) · `4.0.66`
+#### [hessian](https://github.com/ebourg/hessian)
 
 Hessian is Caucho's compact binary web-service protocol from the Dubbo/Caucho era. The problem was SOAP/XML RPC overhead. Hessian2 write/readObject is the binary that this row times.
 
-#### [ion](https://github.com/amazon-ion/ion-java) · `2.22.4`
+#### [ion](https://github.com/amazon-ion/ion-java)
 
 Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
 
-#### [jackson](https://github.com/FasterXML/jackson-databind) · `2.22.4`
+#### [jackson](https://github.com/FasterXML/jackson-databind)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
 
-#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.22.4`
+#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's CBOR mapper.
 
-#### [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) · `2.22.4`
+#### [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's Smile (binary JSON) mapper.
 
-#### [java-serialization](https://github.com/openjdk/jdk) · `21.0.11`
+#### [java-serialization](https://github.com/openjdk/jdk)
 
 Java Object Serialization (`ObjectOutputStream`) is the language's built-in graph serializer. It exists so the JVM can persist and RMI Java objects. It is not a portable wire format.
 
-#### [jsoniter](https://github.com/json-iterator/java) · `0.9.23`
+#### [jsoniter](https://github.com/json-iterator/java)
 
 jsoniter for Java was created as a high-performance JSON library with an optional codegen path. The problem was Jackson/Gson overhead. This suite uses DYNAMIC mode plus javassist.
 
-#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.7.1`
+#### [kryo](https://github.com/EsotericSoftware/kryo)
 
 Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
 
-#### [moshi](https://github.com/square/moshi) · `1.15.2`
+#### [moshi](https://github.com/square/moshi)
 
 Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio.
 
-#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.12`
+#### [msgpack](https://github.com/msgpack/msgpack-java)
 
 msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
 
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.36.2`
+#### [protobuf](https://github.com/protocolbuffers/protobuf)
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
+#### [protostuff](https://github.com/protostuff/protostuff)
 
 protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
 
-#### [jackson-yaml](https://github.com/FasterXML/jackson-dataformats-text) · `unknown`
+#### [jackson-yaml](https://github.com/FasterXML/jackson-dataformats-text)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's YAML mapper.
 
-#### [flatbuffers](https://github.com/google/flatbuffers) · `unknown`
+#### [flatbuffers](https://github.com/google/flatbuffers)
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [capnproto](https://github.com/capnproto/capnproto-java) · `unknown`
+#### [capnproto](https://github.com/capnproto/capnproto-java)
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
 
-#### [arrow-ipc](https://arrow.apache.org/docs/java/) · `19.0.0`
+#### [arrow-ipc](https://arrow.apache.org/docs/java/)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-vector 19.0.0 ArrowStreamWriter inside the bytes API, not the Arrow file format and not arrow-dataset. The schema is built in prepare. Row-to-column conversion stays inside serializeBytes. table_project loads f_float_0 only. No compliance decoder.
 
-#### [parquet](https://parquet.apache.org/docs/file-format/) · `1.18.1`
+#### [parquet](https://parquet.apache.org/docs/file-format/)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times parquet-avro 1.18.1 AvroParquetWriter. parquet-java's default codec is UNCOMPRESSED, so this row sets CompressionCodecName.SNAPPY. table_project sets AvroReadSupport requested projection to f_float_0. No compliance decoder.
 
-#### [parquet-uncompressed](https://parquet.apache.org/docs/file-format/) · `1.18.1`
+#### [parquet-uncompressed](https://parquet.apache.org/docs/file-format/)
 
 This is the same parquet-avro writer as parquet, with CompressionCodecName.UNCOMPRESSED. The name is the override. No compliance decoder.
 
-#### [orc](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
+#### [orc](https://orc.apache.org/specification/ORCv1/)
 
 Apache ORC was created as a columnar file with stripe indexes for scans. This row times orc-core 2.3.1 (classifier nohive). OrcConf.COMPRESS defaults to ZSTD, so orc does not call compress(). orc-uncompressed sets CompressionKind.NONE. Both rows set blockPadding(false) so a small file is not padded toward the 256MB HDFS block. table_project includes f_float_0 only. No compliance decoder.
 
-#### [orc-uncompressed](https://orc.apache.org/specification/ORCv1/) · `2.3.1`
+#### [orc-uncompressed](https://orc.apache.org/specification/ORCv1/)
 
 This is the same orc-core writer as orc, with CompressionKind.NONE and blockPadding(false). The name is the override. No compliance decoder.
 
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding)
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Java flyweight inside serializeBytes. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
+
 
 ### Columnar and SBE
 
@@ -211,86 +214,6 @@ The six new rows support `table`, `table_project`, `nested_table`, and `signal` 
 `table_project` serializes the full row and deserializes `f_float_0` only, including when N is 1. The runner compares that column (`Fidelity.expectedForFidelity`), not the full rows. Arrow reads that column with `MessageChannelReader`, `MessageSerializer.deserializeRecordBatch`, and `VectorLoader` on a one-field schema. Parquet sets `AvroReadSupport.setRequestedProjection` and `setAvroReadSchema`. ORC sets `Reader.Options.include` with the root and `f_float_0` column ids. Peers full-decode, then slice inside `deserialize`.
 
 `orc` and `orc-uncompressed` both set `blockPadding(false)`. Default padding would extend a small file toward the 256MB HDFS block. That flag is not a compression override. ORC 2.3.1's own default compression is ZSTD (`OrcConf.COMPRESS`), so `orc` does not call `compress()`. `orc-uncompressed` sets `CompressionKind.NONE`. The `nohive` jars relocate Hive vectors to `org.apache.orc.storage` and protobuf to `org.apache.orc.protobuf`. `orc-core` nohive is paired with `orc-format` nohive 1.1.1; the default `orc-format` jar is compiled against `com.google.protobuf` and does not link. parquet-java 1.18.1 defaults to UNCOMPRESSED, so `parquet` sets `CompressionCodecName.SNAPPY` and `parquet-uncompressed` sets `UNCOMPRESSED`.
-
-### Specifics
-
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
-
-#### [avro](https://github.com/apache/avro) · `1.12.1`
-
-Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
-
-#### [bson](https://github.com/mongodb/mongo-java-driver) · `5.5.1`
-
-BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
-
-#### [dsl-json](https://github.com/ngs-doo/dsl-json) · `2.0.2`
-
-dsl-json was written for very high-performance JSON on the JVM with compile-time binding. The problem was reflection mappers allocating too much. It reuses a JsonWriter buffer on the hot path.
-
-#### [fastjson2](https://github.com/alibaba/fastjson2) · `2.0.57`
-
-fastjson2 is Alibaba's rewrite of fastjson for high-performance JSON on the JVM. The problem was JSON cost in large Java services (and security issues in fastjson 1.x). fastjson2 solves it with a new FieldBased API.
-
-#### [fory](https://github.com/apache/fory) · `1.3.0`
-
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
-
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-java) · `0.2.0`
-
-gld-kiln is a positional little-endian codec. The schema is the struct field order, built once in prepare, so the timed path does not write names or tags. `Kiln.encodeTo` reuses one buffer; `decode` reads the bytes back into maps that `toDomain` turns into the suite structs. A batch of 100 is one list of that struct. The wire is [Kiln wire v2](https://leo-gan.github.io/gld-kiln/spec/).
-
-#### [gson](https://github.com/google/gson) · `2.14.0`
-
-Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
-
-#### [hessian](https://github.com/ebourg/hessian) · `4.0.66`
-
-Hessian is Caucho's compact binary web-service protocol from the Dubbo/Caucho era. The problem was SOAP/XML RPC overhead. Hessian2 write/readObject is the binary that this row times.
-
-#### [ion](https://github.com/amazon-ion/ion-java) · `2.19.0`
-
-Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
-
-#### [jackson](https://github.com/FasterXML/jackson-databind) · `2.19.0`
-
-Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
-
-#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
-
-Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's CBOR mapper.
-
-#### [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
-
-Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's Smile (binary JSON) mapper.
-
-#### [java-serialization](https://github.com/openjdk/jdk) · `21.0.11`
-
-Java Object Serialization (`ObjectOutputStream`) is the language's built-in graph serializer. It exists so the JVM can persist and RMI Java objects. It is not a portable wire format.
-
-#### [jsoniter](https://github.com/json-iterator/java) · `0.9.23`
-
-jsoniter for Java was created as a high-performance JSON library with an optional codegen path. The problem was Jackson/Gson overhead. This suite uses DYNAMIC mode plus javassist.
-
-#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.6.2`
-
-Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
-
-#### [moshi](https://github.com/square/moshi) · `1.15.2`
-
-Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio.
-
-#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.8`
-
-msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
-
-#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.35.0`
-
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
-
-#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
-
-protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
 
 ### Call-path contract (same idea as Go/Python/Rust)
 
@@ -310,7 +233,7 @@ for rep:
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - Some JSON codecs (e.g. **jsoniter**) shorten floating-point digits; fidelity uses float tolerance.
 
-Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/README.md). [Families](../analysis/families.md).
 
 ## Numbers
 

@@ -96,7 +96,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 | Language benchmark runners | `all@all` stays the five Suite types. `table`, `table_project`, `nested_table`, and `signal` are their own Dashboard data types |
 | [Test Data](../../analysis/test_data_configuration.md) | Those nine type ids |
 | [Columnar run config](../../../config/library/columnar.yaml) | The four columnar types. Timed for the new serializers and a short peer list |
-| [Serialization categories](../../analysis/serialization_categories.md) | Columnar is its own teaching family. SBE stays schema-driven. Its data set is Columnar. Its standard is SBE. |
+| [Families](../../analysis/families.md) | Columnar is its own teaching family. SBE stays schema-driven. Its data set is Columnar. Its standard is SBE. |
 | [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one language, one standard, one data set, and one data type. |
 
 **Important:** `all@all`, `all@1`, and `all@100` stay the five Suite types (`message`, `document`, `telemetry`, `strings`, `event`). The four Columnar types are separate data types. Their groups come from a `columnar.yaml` run appended by `dashboard/scripts/splice-columnar-stats.py`. The five-type groups are the earlier published snapshot and were not recomputed.
