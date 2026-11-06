@@ -1,49 +1,64 @@
 /**
- * Submenu inside a tab section (Benchmarks → Data sets).
+ * Nested groups in the left sidebar.
+ *
  * navigation.sections pulls every section's children back to the root indent,
- * so Suite / Columnar / Graph / Array / Tensor read as more root links.
- * Course sections (Learn → 101 …) do not get .md-nav__item--submenu.
+ * so a group's pages look like more root links. Every nested group gets the
+ * same submenu: a semibold parent and an indented rail.
+ *
+ * That covers Learn → 101 / 201 / 301 / 401, the groups under 301 and 401
+ * (Trust, Protocol Buffers, …), and Benchmarks → Data sets.
+ *
+ * Languages rows are flattened by languages-nav.js, which removes the section
+ * classes, so they stay "C · Dashboard". Compliance, Dashboard, and
+ * Experiments have no nested groups.
  */
 
 @media screen and (min-width: 76.25em) {
-  .md-sidebar--primary .md-nav__item--submenu {
+  .md-sidebar--primary .md-nav__item--section .md-nav__item--section,
+  .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) {
     margin-top: 0.2rem;
     margin-bottom: 0.15rem;
   }
 
   /* Parent row: a menu label, not a second tab title. */
-  .md-sidebar--primary .md-nav__item--submenu > .md-nav__link[for] {
+  .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav__link[for],
+  .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav__link[for] {
     color: var(--md-default-fg-color);
     font-weight: 600;
   }
 
-  /* Drop the -0.6rem pull that aligns section children with root links. */
-  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu > .md-nav {
+  /* Drop the -0.6rem pull that aligns section children with root links.
+     Deeper groups are not sections, so they never get that pull. */
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav {
     margin-left: 0;
   }
 
-  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu > .md-nav {
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav {
     margin-right: 0;
   }
 
-  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu > .md-nav > .md-nav__list {
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav > .md-nav__list,
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav > .md-nav__list {
     margin-left: 0.45rem;
     padding: 0.1rem 0 0.25rem 0.75rem;
     border-left: 2px solid color-mix(in srgb, var(--md-default-fg-color) 22%, transparent);
   }
 
-  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu > .md-nav > .md-nav__list {
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav > .md-nav__list,
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav > .md-nav__list {
     margin-right: 0.45rem;
     padding: 0.1rem 0.75rem 0.25rem 0;
     border-right: 2px solid color-mix(in srgb, var(--md-default-fg-color) 22%, transparent);
   }
 
-  /* On a data-set page the open group tracks the accent, same as the active link. */
-  [dir="ltr"] .md-sidebar--primary .md-nav__item--submenu.md-nav__item--active > .md-nav > .md-nav__list {
+  /* The open group tracks the accent, same as the active link. */
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section.md-nav__item--active > .md-nav > .md-nav__list,
+  [dir="ltr"] .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested.md-nav__item--active:not(.md-nav__item--section) > .md-nav > .md-nav__list {
     border-left-color: var(--md-accent-fg-color);
   }
 
-  [dir="rtl"] .md-sidebar--primary .md-nav__item--submenu.md-nav__item--active > .md-nav > .md-nav__list {
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--section .md-nav__item--section.md-nav__item--active > .md-nav > .md-nav__list,
+  [dir="rtl"] .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested.md-nav__item--active:not(.md-nav__item--section) > .md-nav > .md-nav__list {
     border-right-color: var(--md-accent-fg-color);
   }
 }
