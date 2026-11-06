@@ -10,7 +10,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 |--------------|---------|
 | What the benchmark runner times / suite layout | [Benchmark architecture](architecture.md) |
 | I/O modes and run modes | [Modes](modes.md) |
-| Data-type meanings | [Test data](test_data_configuration.md) |
+| Data-type meanings | [Data sets](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate published numbers | [Dashboard](../dashboard/) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 

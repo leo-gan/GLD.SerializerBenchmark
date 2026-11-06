@@ -13,6 +13,8 @@ Mojo’s serialization stack is still young. This runner times **pure-Mojo** lib
 
 Mojo compiles to **native machine code**. This suite targets **Mojo 1.1.0** on Linux x86_64 through a `pixi` environment (`mojo/pixi.toml`).
 
+Mojo has no standards-body specification. The definition the project publishes is the [Mojo language reference](https://mojolang.org/docs/reference/), with the longer [Mojo manual](https://mojolang.org/docs/manual/). A short overview is [Mojo](https://en.wikipedia.org/wiki/Mojo_(programming_language)).
+
 | | This suite |
 |---|---|
 | Tools | Mojo **1.1.0** via `pixi` (`https://conda.modular.com/max`) |
@@ -80,107 +82,108 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [EmberJson](https://github.com/bgreni/EmberJson) · `0.3.4`
+#### [EmberJson](https://github.com/bgreni/EmberJson)
 
 EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API.
 
-#### [ehsanmok-json](https://github.com/ehsanmok/json) · `0.4.0`
+#### [ehsanmok-json](https://github.com/ehsanmok/json)
 
 ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk.
 
-#### [mojo-json](https://github.com/leo-gan/gld-json) · `0.5.0`
+#### [mojo-json](https://github.com/leo-gan/gld-json)
 
 gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types.
 
-#### [mojo-cbor](https://github.com/leo-gan/gld-cbor) · `0.8.0`
+#### [mojo-cbor](https://github.com/leo-gan/gld-cbor)
 
 gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode.
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln)
 
 gld-kiln (leo-gan) is a positional little-endian codec for Mojo. The encoder is generated from the struct fields at compile time and writes into a reused buffer. This row times encode and decode of the suite structs. There are no field tags on the wire. On the tensor data set this row runs every type. encode writes the struct. tensor_view uses Reader.take and does not copy the matrix.
 
-#### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) · `0.7.0`
+#### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf)
 
 gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode.
 
-#### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.4.0`
+#### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers)
 
 gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`.
 
-#### [mojo-avro](https://github.com/leo-gan/gld-avro) · `0.4.0`
+#### [mojo-avro](https://github.com/leo-gan/gld-avro)
 
 gld-avro (leo-gan) implements Apache Avro for Mojo via `AvroDatum`. Avro exists for compact, schema-driven records. The library gives Mojo that encoding.
 
-#### [mojo-toml](https://github.com/DataBooth/mojo-toml) · `0.9.1`
+#### [mojo-toml](https://github.com/DataBooth/mojo-toml)
 
 DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row times that library. leo-gan/gld-toml is a different library and is the gld-toml row.
 
-#### [gld-toml](https://github.com/leo-gan/gld-toml) · `0.1.0`
+#### [gld-toml](https://github.com/leo-gan/gld-toml)
 
 gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml so its package name does not collide with DataBooth's toml package.
 
-#### [gld-yaml](https://github.com/leo-gan/gld-yaml) · `0.6.0`
+#### [gld-yaml](https://github.com/leo-gan/gld-yaml)
 
 gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a human-friendly config language. The library was written so Mojo can speak YAML on suite types.
 
-#### [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) · `0.4.0`
+#### [mojo-msgpack](https://github.com/leo-gan/gld-messagepack)
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
-#### [mojo-bson](https://github.com/leo-gan/gld-bson) · `0.1.0`
+#### [mojo-bson](https://github.com/leo-gan/gld-bson)
 
 gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types.
 
-#### [mojo-ion](https://github.com/leo-gan/gld-ion) · `0.2.0`
+#### [mojo-ion](https://github.com/leo-gan/gld-ion)
 
 gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a typed superset of JSON with text and binary encodings. This row times Ion 1.0 binary encode and decode of a document built from the suite value.
 
-#### [mojo-smile](https://github.com/leo-gan/gld-smile) · `0.2.0`
+#### [mojo-smile](https://github.com/leo-gan/gld-smile)
 
 gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value.
 
-#### [gld-hdf5](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+#### [gld-hdf5](https://github.com/leo-gan/gld-hdf5)
 
 gld-hdf5 is a from-scratch HDF5 library for Mojo. HDF5 exists to store typed arrays in a portable file. This row times one contiguous float64 dataset named grid. The first dimension is x and the second is y. grid_window copies the interior window after read_hdf5 returns the whole file, because this library has no hyperslab. It does not link libhdf5 and does not time the five suite types.
 
-#### [gld-netcdf](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+#### [gld-netcdf](https://github.com/leo-gan/gld-hdf5)
 
 gld-netcdf is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
-#### [gld-adios2](https://github.com/leo-gan/gld-hdf5) · `0.2.0`
+#### [gld-adios2](https://github.com/leo-gan/gld-hdf5)
 
 gld-adios2 is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
-#### [arrow-ipc](https://github.com/leo-gan/gld-arrow) · `0.2.0`
+#### [arrow-ipc](https://github.com/leo-gan/gld-arrow)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. gld-arrow (leo-gan) is a from-scratch Arrow library for Mojo. This row times `encode_ipc_stream` and `decode_ipc_stream`: the IPC stream, not the Arrow file. The record batch is built inside serialize. gld-arrow has no included-fields reader, so table_project decodes the stream and then materializes f_float_0 only. Suite columns are required because these rows have no nulls.
 
-#### [parquet](https://github.com/leo-gan/gld-parquet) · `0.2.0`
+#### [parquet](https://github.com/leo-gan/gld-parquet)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. gld-parquet (leo-gan) is a from-scratch Parquet library for Mojo. The library default is uncompressed, so this row sets Snappy, the suite page codec. table_project decodes the file and then reads f_float_0 only, because decode_table has no column projection. Lists use the standard three-level group.
 
-#### [parquet-uncompressed](https://github.com/leo-gan/gld-parquet) · `0.2.0`
+#### [parquet-uncompressed](https://github.com/leo-gan/gld-parquet)
 
 This is the same gld-parquet writer as parquet, with the page codec left uncompressed. Encodings stay at the library default. The name is the override.
+
 
 ### Call-path contract
 

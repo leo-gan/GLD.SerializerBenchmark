@@ -221,7 +221,7 @@ Example lesson from LightProto: its **source generator requires Roslyn 4.14+**. 
 Update human-facing inventory so the site matches the runner:
 
 1. Language overview table — for example `docs/c-sharp/index.md` (log name, category, one-line notes).
-2. **Source URL + Specifics:** add the log name to `dashboard/scripts/write-serializer-sources.py` (`URL_OVERRIDE` if the compliance catalog docs URL is not the repo, `SPEC_KEY` / `SPECIFICS` for the origin paragraph). Run `python3 dashboard/scripts/write-serializer-sources.py` then `python3 scripts/apply-serializer-sources-to-docs.py` **after** a bench so `version` is the measured `SerializerVersion`. Serializer names in the language table, Specifics headings, and the Dashboard must link to that source.
+2. **Source URL + Specifics:** add the log name to `dashboard/scripts/write-serializer-sources.py` (`URL_OVERRIDE` if the compliance catalog docs URL is not the repo, `SPEC_KEY` / `SPECIFICS` for the origin paragraph). Run `python3 dashboard/scripts/write-serializer-sources.py` then `python3 scripts/apply-serializer-sources-to-docs.py`. Serializer names in the language table, Specifics headings, and the Dashboard must link to that source. Do not put `SerializerVersion` in the Specifics heading. The paragraph describes the library. The measured version stays in `serializer-sources.json` and on the Dashboard.
 3. Language README serializer count (if it states a number).
 4. Root `README.md` language bullet count (if present).
 5. The language row in `docs/analysis/index.md` (registered-serializer count).
@@ -357,6 +357,6 @@ Deeper audit process: maintainers may run the repo’s **review-suspicious-resul
 - [Adding a language](ADDING_A_LANGUAGE.md) — new runtime tree, not one codec
 - [Architecture](architecture.md) — timing model and folder layout
 - [Modes](modes.md) — bytes/string vs stream
-- [Test data](test_data_configuration.md) — suite type ids and batch cells
+- [Data sets](test_data_configuration.md) — the five sets, their type ids, and batch cells
 - [Metrics](METRICS.md) — CSV columns including `SerializerVersion`
 - [Serialization categories](serialization_categories.md) — family map; judge “too slow” inside one standard

@@ -4,7 +4,7 @@ This page is a **checklist for implementers**. Follow it when you want a new pro
 
 Background (layout, timing model, contract): [Benchmark architecture](architecture.md).  
 I/O modes and run modes: [Modes](modes.md).  
-Test data: [Test data](test_data_configuration.md).  
+Data sets: [Data sets](test_data_configuration.md).  
 How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).  
 **Only adding one library to an existing language?** Use [Adding a serializer](ADDING_A_SERIALIZER.md) instead.
 
@@ -115,13 +115,13 @@ Use **official library APIs** on the timed path. Copy the newest language tree (
 
 ---
 
-## 3. Test data types
+## 3. Suite data types
 
-Implement `make_one` (or the language equivalent) and run-config **cells** for the suite type ids:
+Implement `make_one` (or the language equivalent) and run-config **cells** for the suite set:
 
 `message` · `document` · `telemetry` · `strings` · `event`
 
-See [Test data](test_data_configuration.md) for field shapes and batch rules.
+Columnar, graph, array, and tensor are separate data sets. Add one when the language has a library that can carry it. Shapes and batch rules are on [Data sets](test_data_configuration.md).
 
 - Expand cells with `./scripts/resolve_run_config.py`.
 - Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells.

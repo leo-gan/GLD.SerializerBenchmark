@@ -1,21 +1,27 @@
-# Test data
+# Data sets
 
-This page describes the **sample data** every language benchmark runner serializes: logical shapes, configuration knobs, run matrices, and generator rules.
+This page describes the **sample data** every language benchmark runner serializes. The catalog is five **data sets**. Each set holds one or more **data types**, with the size knobs, the run matrix, and the generator rules for that type.
 
 Think of it as the **shared homework assignment**. Each language implements the same types so comparisons stay fair.
 
+<span id="the-five-default-types"></span>
+
+| Data set | Data types | Run config |
+| --- | --- | --- |
+| [Suite](#suite) | `message`, `document`, `telemetry`, `strings`, `event` | [`default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml), [`smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
+| [Columnar](#columnar) | `table`, `table_project`, `nested_table`, `signal` | [`columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) |
+| [Graph](#graph) | `graph` | [`graph.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/graph.yaml) |
+| [Array](#array) | `grid`, `grid_window` | [`array.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/array.yaml). Writers: [Array bindings](array_bindings.md). |
+| [Tensor](#tensor) | `tensor`, `tensor_view`, `prompt`, `shard`, `request` | [`tensor.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/tensor.yaml) |
+
+Suite is the publication matrix. Columnar, graph, array, and tensor run only from their own configs, and `all@` does not include them. Which serializers are measured on each set is `serializer_data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). A name that is absent is suite only. On a specialized run config, runners whose comma filter is exact fill an empty serializer filter from that map. A filter you pass still narrows the run. Python applies the same map inside the runner.
+
 | Resource | Path |
 |----------|------|
-| Data sets | [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml) `data_sets` |
+| Data set list | [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml) `data_sets` |
 | Type catalog | [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) |
 | Run configs | [`config/library/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/config/library) |
 | Wire schemas | [`schemas/v2/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/schemas/v2) |
-| Default matrix | [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) |
-| Smoke matrix | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
-
-**Type ids:** `message` · `document` · `telemetry` · `strings` · `event` · `table` · `table_project` · `nested_table` · `signal` · `graph` · `grid` · `grid_window` · `tensor` · `tensor_view` · `prompt` · `shard` · `request`
-
-The first five are the publication matrix (`default.yaml`, `smoke.yaml`). The next four run only from `columnar.yaml` / `columnar-smoke.yaml`. `graph` runs only from `graph.yaml`. `grid` and `grid_window` run only from `array.yaml` / `array-smoke.yaml`. `tensor`, `tensor_view`, `prompt`, `shard`, and `request` run only from `tensor.yaml` / `tensor-smoke.yaml`. Which serializers are measured on each set is `serializer_data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). A name that is absent is suite only. On a specialized run config, runners whose comma filter is exact fill an empty serializer filter from that map. A filter you pass still narrows the run. Python applies the same map inside the runner.
 
 How times are cleaned and summarized is separate: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
@@ -25,8 +31,8 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 
 By the end of this page you should be able to:
 
-1. Define **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Sketch the five publication data types, the four columnar / aligned types, the graph type, the two array types, and the five tensor types, and what each stresses.
+1. Define **data set**, **data type**, **run config**, **cell**, and **make_one** in one sentence each.
+2. Name the five data sets, list the data types in each, and say what each type stresses.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
 ---
@@ -102,9 +108,9 @@ payload = instances[0] if N == 1 and adapter prefers a scalar else instances
 
 ---
 
-## The five default types
+## Suite
 
-These five are the publication matrix. Columnar and aligned-record types follow them.
+Five data types. These cells are the publication matrix (`default.yaml` and `smoke.yaml`).
 
 ### message
 
@@ -175,6 +181,10 @@ Event {
 
 Default: `attr_count: 4`, `include_payload_bytes: 0`.
 
+## Columnar
+
+Four data types. These cells run from `columnar.yaml` and `columnar-smoke.yaml`. They are not in the publication matrix. `signal` is the aligned record that SBE can store.
+
 ### table
 
 A wide flat row of named scalars. One instance is one row. `data_type_instance_count` is the table’s row count. Strings are last so the same record is a legal SBE body.
@@ -231,9 +241,9 @@ Signal {
 
 `leg_pad` is 0. It keeps each group body a fixed 16-byte block. Default: `group_count: 4`. Wire schemas are `schemas/v2/protobuf/benchmark_v2.proto`, `schemas/v2/avro/signal.avsc`, and `schemas/v2/sbe/signal.xml`. Protobuf and Avro keep the strings before `legs`. The SBE message puts the `legs` group before `symbol` and `venue`, because sbe-tool rejects a repeating group after variable-length data. Field ids are unchanged.
 
-### graph
+## Graph
 
-One instance is one graph. It belongs to the `graph` data set. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression), with an explicit serializer allow-list.
+One instance is one graph. The data set and the only data type inside it share the name `graph`. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression), with an explicit serializer allow-list.
 
 ```text
 Region { code: utf8, note: utf8, version: int32 }   // note is 64 characters
@@ -256,9 +266,13 @@ Fidelity is identity inside the restored graph, not `asdict` and not a walk that
 
 Dagr emits this shape as `Book` from `schemas/v2/dagr/schema.py` for the regular and frozen layouts only. Packed and frozen+packed inline a node reference, so a `Person.next` cycle is not a legal packed graph. `dagr-packed` and `dagr-frozen-packed` do not support this data type. The timed path is still full materialize (`to_bytes` / `restore`).
 
+## Array
+
+Two data types. These cells run from `array.yaml` and `array-smoke.yaml`. [Array bindings](array_bindings.md) lists the languages that time them with a maintained library. `all@` does not include them.
+
 ### grid and grid_window
 
-One dense float64 array. Both types belong to the `array` data set. `all@` does not include them. The run config is `config/library/array.yaml` (N=1, no compression), with an explicit serializer allow-list. Fortran times `hdf5-fortran`, `netcdf-fortran`, and `adios2`. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
+One dense float64 array, and an interior window of that array. Fortran times `hdf5-fortran`, `netcdf-fortran`, and `adios2`. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
 
 ```text
 grid {
@@ -273,9 +287,9 @@ grid_window {
 
 Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. Fidelity is bit-identical float64. The size column is the full file. N stays 1. The array is one value.
 
-### tensor, tensor_view, prompt, shard, and request
+## Tensor
 
-These five belong to the `tensor` data set. `all@` does not include them. The run config is `config/library/tensor.yaml` (N=1, bytes, no post-compression), with an explicit serializer allow-list.
+Five data types: `tensor`, `tensor_view`, `prompt`, `shard`, and `request`. These cells run from `tensor.yaml` and `tensor-smoke.yaml`. N stays 1. `all@` does not include them.
 
 ```text
 tensor        float32[1024, 1024]     owned read
@@ -325,13 +339,18 @@ Prefer this wrapper over a package-level stream of top-level `repeated` messages
 | File | Matrix |
 |------|--------|
 | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) | `message`, `telemetry` × `[1]` |
-| [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) | five publication types × `[1, 100]` |
+| [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) | five suite types × `[1, 100]` |
 | [`config/library/columnar-smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar-smoke.yaml) | `table`, `table_project`, `nested_table`, `signal` × `[1]`, bytes, no post-compression |
 | [`config/library/columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) | `table` and `table_project` × `[1, 100, 10000]`; `nested_table` and `signal` × `[1, 100]`; bytes; no post-compression |
+| [`config/library/graph.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/graph.yaml) | `graph` × `[1, 100]`; bytes; no post-compression |
+| [`config/library/array-smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/array-smoke.yaml) | `grid` and `grid_window` × `[1]` |
+| [`config/library/array.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/array.yaml) | `grid` and `grid_window` × `[1]`; no post-compression |
+| [`config/library/tensor-smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/tensor-smoke.yaml) | `tensor`, `tensor_view`, `prompt`, `shard`, and `request` × `[1]` |
+| [`config/library/tensor.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/tensor.yaml) | `tensor`, `tensor_view`, `prompt`, `shard`, and `request` × `[1]`; bytes; no post-compression |
 
 `columnar.yaml` sets `compression.mode: none`. `Size` is the codec’s own byte length. Parquet’s default page codec is Snappy, so `parquet` is not a layout-only size. `parquet-uncompressed` turns page compression off. Arrow IPC stream bytes are uncompressed. Apache ORC’s C++ and Java writers default to Zlib. pyarrow’s `write_table` defaults to uncompressed, and the Python `orc` row follows that default. `orc-uncompressed` is the named override for languages whose default is Zlib; on pyarrow it is the same codec as `orc`.
 
-Call the columnar configs with `BENCHMARK_RUN_CONFIG`. They are not `smoke_run_config` or `default_run_config`. Pass a serializer name filter. The new type ids are not part of the global smoke matrix. Mojo generates them for `arrow-ipc`, `parquet`, and `parquet-uncompressed`. PHP, Zig, Swift, and C do not generate them.
+Call the columnar, graph, array, and tensor configs with `BENCHMARK_RUN_CONFIG`. They are not `smoke_run_config` or `default_run_config`. Pass a serializer name filter, or leave it empty so the runner fills it from `serializer_data_sets`. The columnar type ids are not part of the global smoke matrix. Mojo generates them for `arrow-ipc`, `parquet`, and `parquet-uncompressed`. PHP, Zig, Swift, and C do not generate them.
 
 Resolve a config to see the expanded cell list:
 

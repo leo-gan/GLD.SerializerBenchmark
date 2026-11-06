@@ -1,6 +1,6 @@
 # Array bindings by language
 
-The array data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. A row is registered when a maintained library writes that array and reads the window through its own API. A one-off call into the C library, written only for this benchmark, is not a row.
+The array data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. The shapes are on [Data sets](test_data_configuration.md#array). A row is registered when a maintained library writes that array and reads the window through its own API. A one-off call into the C library, written only for this benchmark, is not a row.
 
 NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already times HDF5 would measure the same container again, so new languages on this track are HDF5 only. Fortran and Python keep the NetCDF and ADIOS2 rows that were already published. ADIOS2's own bindings are C++, C, Fortran, Python, and Matlab. No further ADIOS2 row is added: the C and C++ engines are the same library Fortran and Python already call, and the other languages have no binding.
 

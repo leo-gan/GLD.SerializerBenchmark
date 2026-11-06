@@ -13,6 +13,8 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 This suite measures **Node.js**, not JavaScript running in a web browser. Node.js is a command-line host that embeds the **V8** JavaScript engine, which is the same engine Chrome uses. V8 **JIT**-compiles (just-in-time compiles) hot functions into native code and reclaims unused objects with a garbage collector. Node also provides `Buffer`, `require`/`import`, and native addons written in C++.
 
+The language is specified by [ECMA-262](https://tc39.es/ecma262/). A short overview is [JavaScript](https://en.wikipedia.org/wiki/JavaScript). The host is documented in the [Node.js API](https://nodejs.org/api/).
+
 | | This suite |
 |---|---|
 | Host | **Node.js 18 or newer** and npm |
@@ -93,127 +95,128 @@ The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prep
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) · `3.1.3`
+#### [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript)
 
 The official MessagePack JavaScript implementation (`@msgpack/msgpack`). MessagePack was created as compact binary JSON. This package is the reference encode/decode API for JS.
 
-#### [arrow-ipc](https://arrow.apache.org/docs/js/) · `21.2.0`
+#### [arrow-ipc](https://arrow.apache.org/docs/js/)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times the apache-arrow IPC stream writer and reader (tableToIPC with type stream) inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. No compliance decoder.
 
-#### [avsc](https://github.com/mtth/avsc) · `5.7.9`
+#### [avsc](https://github.com/mtth/avsc)
 
 avsc brings Apache Avro to JavaScript. Avro was created for compact, schema-driven records in data pipelines. avsc solves the JS side with `Type.forSchema` and buffer encode/decode.
 
-#### [bebop](https://github.com/6over3/bebop) · `3.2.3`
+#### [bebop](https://github.com/6over3/bebop)
 
 Bebop is a schema-driven binary format created as a simpler, faster alternative to protobuf-like IDL stacks for games and services. The problem was heavy generated code and slow encoders. Bebop solves it with a compact schema and generated writers.
 
-#### [bser](https://github.com/facebook/watchman) · `2.1.2`
+#### [bser](https://github.com/facebook/watchman)
 
 BSER is Facebook Watchman's binary protocol: a compact encoding for the watchman's client/server messages. The problem was JSON overhead in a local file-watching daemon. This row times the Node `bser` dump/load path.
 
-#### [bson](https://github.com/mongodb/js-bson) · `6.10.4`
+#### [bson](https://github.com/mongodb/js-bson)
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [cbor](https://github.com/hildjj/node-cbor) · `9.0.2`
+#### [cbor](https://github.com/hildjj/node-cbor)
 
 node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC.
 
-#### [cbor-x](https://github.com/kriszyp/cbor-x) · `1.6.8`
+#### [cbor-x](https://github.com/kriszyp/cbor-x)
 
 cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [devalue](https://github.com/Rich-Harris/devalue) · `5.9.4`
+#### [devalue](https://github.com/Rich-Harris/devalue)
 
 devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows — dates, maps, cyclical graphs — without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format.
 
-#### [fast-json-stringify](https://github.com/fastify/fast-json-stringify) · `6.4.0`
+#### [fast-json-stringify](https://github.com/fastify/fast-json-stringify)
 
 fast-json-stringify was created in the Fastify ecosystem to serialize JSON from a JSON Schema much faster than `JSON.stringify`. The problem was that schema-known objects still paid for a fully dynamic walk. It compiles a serializer once and reuses it; this suite decodes with `JSON.parse`.
 
-#### [flatbuffers](https://github.com/google/flatbuffers) · `24.12.23`
+#### [flatbuffers](https://github.com/google/flatbuffers)
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses @apache-fory/core with registered struct/list schemas and the bytes API.
 
-#### [flexbuffers](https://github.com/google/flatbuffers) · `24.12.23`
+#### [flexbuffers](https://github.com/google/flatbuffers)
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-typescript) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-typescript)
 
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
-#### [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) · `3.21.4`
+#### [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript)
 
 This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`.
 
-#### [ion-js](https://github.com/amazon-ion/ion-js) · `5.2.1`
+#### [ion-js](https://github.com/amazon-ion/ion-js)
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-js is the official JavaScript implementation. This row times binary dump/load; the Ion DOM is turned into plain objects outside the timer.
 
-#### [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) · `18.30.0`
+#### [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack)
 
 json-pack (jsonjoy) is a family of binary codecs including MessagePack. It was written to give JavaScript a fast, modular binary JSON toolkit. This row times the MsgPack encoder/decoder.
 
-#### [JSON.stringify](https://github.com/nodejs/node) · `node-24.15.0`
+#### [JSON.stringify](https://github.com/nodejs/node)
 
 `JSON.stringify` / `JSON.parse` are the ECMAScript standard JSON APIs. They exist so every JavaScript host can speak RFC 8259 without a library. This row times Node's V8 implementation.
 
-#### [msgpackr](https://github.com/kriszyp/msgpackr) · `1.12.1`
+#### [msgpackr](https://github.com/kriszyp/msgpackr)
 
 msgpackr was written for high-throughput MessagePack in Node, with reusable Packr/Unpackr instances. The problem was that generic MessagePack libraries allocated too much per call. msgpackr solves that with a performance-oriented encoder/decoder.
 
-#### [parquet](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+#### [parquet](https://github.com/hyparam/hyparquet-writer)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times hyparquet-writer parquetWriteBuffer at the library default codec, Snappy, and hyparquet 1.31.2 parquetReadObjects. A nested_table value (struct plus a list of structs, int32 not widened) round-tripped, which is why the row is registered. table_project passes columns ['f_float_0'] on read. SerializerVersion is the writer package. No compliance decoder.
 
-#### [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer) · `0.16.10`
+#### [parquet-uncompressed](https://github.com/hyparam/hyparquet-writer)
 
 This is the same hyparquet-writer path as parquet, with codec UNCOMPRESSED. That switch changes the column codec metadata and the bytes. Encodings stay at the library default. It is the same writer, not a second Parquet library. No compliance decoder.
 
-#### [protobuf-es](https://github.com/bufbuild/protobuf-es) · `2.16.0`
+#### [protobuf-es](https://github.com/bufbuild/protobuf-es)
 
 protobuf-es is Buf's Protocol Buffers implementation for ECMAScript. The problem was that existing JS protobuf stacks did not match modern TypeScript and the official proto3 feature set. It generates TypeScript and times `toBinary` / `fromBinary`.
 
-#### [protobufjs](https://github.com/protobufjs/protobuf.js) · `7.6.6`
+#### [protobufjs](https://github.com/protobufjs/protobuf.js)
 
 protobuf.js is a popular JavaScript Protocol Buffers implementation that can work from a `.proto` or a JSON descriptor. The problem was that Google's JS protobuf was awkward in Node. protobuf.js solves it with a JS-native API.
 
-#### [sia](https://github.com/TimeleapLabs/sia) · `2.3.0`
+#### [sia](https://github.com/TimeleapLabs/sia)
 
 Sia is Timeleap's compact binary tag format for JS values. It was created as a project-specific, typed binary encoding rather than a public interchange standard. This row times those primitive writers.
 
-#### [simdjson-parse+JSON.stringify](https://github.com/simdjson/simdjson) · `0.9.2`
+#### [simdjson-parse+JSON.stringify](https://github.com/simdjson/simdjson)
 
 simdjson was created to parse JSON at memory-bandwidth speeds using SIMD. The problem was that conventional parsers were far from hardware limits. This row uses simdjson only for parse; serialize is still `JSON.stringify`. Only deserialize uses SIMD; serialize is stdlib `JSON.stringify`.
 
-#### [v8-serializer](https://github.com/nodejs/node) · `v8-13.6.233.17-node.48`
+#### [v8-serializer](https://github.com/nodejs/node)
 
 Node's `v8.serialize` / `v8.deserialize` snapshot V8 values. They exist so the engine can persist structured clones, not as a portable wire format. This row times that Node-only API.
+
 
 ### Stream I/O
 

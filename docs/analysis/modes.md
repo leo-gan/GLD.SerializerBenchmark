@@ -7,7 +7,7 @@ This page explains the two different meanings of **mode** in this project. I/O m
 | **I/O mode** | *How* did we call the serializer? | bytes (or string) · stream |
 | **Run mode** | *How long / how heavy* was the experiment? | smoke · all-single · full · research |
 
-A third related idea is **batch size N** (1 vs 100 instances in one call). That is **not** a “mode”; it lives under [Test data](test_data_configuration.md).
+A third related idea is **batch size N** (1 vs 100 instances in one call). That is **not** a “mode”; it lives under [Data sets](test_data_configuration.md).
 
 ---
 
@@ -178,7 +178,7 @@ Exact repetition counts live in config; if config changes, this table should be 
 | Unchanged by run mode | Controlled instead by |
 |-----------------------|------------------------|
 | Which serializers exist | Language registration / Overview |
-| Data type shapes | [Test data](test_data_configuration.md) / `config/library/` |
+| Data type shapes | [Data sets](test_data_configuration.md) / `config/library/` |
 | Whether both I/O modes run | Language runner design |
 | Warmup policy | Analysis drops repetition index 0; runners still log it |
 | Fairness rules | Same CSV contract for all modes |
@@ -257,7 +257,7 @@ If stream and bytes look almost equal, open [stream honesty](#three-levels-of-st
 | Suite layout and timing rules | [Architecture](architecture.md) |
 | How CSVs become numbers | [Methodology](ANALYSIS_METHODOLOGY.md) |
 | Column dictionary | [Metrics](METRICS.md) |
-| Data types and batch size N | [Test data](test_data_configuration.md) |
+| Data types and batch size N | [Data sets](test_data_configuration.md) |
 | C# string / Base64 / envelopes | [C# overview](../c-sharp/index.md) |
 | Fair format families | [Categories](serialization_categories.md) |
 

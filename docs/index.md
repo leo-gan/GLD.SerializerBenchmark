@@ -19,8 +19,8 @@ within-language rankings—not marketing microbenchmarks.
 
 This suite runs the **same data shapes** through serializers in many programming
 languages, writes a **shared CSV contract**, and analyzes results with one
-statistics pipeline. Use it to compare libraries **inside one language and one
-standard**, not to crown a single global winner.
+statistics pipeline. Use it to compare libraries **inside one language, one
+standard, one data set, and one data type**, not to crown a single global winner.
 
 | You want… | Go here |
 |-----------|---------|
@@ -30,6 +30,7 @@ standard**, not to crown a single global winner.
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
 | Per-language runtime primer, library lists, and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Benchmarks](analysis/)** |
+| The five data sets (suite, columnar, graph, array, tensor) | **[Data sets](analysis/test_data_configuration.md)** |
 | The words this site uses (data set, data type, runner) | **[Terminology](analysis/terminology.md)** |
 
 ---
@@ -84,7 +85,7 @@ Then return to the **[Dashboard](dashboard/)** with clearer questions.
 
 ## Honesty rules (short)
 
-- Prefer comparisons **within one language and one standard**. A family is a teaching cut, coarser than the standard. See [Serialization categories](analysis/serialization_categories.md).  
+- Prefer comparisons **within one language, one standard, one data set, and one data type**. A family is a teaching cut, coarser than the standard. The sets are on [Data sets](analysis/test_data_configuration.md). See [Serialization categories](analysis/serialization_categories.md).  
 - Implementation quality often matters more than the format brand name.  
 - Payload shape changes costs a great deal.  
 - Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.

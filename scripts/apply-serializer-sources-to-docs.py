@@ -133,8 +133,7 @@ def render_specifics(lang: str, sources: dict[str, dict], table_names: list[str]
     lines.append(
         "Why each library exists, what problem it was written to solve, "
         "and how. Names link to the source repository (or the stdlib / "
-        "in-tree path this suite times). A version after the name is the "
-        "last measured `SerializerVersion` from this suite's latest bench."
+        "in-tree path this suite times)."
     )
     lines.append("")
     seen = set()
@@ -151,11 +150,7 @@ def render_specifics(lang: str, sources: dict[str, dict], table_names: list[str]
         rec = sources[name]
         url = rec["source_url"]
         spec = rec.get("specifics") or ""
-        ver = (rec.get("version") or "").strip()
-        if ver:
-            lines.append(f"#### [{name}]({url}) · `{ver}`")
-        else:
-            lines.append(f"#### [{name}]({url})")
+        lines.append(f"#### [{name}]({url})")
         lines.append("")
         lines.append(spec.strip())
         lines.append("")
@@ -195,11 +190,18 @@ def names_in_table(table: str, sources: dict[str, dict]) -> list[str]:
 
 
 def strip_old_specifics(after_table: str) -> str:
-    """Remove a previously generated ### Specifics section immediately after the table."""
-    m = re.match(r"^\n*### Specifics\n.*?(?=\n### |\n## |\Z)", after_table, re.S)
-    if not m:
-        return after_table
-    return after_table[m.end() :]
+    """Remove every generated ### Specifics section after the serializers table.
+
+    A section runs until the next ### or ## heading. Handwritten sections
+    such as "Columnar and SBE" stay. An older run sometimes left a second
+    Specifics block after one of those sections; drop that copy too.
+    """
+    return re.sub(
+        r"\n*### Specifics\n.*?(?=\n### |\n## |\Z)",
+        "\n",
+        after_table,
+        flags=re.S,
+    )
 
 
 def patch_file(lang: str, path: Path, sources: dict[str, dict]) -> bool:

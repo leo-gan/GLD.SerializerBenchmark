@@ -13,6 +13,8 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 
 Rust compiles to **native machine code**. There is no virtual machine and no garbage collector. Memory is released when values go out of scope. That rule is called **ownership**. Because of it, a Rust microsecond is a different kind of number from a C#, Java, or Python microsecond.
 
+The language is described by [The Rust Reference](https://doc.rust-lang.org/reference/). Rust does not publish an ISO standard. A short overview is [Rust](https://en.wikipedia.org/wiki/Rust_(programming_language)).
+
 | | This suite |
 |---|---|
 | Edition | Rust **2021** |
@@ -84,115 +86,116 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 ### Specifics
 
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
 
-#### [arrow-ipc](https://docs.rs/arrow) · `60.0.0`
+#### [arrow-ipc](https://docs.rs/arrow)
 
 Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times arrow-rs 60.0.0 IPC stream writer and reader inside the bytes API, not the Arrow file format. The schema is chosen in prepare. The RecordBatch is built inside serialize. table_project passes field index 0 to StreamReader::try_new. No compliance decoder.
 
-#### [bincode](https://github.com/bincode-org/bincode) · `2.0.1`
+#### [bincode](https://github.com/bincode-org/bincode)
 
 bincode is a compact binary format for serde. It was created so Rust programs could pack serde types without a public schema. It is a Rust-centric encoding, not a cross-language standard.
 
-#### [bitcode](https://github.com/SoftbearStudios/bitcode) · `0.6.9`
+#### [bitcode](https://github.com/SoftbearStudios/bitcode)
 
 bitcode is a bit-packed binary format for serde. It was written to squeeze serialized Rust values smaller than typical byte-aligned packers.
 
-#### [bson](https://github.com/mongodb/bson-rust) · `2.15.0`
+#### [bson](https://github.com/mongodb/bson-rust)
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [ciborium](https://github.com/enarx/ciborium) · `0.2.2`
+#### [ciborium](https://github.com/enarx/ciborium)
 
 ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSON-like format. The crate exists to give Rust a serde CBOR backend.
 
-#### [flexbuffers](https://github.com/google/flatbuffers) · `2.0.0`
+#### [flexbuffers](https://github.com/google/flatbuffers)
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
 
-#### [fory](https://github.com/apache/fory) · `1.7.7`
+#### [fory](https://github.com/apache/fory)
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer.
 
-#### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.2.0`
+#### [ion-rs](https://github.com/amazon-ion/ion-rust)
 
 Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion).
 
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) · `0.2.0`
+#### [gld-kiln](https://github.com/leo-gan/gld-kiln-rust)
 
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
-#### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
+#### [minicbor](https://github.com/twittner/minicbor)
 
 minicbor is a compact, often no_std CBOR codec with its own Encode/Decode traits. The problem was serde overhead and no_std needs. It implements RFC 8949 directly on structs.
 
-#### [nanoserde](https://github.com/not-fl3/nanoserde) · `0.1.37`
+#### [nanoserde](https://github.com/not-fl3/nanoserde)
 
 nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path.
 
-#### [parquet](https://docs.rs/parquet) · `60.0.0`
+#### [parquet](https://docs.rs/parquet)
 
 Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times arrow-rs 60 ArrowWriter. arrow-rs DEFAULT_COMPRESSION is UNCOMPRESSED, so this row sets Compression::SNAPPY. Encodings stay at the builder default. table_project uses ProjectionMask::columns on f_float_0. No compliance decoder.
 
-#### [parquet-uncompressed](https://docs.rs/parquet) · `60.0.0`
+#### [parquet-uncompressed](https://docs.rs/parquet)
 
 This is the same arrow-rs Parquet writer as parquet, with Compression::UNCOMPRESSED. Encodings stay at the builder default. The name is the override. No compliance decoder.
 
-#### [postcard](https://github.com/jamesmunns/postcard) · `1.1.3`
+#### [postcard](https://github.com/jamesmunns/postcard)
 
 postcard is a compact, no_std-friendly binary format for serde (James Munns). It was created for embedded Rust where alloc and self-describing formats are too heavy.
 
-#### [prost](https://github.com/tokio-rs/prost) · `0.13.5`
+#### [prost](https://github.com/tokio-rs/prost)
 
 prost is the de-facto Protocol Buffers implementation for Rust (tokio-rs). The problem was that Google does not ship an official Rust runtime. prost-build generates Rust from `.proto` and times encode/decode on those messages.
 
-#### [rkyv](https://github.com/rkyv/rkyv) · `0.8.18`
+#### [rkyv](https://github.com/rkyv/rkyv)
 
 rkyv is a zero-copy deserialization framework for Rust. The problem was that even fast binary codecs still allocate an owned value on decode. rkyv archives data so it can be accessed in place; this suite still materializes owned `T` for fidelity.
 
-#### [rmp-serde](https://github.com/3Hren/msgpack-rust) · `1.3.1`
+#### [rmp-serde](https://github.com/3Hren/msgpack-rust)
 
 rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps.
 
-#### [dagr-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
 
-#### [dagr-regular](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-regular](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
 
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
 
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) · `2026.10.1`
+#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
 
-#### [sbe](https://github.com/aeron-io/simple-binary-encoding) · `1.40.2`
+#### [sbe](https://github.com/aeron-io/simple-binary-encoding)
 
 SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This row fills the sbe-tool 1.40.2 Rust flyweight inside serialize. The logged version is the generator, not the vendored crate 0.1.0. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.
 
-#### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) · `2.1.2`
+#### [serde_avro_fast](https://github.com/Ten0/serde_avro_fast)
 
 serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-× slower on small records.
 
-#### [serde_json](https://github.com/serde-rs/json) · `1.0.154`
+#### [serde_json](https://github.com/serde-rs/json)
 
 serde_json is the standard JSON backend for Rust's serde. Serde was created so Rust types could implement Serialize/Deserialize once and plug in many formats. serde_json is the JSON instance of that idea.
 
-#### [simd-json](https://github.com/simd-lite/simd-json) · `0.14.3`
+#### [simd-json](https://github.com/simd-lite/simd-json)
 
 simd-json is a SIMD JSON parser for Rust (the simdjson port). The problem was parse speed vs serde_json. This row uses SIMD for parse; serialize still goes through serde_json.
 
-#### [sonic-rs](https://github.com/cloudwego/sonic-rs) · `0.3.17`
+#### [sonic-rs](https://github.com/cloudwego/sonic-rs)
 
 sonic-rs is a SIMD-oriented JSON library for Rust, in the same family as ByteDance sonic. The problem was JSON cost on the hot path. It offers a serde-compatible encode/decode.
 
-#### [speedy](https://github.com/koute/speedy) · `0.8.7`
+#### [speedy](https://github.com/koute/speedy)
 
 speedy is a fast binary framework for Rust with its own Writable/Readable traits. It was written to beat generic serde binaries on the encode/decode hot path.
+
 
 ### Call-path contract (same idea as Python)
 

@@ -2,7 +2,7 @@
 
 This page is a **short pointer**. The full data-type catalog, size knobs, run configs, and generator contracts live in one place:
 
-**→ [Test data configuration](test_data_configuration.md)**
+**→ [Data sets](test_data_configuration.md)**
 
 ### Why “v2”?
 
@@ -12,7 +12,7 @@ The suite’s public sample shapes are versioned as **data model v2**. Each type
 
 | Need | Page |
 |------|------|
-| Shapes, sizes, CSV names | [Test data](test_data_configuration.md) |
+| Shapes, sizes, CSV names | [Data sets](test_data_configuration.md) |
 | Bytes vs stream, smoke vs full | [Modes](modes.md) |
 | How rows become published numbers | [Methodology](ANALYSIS_METHODOLOGY.md) |
 | Wire labs (Protobuf-oriented) | [Serialization 401](../theory/401/index.md) |

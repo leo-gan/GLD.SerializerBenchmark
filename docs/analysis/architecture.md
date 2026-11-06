@@ -7,7 +7,7 @@ Think of it as the **lab design** for the experiment. How we turn raw timings in
 | If you need… | Go here |
 |--------------|---------|
 | Statistics (warmup, outliers, confidence intervals) | [Analysis methodology](ANALYSIS_METHODOLOGY.md) |
-| Sample data shapes and size knobs | [Test data](test_data_configuration.md) |
+| Sample data shapes and size knobs | [Data sets](test_data_configuration.md) |
 | JSON vs binary vs schema families | [Serialization categories](serialization_categories.md) |
 | How to add another language | [Adding a language](ADDING_A_LANGUAGE.md) |
 | How to add one library to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
@@ -224,5 +224,5 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 | Concern | Where it lives |
 |---------|----------------|
 | Run modes, data sets, stats, languages, paths | `config/benchmark_config.yaml` — [Modes](modes.md) |
-| Payload shapes and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test data](test_data_configuration.md) |
+| Payload shapes and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Data sets](test_data_configuration.md) |
 | Paradigm inventories | [Serialization categories](serialization_categories.md) + each language **Overview** |
