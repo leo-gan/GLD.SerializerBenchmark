@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Classical deserialize vs zero-copy</title>
+  <desc id="desc">Classical path materializes an object graph; zero-copy verifies then reads fields in place from the buffer.</desc>
+  <defs>
+    <style type="text/css"><![CDATA[
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #e0e0e0; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #90a4ae; }
+      .small { font-size: 11px; fill: #90a4ae; }
+      .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #c5cae9; }
+      .mono-lg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; fill: #c5cae9; }
+      .arrow-label {
+        font-family: "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        fill: #eceff1;
+        text-anchor: middle;
+      }
+      .panel-title { font-size: 14px; font-weight: 600; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#b0bec5"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="360" fill="#1a1a1a"/>
+  <rect x="28" y="40" width="450" height="280" rx="10" fill="#242424" stroke="#5c6bc0" stroke-width="1.5" stroke-opacity="0.55"/>
+  <rect x="522" y="40" width="450" height="280" rx="10" fill="#242424" stroke="#5c6bc0" stroke-width="1.5" stroke-opacity="0.55"/>
+  <text class="label panel-title" x="48" y="72" fill="#e0e0e0">Classical path</text>
+  <text class="label caption" x="48" y="94">parse → allocate object graph</text>
+  <text class="label panel-title" x="542" y="72" fill="#e0e0e0">Zero-copy path</text>
+  <text class="label caption" x="542" y="94">verify → read in place</text>
+  <rect x="120" y="118" width="260" height="36" rx="6" fill="#2c2c2c" stroke="#9fa8da" stroke-width="1.5"/>
+  <text class="label" x="250" y="141" text-anchor="middle" font-size="13" fill="#e0e0e0">network buffer</text>
+  <line x1="250" y1="154" x2="250" y2="176" stroke="#b0bec5" stroke-width="1.75" marker-end="url(#arrowhead)"/>
+  <rect x="120" y="180" width="260" height="36" rx="6" fill="#303f9f" stroke="#9fa8da" stroke-width="1.5" fill-opacity="0.45"/>
+  <text class="label" x="250" y="203" text-anchor="middle" font-size="13" fill="#e0e0e0">parse and allocate</text>
+  <line x1="250" y1="216" x2="250" y2="238" stroke="#b0bec5" stroke-width="1.75" marker-end="url(#arrowhead)"/>
+  <rect x="120" y="242" width="260" height="36" rx="6" fill="#303f9f" stroke="#9fa8da" stroke-width="1.5" fill-opacity="0.45"/>
+  <text class="label" x="250" y="265" text-anchor="middle" font-size="13" fill="#e0e0e0">object graph (copy)</text>
+  <rect x="614" y="118" width="260" height="36" rx="6" fill="#2c2c2c" stroke="#9fa8da" stroke-width="1.5"/>
+  <text class="label" x="744" y="141" text-anchor="middle" font-size="13" fill="#e0e0e0">network buffer</text>
+  <line x1="744" y1="154" x2="744" y2="176" stroke="#b0bec5" stroke-width="1.75" marker-end="url(#arrowhead)"/>
+  <rect x="614" y="180" width="260" height="36" rx="6" fill="#4e342e" stroke="#ffab91" stroke-width="1.5"/>
+  <text class="label" x="744" y="203" text-anchor="middle" font-size="13" fill="#e0e0e0">structural verification</text>
+  <line x1="744" y1="216" x2="744" y2="238" stroke="#b0bec5" stroke-width="1.75" marker-end="url(#arrowhead)"/>
+  <rect x="614" y="242" width="260" height="36" rx="6" fill="#1b5e20" stroke="#81c784" stroke-width="1.5"/>
+  <text class="label" x="744" y="265" text-anchor="middle" font-size="13" fill="#e0e0e0">accessors / views</text>
+  <text class="label small" x="48" y="302">Application reads a full object tree.</text>
+  <text class="label small" x="542" y="302">Application reads fields at offsets in the same buffer.</text>
+</svg>

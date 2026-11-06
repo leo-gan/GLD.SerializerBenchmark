@@ -1,0 +1,67 @@
+/**
+ * Languages sidebar: "C# · Dashboard"
+ * Flat sibling links; not Material nested-toggle targets.
+ */
+
+.md-sidebar--primary .lang-nav-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0;
+  margin: 0.05rem 0;
+  padding: 0.12rem 0;
+  white-space: nowrap;
+  list-style: none;
+}
+
+.md-sidebar--primary .lang-nav-row > .md-nav__toggle {
+  display: none !important;
+}
+
+/* Original nested Overview tree — hidden source of URLs only */
+.md-sidebar--primary .lang-nav-row > .lang-nav-source,
+.md-sidebar--primary .lang-nav-row > label.md-nav__link {
+  display: none !important;
+}
+
+.md-sidebar--primary .lang-nav-row > a.lang-nav-name,
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link {
+  position: relative;
+  z-index: 1;
+  display: inline;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.15rem 0;
+  color: var(--md-typeset-color);
+  text-decoration: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.md-sidebar--primary .lang-nav-row > a.lang-nav-name {
+  font-weight: 600;
+}
+
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link {
+  font-weight: 500;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-sidebar--primary .lang-nav-row > a.lang-nav-name:hover,
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+.md-sidebar--primary .lang-nav-row > a.lang-nav-name.lang-nav-active,
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link.lang-nav-active {
+  font-weight: 700;
+  color: var(--md-typeset-a-color);
+}
+
+.md-sidebar--primary .lang-nav-row > .lang-nav-sep {
+  flex: 0 0 auto;
+  margin: 0 0.4rem;
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
