@@ -43,6 +43,26 @@ def error_row_count(csv_path: Path) -> int:
     return max(0, len(rows) - 1) if rows else 0
 
 
+def export_stats(records: list, language: str) -> dict:
+    """Turn clean rows into the schema 2.2 document the dashboard publishes."""
+    from benchmark_analysis.stats import (
+        build_stats_export_payload,
+        compute_statistics_multi_policy,
+        load_stats_config,
+    )
+
+    config = load_stats_config()
+    by_policy = compute_statistics_multi_policy(
+        records, config=config, language_hint=language
+    )
+    fresh = build_stats_export_payload(by_policy, language)
+    if fresh.get("schema_version") != "2.2":
+        raise SystemExit(
+            f"analysis produced schema {fresh.get('schema_version')}, expected 2.2"
+        )
+    return fresh
+
+
 def count_bases(groups: list, names: tuple[str, ...]) -> dict[str, int]:
     out = {name: 0 for name in names}
     for group in groups:

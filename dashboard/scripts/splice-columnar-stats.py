@@ -24,6 +24,7 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    export_stats,
     as_whole as _norm,
     base_type as _base,
     count_bases as _counts,
@@ -34,12 +35,7 @@ sys.path.insert(0, str(REPO / "analysis" / "src"))
 
 from benchmark_analysis.parser import parse_csv_file  # noqa: E402
 from benchmark_analysis.serializer_data_sets import allow_list  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    _EXPORT_IDENTITY_KEYS,
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
+from benchmark_analysis.stats import _EXPORT_IDENTITY_KEYS  # noqa: E402
 
 DATA = REPO / "dashboard" / "public" / "data"
 COLUMNAR_TYPES = ("table", "table_project", "nested_table", "signal")
@@ -82,11 +78,7 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
     foreign = sorted(base for base in bases if base not in COLUMNAR_TYPES)
     if foreign:
         raise SystemExit(f"{csv_path}: refusing non-columnar types {foreign}")
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
+    fresh = export_stats(records, lang)
     meta = {
         "reps": reps,
         "serializers": sorted({str(row.get("SerializerName") or "") for row in records if row.get("SerializerName")}),

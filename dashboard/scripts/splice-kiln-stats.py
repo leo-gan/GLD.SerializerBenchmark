@@ -21,6 +21,7 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    export_stats,
     as_whole as _norm,
     base_type as _base,
     error_row_count as _error_rows,
@@ -31,11 +32,6 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
 from benchmark_analysis.parser import parse_csv_file  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
 
 DATA = REPO / "dashboard" / "public" / "data"
 NAME = "gld-kiln"
@@ -169,11 +165,7 @@ def _analyze(lang: str, csv_path: Path, kind: str) -> tuple[list, dict]:
         if str(row.get("Language") or "") != lang:
             raise SystemExit(f"{csv_path}: language {row.get('Language')!r}")
 
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"{csv_path}: schema {fresh.get('schema_version')}")
+    fresh = export_stats(records, lang)
     groups = list(fresh.get("groups") or [])
     meta = {"rows": len(records), "reps": reps, "version": "0.2.0"}
     return groups, meta

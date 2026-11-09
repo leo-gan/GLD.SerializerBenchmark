@@ -24,6 +24,7 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    export_stats,
     as_whole as _norm,
     base_type as _base,
     count_bases as _counts,
@@ -35,11 +36,6 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
 from benchmark_analysis.parser import parse_csv_file  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
 
 DATA = REPO / "dashboard" / "public" / "data"
 DAGR_SERIALIZERS = (
@@ -155,11 +151,7 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
         if len(modes) != 1:
             raise SystemExit(f"{csv_path}: {key} mixes StreamMode values {sorted(modes)}")
 
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
+    fresh = export_stats(records, lang)
     meta = {
         "reps": reps,
         "serializers": sorted({str(row.get("SerializerName") or "") for row in records}),
