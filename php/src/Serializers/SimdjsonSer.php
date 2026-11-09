@@ -30,10 +30,6 @@ final class SimdjsonSer extends BytesSer
         return 'text_on_stream';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);

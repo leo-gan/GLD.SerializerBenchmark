@@ -42,6 +42,12 @@ $bytes = $json->serializeBytes($a);
 $back = $json->deserializeBytes($bytes);
 check('json document round-trip', $back['id'] === $a['id'] && count($back['items']) === count($a['items']));
 check('json size is not empty', strlen($bytes) > 10);
+$stream = fopen('php://temp', 'w+b');
+$written = $json->serializeStream($a, $stream);
+rewind($stream);
+$fromStream = $json->deserializeStream($stream);
+fclose($stream);
+check('json stream matches bytes', $written === strlen($bytes) && $fromStream['id'] === $a['id']);
 
 $names = array_map(static fn ($s) => $s->name(), Registry::select(''));
 check('registry includes json', in_array('json', $names, true));

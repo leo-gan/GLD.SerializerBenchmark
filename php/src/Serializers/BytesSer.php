@@ -6,6 +6,10 @@ namespace Benchmark\Serializers;
 
 abstract class BytesSer implements Serializer
 {
+    public function prepare(mixed $value): void
+    {
+    }
+
     public function serializeStream(mixed $value, $out): int
     {
         $bytes = $this->serializeBytes($value);
