@@ -16,6 +16,7 @@ import {
 } from './charts.js';
 import { paretoOptimalGroups } from './pareto.js';
 import { escapeHtml, fetchJsonMaybeGzip } from './page.js';
+import { aggregateCSVRecords, parseCSV } from './csv-upload.js';
 import {
   formatSig,
   formatIntGrouped,
@@ -4075,113 +4076,6 @@ function handleFileUpload(file) {
     }
   };
   reader.readAsText(file);
-}
-
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const headers = parseCSVLine(lines[0]);
-  const records = [];
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const values = parseCSVLine(lines[i]);
-    const rec = {};
-    headers.forEach((h, idx) => {
-      rec[h] = values[idx];
-    });
-    records.push(rec);
-  }
-  return records;
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let cur = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(cur);
-      cur = '';
-    } else cur += ch;
-  }
-  result.push(cur);
-  return result;
-}
-
-function aggregateCSVRecords(records) {
-  const map = new Map();
-  for (const r of records) {
-    const serializer = r.Serializer || r.serializer;
-    const test_data = r.TestData || r.test_data || r.DataType;
-    const mode = r.Mode || r.mode || 'bytes';
-    if (!serializer) continue;
-    const key = `${serializer}|${test_data}|${mode}`;
-    if (!map.has(key)) {
-      map.set(key, {
-        serializer,
-        test_data,
-        mode,
-        times: [],
-        ser: [],
-        deser: [],
-        sizes: [],
-        ops: [],
-        fidelities: [],
-      });
-    }
-    const g = map.get(key);
-    const total = Number(r.TotalTimeNs || r.total_time_ns || r.TimeNs);
-    const ser = Number(r.SerTimeNs || r.ser_time_ns);
-    const deser = Number(r.DeserTimeNs || r.deser_time_ns);
-    const size = Number(r.SizeBytes || r.size_bytes || r.PayloadSize);
-    const ops = Number(r.OpsPerSec || r.ops_per_sec);
-    const fid = Number(r.FidelityScore || r.fidelity);
-    if (Number.isFinite(total)) g.times.push(total);
-    if (Number.isFinite(ser)) g.ser.push(ser);
-    if (Number.isFinite(deser)) g.deser.push(deser);
-    if (Number.isFinite(size)) g.sizes.push(size);
-    if (Number.isFinite(ops)) g.ops.push(ops);
-    if (Number.isFinite(fid)) g.fidelities.push(fid);
-  }
-
-  const groups = [];
-  for (const g of map.values()) {
-    if (!g.times.length && !g.ops.length) continue;
-    const avg_time_total_ns = mean(g.times);
-    const avg_ops_per_sec =
-      g.ops.length > 0 ? mean(g.ops) : avg_time_total_ns > 0 ? 1e9 / avg_time_total_ns : 0;
-    groups.push({
-      serializer: g.serializer,
-      test_data: g.test_data,
-      mode: g.mode,
-      avg_time_total_ns,
-      avg_time_ser_ns: mean(g.ser),
-      avg_time_deser_ns: mean(g.deser),
-      avg_ops_per_sec,
-      median_size_bytes: median(g.sizes),
-      mean_fidelity: g.fidelities.length ? mean(g.fidelities) : null,
-      runs: Math.max(g.times.length, g.ops.length),
-    });
-  }
-  return groups;
-}
-
-function mean(arr) {
-  if (!arr || !arr.length) return null;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
-function median(arr) {
-  if (!arr || !arr.length) return null;
-  const s = [...arr].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
 function triggerDownload(url, filename) {
