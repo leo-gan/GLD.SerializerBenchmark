@@ -7,7 +7,6 @@ canonical dataclasses (mashumaro's supported model style).
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 from mashumaro.codecs.orjson import ORJSONDecoder, ORJSONEncoder
@@ -43,9 +42,3 @@ class MashumaroSerializer(Serializer):
     def deserialize_bytes(self, data: bytes) -> Any:
         return self._decoder.decode(data)
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

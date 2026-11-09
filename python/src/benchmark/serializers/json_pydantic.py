@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import io
 import json
 from typing import Any, Dict, List, Type
 
@@ -128,9 +127,3 @@ class PydanticSerializer(Serializer):
             return json.loads(data)
         return self._model.model_validate_json(data)
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

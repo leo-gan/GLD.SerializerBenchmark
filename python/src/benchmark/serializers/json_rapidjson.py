@@ -7,7 +7,6 @@ Stream mode is adapted (no native bytes stream API for our usage).
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 import rapidjson
@@ -35,9 +34,3 @@ class RapidjsonSerializer(Serializer):
     def deserialize_bytes(self, data: bytes) -> Any:
         return rapidjson.loads(data)
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())
