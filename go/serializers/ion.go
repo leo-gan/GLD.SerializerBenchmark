@@ -41,15 +41,13 @@ func (s *amazonIon) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *amazonIon) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	enc := ion.NewBinaryEncoder(cw)
-	if err := enc.Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	if err := enc.Finish(); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		enc := ion.NewBinaryEncoder(cw)
+		if err := enc.Encode(fx.Value); err != nil {
+			return err
+		}
+		return enc.Finish()
+	})
 }
 
 func (s *amazonIon) DeserializeStream(r io.Reader) (any, error) {

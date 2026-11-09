@@ -49,11 +49,9 @@ func (s *encodingJSONV2) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *encodingJSONV2) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := jsonv2.MarshalWrite(cw, fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return jsonv2.MarshalWrite(cw, fx.Value)
+	})
 }
 
 func (s *encodingJSONV2) DeserializeStream(r io.Reader) (any, error) {

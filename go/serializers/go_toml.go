@@ -75,11 +75,9 @@ func (s *pelletierTOML) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *pelletierTOML) SerializeStream(_ model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := toml.NewEncoder(cw).Encode(s.wrapped); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return toml.NewEncoder(cw).Encode(s.wrapped)
+	})
 }
 
 func (s *pelletierTOML) DeserializeStream(r io.Reader) (any, error) {

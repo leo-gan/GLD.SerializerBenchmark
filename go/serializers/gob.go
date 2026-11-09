@@ -62,11 +62,9 @@ func (s *encodingGob) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *encodingGob) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := gob.NewEncoder(cw).Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return gob.NewEncoder(cw).Encode(fx.Value)
+	})
 }
 
 func (s *encodingGob) DeserializeStream(r io.Reader) (any, error) {

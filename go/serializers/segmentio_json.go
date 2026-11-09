@@ -41,11 +41,9 @@ func (s *segmentioJSON) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *segmentioJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := sjson.NewEncoder(cw).Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return sjson.NewEncoder(cw).Encode(fx.Value)
+	})
 }
 
 func (s *segmentioJSON) DeserializeStream(r io.Reader) (any, error) {

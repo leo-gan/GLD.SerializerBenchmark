@@ -88,12 +88,9 @@ func (s *hambaAvro) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *hambaAvro) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	enc := s.api.NewEncoder(s.schema, cw)
-	if err := enc.Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return s.api.NewEncoder(s.schema, cw).Encode(fx.Value)
+	})
 }
 
 func (s *hambaAvro) DeserializeStream(r io.Reader) (any, error) {

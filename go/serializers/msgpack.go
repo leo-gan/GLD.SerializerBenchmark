@@ -59,12 +59,10 @@ func (s *vmihailencoMsgpack) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *vmihailencoMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	s.enc.Reset(cw)
-	if err := s.enc.Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		s.enc.Reset(cw)
+		return s.enc.Encode(fx.Value)
+	})
 }
 
 func (s *vmihailencoMsgpack) DeserializeStream(r io.Reader) (any, error) {
