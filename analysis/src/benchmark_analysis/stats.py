@@ -11,6 +11,7 @@ Designed for publication-quality reporting:
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -1265,6 +1266,97 @@ def compute_statistics_multi_policy(
     return result
 
 
+def _js_round(value: float) -> int:
+    """Math.round: half rounds toward +infinity."""
+    return math.floor(value + 0.5)
+
+
+def _sig_tick(value: float, sig: int = 3) -> int:
+    """The integer formatSig rounds to before it prints."""
+    if not math.isfinite(value) or value == 0.0:
+        return 0
+    sign = -1 if value < 0 else 1
+    absolute = abs(value)
+    order = math.floor(math.log10(absolute))
+    scale = 10 ** (sig - 1 - order)
+    return sign * _js_round(absolute * scale)
+
+
+def _same_published_display(original: float, published: float) -> bool:
+    """Table text uses 3 significant digits, or an integer for counts and sizes.
+
+    Latency is shown in ns, µs, or ms, so the rounded value has to survive
+    dividing by 1, 1e3, and 1e6.
+    """
+    if _js_round(original) != _js_round(published):
+        return False
+    for divisor in (1.0, 1e3, 1e6):
+        if _sig_tick(original / divisor) != _sig_tick(published / divisor):
+            return False
+    return True
+
+
+def round_published_number_once(value: float) -> int | float:
+    """One coarsening step. May not be stable if the step is fed back in."""
+    as_int = _js_round(value)
+    if _same_published_display(value, float(as_int)):
+        return as_int
+    for digits in (4, 5, 6, 7, 8):
+        rounded = float(f"{value:.{digits}g}")
+        if _same_published_display(value, rounded):
+            if rounded.is_integer() and abs(rounded) < 2**53:
+                return int(rounded)
+            return rounded
+    return value
+
+
+def round_published_number(value: Any) -> Any:
+    """Shorten one metric without changing the dashboard cell text.
+
+    Means and confidence limits are binary fractions of integer nanoseconds.
+    The tables show three significant digits. Counts and sizes show as integers.
+    """
+    if isinstance(value, bool) or isinstance(value, np.bool_):
+        return value
+    if isinstance(value, np.floating):
+        value = float(value)
+    if not isinstance(value, float) or not math.isfinite(value):
+        return value
+
+    def _store(candidate: float) -> int | float:
+        if candidate.is_integer() and abs(candidate) < 2**53:
+            return int(candidate)
+        return candidate
+
+    def _accept(candidate: float) -> bool:
+        stored = _store(candidate)
+        if not _same_published_display(value, float(stored)):
+            return False
+        # A second pass must not shorten it again. Otherwise the published
+        # file fails its own check, or the cell text moves off the original.
+        return _store(float(round_published_number_once(float(stored)))) == stored
+
+    as_int = float(_js_round(value))
+    if _accept(as_int):
+        return int(as_int)
+    for digits in (4, 5, 6, 7, 8):
+        rounded = float(f"{value:.{digits}g}")
+        if _accept(rounded):
+            return _store(rounded)
+    return value
+
+
+def round_published_tree(value: Any) -> Any:
+    """Round every finite float in a stats document. Leave strings and ints."""
+    if isinstance(value, (float, np.floating)):
+        return round_published_number(value)
+    if isinstance(value, dict):
+        return {key: round_published_tree(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [round_published_tree(item) for item in value]
+    return value
+
+
 def build_stats_export_payload(
     by_policy: Dict[str, Dict],
     language: str,
@@ -1277,6 +1369,7 @@ def build_stats_export_payload(
     - **B** no duplicate flat ``groups`` list equal to default policy
     - **C** identity once + ``variants`` per policy (no ``groups_by_policy`` blow-up)
     - **D** filter blocks omit catalog ``label``/``description``
+    - metric floats are shortened to the precision the dashboard prints
     - Pareto fronts omitted (dashboard recomputes from metrics)
 
     Dashboard expands variants client-side. Prefer publishing as
@@ -1373,7 +1466,7 @@ def build_stats_export_payload(
             "Q3": "How stable?",
             "Q4": "Under which workloads does it win?",
         },
-        "groups": slim_groups,
+        "groups": round_published_tree(slim_groups),
     }
 
 

@@ -19,6 +19,8 @@ from benchmark_analysis.stats import (
     _filter_outliers,
     bootstrap_ci,
     build_stats_export_payload,
+    round_published_number,
+    round_published_tree,
     cliffs_delta,
     cliffs_delta_label,
     compute_statistics,
@@ -466,6 +468,7 @@ def test_multi_policy_all_four_and_export_payload():
     assert sample["standard"] == "json"
     assert sample["data_set"] == "suite"
     assert "avg_ops_per_sec" in sample["variants"][DEFAULT_FILTER_POLICY]
+    _assert_published_precision(payload["groups"])
     # D: catalog text not repeated per group
     fb = sample["variants"][DEFAULT_FILTER_POLICY].get("filter") or {}
     assert "label" not in fb and "description" not in fb
@@ -473,6 +476,43 @@ def test_multi_policy_all_four_and_export_payload():
     assert "label" in payload["filter_policies"][DEFAULT_FILTER_POLICY]
     assert not any(str(k).startswith("_") for k in sample)
     assert not any(str(k).startswith("_") for k in sample["variants"][DEFAULT_FILTER_POLICY])
+
+
+def _assert_published_precision(value):
+    """Every float in a published stats tree is already display-rounded."""
+    if isinstance(value, float):
+        assert value == round_published_number(value)
+    elif isinstance(value, dict):
+        for item in value.values():
+            _assert_published_precision(item)
+    elif isinstance(value, list):
+        for item in value:
+            _assert_published_precision(item)
+
+
+def test_round_published_number_drops_binary_noise():
+    """A repeating nanosecond mean becomes the integer the table already shows."""
+    assert round_published_number(25129.282828282827) == 25129
+    assert round_published_number(100.0) == 100
+    assert round_published_number(0.0) == 0
+    tiny = 5.4512612868893595e-34
+    once = round_published_number(tiny)
+    assert round_published_number(float(once)) == once
+    assert round_published_tree({"metrics": {"total_median_ns": 25129.282828282827}}) == {
+        "metrics": {"total_median_ns": 25129}
+    }
+
+
+def test_published_stats_files_are_display_rounded():
+    """The committed dashboard stats are already shortened."""
+    import gzip
+
+    root = Path(__file__).resolve().parents[2] / "dashboard" / "public" / "data"
+    paths = sorted(root.glob("stats_*_latest.json.gz"))
+    assert paths, "expected published stats snapshots"
+    for path in paths:
+        document = json.loads(gzip.open(path, "rt", encoding="utf-8").read())
+        _assert_published_precision(document)
 
 
 def test_save_baseline_skipped_when_regression(tmp_path):
