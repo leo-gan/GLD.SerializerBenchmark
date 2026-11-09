@@ -136,9 +136,9 @@ dashboard/node_modules/
 dashboard/dist/
 docs/dashboard/
 
-# Allow committing dashboard data files, override global ignores
+# Allow committing dashboard data files, override global ignores.
+# baseline.json stays ignored: it is a local regression artifact, not site data.
 !dashboard/public/data/
-!dashboard/public/data/baseline.json
 
 
 # C vendored deps (fetch via c/scripts/fetch-and-build-deps.sh)

@@ -42,11 +42,8 @@ function baseType(testData) {
 test('published snapshots include gld-kiln on suite and tensor', () => {
   for (const lang of LANGS) {
     const stats = loadJsonGz(`stats_${lang}_latest.json.gz`);
-    const payload = loadJsonGz(`${lang}_latest.json.gz`);
     const fromStats = stats.groups.filter((g) => g.serializer === 'gld-kiln');
-    const fromPayload = payload.stats.groups.filter((g) => g.serializer === 'gld-kiln');
     assert.equal(fromStats.length, 15, lang);
-    assert.equal(fromPayload.length, fromStats.length, lang);
     assert.equal(stats.kiln_splice.serializer, 'gld-kiln', lang);
     assert.match(stats.kiln_splice.note, /were not recomputed/);
     const cells = new Set(

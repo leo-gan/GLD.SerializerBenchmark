@@ -186,7 +186,7 @@ After the language bench and experiment runs:
 python3 dashboard/scripts/sync-data.py
 ```
 
-That writes `dashboard/public/data/<lang>_latest.json.gz`, `stats_<lang>_latest.json.gz`, `available_runs.json`, and the experiment catalog (`sync-experiments.py`).
+That writes `dashboard/public/data/<lang>_latest.json.gz` (run id, configs, and errors), `stats_<lang>_latest.json.gz` (the only copy of the measurements), `available_runs.json`, and the experiment catalog (`sync-experiments.py`). Do not copy the stats into the language pack, and do not commit `baseline.json`. The regression baseline stays in `reports/`.
 
 **Do not** re-run sync only to “touch” files. gzip recompression churns other languages’ binaries even when the JSON is unchanged. If a full sync rewrote unrelated `*_latest.json.gz`, restore those binaries and keep only the new language plus `available_runs.json` / experiment payloads you actually updated.
 

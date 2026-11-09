@@ -554,7 +554,6 @@ test('registeredEntries lists Dagr with an empty format list', () => {
 test('mojo gld-kiln is measured as gld-kiln:0.2.0 under the Kiln spec', () => {
   const stats = loadJsonGz('stats_mojo_latest.json.gz');
   const payload = loadJsonGz('mojo_latest.json.gz');
-  assert.deepEqual(stats.groups, payload.stats.groups);
   const names = new Set(stats.groups.map((g) => g.serializer));
   assert.equal(names.has('kiln'), false);
   assert.equal(names.has('gld-kiln'), true);
@@ -655,6 +654,44 @@ test('live mojo gld-kiln has a scored Kiln wire v2 cell', () => {
   assert.deepEqual(heat.columns.map((column) => column.standard), ['Kiln wire v2']);
   assert.equal(heat.columns[0].unscored, undefined);
   assert.ok(heat.rows.some((row) => row.serializer === 'gld-kiln'));
+});
+
+test('compliance publishes failures beside the matrix and keeps pass counts there', () => {
+  const doc = loadJsonGz('compliance.json.gz');
+  const failures = loadJsonGz('compliance-failures.json.gz');
+  assert.equal(doc.results, undefined);
+  assert.ok(Array.isArray(failures));
+  let passed = 0;
+  let failed = 0;
+  let skipped = 0;
+  let errors = 0;
+  for (const cell of doc.matrix) {
+    passed += Number(cell.passed) || 0;
+    failed += Number(cell.failed) || 0;
+    skipped += Number(cell.skipped) || 0;
+    errors += Number(cell.errors) || 0;
+  }
+  assert.equal(passed, doc.passed);
+  assert.equal(failed, doc.failed);
+  assert.equal(skipped, doc.skipped);
+  assert.equal(errors, doc.errors);
+  const outcomes = {};
+  for (const row of failures) {
+    outcomes[row.outcome] = (outcomes[row.outcome] || 0) + 1;
+  }
+  assert.equal(outcomes.pass || 0, 0);
+  assert.equal(outcomes.fail || 0, failed);
+  assert.equal(outcomes.skip || 0, skipped);
+  assert.equal(outcomes.error || 0, errors);
+});
+
+test('bench-versions.json is the stats roster without the stats bodies', () => {
+  const published = loadJsonGz('bench-versions.json');
+  for (const [lang, versions] of Object.entries(published)) {
+    const stats = loadJsonGz(`stats_${lang}_latest.json.gz`);
+    assert.deepEqual(versions, benchMapFromGroups(stats.groups), lang);
+  }
+  assert.ok(Object.keys(published).length >= 14);
 });
 
 test('alias table only remaps known split names', () => {

@@ -1,8 +1,9 @@
 /**
  * Compliance view — spec-quality counterpart to Overview timings.
  *
- * Data: public/data/compliance.json from dashboard/scripts/sync-compliance.py
- * (fed by ./scripts/run-compliance.sh). Results live here, not in MkDocs pages.
+ * Data: public/data/compliance.json.gz from dashboard/scripts/sync-compliance.py
+ * (fed by ./scripts/run-compliance.sh). Pass counts live on the matrix.
+ * Case rows are the failures the page can open.
  */
 import './compliance.css';
 import { serializerDisplayName, serializerSelectLabel } from './format.js';
@@ -23,7 +24,6 @@ import {
   formatLabel,
   noSpecEntries as computeNoSpecEntries,
   normalizeMatrixCell,
-  benchMapFromGroups,
   complianceHeatmap,
   formatSubset,
   rosterEntries,
@@ -55,6 +55,8 @@ const LANG_LABELS = {
 
 let payload = null;
 let loadError = null;
+let failureRows = null;
+let failurePromise = null;
 /** language → { serializer name → version from latest bench stats } */
 let benchVersions = null;
 let ui = {
@@ -190,17 +192,17 @@ function setComplianceView(on) {
 
 async function loadBenchVersions() {
   if (benchVersions) return benchVersions;
-  benchVersions = {};
-  await Promise.all(
-    Object.keys(LANG_LABELS).map(async (lang) => {
-      try {
-        const doc = await fetchJsonMaybeGzip(`data/stats_${lang}_latest.json.gz`);
-        benchVersions[lang] = benchMapFromGroups(doc.groups);
-      } catch {
-        benchVersions[lang] = {};
-      }
-    }),
-  );
+  // Name → version only. The stats files are the measurements, tens of megabytes,
+  // and the table does not read them.
+  try {
+    const res = await fetch('data/bench-versions.json');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    benchVersions = data && typeof data === 'object' ? data : {};
+  } catch (err) {
+    console.warn('bench versions unavailable', err);
+    benchVersions = {};
+  }
   return benchVersions;
 }
 
@@ -233,6 +235,28 @@ async function loadPayload() {
   } catch (err) {
     loadError = err;
   }
+}
+
+function loadFailures() {
+  if (failureRows) return Promise.resolve(failureRows);
+  if (Array.isArray(payload?.results)) {
+    failureRows = payload.results;
+    return Promise.resolve(failureRows);
+  }
+  if (!failurePromise) {
+    failurePromise = fetchJsonMaybeGzip('data/compliance-failures.json.gz')
+      .then((doc) => {
+        const rows = Array.isArray(doc) ? doc : doc?.results;
+        if (!Array.isArray(rows)) throw new Error('failure payload is empty');
+        failureRows = rows;
+        return failureRows;
+      })
+      .catch((err) => {
+        failurePromise = null;
+        throw err;
+      });
+  }
+  return failurePromise;
 }
 
 function unique(rows, keyFn) {
@@ -281,9 +305,8 @@ function noSpecEntries(lang) {
 }
 
 function rowsForLang() {
-  const rows = (Array.isArray(payload?.results) ? payload.results : []).map((row) =>
-    normalizeMatrixCell(row, payload?.language || ''),
-  );
+  const source = failureRows || (Array.isArray(payload?.results) ? payload.results : []);
+  const rows = source.map((row) => normalizeMatrixCell(row, payload?.language || ''));
   if (!ui.lang || ui.lang === ALL_LANG) return rows;
   return rows.filter((row) => String(row.language || payload.language || 'python') === ui.lang);
 }
@@ -489,7 +512,9 @@ function renderHeatmap(matrix) {
     <div id="cmp-fail-panel" class="cmp-fail-panel" hidden></div>`;
 }
 
-function openCellPanel(serializer, standard) {
+let openToken = 0;
+
+function paintCellPanel(serializer, standard) {
   const rows = rowsForLang().filter(
     (row) =>
       matchesRow(row, serializer) &&
@@ -499,18 +524,22 @@ function openCellPanel(serializer, standard) {
   const fails = rows.filter((row) => row.outcome === 'fail' || row.outcome === 'error');
   const panel = document.getElementById('cmp-fail-panel');
   if (!panel) return;
-  ui.panel = { serializer, standard };
-  ui.serializer = serializer;
-  const sample = rows[0] || {};
+  const sample =
+    rows[0] ||
+    matrixForLang().find(
+      (cell) => matchesRow(cell, serializer) && String(cell.standard) === standard,
+    ) ||
+    {};
   const heading = `${serializerLabel(sample) || serializer} × ${standard}`;
   if (!fails.length) {
+    const quiet = quietCases(serializer, standard);
     panel.hidden = false;
     panel.innerHTML = `
       <div class="cmp-fail-head">
         <h3>${escapeHtml(heading)}</h3>
         <button type="button" class="tab-btn" id="cmp-fail-close">Close</button>
       </div>
-      <p class="section-help">No failures in this cell (${rows.length} case${rows.length === 1 ? '' : 's'} passed or skipped).</p>`;
+      <p class="section-help">No failures in this cell (${quiet} case${quiet === 1 ? '' : 's'} passed or skipped).</p>`;
     document.getElementById('cmp-fail-close')?.addEventListener('click', closeCellPanel);
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     syncHashQuiet();
@@ -528,7 +557,32 @@ function openCellPanel(serializer, standard) {
   syncHashQuiet();
 }
 
+function openCellPanel(serializer, standard) {
+  const panel = document.getElementById('cmp-fail-panel');
+  if (!panel) return;
+  ui.panel = { serializer, standard };
+  ui.serializer = serializer;
+  const token = ++openToken;
+  if (failureRows || Array.isArray(payload?.results)) {
+    paintCellPanel(serializer, standard);
+    return;
+  }
+  panel.hidden = false;
+  panel.innerHTML = '<p class="section-help">Loading failures…</p>';
+  loadFailures()
+    .then(() => {
+      if (token !== openToken) return;
+      paintCellPanel(serializer, standard);
+    })
+    .catch((err) => {
+      if (token !== openToken) return;
+      panel.hidden = false;
+      panel.innerHTML = `<p class="section-help">Could not load failure cases (${escapeHtml(err.message)}).</p>`;
+    });
+}
+
 function closeCellPanel() {
+  openToken += 1;
   ui.panel = null;
   const panel = document.getElementById('cmp-fail-panel');
   if (panel) {
@@ -537,18 +591,30 @@ function closeCellPanel() {
   }
 }
 
-function kpisFrom(rows) {
+function kpisFromMatrix(cells) {
   let passed = 0;
   let failed = 0;
   let skipped = 0;
   let errors = 0;
-  for (const row of rows) {
-    if (row.outcome === 'pass') passed += 1;
-    else if (row.outcome === 'fail') failed += 1;
-    else if (row.outcome === 'skip') skipped += 1;
-    else errors += 1;
+  for (const cell of cells || []) {
+    passed += Number(cell.passed) || 0;
+    failed += Number(cell.failed) || 0;
+    skipped += Number(cell.skipped) || 0;
+    errors += Number(cell.errors) || 0;
   }
-  return { passed, failed, skipped, errors, total: rows.length };
+  return { passed, failed, skipped, errors, total: passed + failed + skipped + errors };
+}
+
+/** Cases that passed or were skipped. Their text is not in the payload. */
+function quietCases(serializer, standard) {
+  let n = 0;
+  for (const cell of matrixForLang()) {
+    if (!matchesRow(cell, serializer)) continue;
+    if (String(cell.standard) !== standard) continue;
+    if (ui.format && String(cell.format) !== ui.format) continue;
+    n += (Number(cell.passed) || 0) + (Number(cell.skipped) || 0);
+  }
+  return n;
 }
 
 function renderLangTabs(tabIds) {
@@ -571,16 +637,16 @@ function renderMain(root) {
   const tabIds = langIds.length ? [...langIds, ALL_LANG] : [ALL_LANG];
   if (!ui.lang || !tabIds.includes(ui.lang)) ui.lang = langIds[0] || ALL_LANG;
 
-  const langRows = rowsForLang();
   const noSpec = ui.format === NO_SPEC;
   const allStandards = !ui.format;
-  const kpis = noSpec ? { passed: 0, failed: 0, skipped: 0, errors: 0, total: 0 } : kpisFrom(langRows);
+  const matrix = matrixForLang();
+  const langRows = rowsForLang();
+  const kpis = noSpec ? { passed: 0, failed: 0, skipped: 0, errors: 0, total: 0 } : kpisFromMatrix(matrix);
   const judged = kpis.passed + kpis.failed;
   const rate = judged ? kpis.passed / judged : null;
   const group = groupingArgs();
   const roster = rosterEntries(group);
   const noSpecList = noSpecEntries(ui.lang);
-  const matrix = matrixForLang();
   const formats = standardMenuOptions(group);
   const serializers = noSpec
     ? noSpecList.map((e) => e.key)
@@ -690,8 +756,7 @@ async function render() {
   const loc = parseHash();
   setComplianceView(loc.active);
   if (!loc.active) return;
-  await loadSerializerSources();
-  await loadPayload();
+  await Promise.all([loadSerializerSources(), loadPayload(), loadBenchVersions()]);
   if (loadError) {
     renderEmpty(
       root,
@@ -700,17 +765,18 @@ async function render() {
     );
     return;
   }
-  if (!payload || !Array.isArray(payload.results)) {
+  if (!payload || !Array.isArray(payload.matrix)) {
     renderEmpty(root, 'Compliance payload is empty.');
     return;
   }
-  await loadBenchVersions();
   applyHashToUi(loc);
   const langIds = languageIds();
   const tabIds = langIds.length ? [...langIds, ALL_LANG] : [ALL_LANG];
   if (ui.lang && !tabIds.includes(ui.lang)) ui.lang = langIds[0] || ALL_LANG;
   renderMain(root);
   if (loc.lang) syncHashQuiet();
+  // Case text is not needed for the table. Fetch it after the first paint.
+  loadFailures().catch((err) => console.warn('compliance failures', err));
 }
 
 function bindNav() {

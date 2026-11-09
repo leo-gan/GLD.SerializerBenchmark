@@ -2556,21 +2556,24 @@ def load_measured_versions() -> dict[tuple[str, str], str]:
     data_dir = ROOT / "dashboard" / "public" / "data"
     for path in sorted(data_dir.glob("*_latest.json.gz")):
         stem = path.name.removesuffix("_latest.json.gz")
-        if stem.startswith("stats_"):
-            continue
-        lang = stem
         try:
             payload = json.loads(gzip.open(path).read())
         except (OSError, json.JSONDecodeError) as exc:
             print(f"WARN skip versions in {path.name}: {exc}", file=sys.stderr)
             continue
-        items = ((payload.get("configs") or {}).get("serializers") or {}).get("items") or []
-        for it in items:
-            name = it.get("name")
-            ver = it.get("version")
-            if name and ver:
-                out[(lang, str(name))] = str(ver)
-        for g in ((payload.get("stats") or {}).get("groups") or []):
+        if stem.startswith("stats_"):
+            lang = stem.removeprefix("stats_")
+            groups = payload.get("groups") or []
+        else:
+            lang = stem
+            groups = (payload.get("stats") or {}).get("groups") or []
+            items = ((payload.get("configs") or {}).get("serializers") or {}).get("items") or []
+            for it in items:
+                name = it.get("name")
+                ver = it.get("version")
+                if name and ver:
+                    out[(lang, str(name))] = str(ver)
+        for g in groups:
             name = g.get("serializer")
             ver = g.get("serializer_version")
             if name and ver:

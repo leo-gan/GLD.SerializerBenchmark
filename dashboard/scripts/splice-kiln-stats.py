@@ -13,7 +13,6 @@ for that language is replaced.
 from __future__ import annotations
 
 import argparse
-import copy
 import csv
 import gzip
 import json
@@ -126,6 +125,8 @@ def _write_gz(path: Path, payload: dict) -> None:
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -289,13 +290,8 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
     for path in (suite_csv, tensor_csv):
         if not path.is_file():
             raise SystemExit(f"CSV not found: {path}")
-    payload_path = DATA / f"{lang}_latest.json.gz"
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    payload = _load_gz(payload_path)
     stats = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict):
-        raise SystemExit(f"{lang}: payload has no stats object")
     published = list(stats.get("groups") or [])
     suite_groups, suite_meta = _analyze(lang, suite_csv, "suite")
     tensor_groups, tensor_meta = _analyze(lang, tensor_csv, "tensor")
@@ -305,18 +301,12 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
     _validate(lang, tensor_groups, published, "tensor")
     new_groups = suite_groups + tensor_groups
     before = _census(published)
-    payload_before = _census(list(embedded.get("groups") or []))
-    if before != payload_before:
-        raise SystemExit(f"{lang}: stats and payload disagree before the splice")
 
     def _keep(groups: list) -> tuple[list, int]:
         kept = [group for group in groups if str(group.get("serializer") or "") != NAME]
         return kept, len(groups) - len(kept)
 
     stats_keep, stats_old = _keep(published)
-    payload_keep, payload_old = _keep(list(embedded.get("groups") or []))
-    if stats_old != payload_old:
-        raise SystemExit(f"{lang}: existing gld-kiln groups diverged")
     note = {
         "suite_csv": str(suite_csv.relative_to(REPO)),
         "tensor_csv": str(tensor_csv.relative_to(REPO)),
@@ -342,15 +332,9 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
         return
     stats["groups"] = stats_keep + new_groups
     stats["kiln_splice"] = note
-    embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
-    embedded["kiln_splice"] = copy.deepcopy(note)
-    payload["kiln_splice"] = copy.deepcopy(note)
     if _census(stats["groups"]) != before:
         raise SystemExit(f"{lang}: other serializers changed")
-    if _census(embedded["groups"]) != before:
-        raise SystemExit(f"{lang}: payload other serializers changed")
     _write_gz(stats_path, stats)
-    _write_gz(payload_path, payload)
     print(f"{lang}: wrote {len(new_groups)} gld-kiln groups")
 
 

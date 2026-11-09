@@ -9,11 +9,9 @@ It analyzes one Dagr CSV with the same statistics pipeline as analyze-benchmarks
 then appends schema-2.2 groups for the four Dagr layouts. On a re-run those
 layouts replace the previously spliced Dagr groups. Every other group stays.
 
-Both dashboard/public/data/<lang>_latest.json.gz and stats_<lang>_latest.json.gz
-gain the same 40 groups (4 layouts x 5 suite types x n=1 and n=100). The stats
-file is what Overview loads. Its groups already carry standard and data_set.
-The language payload's embedded groups are the same rows without those two
-fields; this script leaves that existing shape alone and only appends.
+The 40 groups (4 layouts x 5 suite types x n=1 and n=100) are written to
+stats_<lang>_latest.json.gz, which is what Overview loads. The language pack
+is run metadata and is left unchanged.
 """
 from __future__ import annotations
 
@@ -131,6 +129,8 @@ def _write_gz(path: Path, payload: dict) -> None:
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -334,36 +334,21 @@ def _summary_line(group: dict) -> str:
 
 
 def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
-    payload_path = DATA / f"{lang}_latest.json.gz"
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    if not payload_path.is_file() or not stats_path.is_file():
-        raise SystemExit(f"{lang}: missing {payload_path.name} or {stats_path.name}")
-    payload = _load_gz(payload_path)
+    if not stats_path.is_file():
+        raise SystemExit(f"{lang}: missing {stats_path.name}")
     stats = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict):
-        raise SystemExit(f"{lang}: payload has no stats object")
-    if embedded.get("schema_version") != "2.2" or stats.get("schema_version") != "2.2":
+    if stats.get("schema_version") != "2.2":
         raise SystemExit(f"{lang}: published schema is not 2.2")
 
     stats_groups = list(stats.get("groups") or [])
-    payload_groups = list(embedded.get("groups") or [])
-    if len(stats_groups) != len(payload_groups):
-        raise SystemExit(
-            f"{lang}: stats groups {len(stats_groups)} != payload groups {len(payload_groups)}"
-        )
-    for index, (left, right) in enumerate(zip(payload_groups, stats_groups)):
-        if _core(left) != _core(right):
-            raise SystemExit(f"{lang}: payload/stats group {index} diverged at {_core(left)} vs {_core(right)}")
-        if not right.get("standard") or not right.get("data_set"):
-            raise SystemExit(f"{lang}: stats group {index} {right.get('serializer')} has no standard")
+    for index, group in enumerate(stats_groups):
+        if not group.get("standard") or not group.get("data_set"):
+            raise SystemExit(f"{lang}: stats group {index} {group.get('serializer')} has no standard")
 
     fresh, meta = _analyze(lang, csv_path)
     new_groups = _validate_fresh(lang, fresh, stats_groups)
     stats_keep, stats_old = _split(lang, stats_groups)
-    payload_keep, payload_old = _split(lang, payload_groups)
-    if [_core(group) for group in stats_keep] != [_core(group) for group in payload_keep]:
-        raise SystemExit(f"{lang}: non-Dagr groups diverged between stats and payload")
 
     before_columnar = _counts(stats_keep, COLUMNAR_TYPES)
     before_suite = _counts(stats_keep, SUITE_TYPES)
@@ -398,51 +383,29 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
         return
 
     stats_before = copy.deepcopy(stats_keep)
-    payload_before = copy.deepcopy(payload_keep)
     columnar_stats = copy.deepcopy(stats.get("columnar_splice"))
-    columnar_payload = copy.deepcopy(payload.get("columnar_splice"))
-    columnar_embedded = copy.deepcopy(embedded.get("columnar_splice"))
-    payload_note = copy.deepcopy(note)
-    embedded_note = copy.deepcopy(note)
 
     stats["groups"] = stats_keep + new_groups
     stats["dagr_splice"] = note
-    embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
-    embedded["dagr_splice"] = embedded_note
-    payload["dagr_splice"] = payload_note
 
     if stats["groups"][: len(stats_before)] != stats_before:
         raise SystemExit(f"{lang}: non-Dagr stats groups changed")
-    if embedded["groups"][: len(payload_before)] != payload_before:
-        raise SystemExit(f"{lang}: non-Dagr payload groups changed")
     if _counts(stats["groups"], COLUMNAR_TYPES) != before_columnar:
         raise SystemExit(f"{lang}: columnar counts changed")
     if _counts(stats_keep, SUITE_TYPES) != before_suite:
         raise SystemExit(f"{lang}: non-Dagr suite counts changed")
     if stats.get("columnar_splice") != columnar_stats:
         raise SystemExit(f"{lang}: columnar_splice on stats changed")
-    if payload.get("columnar_splice") != columnar_payload:
-        raise SystemExit(f"{lang}: columnar_splice on payload changed")
-    if embedded.get("columnar_splice") != columnar_embedded:
-        raise SystemExit(f"{lang}: columnar_splice inside payload stats changed")
-    if len(stats["groups"]) != len(embedded["groups"]):
-        raise SystemExit(f"{lang}: spliced lengths diverged")
     dagr_cells = {_cell(group) for group in stats["groups"] if group.get("serializer") in DAGR_SET}
     if dagr_cells != EXPECTED_CELLS:
         raise SystemExit(f"{lang}: spliced Dagr cells are incomplete")
 
     _write_gz(stats_path, stats)
-    _write_gz(payload_path, payload)
 
     written_stats = _load_gz(stats_path)
-    written_payload = _load_gz(payload_path)
     if written_stats.get("groups") != stats["groups"]:
         raise SystemExit(f"{lang}: reread stats groups do not match the write")
-    if written_payload.get("stats", {}).get("groups") != embedded["groups"]:
-        raise SystemExit(f"{lang}: reread payload groups do not match the write")
-    if len(written_stats["groups"]) != len(written_payload["stats"]["groups"]):
-        raise SystemExit(f"{lang}: written group counts diverged")
-    print(f"{lang}: wrote {len(new_groups)} Dagr groups into {stats_path.name} and {payload_path.name}")
+    print(f"{lang}: wrote {len(new_groups)} Dagr groups into {stats_path.name}")
 
 
 def main(argv: list[str] | None = None) -> int:
