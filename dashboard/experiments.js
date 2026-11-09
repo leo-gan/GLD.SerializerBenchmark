@@ -6,6 +6,7 @@
  * New folders appear automatically after sync.
  */
 import './experiments.css';
+import { escapeHtml, fetchJsonMaybeGzip } from './page.js';
 import { formatSig, formatRelativeCell, formatIntGrouped } from './format.js';
 import { loadSerializerSources, serializerNameHtml } from './serializer-sources.js';
 import {
@@ -95,32 +96,6 @@ function sizeCell(value, best) {
   return `<td class="${className}">${escapeHtml(text)}</td>`;
 }
 
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: ${res.status}`);
-  return res.json();
-}
-
-async function fetchGzipJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: ${res.status}`);
-  const buf = await res.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
-  if (!isGzip) {
-    return JSON.parse(new TextDecoder().decode(bytes));
-  }
-  if (typeof DecompressionStream === 'undefined') {
-    throw new Error('gzip payload but DecompressionStream is unavailable');
-  }
-  const ds = new DecompressionStream('gzip');
-  const writer = ds.writable.getWriter();
-  writer.write(bytes);
-  writer.close();
-  const text = await new Response(ds.readable).text();
-  return JSON.parse(text);
-}
-
 function parseHash() {
   return parseExperimentsHash(window.location.hash);
 }
@@ -202,7 +177,7 @@ let graphUi = {
 async function loadCatalog() {
   if (catalog || catalogError) return;
   try {
-    catalog = await fetchJson(CATALOG_URL);
+    catalog = await fetchJsonMaybeGzip(CATALOG_URL);
   } catch (err) {
     catalogError = err;
   }
@@ -211,7 +186,7 @@ async function loadCatalog() {
 async function loadPayload(id, payloadPath) {
   if (payloadCache.has(id)) return payloadCache.get(id);
   const url = payloadPath || `experiments/${id}.json.gz`;
-  const data = await fetchGzipJson(`data/${url.replace(/^data\//, '')}`);
+  const data = await fetchJsonMaybeGzip(`data/${url.replace(/^data\//, '')}`);
   payloadCache.set(id, data);
   return data;
 }
@@ -230,14 +205,6 @@ function setExperimentsView(on) {
     });
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
-}
-
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 function selectHtml(id, label, values, current, labelFn) {

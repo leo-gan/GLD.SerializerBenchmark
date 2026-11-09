@@ -3,6 +3,7 @@
  * Do not import charts.js or main.js.
  */
 import { formatSig, formatIntGrouped, formatRelativeCell, LATENCY_US } from './format.js';
+import { escapeHtml } from './page.js';
 import {
   compareLabel,
   competingRows,
@@ -281,14 +282,6 @@ export function wrapYTick(row, rows) {
 
 function plotHeight(n, compact = false) {
   return Math.max(280, n * (compact ? 26 : 36) + 48);
-}
-
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 function bestCompared(rows, key) {

@@ -10,6 +10,7 @@
  */
 
 import { CATALOG_BY_KEY } from './compliance-catalog.js';
+import { escapeHtml } from './page.js';
 
 const DATA_URL = 'data/serializer-sources.json';
 
@@ -66,14 +67,6 @@ export function serializerVersion(language, name) {
   const entry = languages[String(language)]?.[String(name)];
   const ver = entry && entry.version;
   return typeof ver === 'string' ? ver : '';
-}
-
-export function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 /**

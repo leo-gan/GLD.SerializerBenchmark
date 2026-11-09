@@ -15,6 +15,7 @@ import {
   resizeCharts,
 } from './charts.js';
 import { paretoOptimalGroups } from './pareto.js';
+import { escapeHtml, fetchJsonMaybeGzip } from './page.js';
 import {
   formatSig,
   formatIntGrouped,
@@ -1091,23 +1092,6 @@ function updateHistoryUIForLanguage() {
       if (b) b.disabled = true;
     }
   );
-}
-
-/**
- * Fetch JSON or gzip-JSON from a URL.
- * @param {string} url
- * @returns {Promise<object|null>}
- */
-async function fetchJsonMaybeGzip(url) {
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  try {
-    return await res.clone().json();
-  } catch {
-    const ds = new DecompressionStream('gzip');
-    const text = await new Response(res.body.pipeThrough(ds)).text();
-    return JSON.parse(text);
-  }
 }
 
 /**
@@ -3942,13 +3926,6 @@ function renderCompareMatrix() {
   });
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function copyRosterMarkdown() {
   const metricSpecs = rosterMetricKeys();
