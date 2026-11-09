@@ -28,6 +28,7 @@ if str(LIB) not in sys.path:
     sys.path.insert(0, str(LIB))
 
 from experiment_config import load_experiment, libraries_by_language
+from language_results import load_language_blocks, saved_language
 
 NS_PER_US = 1000.0
 MEMORY_MODES = {"bytes", "string", "buffer"}
@@ -433,11 +434,9 @@ def experiment_payload(cfg: dict, languages: dict) -> dict:
 
 
 def write_outputs(language: str, pack: dict) -> None:
+    """Write the language page. The numbers live in the combined results.json."""
     dest = HERE / language
     dest.mkdir(parents=True, exist_ok=True)
-    (dest / "results.json").write_text(
-        json.dumps(pack, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
     (dest / "results.md").write_text(write_language_markdown(language, pack), encoding="utf-8")
 
 
@@ -597,7 +596,7 @@ def write_aggregate(cfg: dict, languages: dict) -> Path:
     return out
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", help="Language id (python, go, …)")
     parser.add_argument("--csv", type=Path, help="Raw CSV for that language")
@@ -612,19 +611,20 @@ def main() -> int:
         default=HERE / CONFIG_NAME,
         help="Path to experiment.yaml",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     cfg = _load_cfg(args.config)
     catalog = libraries_by_language(cfg)
 
     if args.all:
+        saved = load_language_blocks(HERE)
         languages = {}
         for lang in catalog:
             csv_path = _latest_csv(lang)
             if csv_path is None:
-                existing = HERE / lang / "results.json"
-                if existing.is_file():
-                    languages[lang] = json.loads(existing.read_text(encoding="utf-8"))
-                    print(f"{lang}: kept existing results.json (no CSV)")
+                block = saved_language(HERE, lang, saved)
+                if block is not None:
+                    languages[lang] = block
+                    print(f"{lang}: kept saved results (no CSV)")
                     continue
                 languages[lang] = {
                     "status": "missing",
@@ -648,16 +648,19 @@ def main() -> int:
 
     pack = summarize_language(args.language, args.csv, catalog, cfg.get("analysis") or {})
     write_outputs(args.language, pack)
-    # Refresh the combined file from whatever language JSON we already have.
+    # Other languages stay as saved in the combined file. One language folder
+    # does not keep a second copy of its block.
+    saved = load_language_blocks(HERE)
     languages = {}
     for lang in catalog:
-        p = HERE / lang / "results.json"
-        if p.is_file():
-            languages[lang] = json.loads(p.read_text(encoding="utf-8"))
-        elif lang == args.language:
+        if lang == args.language:
             languages[lang] = pack
+            continue
+        block = saved_language(HERE, lang, saved)
+        if block is not None:
+            languages[lang] = block
     write_aggregate(cfg, languages)
-    print(f"Wrote {HERE / args.language / 'results.json'}")
+    print(f"Wrote {HERE / 'results.json'}")
     return 0 if pack["status"] == "ok" else 1
 
 

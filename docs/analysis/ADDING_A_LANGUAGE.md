@@ -172,7 +172,7 @@ For **each** `experiments/*/experiment.yaml` where this language can answer the 
 3. Add the language to that experiment’s parent `run.sh` `RUNNER` map (and to `experiment_config.py` `RUNNERS` / the schema enum — once).
 4. **Time it:** `./experiments/<id>/run.sh <lang>`. Then `python3 dashboard/scripts/sync-experiments.py`.
 
-`summarize.py --language` already refreshes the combined `results.json`. A one-language run must **not** call `summarize.py --all`: leftover CSVs for other languages would rewrite their pages. `--all` must keep an existing `<lang>/results.json` when that folder has no CSV.
+`summarize.py --language` already refreshes the combined `results.json`. A one-language run must **not** call `summarize.py --all`: leftover CSVs for other languages would rewrite their pages. `--all` keeps a language that has no CSV from that combined file.
 
 [prepare-pr](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/.grok/skills/prepare-pr/SKILL.md) step 7 runs `run-experiments-for-langs.sh` for every changed language. Do not skip it.
 
