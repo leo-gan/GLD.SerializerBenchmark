@@ -11,12 +11,19 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    as_whole as _norm,
+    base_type as _base,
+    count_bases as _counts,
+    error_row_count as _error_rows,
+    require_finite as _finite,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
@@ -51,16 +58,6 @@ DEFAULT_CSVS = {
 }
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
 def _core(group: dict) -> tuple:
     return (
         group.get("serializer"),
@@ -73,43 +70,12 @@ def _core(group: dict) -> tuple:
     )
 
 
-def _counts(groups: list, names: tuple[str, ...]) -> dict[str, int]:
-    out = {name: 0 for name in names}
-    for group in groups:
-        base = _base(group.get("test_data"))
-        if base in out:
-            out[base] += 1
-    return out
-
-
-def _finite(value, path: str) -> None:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise SystemExit(f"non-finite number at {path}")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _finite(item, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            _finite(item, f"{path}[{index}]")
-
-
 def _allowed_version(lang: str, name: str) -> str:
     if name in DAGR_NAMES:
         return DAGR_VERSION
     if lang == "python" and name in PYTHON_EXTRA:
         return PYTHON_EXTRA[name]
     raise SystemExit(f"{lang}: serializer {name!r} is not on the graph allow-list")
-
-
-def _error_rows(csv_path: Path) -> int:
-    err_path = csv_path.with_name(csv_path.stem + ".errors.csv")
-    if not err_path.is_file():
-        return 0
-    with err_path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.reader(handle))
-    return max(0, len(rows) - 1) if rows else 0
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
@@ -283,7 +249,6 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"{lang}: CSV not found: {path}")
         splice_language(lang, path, dry_run=args.dry_run)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

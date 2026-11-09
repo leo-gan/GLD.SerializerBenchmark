@@ -23,6 +23,12 @@ from pathlib import Path
 
 from snapshot_io import load_json_gz, write_json_gz
 
+from splice_rows import (
+    as_whole as _norm,
+    base_type as _base,
+    count_bases as _counts,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
@@ -55,29 +61,10 @@ DEFAULT_CSVS = {
 CORE = ("python", "cpp", "csharp", "go", "java", "rust")
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
 def _ident(group: dict) -> tuple:
     return tuple(_norm(group.get(key)) for key in _EXPORT_IDENTITY_KEYS) + (
         _norm(group.get("StreamMode")),
     )
-
-
-def _counts(groups: list) -> dict[str, int]:
-    out = {name: 0 for name in ROW_TYPES}
-    for group in groups:
-        base = _base(group.get("test_data"))
-        if base in out:
-            out[base] += 1
-    return out
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
@@ -118,7 +105,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
         raise SystemExit(f"{lang}: published schema is {stats.get('schema_version')}, expected 2.2")
 
     before_groups = list(stats.get("groups") or [])
-    before_counts = _counts(before_groups)
+    before_counts = _counts(before_groups, ROW_TYPES)
     fresh, meta = _analyze(lang, csv_path)
     expected = set(allow_list(lang, "columnar"))
     got = set(meta["serializers"])
@@ -141,7 +128,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     kept = [group for group in before_groups if _base(group.get("test_data")) not in COLUMNAR_TYPES]
     replaced = len(before_groups) - len(kept)
     stats["groups"] = kept + added
-    after_counts = _counts(stats["groups"])
+    after_counts = _counts(stats["groups"], ROW_TYPES)
     if after_counts != before_counts:
         raise SystemExit(f"{lang}: row-type counts changed {before_counts} -> {after_counts}")
 
@@ -209,7 +196,6 @@ def main(argv: list[str] | None = None) -> int:
     for lang, path in jobs:
         splice_language(lang, path)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

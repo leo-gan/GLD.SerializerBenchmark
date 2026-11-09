@@ -14,12 +14,18 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    as_whole as _norm,
+    base_type as _base,
+    error_row_count as _error_rows,
+    require_finite as _finite,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
@@ -99,38 +105,6 @@ RUNS = {
         "tensor": "logs/zig/2026-10-21-kiln-zig-tensor.csv",
     },
 }
-
-
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
-def _finite(value, path: str) -> None:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise SystemExit(f"non-finite number at {path}")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _finite(item, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            _finite(item, f"{path}[{index}]")
-
-
-def _error_rows(csv_path: Path) -> int:
-    err_path = csv_path.with_name(csv_path.stem + ".errors.csv")
-    if not err_path.is_file():
-        return 0
-    with err_path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.reader(handle))
-    return max(0, len(rows) - 1) if rows else 0
 
 
 def _census(groups: list) -> dict[tuple, int]:
@@ -329,7 +303,6 @@ def main(argv: list[str] | None = None) -> int:
     for lang in langs:
         splice_language(lang, dry_run=args.dry_run)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
