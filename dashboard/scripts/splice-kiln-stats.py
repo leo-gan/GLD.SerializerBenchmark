@@ -21,17 +21,16 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    load_records,
+    refuse_error_rows,
     export_stats,
     as_whole as _norm,
     base_type as _base,
-    error_row_count as _error_rows,
     require_finite as _finite,
 )
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
-
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
 
 DATA = REPO / "dashboard" / "public" / "data"
 NAME = "gld-kiln"
@@ -133,16 +132,11 @@ def _check_sizes(lang: str, csv_path: Path, kind: str) -> None:
 
 
 def _analyze(lang: str, csv_path: Path, kind: str) -> tuple[list, dict]:
-    if _error_rows(csv_path):
-        raise SystemExit(f"{csv_path}: refusing to publish; error rows present")
+    refuse_error_rows(csv_path)
     _check_sizes(lang, csv_path, kind)
     allowed = SUITE_TYPES if kind == "suite" else TENSOR_TYPES
     want_n = {1, 100} if kind == "suite" else {1}
-    records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
-    if skipped:
-        raise SystemExit(f"{csv_path}: parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    records = load_records(csv_path, lang)
     names = {str(row.get("SerializerName") or "") for row in records}
     if names != {NAME}:
         raise SystemExit(f"{csv_path}: serializers {sorted(names)}")

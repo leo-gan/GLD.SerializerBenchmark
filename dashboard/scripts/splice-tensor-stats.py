@@ -18,18 +18,18 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    load_records,
+    refuse_error_rows,
     export_stats,
     as_whole as _norm,
     base_type as _base,
     count_bases as _counts,
-    error_row_count as _error_rows,
     require_finite as _finite,
 )
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
 
 DATA = REPO / "dashboard" / "public" / "data"
 LANGUAGE = "python"
@@ -51,14 +51,8 @@ MIN_REPS = 100
 
 
 def _analyze(csv_path: Path) -> tuple[dict, dict]:
-    error_rows = _error_rows(csv_path)
-    if error_rows:
-        raise SystemExit(f"{csv_path}: refusing to publish; {error_rows} error row(s)")
-    records, skipped = parse_csv_file(str(csv_path), language_hint=LANGUAGE)
-    if skipped:
-        raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    refuse_error_rows(csv_path)
+    records = load_records(csv_path, LANGUAGE)
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if reps != [MIN_REPS]:
         raise SystemExit(f"{csv_path}: repetitions {reps}; expected {MIN_REPS}")

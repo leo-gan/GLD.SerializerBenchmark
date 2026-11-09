@@ -24,6 +24,7 @@ from pathlib import Path
 from snapshot_io import load_json_gz, write_json_gz
 
 from splice_rows import (
+    load_records,
     export_stats,
     as_whole as _norm,
     base_type as _base,
@@ -33,7 +34,6 @@ from splice_rows import (
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
 from benchmark_analysis.serializer_data_sets import allow_list  # noqa: E402
 from benchmark_analysis.stats import _EXPORT_IDENTITY_KEYS  # noqa: E402
 
@@ -64,11 +64,7 @@ def _ident(group: dict) -> tuple:
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
-    records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
-    if skipped:
-        raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    records = load_records(csv_path, lang)
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if not reps or min(reps) < MIN_REPS:
         raise SystemExit(

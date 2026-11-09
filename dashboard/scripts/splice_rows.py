@@ -43,6 +43,27 @@ def error_row_count(csv_path: Path) -> int:
     return max(0, len(rows) - 1) if rows else 0
 
 
+def refuse_error_rows(csv_path) -> None:
+    """A sidecar errors.csv with any data row means the run is not publishable."""
+    count = error_row_count(csv_path)
+    if count:
+        raise SystemExit(f"{csv_path}: refusing to publish; {count} error row(s)")
+
+
+def load_records(csv_path, language: str) -> list:
+    """Parse a splice CSV. Skipped rows and an empty file are not publishable."""
+    from benchmark_analysis.parser import parse_csv_file
+
+    records, skipped = parse_csv_file(str(csv_path), language_hint=language)
+    if skipped:
+        raise SystemExit(
+            f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)"
+        )
+    if not records:
+        raise SystemExit(f"{csv_path}: no records")
+    return records
+
+
 def export_stats(records: list, language: str) -> dict:
     """Turn clean rows into the schema 2.2 document the dashboard publishes."""
     from benchmark_analysis.stats import (
