@@ -82,6 +82,16 @@ impl Write for CountWrite<'_> {
     }
 }
 
+/// Run a native stream encode and return how many bytes it wrote.
+pub(crate) fn counted_write(
+    w: &mut dyn Write,
+    body: impl FnOnce(&mut dyn Write) -> Result<()>,
+) -> Result<usize> {
+    let mut counter = CountWrite { inner: w, n: 0 };
+    body(&mut counter)?;
+    Ok(counter.n)
+}
+
 /// How stream mode is implemented (mirrors Python `stream_mode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StreamMode {
@@ -242,6 +252,19 @@ mod tests {
     use super::json::SerdeJson;
     use super::*;
     use crate::data::{all_fixtures, check_cell_fidelity, fidelity, make_one, Fixture, TypeConfig};
+
+    #[test]
+    fn counted_write_reports_bytes_written() {
+        let mut buf = Vec::new();
+        let n = counted_write(&mut buf, |out| {
+            out.write_all(b"ab")?;
+            out.write_all(b"c")?;
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(n, 3);
+        assert_eq!(buf, b"abc");
+    }
 
     fn roundtrip(ser: &mut dyn BenchSerializer, fx: &Fixture) {
         ser.prepare(fx).expect("prepare");

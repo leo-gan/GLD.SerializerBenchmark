@@ -31,7 +31,7 @@ use serde_avro_fast::{from_datum_reader, from_datum_slice, to_datum, Schema};
 use std::io::{BufReader, Cursor, Read, Write};
 use std::sync::OnceLock;
 
-use super::{ver, BenchSerializer, CountWrite, NativeKind, StreamMode};
+use super::{counted_write, ver, BenchSerializer, NativeKind, StreamMode};
 
 // ---------------------------------------------------------------------------
 // Schemas (field names match serde / data catalog snake_case)
@@ -306,9 +306,10 @@ impl BenchSerializer for AvroFastSer {
             .ser_config
             .as_mut()
             .context("serde_avro_fast: prepare not called")?;
-        let mut counter = CountWrite { inner: w, n: 0 };
-        write_datum(cfg, fixture, &mut counter)?;
-        Ok(counter.n)
+        counted_write(w, |out| {
+            write_datum(cfg, fixture, out)?;
+            Ok(())
+        })
     }
 
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {

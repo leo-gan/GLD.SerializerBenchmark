@@ -43,16 +43,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var bytes = _ser(NativeOf(serializable));
-            outputStream.Write(bytes, 0, bytes.Length);
+            WriteAll(outputStream, _ser(NativeOf(serializable)));
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            inputStream.Seek(0, SeekOrigin.Begin);
-            using var ms = new MemoryStream();
-            inputStream.CopyTo(ms);
-            return _deser(ms.ToArray());
+            return _deser(ReadAll(inputStream, rewind: true));
         }
     }
 }

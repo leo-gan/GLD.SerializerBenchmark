@@ -71,17 +71,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var bytes = Encode(serializable);
-            outputStream.Write(bytes, 0, bytes.Length);
+            WriteAll(outputStream, Encode(serializable));
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            if (inputStream.CanSeek)
-                inputStream.Seek(0, SeekOrigin.Begin);
-            using var ms = new MemoryStream();
-            inputStream.CopyTo(ms);
-            var bytes = ms.ToArray();
+            var bytes = ReadAll(inputStream, rewind: false);
             return IsTableProject ? Project(bytes) : Decode(bytes);
         }
 

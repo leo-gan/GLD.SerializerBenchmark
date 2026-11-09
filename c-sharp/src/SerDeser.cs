@@ -59,5 +59,21 @@ namespace GLD.SerializerBenchmark
 
         public abstract void Serialize(object serializable, Stream outputStream);
         public abstract object Deserialize(Stream inputStream);
+
+        /// Write a finished buffer. Used by codecs whose stream path is the byte path.
+        protected static void WriteAll(Stream output, byte[] bytes)
+        {
+            output.Write(bytes, 0, bytes.Length);
+        }
+
+        /// Read a stream into a buffer. rewind=false seeks only when the stream can.
+        protected static byte[] ReadAll(Stream input, bool rewind)
+        {
+            if (rewind || input.CanSeek)
+                input.Seek(0, SeekOrigin.Begin);
+            using var ms = new MemoryStream();
+            input.CopyTo(ms);
+            return ms.ToArray();
+        }
     }
 }
