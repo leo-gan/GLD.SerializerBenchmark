@@ -18,12 +18,12 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
-import gzip
-import json
 import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from snapshot_io import load_json_gz, write_json_gz
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
@@ -108,29 +108,6 @@ def _counts(groups: list, names: tuple[str, ...]) -> dict[str, int]:
         if base in out:
             out[base] += 1
     return out
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _dump(payload: dict) -> str:
-    # Match the published files: compact, default ensure_ascii, no trailing newline.
-    return json.dumps(payload, separators=(",", ":"))
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = _dump(payload).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -337,7 +314,7 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
     if not stats_path.is_file():
         raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     if stats.get("schema_version") != "2.2":
         raise SystemExit(f"{lang}: published schema is not 2.2")
 
@@ -400,9 +377,9 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
     if dagr_cells != EXPECTED_CELLS:
         raise SystemExit(f"{lang}: spliced Dagr cells are incomplete")
 
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
 
-    written_stats = _load_gz(stats_path)
+    written_stats = load_json_gz(stats_path)
     if written_stats.get("groups") != stats["groups"]:
         raise SystemExit(f"{lang}: reread stats groups do not match the write")
     print(f"{lang}: wrote {len(new_groups)} Dagr groups into {stats_path.name}")

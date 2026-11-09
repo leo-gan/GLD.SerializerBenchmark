@@ -14,12 +14,12 @@ from __future__ import annotations
 
 import argparse
 import csv
-import gzip
-import json
 import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from snapshot_io import load_json_gz, write_json_gz
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
@@ -109,24 +109,6 @@ def _norm(value):
     if isinstance(value, float) and value.is_integer():
         return int(value)
     return value
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -291,7 +273,7 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
         if not path.is_file():
             raise SystemExit(f"CSV not found: {path}")
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     published = list(stats.get("groups") or [])
     suite_groups, suite_meta = _analyze(lang, suite_csv, "suite")
     tensor_groups, tensor_meta = _analyze(lang, tensor_csv, "tensor")
@@ -334,7 +316,7 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
     stats["kiln_splice"] = note
     if _census(stats["groups"]) != before:
         raise SystemExit(f"{lang}: other serializers changed")
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(f"{lang}: wrote {len(new_groups)} gld-kiln groups")
 
 

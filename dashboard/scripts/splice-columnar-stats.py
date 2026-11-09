@@ -17,11 +17,11 @@ is run metadata and does not carry a second copy of these rows.
 from __future__ import annotations
 
 import argparse
-import gzip
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from snapshot_io import load_json_gz, write_json_gz
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
@@ -80,24 +80,6 @@ def _counts(groups: list) -> dict[str, int]:
     return out
 
 
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
-
-
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
     records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
     if skipped:
@@ -131,7 +113,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
     if not stats_path.is_file():
         raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     if stats.get("schema_version") != "2.2":
         raise SystemExit(f"{lang}: published schema is {stats.get('schema_version')}, expected 2.2")
 
@@ -182,7 +164,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     }
     stats["columnar_splice"] = note
 
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(
         f"{lang}: replaced {replaced} columnar groups with {len(added)}, "
         f"row counts {after_counts}, serializers {meta['serializers']}"
