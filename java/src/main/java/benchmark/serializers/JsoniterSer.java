@@ -9,8 +9,6 @@ import com.jsoniter.spi.DecodingMode;
 import com.jsoniter.spi.JsoniterSpi;
 import com.jsoniter.spi.TypeLiteral;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
@@ -71,18 +69,6 @@ public final class JsoniterSer implements BenchSerializer {
   @Override
   public Object deserializeBytes(byte[] data) {
     return JsonIterator.deserialize(CFG, data, typeLiteral);
-  }
-
-  @Override
-  public int serializeStream(Fixture fx, OutputStream out) throws Exception {
-    byte[] b = serializeBytes(fx);
-    out.write(b);
-    return b.length;
-  }
-
-  @Override
-  public Object deserializeStream(InputStream in) throws Exception {
-    return deserializeBytes(in.readAllBytes());
   }
 
   private record ListType(Class<?> el) implements java.lang.reflect.ParameterizedType {

@@ -5,8 +5,6 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 
 /**
@@ -54,18 +52,6 @@ public final class Fastjson2Ser implements BenchSerializer {
   @Override
   public Object deserializeBytes(byte[] data) {
     return JSON.parseObject(data, type, JSONReader.Feature.FieldBased);
-  }
-
-  @Override
-  public int serializeStream(Fixture fx, OutputStream out) throws Exception {
-    byte[] b = serializeBytes(fx);
-    out.write(b);
-    return b.length;
-  }
-
-  @Override
-  public Object deserializeStream(InputStream in) throws Exception {
-    return deserializeBytes(in.readAllBytes());
   }
 
   private record ParameterizedList(Class<?> el) implements java.lang.reflect.ParameterizedType {

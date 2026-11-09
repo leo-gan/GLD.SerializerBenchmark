@@ -60,12 +60,6 @@ class CapnProtoSer : BenchSerializer {
         return readRoot(reader)
     }
 
-    override fun serializeStream(fx: Fixture, out: java.io.OutputStream): Int {
-        val raw = serializeBytes(fx)
-        out.write(raw)
-        return raw.size
-    }
-
     override fun deserializeStream(input: java.io.InputStream): Any {
         val reader = Serialize.read(Channels.newChannel(input))
         return readRoot(reader)
