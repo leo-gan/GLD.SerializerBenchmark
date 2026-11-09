@@ -10,7 +10,6 @@ Suite, columnar, graph, and array groups stay.
 from __future__ import annotations
 
 import argparse
-import copy
 import csv
 import gzip
 import json
@@ -72,6 +71,8 @@ def _write_gz(path: Path, payload: dict) -> None:
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -228,17 +229,11 @@ def select_language(language: str) -> None:
 
 
 def splice(csv_path: Path, *, dry_run: bool) -> None:
-    payload_path = DATA / f"{LANGUAGE}_latest.json.gz"
     stats_path = DATA / f"stats_{LANGUAGE}_latest.json.gz"
-    payload = _load_gz(payload_path)
     stats = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict):
-        raise SystemExit("python: payload has no stats object")
     fresh, meta = _analyze(csv_path)
     new_groups = _validate_fresh(fresh, list(stats.get("groups") or []))
     stats_keep, stats_old = _split(list(stats.get("groups") or []))
-    payload_keep, payload_old = _split(list(embedded.get("groups") or []))
     before_suite = _counts(stats_keep, SUITE_TYPES)
     before_array = _counts(stats_keep, ARRAY_TYPES)
     note = {
@@ -259,21 +254,15 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
     }
     print(f"{LANGUAGE}: {meta['rows']} rows, {len(new_groups)} groups, replace {len(stats_old)}")
     if dry_run:
-        print("python: dry-run, snapshots not written")
+        print(f"{LANGUAGE}: dry-run, snapshots not written")
         return
-    if len(stats_old) != len(payload_old):
-        raise SystemExit("python: stats/payload tensor groups diverged")
     stats["groups"] = stats_keep + new_groups
     stats["tensor_splice"] = note
-    embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
-    embedded["tensor_splice"] = copy.deepcopy(note)
-    payload["tensor_splice"] = copy.deepcopy(note)
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
         raise SystemExit("python: suite counts changed")
     if _counts(stats["groups"], ARRAY_TYPES) != before_array:
         raise SystemExit("python: array counts changed")
     _write_gz(stats_path, stats)
-    _write_gz(payload_path, payload)
     print(f"{LANGUAGE}: wrote {len(new_groups)} tensor groups")
 
 

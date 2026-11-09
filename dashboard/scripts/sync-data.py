@@ -88,76 +88,33 @@ def _carry_spliced_groups(lang, existing_stats, new_stats):
     print(f"{lang}: carried {len(carried)} spliced groups from the previous snapshot")
 
 
-def _refuse_columnar_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase spliced columnar groups."""
-    lost = (_base_types(existing_stats) & _COLUMNAR_TYPES) - _base_types(new_stats)
-    if not lost:
-        return
-    if os.environ.get("DASHBOARD_REPLACE_COLUMNAR", "").strip().lower() in ("1", "true", "yes"):
-        print(f"WARNING: {lang} replacing snapshot and dropping columnar types {sorted(lost)}")
-        return
-    print(f"ERROR: {lang} snapshot has columnar types {sorted(lost)} that this sync would drop.")
-    print("That snapshot was built by splice-columnar-stats.py. Refusing to overwrite.")
-    print("Set DASHBOARD_REPLACE_COLUMNAR=1 to replace the snapshot anyway.")
-    sys.exit(1)
+# A suite sync must not erase groups a splice script added. The flag replaces
+# that splice on purpose. Dagr is matched by serializer name; the others by type.
+_SPLICE_GUARDS = (
+    ("DASHBOARD_REPLACE_COLUMNAR", _COLUMNAR_TYPES, None, "columnar types", "splice-columnar-stats.py"),
+    ("DASHBOARD_REPLACE_DAGR", None, _DAGR_SERIALIZERS, "Dagr serializers", "splice-dagr-stats.py"),
+    ("DASHBOARD_REPLACE_GRAPH", _GRAPH_TYPES, None, "graph types", "splice-graph-stats.py"),
+    ("DASHBOARD_REPLACE_ARRAY", _ARRAY_TYPES, None, "array types", "splice-array-stats.py"),
+    ("DASHBOARD_REPLACE_TENSOR", _TENSOR_TYPES, None, "tensor types", "splice-tensor-stats.py"),
+)
 
 
-def _refuse_dagr_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase spliced Dagr serializers.
-
-    A later full-matrix stats file that still contains the dagr-* names passes.
-    """
-    lost = (_serializer_names(existing_stats) & _DAGR_SERIALIZERS) - _serializer_names(new_stats)
-    if not lost:
-        return
-    if os.environ.get("DASHBOARD_REPLACE_DAGR", "").strip().lower() in ("1", "true", "yes"):
-        print(f"WARNING: {lang} replacing snapshot and dropping Dagr serializers {sorted(lost)}")
-        return
-    print(f"ERROR: {lang} snapshot has Dagr serializers {sorted(lost)} that this sync would drop.")
-    print("That snapshot was built by splice-dagr-stats.py. Refusing to overwrite.")
-    print("Set DASHBOARD_REPLACE_DAGR=1 to replace the snapshot anyway.")
-    sys.exit(1)
-
-
-def _refuse_graph_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase spliced graph groups."""
-    lost = (_base_types(existing_stats) & _GRAPH_TYPES) - _base_types(new_stats)
-    if not lost:
-        return
-    if os.environ.get("DASHBOARD_REPLACE_GRAPH", "").strip().lower() in ("1", "true", "yes"):
-        print(f"WARNING: {lang} replacing snapshot and dropping graph types {sorted(lost)}")
-        return
-    print(f"ERROR: {lang} snapshot has graph types {sorted(lost)} that this sync would drop.")
-    print("That snapshot was built by splice-graph-stats.py. Refusing to overwrite.")
-    print("Set DASHBOARD_REPLACE_GRAPH=1 to replace the snapshot anyway.")
-    sys.exit(1)
-
-def _refuse_array_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase spliced array groups."""
-    lost = (_base_types(existing_stats) & _ARRAY_TYPES) - _base_types(new_stats)
-    if not lost:
-        return
-    if os.environ.get("DASHBOARD_REPLACE_ARRAY", "").strip().lower() in ("1", "true", "yes"):
-        print(f"WARNING: {lang} replacing snapshot and dropping array types {sorted(lost)}")
-        return
-    print(f"ERROR: {lang} snapshot has array types {sorted(lost)} that this sync would drop.")
-    print("That snapshot was built by splice-array-stats.py. Refusing to overwrite.")
-    print("Set DASHBOARD_REPLACE_ARRAY=1 to replace the snapshot anyway.")
-    sys.exit(1)
-
-
-def _refuse_tensor_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase spliced tensor groups."""
-    lost = (_base_types(existing_stats) & _TENSOR_TYPES) - _base_types(new_stats)
-    if not lost:
-        return
-    if os.environ.get("DASHBOARD_REPLACE_TENSOR", "").strip().lower() in ("1", "true", "yes"):
-        print(f"WARNING: {lang} replacing snapshot and dropping tensor types {sorted(lost)}")
-        return
-    print(f"ERROR: {lang} snapshot has tensor types {sorted(lost)} that this sync would drop.")
-    print("That snapshot was built by splice-tensor-stats.py. Refusing to overwrite.")
-    print("Set DASHBOARD_REPLACE_TENSOR=1 to replace the snapshot anyway.")
-    sys.exit(1)
+def _refuse_splice_loss(lang, existing_stats, new_stats):
+    """Abort when a sync would erase groups a splice script published."""
+    for env, types, names, label, script in _SPLICE_GUARDS:
+        if types is not None:
+            lost = (_base_types(existing_stats) & types) - _base_types(new_stats)
+        else:
+            lost = (_serializer_names(existing_stats) & names) - _serializer_names(new_stats)
+        if not lost:
+            continue
+        if _replace_flag(env):
+            print(f"WARNING: {lang} replacing snapshot and dropping {label} {sorted(lost)}")
+            continue
+        print(f"ERROR: {lang} snapshot has {label} {sorted(lost)} that this sync would drop.")
+        print(f"That snapshot was built by {script}. Refusing to overwrite.")
+        print(f"Set {env}=1 to replace the snapshot anyway.")
+        sys.exit(1)
 
 
 def find_latest_run(lang_logs_dir):
@@ -280,11 +237,7 @@ def main():
             except Exception as e:
                 print(f"Warning: could not read existing stats for {lang}: {e}")
         _carry_spliced_groups(lang, existing_stats, stats_data)
-        _refuse_columnar_loss(lang, existing_stats, stats_data)
-        _refuse_dagr_loss(lang, existing_stats, stats_data)
-        _refuse_graph_loss(lang, existing_stats, stats_data)
-        _refuse_array_loss(lang, existing_stats, stats_data)
-        _refuse_tensor_loss(lang, existing_stats, stats_data)
+        _refuse_splice_loss(lang, existing_stats, stats_data)
         if stats_data:
             stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
                 "utf-8"
@@ -292,23 +245,29 @@ def main():
             print(f"Writing gzipped stats to: {dest_stats_gz_path} ({len(stats_bytes)} raw bytes)")
             with gzip.open(dest_stats_gz_path, "wb", compresslevel=9) as f:
                 f.write(stats_bytes)
+            from bench_versions import save_language_versions
+            save_language_versions(target_data_dir, lang, stats_data)
             # Remove plain JSON if present (avoid double storage in git)
             if os.path.exists(dest_stats_path):
                 print(f"Removing plain stats file: {dest_stats_path}")
                 os.remove(dest_stats_path)
         else:
+            removed = False
             for p in (dest_stats_path, dest_stats_gz_path):
                 if os.path.exists(p):
                     print(f"Removing stale stats file: {p}")
                     os.remove(p)
+                    removed = True
+            if removed:
+                from bench_versions import save_language_versions
+                save_language_versions(target_data_dir, lang, None)
 
-        # Assemble compact payload.
+        # Run metadata only. The stats document is stats_<lang>_latest.json.gz.
         # Omit full CSV by default (multi-MB); set DASHBOARD_INCLUDE_CSV=1 to embed.
         include_csv = os.environ.get("DASHBOARD_INCLUDE_CSV", "").strip() in ("1", "true", "yes")
         payload = {
             "language": lang,
             "run_id": latest_run,
-            "stats": stats_data,
             "configs": configs_data,
             "errors": errors_data,
         }
@@ -322,25 +281,20 @@ def main():
         dest_gzip_path = os.path.join(target_data_dir, f"{lang}_latest.json.gz")
         print(f"Saving compressed payload to: {dest_gzip_path}")
         
-        json_bytes = json.dumps(payload, indent=None).encode("utf-8")
+        json_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
         with gzip.open(dest_gzip_path, "wb") as f:
             f.write(json_bytes)
 
-    # 3. Write baseline.json if it exists
-    baseline_src = os.path.join(source_reports_dir, "baseline.json")
-    if os.path.exists(baseline_src):
-        baseline_dest = os.path.join(target_data_dir, "baseline.json")
-        import shutil
-        print(f"Copying baseline.json to target...")
-        shutil.copy2(baseline_src, baseline_dest)
+    # Regression baselines stay in reports/baseline.json (gitignored).
+    # The dashboard does not read that file.
 
-    # 4. Save metadata of available runs
+    # 3. Save metadata of available runs
     available_runs_path = os.path.join(target_data_dir, "available_runs.json")
     print(f"Saving available runs list to: {available_runs_path}")
     with open(available_runs_path, "w", encoding="utf-8") as f:
         json.dump(available_runs, f, indent=2)
 
-    # 5. Create symlink for logs in public directory for historical downloads
+    # 4. Create symlink for logs in public directory for historical downloads
     public_logs_symlink = os.path.join(project_root, "public", "logs")
     if not os.path.exists(public_logs_symlink):
         try:

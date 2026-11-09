@@ -110,18 +110,26 @@ test('catalog versions match latest bench SerializerVersion when present', () =>
   const mismatches = [];
   let compared = 0;
   for (const [lang, items] of Object.entries(data.languages || {})) {
-    const gzPath = join(dataDir, `${lang}_latest.json.gz`);
-    let payload;
+    let payload = {};
+    let groups = [];
     try {
-      payload = JSON.parse(gunzipSync(readFileSync(gzPath)).toString('utf8'));
+      payload = JSON.parse(gunzipSync(readFileSync(join(dataDir, `${lang}_latest.json.gz`))).toString('utf8'));
     } catch {
-      continue;
+      payload = {};
     }
+    try {
+      groups = JSON.parse(
+        gunzipSync(readFileSync(join(dataDir, `stats_${lang}_latest.json.gz`))).toString('utf8'),
+      ).groups || [];
+    } catch {
+      groups = payload.stats?.groups || [];
+    }
+    if (!payload.configs && !groups.length) continue;
     const measured = new Map();
     for (const it of payload.configs?.serializers?.items || []) {
       if (it?.name && it?.version) measured.set(String(it.name), String(it.version));
     }
-    for (const g of payload.stats?.groups || []) {
+    for (const g of groups) {
       if (g?.serializer && g?.serializer_version && !measured.has(String(g.serializer))) {
         measured.set(String(g.serializer), String(g.serializer_version));
       }

@@ -1111,7 +1111,7 @@ async function fetchJsonMaybeGzip(url) {
 }
 
 /**
- * Prefer standalone multi-policy stats (gzip first); fall back to embedded stats.
+ * Stats live in stats_<lang>_latest.json.gz. Older packs may still embed .stats.
  * @param {string} lang
  * @param {object|null} gzStats
  */

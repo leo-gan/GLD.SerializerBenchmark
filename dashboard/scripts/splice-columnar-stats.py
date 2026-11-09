@@ -11,8 +11,8 @@ analyze-benchmarks, drops the previous columnar groups, and writes the new
 ones. Suite, graph, array, and tensor groups are not recomputed. The serializer
 names must match serializer_data_sets for that language.
 
-Both dashboard/public/data/<lang>_latest.json.gz and stats_<lang>_latest.json.gz
-are rewritten so Overview and Compliance see the same roster.
+Groups are written only to stats_<lang>_latest.json.gz. The language pack
+is run metadata and does not carry a second copy of these rows.
 """
 from __future__ import annotations
 
@@ -88,13 +88,14 @@ def _load_gz(path: Path) -> dict:
     return data
 
 
-def _write_gz(path: Path, payload: dict, *, compact: bool) -> None:
-    separators = (",", ":") if compact else (", ", ": ")
-    raw = json.dumps(payload, separators=separators).encode("utf-8")
+def _write_gz(path: Path, payload: dict) -> None:
+    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     tmp = path.with_suffix(path.suffix + ".tmp")
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
@@ -127,19 +128,14 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
 
 
 def splice_language(lang: str, csv_path: Path) -> None:
-    payload_path = DATA / f"{lang}_latest.json.gz"
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    if not payload_path.is_file() or not stats_path.is_file():
-        raise SystemExit(f"{lang}: missing {payload_path.name} or {stats_path.name}")
-    payload = _load_gz(payload_path)
-    standalone = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict) or embedded.get("groups") != standalone.get("groups"):
-        raise SystemExit(f"{lang}: payload stats and stats_{lang}_latest.json.gz groups differ; not splicing")
-    if embedded.get("schema_version") != "2.2":
-        raise SystemExit(f"{lang}: published schema is {embedded.get('schema_version')}, expected 2.2")
+    if not stats_path.is_file():
+        raise SystemExit(f"{lang}: missing {stats_path.name}")
+    stats = _load_gz(stats_path)
+    if stats.get("schema_version") != "2.2":
+        raise SystemExit(f"{lang}: published schema is {stats.get('schema_version')}, expected 2.2")
 
-    before_groups = list(embedded.get("groups") or [])
+    before_groups = list(stats.get("groups") or [])
     before_counts = _counts(before_groups)
     fresh, meta = _analyze(lang, csv_path)
     expected = set(allow_list(lang, "columnar"))
@@ -162,8 +158,8 @@ def splice_language(lang: str, csv_path: Path) -> None:
 
     kept = [group for group in before_groups if _base(group.get("test_data")) not in COLUMNAR_TYPES]
     replaced = len(before_groups) - len(kept)
-    embedded["groups"] = kept + added
-    after_counts = _counts(embedded["groups"])
+    stats["groups"] = kept + added
+    after_counts = _counts(stats["groups"])
     if after_counts != before_counts:
         raise SystemExit(f"{lang}: row-type counts changed {before_counts} -> {after_counts}")
 
@@ -184,12 +180,9 @@ def splice_language(lang: str, csv_path: Path) -> None:
             "published snapshot and were not recomputed."
         ),
     }
-    embedded["columnar_splice"] = note
-    payload["columnar_splice"] = note
-    payload["stats"] = embedded
+    stats["columnar_splice"] = note
 
-    _write_gz(stats_path, embedded, compact=True)
-    _write_gz(payload_path, payload, compact=False)
+    _write_gz(stats_path, stats)
     print(
         f"{lang}: replaced {replaced} columnar groups with {len(added)}, "
         f"row counts {after_counts}, serializers {meta['serializers']}"

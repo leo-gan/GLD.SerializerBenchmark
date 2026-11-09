@@ -4,7 +4,9 @@
 Reads ``logs/compliance/latest.json`` when present (written by an unfiltered
 ``./scripts/run-compliance.sh``). Otherwise uses the newest timestamped file.
 
-Writes ``dashboard/public/data/compliance.json`` for the Dashboard Compliance view.
+Writes ``dashboard/public/data/compliance.json.gz`` (matrix and counts) and
+``compliance-failures.json.gz`` (the cases the page opens). Pass rows are not
+stored; their counts stay on the matrix.
 
 Run:
     python3 dashboard/scripts/sync-compliance.py
@@ -251,7 +253,9 @@ def build_payload(raw: dict, source_name: str) -> dict:
         "catalog_errors": raw.get("catalog_errors") or [],
         "serializer_errors": raw.get("serializer_errors") or raw.get("adapter_errors") or [],
         "matrix": matrix,
-        "results": results,
+        # Pass rows repeat the matrix counts. The page opens failures, so only
+        # those case rows are published.
+        "results": [row for row in results if row.get("outcome") != "pass"],
     }
     if not payload["scope"].get("note"):
         payload["scope"]["note"] = SCOPE_NOTE
@@ -277,15 +281,23 @@ def main() -> int:
     import gzip
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    blob = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    # The table reads the matrix. Failure text is a second file so the first
+    # paint does not parse every case.
+    summary = {key: value for key, value in payload.items() if key != "results"}
+    failures = payload["results"]
+    summary_blob = json.dumps(summary, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    failure_blob = json.dumps(failures, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     gz_path = out_path.with_suffix(out_path.suffix + ".gz")
-    gz_path.write_bytes(gzip.compress(blob, compresslevel=6))
+    fail_path = out_path.parent / "compliance-failures.json.gz"
+    gz_path.write_bytes(gzip.compress(summary_blob, compresslevel=9))
+    fail_path.write_bytes(gzip.compress(failure_blob, compresslevel=9))
     if out_path.is_file():
         out_path.unlink()
     print(
-        f"Wrote {gz_path.relative_to(_repo)} "
+        f"Wrote {gz_path.relative_to(_repo)} and {fail_path.name} "
         f"from {'+'.join(s.name for s in srcs)} ({payload['passed']} pass / {payload['failed']} fail / "
-        f"{len(payload['results'])} rows, {len(blob)} bytes -> {gz_path.stat().st_size} gzip)"
+        f"{len(failures)} stored rows, summary {gz_path.stat().st_size} gzip, "
+        f"failures {fail_path.stat().st_size} gzip)"
     )
     return 0
 

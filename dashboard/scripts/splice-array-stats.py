@@ -8,7 +8,6 @@ It replaces previous groups only for the array serializers of that language.
 from __future__ import annotations
 
 import argparse
-import copy
 import csv
 import gzip
 import json
@@ -76,6 +75,8 @@ def _write_gz(path: Path, payload: dict) -> None:
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -233,20 +234,14 @@ def _split(groups: list) -> tuple[list, list]:
 
 
 def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
-    payload_path = DATA / f"{language}_latest.json.gz"
     stats_path = DATA / f"stats_{language}_latest.json.gz"
-    if not payload_path.is_file() or not stats_path.is_file():
-        raise SystemExit(f"{language}: missing published snapshot")
-    payload = _load_gz(payload_path)
+    if not stats_path.is_file():
+        raise SystemExit(f"{language}: missing {stats_path.name}")
     stats = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict):
-        raise SystemExit(f"{language}: payload has no stats object")
 
     fresh, meta = _analyze(csv_path)
     new_groups = _validate_fresh(fresh, list(stats.get("groups") or []))
     stats_keep, stats_old = _split(list(stats.get("groups") or []))
-    payload_keep, payload_old = _split(list(embedded.get("groups") or []))
     before_suite = _counts(stats_keep, SUITE_TYPES)
     names = ", ".join(ARRAY_NAMES)
     if LANGUAGE == "fortran":
@@ -282,13 +277,8 @@ def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
     if dry_run:
         print(f"{language}: dry-run, snapshots not written")
         return
-    if len(stats_old) != len(payload_old):
-        raise SystemExit(f"{language}: stats/payload groups for these serializers diverged")
     stats["groups"] = stats_keep + new_groups
     stats["array_splice"] = note
-    embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
-    embedded["array_splice"] = copy.deepcopy(note)
-    payload["array_splice"] = copy.deepcopy(note)
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
         raise SystemExit(f"{language}: suite counts for the other serializers changed")
     if any(
@@ -298,7 +288,6 @@ def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
     ):
         raise SystemExit(f"{language}: an array serializer still has a group outside array and tensor")
     _write_gz(stats_path, stats)
-    _write_gz(payload_path, payload)
     print(f"{language}: wrote {len(new_groups)} array groups")
 
 

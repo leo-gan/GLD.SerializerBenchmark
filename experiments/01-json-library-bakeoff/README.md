@@ -11,7 +11,7 @@ The full argument is in [../PLAN.md](../PLAN.md). This folder is the question. E
   results.md            ← all languages, one page to read
   results.json          ← all languages, for a dashboard
   run.sh                ← run one language or every language
-  python/ go/ java/ …   ← results.md, results.json (logs stay local)
+  python/ go/ java/ …   ← results.md (logs stay local)
 ```
 
 To change the experiment (which record, which languages, which libraries, how many trials), edit **[`experiment.yaml`](experiment.yaml)** only. A later screen can load and save that file. The field list is described in [`../lib/experiment.config.schema.json`](../lib/experiment.config.schema.json).
@@ -57,7 +57,7 @@ Other language runners build the same *shape* from the same settings and seed. T
 ./experiments/01-json-library-bakeoff/python/run.sh     # one language
 ```
 
-Each run writes a CSV under `<language>/logs/` (local only; not in git) and refreshes that language’s `results.json` and `results.md`. It does not change the published website tables. Saved results are enough.
+Each run writes a CSV under `<language>/logs/` (local only; not in git) and refreshes that language’s `results.md`. The numbers for every language are in the combined `results.json`. It does not change the published website tables. Saved results are enough.
 
 ## How a dashboard should read the numbers
 
@@ -84,7 +84,7 @@ cd analysis
 uv run python ../experiments/01-json-library-bakeoff/summarize.py --all
 ```
 
-That reads local CSVs (not in git) and rewrites every `results.json` / `results.md` plus the combined file.
+That reads local CSVs (not in git) and rewrites each language’s `results.md` plus the combined `results.json`. A language with no CSV keeps the block already in that combined file.
 
 The main comparison is `io == "memory"` and `writes_named_fields == true`. Stream rows are a side check.
 

@@ -141,10 +141,8 @@ test('spliced snapshots keep the five-type matrix and add columnar groups', () =
     const stats = loadJsonGz(`stats_${lang}_latest.json.gz`);
     const payload = loadJsonGz(`${lang}_latest.json.gz`);
     assert.equal(payload.run_id, RUN_IDS[lang], lang);
+    assert.equal(payload.stats, undefined, `${lang} pack does not repeat the stats`);
     assert.deepEqual(rowCounts(stats.groups), expectedRows, `${lang} stats row counts`);
-    assert.deepEqual(rowCounts(payload.stats.groups), expectedRows, `${lang} payload row counts`);
-    assert.equal(stats.groups.length, payload.stats.groups.length, lang);
-    assert.equal(stats.columnar_splice.note, payload.columnar_splice.note, lang);
     assert.match(stats.columnar_splice.note, /were not recomputed/);
     assert.ok((stats.columnar_splice.reps || []).every((n) => n >= 50), lang);
     const columnarNames = new Set();

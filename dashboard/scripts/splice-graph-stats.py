@@ -100,6 +100,8 @@ def _write_gz(path: Path, payload: dict) -> None:
     with gzip.open(tmp, "wb", compresslevel=9) as handle:
         handle.write(raw)
     tmp.replace(path)
+    from bench_versions import note_stats_file
+    note_stats_file(path, payload)
 
 
 def _finite(value, path: str) -> None:
@@ -247,22 +249,15 @@ def _split(groups: list) -> tuple[list, list]:
 
 
 def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
-    payload_path = DATA / f"{lang}_latest.json.gz"
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    if not payload_path.is_file() or not stats_path.is_file():
-        raise SystemExit(f"{lang}: missing published snapshot")
-    payload = _load_gz(payload_path)
+    if not stats_path.is_file():
+        raise SystemExit(f"{lang}: missing {stats_path.name}")
     stats = _load_gz(stats_path)
-    embedded = payload.get("stats")
-    if not isinstance(embedded, dict):
-        raise SystemExit(f"{lang}: payload has no stats object")
 
     stats_groups = list(stats.get("groups") or [])
-    payload_groups = list(embedded.get("groups") or [])
     fresh, meta = _analyze(lang, csv_path)
     new_groups = _validate_fresh(lang, fresh, stats_groups)
     stats_keep, stats_old = _split(stats_groups)
-    payload_keep, payload_old = _split(payload_groups)
     before_suite = _counts(stats_keep, SUITE_TYPES)
     before_columnar = _counts(stats_keep, COLUMNAR_TYPES)
     note = {
@@ -289,19 +284,13 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
     columnar_note = copy.deepcopy(stats.get("columnar_splice"))
     stats["groups"] = stats_keep + new_groups
     stats["graph_splice"] = note
-    embedded["groups"] = payload_keep + copy.deepcopy(new_groups)
-    embedded["graph_splice"] = copy.deepcopy(note)
-    payload["graph_splice"] = copy.deepcopy(note)
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
         raise SystemExit(f"{lang}: suite counts changed")
     if _counts(stats["groups"], COLUMNAR_TYPES) != before_columnar:
         raise SystemExit(f"{lang}: columnar counts changed")
     if stats.get("dagr_splice") != dagr_note or stats.get("columnar_splice") != columnar_note:
         raise SystemExit(f"{lang}: an existing splice note changed")
-    if len(stats_old) != len(payload_old):
-        raise SystemExit(f"{lang}: stats/payload graph groups diverged before splice")
     _write_gz(stats_path, stats)
-    _write_gz(payload_path, payload)
     print(f"{lang}: wrote {len(new_groups)} graph groups")
 
 
