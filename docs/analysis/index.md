@@ -51,8 +51,7 @@ Each programming language has a small program called a **benchmark runner**. The
        ▼
   analyze-benchmarks
        │
-       ├──► reports/stats_<lang>_latest.json   (Dashboard sync input)
-       └──► reports/<docs_dir>/results.md      (unpublished PR-diff report)
+       └──► reports/stats_<lang>_latest.json   (Dashboard sync input)
 ```
 
 ---
@@ -110,7 +109,7 @@ Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) ·
 
 ## Languages in this suite
 
-Each language has a hand-written **Overview** (roster, caveats, how to read this runner). Measured numbers live on the **Dashboard**. Unpublished CLI reports land under `reports/<docs_dir>/results.md` for PR diffs — do not commit them to the site.
+Each language has a hand-written **Overview** (roster, caveats, how to read this runner). Measured numbers live on the **Dashboard**.
 
 | Language | Serializers (registered) | Overview | Dashboard |
 |----------|--------------------------|----------|-----------|

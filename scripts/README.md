@@ -150,7 +150,6 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 | `--logs-root PATH` | Root with `logs/<lang>/` (default: repo `logs/`) |
 | `-l` / `--language LANG` | One language (aliases: `py`, `cs`, `js`) |
 | `--logs SPEC` | Override: `LANG=PATH`, `LANG:stamp`, `LANG:latest` |
-| `--skip-generate` | Skip docs/plots |
 | `--compare-a` / `--compare-b` | Compare two runs |
 | `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` | Regression gates |
 | `--config PATH` | Master `benchmark_config.yaml` |
@@ -176,7 +175,6 @@ BENCHMARK_TS=2026-07-02-173247 ./scripts/verify-results.sh
 |--------|----------|
 | Raw CSVs / sidecars | `logs/<lang>/` (gitignored) |
 | Stats JSON | `reports/stats_<lang>_latest.json` (always) |
-| Unpublished language report | `reports/<docs_dir>/results.md` (default; `--no-markdown-report` skips) |
 | Baseline JSON | path you pass / config |
 
 ```bash

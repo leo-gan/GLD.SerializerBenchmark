@@ -1,6 +1,6 @@
 # Analysis methodology
 
-This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, Dashboard numbers, and unpublished language reports.
+This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, and Dashboard numbers.
 
 If architecture is the lab setup, methodology is the **lab notebook**: what we keep, what we drop, and how we summarize.
 
@@ -153,14 +153,7 @@ Markdown language pages still use the configured single `statistics.outlier_meth
 | Throughput | Operations per second from mean total time |
 | Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
 
-**Display-only** rules on unpublished `reports/<docs_dir>/results.md` (the CSV on disk is unchanged):
-
-- I/O modes labeled **bytes mode** / **stream mode**
-- Large numbers: one unit per column (K or M) with about two significant digits
-- **Bold** cells mark the semantic best value (lowest time; highest ops/s; ties all bolded)
-- **Rust** reports also include within-category mean ops/s rankings in bytes mode
-
-Published numbers live on the [Dashboard](../dashboard/). Those reports are PR-diff blobs, not site pages.
+Published numbers live on the [Dashboard](../dashboard/).
 
 ### Bootstrap confidence interval on the mean
 
@@ -334,7 +327,6 @@ For research-oriented L2/L3 collection tips and soft host checks, see [Claims an
 | Output | Content |
 |--------|---------|
 | `reports/stats_<lang>_latest.json` | Multi-policy stats export (Dashboard sync input; **always** written) |
-| `reports/<docs_dir>/results.md` | Unpublished language report (pivot tables + exploratory-rank banner). Default on; `--no-markdown-report` skips. `csharp` → `reports/c-sharp/results.md`. Do not commit to the site. |
 | [Dashboard](../dashboard/) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
 | `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
 | `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |

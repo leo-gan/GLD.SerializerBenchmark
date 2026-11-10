@@ -256,7 +256,6 @@ Confirm:
 - `size(n=100)/size(n=1)` roughly scales with N for binary codecs.
 - Dashboard Details / Compare: `python3 dashboard/scripts/sync-data.py` (commit `dashboard/public/data/<lang>_latest.json.gz` if you publish dashboard data).
 - Compliance: `logs/compliance/latest-<lang>.json` exists for this language; `sync-compliance.py` refreshed `dashboard/public/data/compliance.json.gz`. Library misses are report-only (not a red build).
-- Unpublished report: `analyze-benchmarks` writes `reports/<docs_dir>/results.md` (do not commit to the site).
 
 ### 9. Pull request
 

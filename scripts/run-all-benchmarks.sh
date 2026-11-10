@@ -29,7 +29,7 @@ config/benchmark_config.yaml) and optionally generate reports.
 OPTIONS:
     -m, --mode MODE             Mode from config modes: (default: all-single)
     -l, --lang LANG             Only run one language id from config
-    -a, --analyze               Generate analysis artifacts (tables + plots) via analyze-benchmarks
+    -a, --analyze               Write stats JSON via analyze-benchmarks
     -r, --regression-check      Check for performance regressions
     -t, --threshold PERCENT     Regression threshold (default: regression.threshold_percent)
     -b, --save-baseline         Save current results as baseline
@@ -152,9 +152,6 @@ if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAV
         [[ -f "$f" ]] || continue
         ANALYSIS_CMD="$ANALYSIS_CMD --logs ${lang}=\"$f\""
     done
-    if [ "$GENERATE_ARTIFACTS" != true ]; then
-        ANALYSIS_CMD="$ANALYSIS_CMD --skip-generate"
-    fi
     [ "$CHECK_REGRESSION" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --check-regression --regression-threshold $REGRESSION_THRESHOLD"
     [ "$SAVE_BASELINE" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --save-baseline"
     if command -v analyze-benchmarks >/dev/null 2>&1; then
@@ -163,8 +160,7 @@ if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAV
         PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.cli \
             --logs-root "$LOG_DIR" \
             --config "$PROJECT_ROOT/config/benchmark_config.yaml" \
-            ${LANG_FILTER:+-l "$LANG_FILTER"} \
-            $([ "$GENERATE_ARTIFACTS" != true ] && echo --skip-generate) || true
+            ${LANG_FILTER:+-l "$LANG_FILTER"} || true
     fi
 fi
 
