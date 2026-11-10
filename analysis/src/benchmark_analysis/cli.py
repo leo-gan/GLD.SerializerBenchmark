@@ -426,39 +426,6 @@ def _run_multi_session(
             )
 
 
-def _generate_artifacts(
-    *,
-    all_stats: Dict,
-    lang_paths: Dict[str, Optional[str]],
-    reports_root: Path,
-    stats_config: Optional[Dict] = None,
-    write_markdown: bool = True,
-) -> None:
-    """Write unpublished language reports.
-
-    Output lives under ``reports_root`` (``reports/<docs_dir>/results.md``).
-    Never writes ``docs/<lang>/results.md``.
-    """
-    from .reports import generate_language_results_pages
-
-    lang_sources = {k: v for k, v in lang_paths.items() if v}
-
-    if not write_markdown:
-        return
-
-    metrics_profile = (
-        os.environ.get("BENCHMARK_METRICS_PROFILE")
-        or (stats_config or {}).get("_metrics_profile")
-        or "multi_way"
-    )
-    generate_language_results_pages(
-        multi_lang_stats=all_stats,
-        docs_root=str(reports_root),
-        lang_sources=lang_sources,
-        metrics_profile=str(metrics_profile),
-    )
-
-
 def main():
     # Defaults from master config (overridable by flags after parse).
     try:
@@ -475,15 +442,11 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Analyze serializer benchmarks and write unpublished reports "
-            "(stats JSON + language markdown)."
+            "Analyze serializer benchmarks and write reports/stats_<lang>_latest.json."
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
             "  reports/stats_<lang>_latest.json\n"
-            "  reports/<docs_dir>/results.md   (e.g. reports/c-sharp/results.md)\n"
-            "(docs/analysis/BENCHMARK_SUMMARY.md is a static hub and is not overwritten.)\n"
-            "Do not commit reports/<docs_dir>/results.md to the published site.\n"
             "\n"
             "Examples:\n"
             "  analyze-benchmarks\n"
@@ -523,16 +486,6 @@ def main():
             "PATH (with a single -l LANG, or when language is in the path), "
             "or shorthand LANG / LANG:stamp under --logs-root."
         ),
-    )
-    parser.add_argument(
-        "--skip-generate",
-        action="store_true",
-        help="Do not write the reports markdown (use with --compare-a/--check-regression/--save-baseline only)",
-    )
-    parser.add_argument(
-        "--no-markdown-report",
-        action="store_true",
-        help="Skip unpublished reports/<docs_dir>/results.md (stats JSON is still written)",
     )
     parser.add_argument("--check-regression", action="store_true", help="Check for regressions")
     parser.add_argument(
@@ -720,20 +673,6 @@ def main():
         f"Total: {total_loaded} raw records, {total_sanitized} sanitized, "
         f"{len(all_stats)} stat groups"
     )
-
-    os.makedirs(str(reports_root), exist_ok=True)
-
-    if not args.skip_generate:
-        if total_loaded == 0:
-            print("No records loaded; skipping artifact generation.")
-        else:
-            _generate_artifacts(
-                all_stats=all_stats,
-                lang_paths=lang_paths,
-                reports_root=reports_root,
-                stats_config=stats_cfg,
-                write_markdown=not args.no_markdown_report,
-            )
 
     if args.compare_a and args.compare_b:
         ca = _resolve_log_spec(args.compare_a, logs_root=logs_root)

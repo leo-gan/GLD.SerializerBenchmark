@@ -5,7 +5,6 @@ __version__ = "0.1.0"
 __all__ = [
     "parse_csv_file",
     "compute_statistics",
-    "generate_language_results_pages",
     "check_regression",
     "save_baseline",
     "capture_environment",
@@ -27,7 +26,4 @@ def __getattr__(name: str):
     if name in ("capture_environment", "load_environment"):
         from . import environment as _environment
         return getattr(_environment, name)
-    if name == "generate_language_results_pages":
-        from . import reports as _reports
-        return getattr(_reports, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -13,7 +13,6 @@ This document is the output of a full source + runtime + config + output review 
 Small, installable package (`benchmark-analysis`) that consumes language-agnostic CSV logs and produces:
 
 - Scientific per-group statistics (warmup drop, IQR filtering, bootstrap CI, Cliff’s δ, Hedges’ g, Mann–Whitney + Holm)
-- Markdown summaries and per-language results pages under `reports/<docs_dir>/results.md`
 - Regression gate vs baseline
 - A/B version comparison
 
@@ -75,7 +74,7 @@ It sits between raw harness output (timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.c
 
 Result: the package advertises publication-grade methods while the user-visible product is still largely spreadsheet-era means. The expensive stats work has low ROI today.
 
-Evidence: `docs/c-sharp/results.md` (and siblings), `generate_language_results_pages()`, `_pivot_table_md()`.
+Evidence at the time of this review: the generated language markdown pages. Those pages have since been removed. Published numbers are on the Dashboard.
 
 ### 2. Regression detection is statistically naive and dangerous for multi-lang (HIGH)
 

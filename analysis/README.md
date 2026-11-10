@@ -41,7 +41,6 @@ cd analysis && uv run analyze-benchmarks
 | `--logs-root` | Root logs directory (default: repo `logs/`) |
 | `--logs SPEC` | Log override (repeatable) |
 | `-l` / `--language LANG` | One language (repeatable) |
-| `--skip-generate` | Skip docs/plots |
 | `--compare-a` / `--compare-b` | Compare two runs |
 | `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` / `--regression-combine` | Regression gates (default **and**: practical % **and** CI; see methodology) |
 | `--config` | Path to `benchmark_config.yaml` |
