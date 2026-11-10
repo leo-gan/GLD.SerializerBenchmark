@@ -49,6 +49,10 @@ if [[ ! -d .pixi/envs/default ]]; then
   echo "[INFO] pixi install..."
   pixi install
 fi
+if [[ ! -d vendor/gldjson_src ]]; then
+  echo "[INFO] Fetching Mojo vendor trees..."
+  ./scripts/fetch-vendors.sh
+fi
 
 RESOLVED="$LOG_DIR/${BENCHMARK_TS}.resolved.json"
 PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
