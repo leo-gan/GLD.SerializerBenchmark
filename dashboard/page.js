@@ -19,12 +19,14 @@ export async function decodeJsonBytes(bytes) {
   if (typeof DecompressionStream === 'undefined') {
     throw new Error('gzip payload but DecompressionStream is unavailable');
   }
+  // Read while writing. Awaiting write() before pulling readable deadlocks
+  // once decompressed output fills the stream queue.
   const stream = new DecompressionStream('gzip');
+  const textPromise = new Response(stream.readable).text();
   const writer = stream.writable.getWriter();
   await writer.write(view);
   await writer.close();
-  const text = await new Response(stream.readable).text();
-  return JSON.parse(text);
+  return JSON.parse(await textPromise);
 }
 
 export async function fetchJsonMaybeGzip(url) {
