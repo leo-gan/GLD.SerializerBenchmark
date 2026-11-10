@@ -132,6 +132,91 @@ def rewrite_tree(src: Path, dest: Path, mapping: dict[str, str]) -> None:
             path.write_text(text, encoding="utf-8")
 
 
+EHSANMOK_REFLECTION_REPLACEMENTS: tuple[tuple[str, str], ...] = (
+    ("from std.memory import UnsafeMaybeUninit", "from std.memory import MaybeUninit"),
+    ("var slot = UnsafeMaybeUninit[E]()", "var slot = MaybeUninit[E]()"),
+    ("var slot = UnsafeMaybeUninit[V]()", "var slot = MaybeUninit[V]()"),
+    ("var slot = UnsafeMaybeUninit[T]()", "var slot = MaybeUninit[T]()"),
+    (
+        "            try:\n"
+        "                _parse_into[E](r, Pointer(to=slot.unsafe_assume_init_ref()))\n"
+        "            except e:\n"
+        '                raise Error("element " + String(index) + ": " + String(e))\n'
+        "            out.append(slot.unsafe_assume_init_take())",
+        "            try:\n"
+        "                _parse_into[E](r, Pointer(to=slot.unsafe_assume_init()))\n"
+        "            except e:\n"
+        "                slot^.unsafe_forget()\n"
+        '                raise Error("element " + String(index) + ": " + String(e))\n'
+        "            out.append(slot^.unsafe_assume_init())",
+    ),
+    (
+        "        _parse_into[E](r, Pointer(to=slot.unsafe_assume_init_ref()))\n"
+        "        var element = slot.unsafe_assume_init_take()",
+        "        try:\n"
+        "            _parse_into[E](r, Pointer(to=slot.unsafe_assume_init()))\n"
+        "        except e:\n"
+        "            slot^.unsafe_forget()\n"
+        "            raise e\n"
+        "        var element = slot^.unsafe_assume_init()",
+    ),
+    (
+        "                try:\n"
+        "                    _parse_into[V](r, Pointer(to=slot.unsafe_assume_init_ref()))\n"
+        "                except e:\n"
+        "                    raise Error(\"key '\" + name + \"': \" + String(e))\n"
+        "                out[name] = slot.unsafe_assume_init_take()",
+        "                try:\n"
+        "                    _parse_into[V](r, Pointer(to=slot.unsafe_assume_init()))\n"
+        "                except e:\n"
+        "                    slot^.unsafe_forget()\n"
+        "                    raise Error(\"key '\" + name + \"': \" + String(e))\n"
+        "                out[name] = slot^.unsafe_assume_init()",
+    ),
+    (
+        "    _parse_into[T](reader, Pointer(to=slot.unsafe_assume_init_ref()))\n"
+        "    reader.expect_end()\n"
+        "    return slot.unsafe_assume_init_take()",
+        "    try:\n"
+        "        _parse_into[T](reader, Pointer(to=slot.unsafe_assume_init()))\n"
+        "        reader.expect_end()\n"
+        "    except e:\n"
+        "        slot^.unsafe_forget()\n"
+        "        raise e\n"
+        "    return slot^.unsafe_assume_init()",
+    ),
+)
+
+
+def patch_ehsanmok_for_mojo_1_1(ej_dest: Path) -> None:
+    """Apply Mojo 1.1 stdlib adaptations to ehsanmok-json v0.4.0."""
+    for path in ej_dest.rglob("*.mojo"):
+        text = path.read_text(encoding="utf-8")
+        updated = text.replace("InlineArray", "Array")
+        if updated != text:
+            path.write_text(updated, encoding="utf-8")
+
+    refl = ej_dest / "reflection.mojo"
+    if refl.is_file():
+        rtext = refl.read_text(encoding="utf-8")
+        for old, new in EHSANMOK_REFLECTION_REPLACEMENTS:
+            rtext = rtext.replace(old, new)
+        refl.write_text(rtext, encoding="utf-8")
+
+    val = ej_dest / "value" / "value.mojo"
+    if val.is_file():
+        vtext = val.read_text(encoding="utf-8")
+        vtext = vtext.replace(
+            "hasher.update(self.hash_u64())",
+            "hasher._update_with_simd(self.hash_u64())",
+        )
+        val.write_text(vtext, encoding="utf-8")
+
+    gpu_init = ej_dest / "gpu" / "__init__.mojo"
+    gpu_init.parent.mkdir(parents=True, exist_ok=True)
+    gpu_init.write_text(EHSANMOK_GPU_STUB, encoding="utf-8")
+
+
 def refresh_vendors(src_root: Path, mojo_dir: Path) -> None:
     vendor_dir = mojo_dir / "vendor"
     for repo_name, dest_name, prefix, prefixed, extra in GLD_SPECS:
@@ -147,14 +232,7 @@ def refresh_vendors(src_root: Path, mojo_dir: Path) -> None:
     if ej_dest.exists():
         shutil.rmtree(ej_dest)
     shutil.copytree(src_root / "ehsanmok-json" / "json", ej_dest)
-    for path in ej_dest.rglob("*.mojo"):
-        text = path.read_text(encoding="utf-8")
-        updated = text.replace("InlineArray", "Array")
-        if updated != text:
-            path.write_text(updated, encoding="utf-8")
-    gpu_init = ej_dest / "gpu" / "__init__.mojo"
-    gpu_init.parent.mkdir(parents=True, exist_ok=True)
-    gpu_init.write_text(EHSANMOK_GPU_STUB, encoding="utf-8")
+    patch_ehsanmok_for_mojo_1_1(ej_dest)
 
     smile_codec = vendor_dir / "smile_src" / "smile_wire" / "codec.mojo"
     smile_text = smile_codec.read_text(encoding="utf-8")
