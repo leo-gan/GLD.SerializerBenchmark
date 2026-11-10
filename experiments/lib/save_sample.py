@@ -50,7 +50,7 @@ def save_experiment_sample(
             cell["type_id"],
             cell["type_config"],
             seed,
-            int(cell["data_type_instance_count"]),
+            1,
         )
         cells.append(
             {
@@ -59,7 +59,7 @@ def save_experiment_sample(
                 "settings_hash": cell["type_config_hash"],
                 "how_many_records": int(cell["data_type_instance_count"]),
                 "seed": seed,
-                "records": [obj.to_dict() for obj in instances],
+                "records": [obj.to_dict() for obj in instances[:1]],
             }
         )
 

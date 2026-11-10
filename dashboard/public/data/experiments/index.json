@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-10-29T18:25:46Z",
+  "generated_at": "2026-11-10T16:29:05Z",
   "count": 15,
   "with_results": 15,
   "experiments": [
@@ -124,7 +124,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 133499
+      "source_bytes": 77691
     },
     {
       "id": "02-flat-record-formats",
@@ -250,7 +250,7 @@
           "rows": 6
         }
       ],
-      "source_bytes": 257314
+      "source_bytes": 147518
     },
     {
       "id": "03-one-language-store",
@@ -329,7 +329,7 @@
           "rows": 2
         }
       ],
-      "source_bytes": 79571
+      "source_bytes": 46150
     },
     {
       "id": "04-sensor-list-size",
@@ -1120,7 +1120,7 @@
           "rows": 32
         }
       ],
-      "source_bytes": 320056
+      "source_bytes": 182590
     },
     {
       "id": "05-event-log-formats",
@@ -1274,7 +1274,7 @@
           "rows": 6
         }
       ],
-      "source_bytes": 215105
+      "source_bytes": 122801
     },
     {
       "id": "06-document-db-formats",
@@ -1381,7 +1381,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 58460
+      "source_bytes": 34225
     },
     {
       "id": "07-write-once-read-many",
@@ -2027,7 +2027,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 112254
+      "source_bytes": 65124
     },
     {
       "id": "08-human-files",
@@ -2165,7 +2165,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 109748
+      "source_bytes": 63242
     },
     {
       "id": "09-compression-size",
@@ -2433,7 +2433,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 246355
+      "source_bytes": 141431
     },
     {
       "id": "10-one-vs-hundred",
@@ -2618,7 +2618,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 366302
+      "source_bytes": 209407
     },
     {
       "id": "11-memory-vs-stream",
@@ -2705,7 +2705,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 67719
+      "source_bytes": 38972
     },
     {
       "id": "12-format-vs-library",
@@ -2807,7 +2807,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 125892
+      "source_bytes": 72449
     },
     {
       "id": "13-ranking-accident",
@@ -2993,7 +2993,7 @@
           "rows": 30
         }
       ],
-      "source_bytes": 966919
+      "source_bytes": 550716
     },
     {
       "id": "14-starter-kit",
@@ -3115,7 +3115,7 @@
           "rows": 1
         }
       ],
-      "source_bytes": 108235
+      "source_bytes": 64007
     },
     {
       "id": "15-fortran-ffi-tax",
@@ -3149,7 +3149,7 @@
           "rows": 10
         }
       ],
-      "source_bytes": 23803
+      "source_bytes": 13846
     }
   ]
 }
