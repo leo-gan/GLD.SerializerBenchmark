@@ -412,6 +412,10 @@ install_mojo() {
   fi
   echo "[INFO] pixi install in mojo/ (Mojo 1.1)..."
   (cd "$PROJECT_ROOT/mojo" && pixi install)
+  if [[ ! -d "$PROJECT_ROOT/mojo/vendor/gldjson_src" ]]; then
+    echo "[INFO] Fetching Mojo vendor sources..."
+    "$PROJECT_ROOT/mojo/scripts/fetch-vendors.sh"
+  fi
   echo "[OK] $(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version)"
 }
 

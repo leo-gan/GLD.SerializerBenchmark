@@ -2,7 +2,6 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,gldtoml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src,bson_src,ion_src,smile_src,arrow_src,parquet_src,hdf5_src,kiln_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -20,14 +19,9 @@ acquire() {
   if [[ -d "$SIBLING_ROOT/$name/src" ]]; then
     echo "[INFO] using sibling $SIBLING_ROOT/$name"
     rm -rf "$dest"
-    mkdir -p "$(dirname "$dest")"
-    # Copy the tree the rewrite step needs. Skip heavy generated site/.
-    if [[ -d "$SIBLING_ROOT/$name/src" ]]; then
-      mkdir -p "$dest"
-      cp -a "$SIBLING_ROOT/$name/src" "$dest/src"
-      # pixi.toml is only used for a version stamp in docs; optional.
-      [[ -f "$SIBLING_ROOT/$name/pixi.toml" ]] && cp -a "$SIBLING_ROOT/$name/pixi.toml" "$dest/"
-    fi
+    mkdir -p "$dest"
+    cp -a "$SIBLING_ROOT/$name/src" "$dest/src"
+    [[ -f "$SIBLING_ROOT/$name/pixi.toml" ]] && cp -a "$SIBLING_ROOT/$name/pixi.toml" "$dest/"
     return 0
   fi
   echo "[INFO] cloning $url"
@@ -35,22 +29,14 @@ acquire() {
   git clone --depth 1 $extra "$url" "$dest"
 }
 
-acquire gld-json "$tmp/gld-json" https://github.com/leo-gan/gld-json.git
-acquire gld-cbor "$tmp/gld-cbor" https://github.com/leo-gan/gld-cbor.git
-acquire gld-protobuf "$tmp/gld-protobuf" https://github.com/leo-gan/gld-protobuf.git
-acquire gld-yaml "$tmp/gld-yaml" https://github.com/leo-gan/gld-yaml.git
-acquire gld-messagepack "$tmp/gld-messagepack" https://github.com/leo-gan/gld-messagepack.git
-acquire gld-flatbuffers "$tmp/gld-flatbuffers" https://github.com/leo-gan/gld-flatbuffers.git
-acquire gld-avro "$tmp/gld-avro" https://github.com/leo-gan/gld-avro.git
-acquire gld-bson "$tmp/gld-bson" https://github.com/leo-gan/gld-bson.git
-acquire gld-ion "$tmp/gld-ion" https://github.com/leo-gan/gld-ion.git
-acquire gld-smile "$tmp/gld-smile" https://github.com/leo-gan/gld-smile.git
-acquire gld-toml "$tmp/gld-toml" https://github.com/leo-gan/gld-toml.git
-acquire gld-arrow "$tmp/gld-arrow" https://github.com/leo-gan/gld-arrow.git
-acquire gld-parquet "$tmp/gld-parquet" https://github.com/leo-gan/gld-parquet.git
-acquire gld-hdf5 "$tmp/gld-hdf5" https://github.com/leo-gan/gld-hdf5.git
-acquire gld-kiln "$tmp/gld-kiln" https://github.com/leo-gan/gld-kiln.git
-# DataBooth/mojo-toml keeps the `toml` package. gld-toml is vendored separately below.
+for pkg in \
+  gld-json gld-cbor gld-protobuf gld-yaml gld-messagepack \
+  gld-flatbuffers gld-avro gld-bson gld-ion gld-smile \
+  gld-toml gld-arrow gld-parquet gld-hdf5 gld-kiln; do
+  acquire "$pkg" "$tmp/$pkg" "https://github.com/leo-gan/${pkg}.git"
+done
+
+# DataBooth/mojo-toml keeps the `toml` package. gld-toml is vendored separately.
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
   rm -rf "$tmp/mojo-toml"
@@ -59,6 +45,7 @@ if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
 else
   git clone --depth 1 https://github.com/DataBooth/mojo-toml.git "$tmp/mojo-toml"
 fi
+
 if [[ -d "$SIBLING_ROOT/ehsanmok-json/json" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/ehsanmok-json"
   rm -rf "$tmp/ehsanmok-json"
@@ -68,262 +55,4 @@ else
   git clone --depth 1 --branch v0.4.0 https://github.com/ehsanmok/json.git "$tmp/ehsanmok-json"
 fi
 
-python3 - "$tmp" "$MOJO_DIR" <<'PY'
-from pathlib import Path
-import re
-import shutil
-import sys
-
-src_root = Path(sys.argv[1])
-mojo = Path(sys.argv[2])
-
-def rewrite_tree(src: Path, dest: Path, mapping: dict[str, str]) -> None:
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True)
-    for item in src.iterdir():
-        if item.name.startswith("."):
-            continue
-        target = dest / mapping.get(item.name, item.name)
-        if item.is_dir():
-            shutil.copytree(item, target)
-        else:
-            shutil.copy2(item, target)
-    for path in dest.rglob("*.mojo"):
-        text = path.read_text(encoding="utf-8")
-        orig = text
-        for old, new in mapping.items():
-            if old == new:
-                continue
-            text = re.sub(rf"\bfrom {re.escape(old)}\b", f"from {new}", text)
-            text = re.sub(rf"\bimport {re.escape(old)}\b", f"import {new}", text)
-        if text != orig:
-            path.write_text(text, encoding="utf-8")
-
-rewrite_tree(
-    src_root / "gld-json" / "src",
-    mojo / "vendor" / "gldjson_src",
-    {
-        "runtime": "gldjson_runtime",
-        "wire": "gldjson_wire",
-        "schema": "gldjson_schema",
-        "codegen": "gldjson_codegen",
-        "json": "gldjson",
-    },
-)
-rewrite_tree(
-    src_root / "gld-cbor" / "src",
-    mojo / "vendor" / "cbor_src",
-    {
-        "runtime": "cbor_runtime",
-        "wire": "cbor_wire",
-        "diag": "cbor_diag",
-        "cddl": "cbor_cddl",
-        "codegen": "cbor_codegen",
-        "cbor": "cbor",
-    },
-)
-rewrite_tree(
-    src_root / "gld-protobuf" / "src",
-    mojo / "vendor" / "pb_src",
-    {
-        "runtime": "pb_runtime",
-        "wire": "pb_wire",
-        "descriptor": "pb_descriptor",
-        "codegen": "pb_codegen",
-        "conformance_runner": "pb_conformance_runner",
-        "protobuf": "protobuf",
-    },
-)
-rewrite_tree(
-    src_root / "gld-yaml" / "src",
-    mojo / "vendor" / "yaml_src",
-    {
-        "runtime": "yaml_runtime",
-        "wire": "yaml_wire",
-        "schema": "yaml_schema",
-        "codegen": "yaml_codegen",
-        "yaml": "yaml",
-    },
-)
-rewrite_tree(
-    src_root / "gld-messagepack" / "src",
-    mojo / "vendor" / "msgpack_src",
-    {
-        "runtime": "msgpack_runtime",
-        "wire": "msgpack_wire",
-        "schema": "msgpack_schema",
-        "codegen": "msgpack_codegen",
-        "msgpack": "msgpack",
-    },
-)
-rewrite_tree(
-    src_root / "gld-bson" / "src",
-    mojo / "vendor" / "bson_src",
-    {
-        "runtime": "bson_runtime",
-        "wire": "bson_wire",
-        "schema": "bson_schema",
-        "codegen": "bson_codegen",
-        "bson": "bson_lib",
-    },
-)
-rewrite_tree(
-    src_root / "gld-avro" / "src",
-    mojo / "vendor" / "avro_src",
-    {
-        "runtime": "avro_runtime",
-        "wire": "avro_wire",
-        "schema": "avro_schema",
-        "json": "avro_json",
-        "deflate": "avro_deflate",
-        "codegen": "avro_codegen",
-        "avro": "avro",
-    },
-)
-rewrite_tree(
-    src_root / "gld-ion" / "src",
-    mojo / "vendor" / "ion_src",
-    {
-        "runtime": "ion_runtime",
-        "wire": "ion_wire",
-        "schema": "ion_schema",
-        "codegen": "ion_codegen",
-        "ion": "ion",
-    },
-)
-rewrite_tree(
-    src_root / "gld-toml" / "src",
-    mojo / "vendor" / "gldtoml_src",
-    {
-        "runtime": "gldtoml_runtime",
-        "wire": "gldtoml_wire",
-        "schema": "gldtoml_schema",
-        "codegen": "gldtoml_codegen",
-        "toml": "gldtoml",
-    },
-)
-rewrite_tree(
-    src_root / "gld-smile" / "src",
-    mojo / "vendor" / "smile_src",
-    {
-        "runtime": "smile_runtime",
-        "wire": "smile_wire",
-        "schema": "smile_schema",
-        "codegen": "smile_codegen",
-        "smile": "smile",
-    },
-)
-rewrite_tree(
-    src_root / "gld-arrow" / "src",
-    mojo / "vendor" / "arrow_src",
-    {
-        "runtime": "arrow_runtime",
-        "wire": "arrow_wire",
-        "schema": "arrow_schema",
-        "codegen": "arrow_codegen",
-        "compress": "arrow_compress",
-        "arrow": "arrow",
-    },
-)
-rewrite_tree(
-    src_root / "gld-parquet" / "src",
-    mojo / "vendor" / "parquet_src",
-    {
-        "runtime": "parquet_runtime",
-        "wire": "parquet_wire",
-        "schema": "parquet_schema",
-        "codegen": "parquet_codegen",
-        "compress": "parquet_compress",
-        "parquet": "parquet",
-    },
-)
-rewrite_tree(
-    src_root / "gld-hdf5" / "src",
-    mojo / "vendor" / "hdf5_src",
-    {
-        "runtime": "hdf5_runtime",
-        "wire": "hdf5_wire",
-        "schema": "hdf5_schema",
-        "codegen": "hdf5_codegen",
-        "hdf5": "hdf5",
-    },
-)
-rewrite_tree(
-    src_root / "gld-kiln" / "src",
-    mojo / "vendor" / "kiln_src",
-    {},
-)
-rewrite_tree(
-    src_root / "gld-flatbuffers" / "src",
-    mojo / "vendor" / "fb_src",
-    {
-        "wire": "fb_wire",
-        "flex": "fb_flex",
-        "schema": "fb_schema",
-        "codegen": "fb_codegen",
-        "flatbuffers": "flatbuffers",
-    },
-)
-toml_dest = mojo / "vendor" / "toml_src" / "toml"
-if toml_dest.exists():
-    shutil.rmtree(toml_dest)
-shutil.copytree(src_root / "mojo-toml" / "src" / "toml", toml_dest)
-ej_dest = mojo / "vendor" / "ehsanmok_src" / "ehsanmok_json"
-if ej_dest.exists():
-    shutil.rmtree(ej_dest)
-shutil.copytree(src_root / "ehsanmok-json" / "json", ej_dest)
-# Mojo 1.1 removed the InlineArray alias. The v0.4.0 tag still uses it.
-# v0.4.2 drops InlineArray but imports std.hash, which this Mojo 1.1 toolchain
-# cannot resolve, so the pin stays on v0.4.0.
-for path in ej_dest.rglob("*.mojo"):
-    text = path.read_text(encoding="utf-8")
-    updated = text.replace("InlineArray", "Array")
-    if updated != text:
-        path.write_text(updated, encoding="utf-8")
-# GPU path needs Modular `max`; this harness times the CPU parser only.
-(ej_dest / "gpu" / "__init__.mojo").write_text(
-    """# GPU backends require Modular `max`. This harness times the default
-# CPU parser only, so the GPU symbols are stubs that raise if selected.
-
-from ..types import JSONInput
-from ..value import Value
-
-
-def parse_json_gpu(input_obj: JSONInput) raises -> Int:
-    raise Error("ehsanmok-json GPU target is not built in this harness")
-
-
-def parse_json_gpu_from_pinned(input_obj: JSONInput) raises -> Int:
-    raise Error("ehsanmok-json GPU target is not built in this harness")
-
-
-def parse_gpu_to_value(s: String, result: Int) raises -> Value:
-    raise Error("ehsanmok-json GPU target is not built in this harness")
-""",
-    encoding="utf-8",
-)
-# gld-smile 0.2.0 returns from a short 0x3A header without consuming
-# the byte, and the caller loops. Keep the end-of-input guard.
-smile_codec = mojo / "vendor" / "smile_src" / "smile_wire" / "codec.mojo"
-smile_text = smile_codec.read_text(encoding="utf-8")
-smile_old = (
-    "    def _try_header(mut self) raises DecodeError -> Bool:\n"
-    "        if self._remain() < 4:\n"
-    "            return False\n"
-)
-smile_new = (
-    "    def _try_header(mut self) raises DecodeError -> Bool:\n"
-    "        if self._remain() < 4:\n"
-    "            # 0x3A starts a header. Leaving those bytes unconsumed makes\n"
-    "            # `_finish` call this again and never move forward.\n"
-    "            if self._remain() > 0 and Int(self.raw[self.i]) == 0x3A:\n"
-    "                raise DecodeError(DecodeError.KIND_EOF, self.i)\n"
-    "            return False\n"
-)
-if smile_old in smile_text:
-    smile_codec.write_text(smile_text.replace(smile_old, smile_new, 1), encoding="utf-8")
-elif "never move forward" not in smile_text:
-    raise SystemExit("smile short-header guard could not be applied")
-print("vendors refreshed")
-PY
+python3 "$MOJO_DIR/scripts/vendor_rewrite.py" "$tmp" "$MOJO_DIR"

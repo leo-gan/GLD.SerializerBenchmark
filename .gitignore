@@ -195,6 +195,23 @@ mojo/vendor/gld-cbor/
 mojo/vendor/gld-protobuf/
 mojo/vendor/mojo-toml/
 mojo/vendor/bin/
+mojo/vendor/arrow_src/
+mojo/vendor/avro_src/
+mojo/vendor/bson_src/
+mojo/vendor/cbor_src/
+mojo/vendor/ehsanmok_src/
+mojo/vendor/fb_src/
+mojo/vendor/gldjson_src/
+mojo/vendor/gldtoml_src/
+mojo/vendor/hdf5_src/
+mojo/vendor/ion_src/
+mojo/vendor/kiln_src/
+mojo/vendor/msgpack_src/
+mojo/vendor/parquet_src/
+mojo/vendor/pb_src/
+mojo/vendor/smile_src/
+mojo/vendor/toml_src/
+mojo/vendor/yaml_src/
 
 # dagr build archives the previous schema here. Not source.
 schemas/v2/dagr/.dagr/

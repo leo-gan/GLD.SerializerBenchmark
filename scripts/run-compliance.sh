@@ -443,6 +443,9 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
         if [[ ! -d .pixi/envs/default ]]; then
             pixi install
         fi
+        if [[ ! -d vendor/gldjson_src ]]; then
+            ./scripts/fetch-vendors.sh
+        fi
         pixi run mojo build \
             -I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src \
             -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src \
