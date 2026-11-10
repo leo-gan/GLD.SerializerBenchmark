@@ -10,7 +10,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 - **53 serializers** registered in `Program.cs` (was 52, plus gld-kiln). Also Json.NET, protobuf-net, LightProto, Bond, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Amazon.IonDotnet, Nerdbank.MessagePack, ShapeShift, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more. **Not** included: Wire; Jil (incompatible with .NET 10); Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs); **sbe** (no NuGet `Org.SbeTool.Sbe.Dll` on the 1.40.2 line); ORC; ParquetSharp.
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event`, plus columnar `table`, `table_project`, `nested_table`, `signal` — domain POCOs in `TestData/V2/Models.cs`. The new Arrow/Parquet rows support only those four ids. Older rows still default `Supports` to true, so a columnar config must pass a comma-separated exact-name allow-list.
-- **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
+- **Dual mode**: **bytes** and **stream**, the same labels as the other languages. Stream is **native** when the library writes the stream, or **adapted** when the benchmark copies a finished buffer. See [bytes and stream](../docs/c-sharp/index.md#bytes-mode-and-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
 - Most codecs use domain types (or codegen forms) on the timed path. **Exceptions:** ExtendedXmlSerializer and Migrant time a **JSON envelope** only — see [envelope codecs](../docs/c-sharp/index.md#envelope-codecs-not-native-domain-wire).
 
@@ -37,7 +37,7 @@ For `N>1`, payloads use batch wrappers (`BatchMessage`, `BatchTable`, `BatchNest
 
 `arrow-ipc` is Apache.Arrow **23.0.0** (net8.0 asset, consumed from `net10.0`; no net10-specific lib). `parquet` and `parquet-uncompressed` are Parquet.Net **6.1.0** (explicit `net10.0`). `parquet` uses the library default, Snappy. `parquet-uncompressed` sets `CompressionMethod.None`.
 
-The timed call is the **string** path: Base64 of the IPC stream or Parquet bytes. There is no compliance decoder. The stream path is adapted (the same buffer written to the harness `Stream`), not a native streaming writer. Arrow and Parquet project `FFloat0` inside `table_project` deserialize. System.Text.Json, Google.Protobuf, FlatSharp, and Apache.Avro full-decode, then slice that column.
+The timed call is the **bytes** path: the IPC stream or Parquet bytes. There is no compliance decoder. The stream path is adapted (the same buffer written to the harness `Stream`), not a native streaming writer. Arrow and Parquet project `FFloat0` inside `table_project` deserialize. System.Text.Json, Google.Protobuf, FlatSharp, and Apache.Avro full-decode, then slice that column.
 
 **sbe** was not registered. sbe-tool 1.40.2 accepts `schemas/v2/sbe/signal.xml`, but no NuGet package provides `Org.SbeTool.Sbe.Dll` at 1.40.2. NuGet `sbe-tool` 1.23.1.1 is an older `SBE.dll` (`net45` / `netstandard2.0`). The generated namespace would also collide with Google.Protobuf's `Benchmark.V2`.
 

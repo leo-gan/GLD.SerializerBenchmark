@@ -28,8 +28,8 @@ namespace GLD.SerializerBenchmark
         /// <summary>Untimed domain conversion after timed deserialize.</summary>
         object ToDomain(object decoded);
 
-        string Serialize(object serializable);
-        object Deserialize(string serialized);
+        byte[] SerializeBytes(object serializable);
+        object DeserializeBytes(byte[] serialized);
 
         void Serialize(object serializable, Stream outputStream);
         object Deserialize(Stream inputStream);

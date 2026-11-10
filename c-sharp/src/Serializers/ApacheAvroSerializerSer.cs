@@ -95,16 +95,16 @@ namespace GLD.SerializerBenchmark.Serializers
             _reuse = null;
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             _serMs.SetLength(0);
             _write(serializable, _serEnc);
-            return Convert.ToBase64String(_serMs.GetBuffer(), 0, (int)_serMs.Length);
+            return _serMs.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             _deMs.SetLength(0);
             _deMs.Write(bytes, 0, bytes.Length);
             _deMs.Position = 0;

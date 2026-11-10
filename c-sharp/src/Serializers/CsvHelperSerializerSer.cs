@@ -45,18 +45,18 @@ namespace GLD.SerializerBenchmark.Serializers
                 throw new InvalidOperationException($"CsvHelper expects List<TRow>, got {nativeRoot}");
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var rows = NativeOf(serializable);
             using var w = new StringWriter();
             using var csv = new CsvWriter(w, Cfg);
             WriteRecords(csv, rows);
-            return w.ToString();
+            return Utf8Bytes(w.ToString());
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            using var r = new StringReader(serialized);
+            using var r = new StringReader(Utf8Text(serialized));
             using var csv = new CsvReader(r, Cfg);
             return ReadRecords(csv);
         }

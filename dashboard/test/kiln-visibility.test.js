@@ -18,7 +18,7 @@ const WIRE = {
   shard: 1836060,
   request: 24623,
 };
-// C# bytes mode stores the Base64 text length of that wire payload.
+// Published C# tensor sizes are the Base64 length of that wire payload.
 const CSHARP = {
   tensor: 5592424,
   tensor_view: 5592424,

@@ -30,11 +30,11 @@ namespace GLD.SerializerBenchmark.Serializers
                 ?? throw new NotSupportedException($"No reflection type shape is available for {serializablePrimaryType}.");
         }
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(Serializer.SerializeObject(serializable, _shape));
+        public override byte[] SerializeBytes(object serializable)
+            => Serializer.SerializeObject(serializable, _shape);
 
-        public override object Deserialize(string serialized)
-            => Serializer.DeserializeObject(Convert.FromBase64String(serialized), _shape);
+        public override object DeserializeBytes(byte[] serialized)
+            => Serializer.DeserializeObject(serialized, _shape);
 
         public override void Serialize(object serializable, Stream outputStream)
             => Serializer.SerializeObject(outputStream, serializable, _shape);

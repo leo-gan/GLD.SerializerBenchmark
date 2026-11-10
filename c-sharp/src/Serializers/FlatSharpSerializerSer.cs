@@ -57,12 +57,12 @@ namespace GLD.SerializerBenchmark.Serializers
         static T ParseNative<T>(FlatBufferSerializer fb, byte[] bytes) where T : class
             => fb.Parse<T>(bytes);
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(_ser(NativeOf(serializable)));
+        public override byte[] SerializeBytes(object serializable)
+            => _ser(NativeOf(serializable));
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var native = _parse(Convert.FromBase64String(serialized));
+            var native = _parse(serialized);
             return IsTableProject ? ColumnarProject.FFloat0(native) : native;
         }
 

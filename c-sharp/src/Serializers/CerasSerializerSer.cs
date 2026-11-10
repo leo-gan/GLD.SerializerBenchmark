@@ -16,11 +16,11 @@ namespace GLD.SerializerBenchmark.Serializers
             // Ceras is now enabled - uses reflection for generic type deserialization
             return !IsArrayType(testDataName);
         }
-        public override string Serialize(object serializable) => Convert.ToBase64String(_serializer.Value.Serialize(serializable));
+        public override byte[] SerializeBytes(object serializable) => _serializer.Value.Serialize(serializable);
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             // Use reflection to call generic Deserialize<T>(byte[]) with _primaryType
             var method = typeof(Ceras.CerasSerializer).GetMethods()
                 .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(byte[]));

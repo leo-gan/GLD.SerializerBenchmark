@@ -53,8 +53,8 @@ On the **Dashboard** Mode filter you usually see:
 
 | Label on Dashboard | Everyday meaning | Typical CSV value (`StringOrStream`) |
 |------------------|------------------|--------------------------------------|
-| **bytes mode** | In-memory buffer (or language equivalent) | `bytes`, `buffer`, or C# **`string`** |
-| **stream mode** | Stream-style write/read | `stream` or `Stream` |
+| **bytes mode** | In-memory buffer | `bytes` (older C# logs may say `string`) |
+| **stream mode** | Stream-style write/read | `stream` |
 
 **Important:** these names describe the **programming interface**, not the **size** of the data. “Bytes mode” does **not** mean “small payload.” “Stream mode” does **not** mean “large payload.”
 
@@ -67,22 +67,9 @@ For **each** I/O mode, the stopwatch covers:
 
 Setup (schemas, maps, buffer pools) is **not timed**. Details: [Architecture — what we measure](architecture.md#measurement-model) and [Timing honesty](TIMING_HONESTY.md).
 
-### C# special case: “string” instead of “bytes”
+### Older C# logs
 
-Most languages log the in-memory path as `bytes`. **C#** often logs it as **`string`**, because many .NET libraries expose `Serialize` / `Deserialize` that return or take a `string`.
-
-| Language family | In-memory path in CSV | Dashboard label |
-|-----------------|----------------------|---------------|
-| Python, Rust, Go, Java, C, C++, JS, Swift | `bytes` (or similar) | **bytes mode** |
-| C# | `string` | still shown as **bytes mode** in multi-language tables for consistency |
-
-On C#, for **binary** libraries, that string is often **Base64** text of the real binary payload. So:
-
-- The **string** path times Base64 encode/decode as well as the library.  
-- The **stream** path may write raw binary without Base64.  
-- **Sizes** on the string path can look larger than stream sizes for the same object — that can be Base64, not a different object.
-
-C#-specific notes: [C# overview — string vs stream](../c-sharp/index.md#string-mode-vs-stream-mode).
+Runners log the in-memory path as `bytes`. Older C# logs and the published C# snapshot say `string`. On those rows, binary libraries timed Base64 of the payload, so the string size is larger than the stream size. The fold keeps the raw-byte row as the parent.
 
 ### Three levels of “stream” honesty {#three-levels-of-stream-honesty}
 
@@ -242,7 +229,7 @@ If stream and bytes look almost equal, open [stream honesty](#three-levels-of-st
 
 | If you hear… | It means… |
 |--------------|-----------|
-| “bytes mode” / “string mode” | In-memory API path (C# uses string) |
+| “bytes mode” / “string mode” | In-memory API path. `string` is the older C# label |
 | “stream mode” | Stream API path (native, text-on-stream, or adapted) |
 | “smoke / full / research” | How heavy the **run** is (repetitions / matrix intent) |
 | “message @ n=100” | Data type + batch size — **not** an I/O mode |
@@ -258,7 +245,7 @@ If stream and bytes look almost equal, open [stream honesty](#three-levels-of-st
 | How CSVs become numbers | [Methodology](ANALYSIS_METHODOLOGY.md) |
 | Column dictionary | [Metrics](METRICS.md) |
 | Data types and batch size N | [Data sets](test_data_configuration.md) |
-| C# string / Base64 / envelopes | [C# overview](../c-sharp/index.md) |
+| C# envelopes | [C# overview](../c-sharp/index.md) |
 | Fair format families | [Families](families.md) |
 
 

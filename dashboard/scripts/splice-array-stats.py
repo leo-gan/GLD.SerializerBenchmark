@@ -76,7 +76,7 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
         if count != 1:
             raise SystemExit(f"{csv_path}: refusing instance count {count!r}")
         mode = str(row.get("StringOrStream") or "")
-        if mode != MODES[name]:
+        if mode != MODES[name] and not (MODES[name] == "bytes" and mode == "string"):
             raise SystemExit(f"{csv_path}: {name} I/O mode {mode!r}")
         stream_mode = str(row.get("StreamMode") or "").strip()
         if MODES[name] == "stream" and stream_mode != "native":
@@ -234,8 +234,8 @@ def _select_language(language: str) -> None:
         "cpp": (("highfive",), {"highfive": "hdf5"}, "bytes"),
         "rust": (("hdf5-metno",), {"hdf5-metno": "hdf5"}, "bytes"),
         "javascript": (("h5wasm",), {"h5wasm": "hdf5"}, "bytes"),
-        # The C# runner labels the in-memory row "string". Analysis publishes it as bytes.
-        "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "string"),
+        # C# now logs bytes. Older logs say string; the row check accepts both.
+        "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "bytes"),
         "mojo": (("gld-hdf5",), {"gld-hdf5": "hdf5"}, "bytes"),
     }
     if language not in profiles:

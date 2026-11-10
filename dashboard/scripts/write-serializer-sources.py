@@ -484,8 +484,8 @@ SPECIFICS: dict[str, str] = {
     "PureHDF": (
         "PureHDF is a managed C# HDF5 reader and writer. It does not call "
         "libhdf5. This row times one float64 dataset named grid. grid_window "
-        "reads a hyperslab selection. The string path carries the file bytes "
-        "as Latin-1 so the size is the file length. The row does not time "
+        "reads a hyperslab selection. The bytes path returns the file bytes, "
+        "so the size is the file length. The row does not time "
         "the five suite types."
     ),
     "h5wasm": (
@@ -1777,7 +1777,7 @@ SPECIFICS: dict[str, str] = {
         "batches without copying each one into a private layout. The problem "
         "was a convert-at-every-boundary tax. Arrow IPC is the stream format "
         "for those batches. This row times Apache.Arrow 23.0.0 stream writer "
-        "and reader on the string path (Base64 of the IPC stream), not the "
+        "and reader on the bytes path, not the "
         "Arrow file format. Row-to-column conversion stays inside serialize. "
         "table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no "
         "net10.0 asset; the net10.0 project consumes the net8.0 asset. "
@@ -1787,8 +1787,8 @@ SPECIFICS: dict[str, str] = {
         "Apache Parquet was created as a columnar file for scans that touch "
         "a few fields of many rows. The problem was row files that made every "
         "reader parse every column. This row times Parquet.Net 6.1.0 at the "
-        "library default, Snappy. The timed call is the string path (Base64 "
-        "of the Parquet bytes). table_project reads the FFloat0 data field. "
+        "library default, Snappy. The timed call is the bytes path. "
+        "table_project reads the FFloat0 data field. "
         "The package has an explicit net10.0 asset. No compliance decoder."
     ),
     "parquet-uncompressed-csharp": (
@@ -2407,7 +2407,7 @@ EXTRA: dict[tuple[str, str], str] = {
         "This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes."
     ),
     ("csharp", "fory"): (
-        "This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted."
+        "This row uses Apache.Fory source-generated serializers. The bytes path is the library payload, and the stream path is adapted."
     ),
     ("rust", "fory"): (
         "This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer."

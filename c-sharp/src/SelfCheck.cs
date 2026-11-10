@@ -58,8 +58,8 @@ namespace GLD.SerializerBenchmark
                 {
                     zf.Initialize(fx.DataType, fx.SecondaryDataTypes);
                     zf.PrepareData(fx.Data);
-                    var s = zf.Serialize(fx.Data);
-                    var d = zf.ToDomain(zf.Deserialize(s));
+                    var s = zf.SerializeBytes(fx.Data);
+                    var d = zf.ToDomain(zf.DeserializeBytes(s));
                     if (!Comparer.Compare(fx.Data, d, out var err, new Log { Size = s?.Length ?? 1 }, false))
                     {
                         Console.WriteLine($"FAIL ZeroFormatter roundtrip {fx.Name}: {err}");
@@ -82,8 +82,8 @@ namespace GLD.SerializerBenchmark
                 {
                     ion.Initialize(fx.DataType, fx.SecondaryDataTypes);
                     ion.PrepareData(fx.Data);
-                    var s = ion.Serialize(fx.Data);
-                    var d = ion.ToDomain(ion.Deserialize(s));
+                    var s = ion.SerializeBytes(fx.Data);
+                    var d = ion.ToDomain(ion.DeserializeBytes(s));
                     if (!Comparer.Compare(fx.Data, d, out var err, new Log { Size = s?.Length ?? 1 }, false))
                     {
                         Console.WriteLine($"FAIL Amazon.IonDotnet bytes {fx.Name}: {err}");
@@ -118,8 +118,8 @@ namespace GLD.SerializerBenchmark
                 {
                     ser.Initialize(fx.DataType, fx.SecondaryDataTypes);
                     ser.PrepareData(fx.Data);
-                    var s = ser.Serialize(fx.Data);
-                    var d = ser.ToDomain(ser.Deserialize(s));
+                    var s = ser.SerializeBytes(fx.Data);
+                    var d = ser.ToDomain(ser.DeserializeBytes(s));
                     if (!Comparer.Compare(fx.Data, d, out var err, new Log { Size = s?.Length ?? 1 }, false))
                     {
                         Console.WriteLine($"FAIL {ser.Name} message: {err}");
@@ -251,9 +251,9 @@ namespace GLD.SerializerBenchmark
             raw.Initialize(dt, sec);
             snappy.PrepareData(rows);
             raw.PrepareData(rows);
-            var left = snappy.Serialize(rows);
-            var right = raw.Serialize(rows);
-            if (left == right)
+            var left = snappy.SerializeBytes(rows);
+            var right = raw.SerializeBytes(rows);
+            if (left.AsSpan().SequenceEqual(right))
             {
                 Console.WriteLine("FAIL parquet and parquet-uncompressed bytes match at N=100");
                 failures++;
@@ -286,9 +286,9 @@ namespace GLD.SerializerBenchmark
             }
             else
             {
-                var s = ser.Serialize(data);
+                var s = ser.SerializeBytes(data);
                 size = s?.Length ?? 0;
-                back = ser.ToDomain(ser.Deserialize(s));
+                back = ser.ToDomain(ser.DeserializeBytes(s));
             }
             object expected = data;
             if (typeId == "table_project")
@@ -325,13 +325,13 @@ namespace GLD.SerializerBenchmark
                     ser.BindFixture(typeId);
                     ser.Initialize(dt, sec);
                     ser.PrepareData(data);
-                    var payload = ser.Serialize(data);
-                    GC.KeepAlive(ser.Deserialize(payload));
+                    var payload = ser.SerializeBytes(data);
+                    GC.KeepAlive(ser.DeserializeBytes(payload));
                     var times = new long[reps];
                     for (int i = 0; i < reps; i++)
                     {
                         var sw = System.Diagnostics.Stopwatch.StartNew();
-                        var back = ser.Deserialize(payload);
+                        var back = ser.DeserializeBytes(payload);
                         times[i] = (long)(sw.ElapsedTicks * 1_000_000_000.0 / System.Diagnostics.Stopwatch.Frequency);
                         GC.KeepAlive(back);
                     }

@@ -54,8 +54,14 @@ namespace GLD.SerializerBenchmark
 
         public virtual object ToDomain(object decoded) => decoded;
 
-        public abstract string Serialize(object serializable);
-        public abstract object Deserialize(string serialized);
+        public abstract byte[] SerializeBytes(object serializable);
+        public abstract object DeserializeBytes(byte[] serialized);
+
+        protected static byte[] Utf8Bytes(string text) =>
+            System.Text.Encoding.UTF8.GetBytes(text ?? "");
+
+        protected static string Utf8Text(byte[] data) =>
+            System.Text.Encoding.UTF8.GetString(data ?? System.Array.Empty<byte>());
 
         public abstract void Serialize(object serializable, Stream outputStream);
         public abstract object Deserialize(Stream inputStream);

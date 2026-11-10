@@ -34,11 +34,11 @@ namespace GLD.SerializerBenchmark.Serializers
             _wy = grid.Wy;
         }
 
-        public override string Serialize(object serializable) =>
-            Encoding.Latin1.GetString(Write((Grid)serializable));
+        public override byte[] SerializeBytes(object serializable) =>
+            Write((Grid)serializable);
 
-        public override object Deserialize(string serialized) =>
-            Read(Encoding.Latin1.GetBytes(serialized));
+        public override object DeserializeBytes(byte[] serialized) =>
+            Read(serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
         {

@@ -4,7 +4,7 @@ namespace GLD.SerializerBenchmark
     internal static class StreamModeHelper
     {
         /// <summary>
-        /// Resolve honesty label. Adapted = full string/Base64 then dump to stream.
+        /// Resolve honesty label. Adapted = full byte buffer then dump to stream.
         /// text_on_stream = library text writer on stream. Else native binary stream API.
         /// </summary>
         public static string Resolve(string serializerName)

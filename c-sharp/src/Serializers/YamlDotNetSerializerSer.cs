@@ -12,14 +12,14 @@ namespace GLD.SerializerBenchmark.Serializers
         private static readonly YamlDotNet.Serialization.ISerializer _serializer = new YamlDotNet.Serialization.SerializerBuilder().Build();
         private static readonly YamlDotNet.Serialization.IDeserializer _deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
         public override string Name => "YamlDotNet";
-        public override string Serialize(object serializable) => _serializer.Serialize(serializable);
-        public override object Deserialize(string serialized)
+        public override byte[] SerializeBytes(object serializable) => Utf8Bytes(_serializer.Serialize(serializable));
+        public override object DeserializeBytes(byte[] serialized)
         {
             // Use reflection to call generic Deserialize<T>(TextReader) with _primaryType
             var method = _deserializer.GetType().GetMethods()
                 .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(TextReader));
             var genericMethod = method.MakeGenericMethod(_primaryType);
-            return genericMethod.Invoke(_deserializer, new object[] { new StringReader(serialized) });
+            return genericMethod.Invoke(_deserializer, new object[] { new StringReader(Utf8Text(serialized)) });
         }
         public override void Serialize(object serializable, Stream outputStream) {
             using var sw = new StreamWriter(outputStream, Encoding.UTF8, 1024, true);

@@ -32,18 +32,18 @@ namespace GLD.SerializerBenchmark.Serializers
             }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             if (_serializer == null) throw new InvalidOperationException("NetSerializer not initialized");
             using var ms = new MemoryStream();
             _serializer.Serialize(ms, serializable);
-            return Convert.ToBase64String(ms.ToArray());
+            return ms.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
             if (_serializer == null) throw new InvalidOperationException("NetSerializer not initialized");
-            using var ms = new MemoryStream(Convert.FromBase64String(serialized));
+            using var ms = new MemoryStream(serialized);
             return _serializer.Deserialize(ms);
         }
 

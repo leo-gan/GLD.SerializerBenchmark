@@ -155,8 +155,7 @@ An **I/O mode** is the API the runner called.
 
 | Dashboard label | CSV `StringOrStream` | Meaning |
 | --- | --- | --- |
-| **Bytes mode** | `bytes`, `buffer`, or a similar in-memory name | The library’s in-memory buffer API, or that language’s equivalent. |
-| **String mode** | `string`, used by C# | The in-memory path. Multi-language tables still show it as bytes mode. For many binary libraries that string is Base64 of the raw bytes. |
+| **Bytes mode** | `bytes`, `buffer`, or `string` | The in-memory buffer API. `string` is the label on older C# logs and the published C# snapshot. Binary rows with that label are Base64 of the payload. |
 | **Stream mode** | `stream` or `Stream` | A stream-style write and a stream-style read. |
 
 Bytes mode and stream mode name the programming interface. Either API can carry a short record or a long one. Payload size is the separate `Size` column.

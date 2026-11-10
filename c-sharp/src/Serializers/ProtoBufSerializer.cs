@@ -37,18 +37,18 @@ namespace GLD.SerializerBenchmark.Serializers
             EnsureCompiled();
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             EnsureCompiled();
             _serMs.SetLength(0);
             _model.Serialize(_serMs, serializable);
-            return Convert.ToBase64String(_serMs.GetBuffer(), 0, (int)_serMs.Length);
+            return _serMs.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
             EnsureCompiled();
-            var b = Convert.FromBase64String(serialized);
+            var b = serialized;
             using var stream = new MemoryStream(b);
             return _model.Deserialize(stream, null, _primaryType);
         }

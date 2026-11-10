@@ -37,7 +37,7 @@ NAME = "gld-kiln"
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 TENSOR_TYPES = ("tensor", "tensor_view", "prompt", "shard", "request")
 MIN_REPS = 100
-# C# bytes mode records the Base64 text length. The wire size is the other languages.
+# Published C# tensor sizes are the Base64 length from that snapshot. The wire size is the other languages.
 CSHARP_SIZE = {
     "tensor": 5_592_424,
     "tensor_view": 5_592_424,

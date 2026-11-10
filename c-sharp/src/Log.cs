@@ -273,7 +273,9 @@ namespace GLD.SerializerBenchmark
             var fileCreationDateTimeString = string.Format(".{0}-{1}-{2}_{3}{4}{5}.", fileCreationDate.Year,
                 fileCreationDate.Month, fileCreationDate.Day,
                 fileCreationDate.Hour, fileCreationDate.Minute, fileCreationDate.Second);
-            return fileName + fileCreationDateTimeString + fileExtension;
+            var archived = fileName + fileCreationDateTimeString + fileExtension;
+            var dir = Path.GetDirectoryName(fileFullName);
+            return string.IsNullOrEmpty(dir) ? archived : Path.Combine(dir, archived);
         }
     }
 }

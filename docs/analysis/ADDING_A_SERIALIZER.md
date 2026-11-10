@@ -226,7 +226,7 @@ Update human-facing inventory so the site matches the runner:
 4. Root `README.md` language bullet count (if present).
 5. The language row in `docs/analysis/index.md` (registered-serializer count).
 6. Comment in `config/benchmark_config.yaml` for that language (if it mentions a count).
-7. Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).
+7. Stream honesty notes when the path is adapted or text-on-stream.
 8. Optional one-line **call-path** note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).
 
 ### 8. Build, peer-smoke, then full results
@@ -299,8 +299,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         // Prefer: Initialize/PrepareData for one-time setup (schema, ClassCache, compiled model, …)
 
-        public override string Serialize(object serializable) { /* … */ }
-        public override object Deserialize(string serialized) { /* … */ }
+        public override byte[] SerializeBytes(object serializable) { /* … */ }
+        public override object DeserializeBytes(byte[] serialized) { /* … */ }
         public override void Serialize(object serializable, Stream outputStream) { /* … */ }
         public override object Deserialize(Stream inputStream) { /* … */ }
     }
@@ -309,19 +309,17 @@ namespace GLD.SerializerBenchmark.Serializers
 
 `SerDeser.Version` already calls `SerializerVersionRegistry.Resolve(Name)`. You only add the map entry unless you override `Version`.
 
-**Binary on string mode:** return Base64 of the byte payload (same as ProtoBuf / MemoryPack) so the column stays a `string` while size still reflects wire length after decode in analysis conventions used by peers.
-
 **C# hot-path habits (same PR):**
 
 | Habit | Why |
 |-------|-----|
 | Build schema / `RuntimeTypeModel` / formatters in `Initialize` or `PrepareData` | Untimed setup |
 | Prefer typed APIs (`Something<T>`) bound once from `Type` | Avoid re-resolving via `object` every call |
-| Reuse `MemoryStream` + encoder/decoder on the **string/Base64** path when the library allows | Official samples often `new` every time; the timed path should not |
+| Reuse `MemoryStream` + encoder/decoder on the **bytes** path when the library allows | Official samples often `new` every time; the timed path should not |
 | Pass a **reuse** instance into deserialize when the API supports it | Cuts alloc on the hot loop |
 | Stream path: real library write/read on the harness `Stream` | Do not invent a slow redirect layer unless measurements show it helps |
 
-Reference client that went through this audit: `c-sharp/src/Serializers/ApacheAvroSerializerSer.cs` (typed Reflect + reuse on the string path).
+Reference client that went through this audit: `c-sharp/src/Serializers/ApacheAvroSerializerSer.cs` (typed Reflect + reuse on the bytes path).
 
 **Verify version + peer-smoke locally:**
 

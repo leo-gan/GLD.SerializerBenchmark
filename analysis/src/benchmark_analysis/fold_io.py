@@ -200,7 +200,7 @@ def fold_io_groups(
         chosen = opt_in.get((language, serializer))
         if language == "csharp" and _is_base64_pair(levels, ratio, tolerance):
             parent = _with_optional(_raw_bytes(levels), [], "raw_bytes")
-            if chosen and chosen.get("level") == "string":
+            if chosen:
                 string_level = next(group for group in levels if _mode(group) == "string")
                 parent["optional"] = [_child(string_level, "string")]
             folded.append(parent)

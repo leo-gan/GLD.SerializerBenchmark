@@ -15,12 +15,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void PrepareData(object data) => _native = data;
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return JsonSerializer.Serialize(_native ?? serializable, Options);
+            return JsonSerializer.SerializeToUtf8Bytes(_native ?? serializable, Options);
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
             var decoded = JsonSerializer.Deserialize(serialized, _primaryType, Options);
             return IsTableProject ? ColumnarProject.FFloat0(decoded) : decoded;

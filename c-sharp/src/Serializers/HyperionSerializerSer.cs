@@ -11,18 +11,18 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "Hyperion";
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using (var ms = new MemoryStream())
             {
                 _serializer.Serialize(serializable, ms);
-                return Convert.ToBase64String(ms.ToArray());
+                return ms.ToArray();
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var b = Convert.FromBase64String(serialized);
+            var b = serialized;
             using (var ms = new MemoryStream(b))
             {
                 return _serializer.Deserialize<object>(ms);

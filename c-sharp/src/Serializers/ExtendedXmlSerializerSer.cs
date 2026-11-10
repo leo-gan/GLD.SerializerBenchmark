@@ -51,20 +51,20 @@ namespace GLD.SerializerBenchmark.Serializers
             return decoded;
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var env = _native ?? Make(serializable);
-            return _serializer.Serialize(env);
+            return Utf8Bytes(_serializer.Serialize(env));
         }
 
-        public override object Deserialize(string serialized)
-            => _serializer.Deserialize<XmlEnvelope>(serialized);
+        public override object DeserializeBytes(byte[] serialized)
+            => _serializer.Deserialize<XmlEnvelope>(Utf8Text(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
         {
             // Adapted stream: same string path through a StreamWriter.
             using var sw = new StreamWriter(outputStream, System.Text.Encoding.UTF8, 1024, true);
-            sw.Write(Serialize(serializable));
+            sw.Write(Utf8Text(SerializeBytes(serializable)));
             sw.Flush();
         }
 
@@ -72,7 +72,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             inputStream.Seek(0, SeekOrigin.Begin);
             using var sr = new StreamReader(inputStream, System.Text.Encoding.UTF8, false, 1024, true);
-            return Deserialize(sr.ReadToEnd());
+            return DeserializeBytes(Utf8Bytes(sr.ReadToEnd()));
         }
 
         static XmlEnvelope Make(object data) => new XmlEnvelope

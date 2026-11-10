@@ -25,16 +25,16 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "MS Bond Fast";
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var output = new OutputBuffer(2 * 1024);
             _serializer.Serialize(serializable, new FastBinaryWriter<OutputBuffer>(output));
-            return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
+            return output.Data.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var input = new InputBuffer(Convert.FromBase64String(serialized));
+            var input = new InputBuffer(serialized);
             return _deserializer.Deserialize(new FastBinaryReader<InputBuffer>(input));
         }
 

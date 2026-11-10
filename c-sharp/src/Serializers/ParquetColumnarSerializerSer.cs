@@ -60,12 +60,12 @@ namespace GLD.SerializerBenchmark.Serializers
                 .MakeGenericMethod(_rowType);
         }
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(Encode(serializable));
+        public override byte[] SerializeBytes(object serializable)
+            => Encode(serializable);
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             return IsTableProject ? Project(bytes) : Decode(bytes);
         }
 

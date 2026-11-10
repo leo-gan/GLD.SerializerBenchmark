@@ -23,20 +23,20 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "MS XmlSerializer"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             Initialize();
             using (var sw = new StringWriter())
             {
                 _serializer.Serialize(sw, serializable);
-                return sw.ToString();
+                return Utf8Bytes(sw.ToString());
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
             Initialize();
-            using (var sr = new StringReader(serialized))
+            using (var sr = new StringReader(Utf8Text(serialized)))
             {
                 return _serializer.Deserialize(sr);
             }

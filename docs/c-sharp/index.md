@@ -41,7 +41,7 @@ Modern codecs such as MemoryPack, FlatSharp, and SpanJson avoid extra copies by 
 
 Apex.Serialization was removed because it crashes on .NET 8. ZeroFormatter’s dynamic IL path is also broken on net8, so the suite uses `KeyTuple` shapes instead.
 
-On the **string** path, binary codecs usually encode the payload as Base64. That extra encode and decode runs inside the timer. See [string vs stream](#string-mode-vs-stream-mode).
+The in-memory path is `bytes`, the same label the other languages use. See [bytes and stream](#bytes-mode-and-stream-mode).
 
 ExtendedXmlSerializer and Migrant do not serialize the suite objects as native XML or binary. They serialize a JSON envelope. See [envelope codecs](#envelope-codecs-not-native-domain-wire).
 
@@ -65,17 +65,17 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 |----------|----------|-----------------|
 | [Amazon.IonDotnet](https://github.com/amazon-ion/ion-dotnet) | Binary | Ion team .NET binary reader/writer (NuGet `Amazon.IonDotnet`); reflection over suite types; `forceFloat64` |
 | [Apache.Avro](https://github.com/apache/avro) | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
-| [arrow-ipc](https://github.com/apache/arrow-dotnet) | Columnar | Apache.Arrow **23.0.0** IPC **stream** (not the file format). String path is Base64 of those bytes. `table_project` reads the `FFloat0` value buffer only. Supports only `table`, `table_project`, `nested_table`, `signal`. No compliance decoder |
-| [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
+| [arrow-ipc](https://github.com/apache/arrow-dotnet) | Columnar | Apache.Arrow **23.0.0** IPC **stream** (not the file format). Bytes path is the IPC payload. `table_project` reads the `FFloat0` value buffer only. Supports only `table`, `table_project`, `nested_table`, `signal`. No compliance decoder |
+| [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); bytes path is the library payload |
 | [Ceras](https://github.com/rikimaru0345/Ceras) | Binary | Ceras |
 | [CsvHelper](https://github.com/JoshClose/CsvHelper) | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
 | [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer) | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | [fastJson](https://github.com/mgholam/fastJSON) | JSON | FastJson |
 | [FlatSharp](https://github.com/jamescourtney/FlatSharp) | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
-| [fory](https://github.com/apache/fory) | Binary | Apache.Fory source-generated serializers on `[ForyStruct]` domain types; string mode is Base64; stream is adapted |
+| [fory](https://github.com/apache/fory) | Binary | Apache.Fory source-generated serializers on `[ForyStruct]` domain types; bytes path is the library payload; stream is adapted |
 | [FsPickler](https://github.com/mbraceproject/FsPickler) | Binary | FsPickler binary |
 | [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | JSON | FsPickler JSON |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) | Binary | `Gld.Kiln` 0.2.0 from git tag `0.2.0`; positional `Writer.Encode` / decode; a batch is one list; string mode is Base64 |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) | Binary | `Gld.Kiln` 0.2.0 from git tag `0.2.0`; positional `Writer.Encode` / decode; a batch is one list; bytes path is the library payload |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
 | [GroBuf](https://github.com/skbkontur/GroBuf) | Binary | GroBuf |
 | [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
@@ -95,17 +95,17 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [MS XmlSerializer](https://github.com/dotnet/runtime) | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
 | [NetJSON](https://github.com/rpgmaker/NetJSON) | JSON | NetJSON |
 | [NetSerializer](https://github.com/tomba/netserializer) | Binary | NetSerializer |
-| [parquet](https://github.com/aloneguid/parquet-dotnet) | Columnar | Parquet.Net **6.1.0** (explicit `net10.0`), library default **Snappy**. String path is Base64. `table_project` reads the `FFloat0` data field only. No compliance decoder |
-| [parquet-uncompressed](https://github.com/aloneguid/parquet-dotnet) | Columnar | Same Parquet.Net writer with `CompressionMethod.None`. String path is Base64. No compliance decoder |
+| [parquet](https://github.com/aloneguid/parquet-dotnet) | Columnar | Parquet.Net **6.1.0** (explicit `net10.0`), library default **Snappy**. Bytes path is the Parquet payload. `table_project` reads the `FFloat0` data field only. No compliance decoder |
+| [parquet-uncompressed](https://github.com/aloneguid/parquet-dotnet) | Columnar | Same Parquet.Net writer with `CompressionMethod.None`. Bytes path is the Parquet payload. No compliance decoder |
 | [ProtoBuf](https://github.com/protobuf-net/protobuf-net) | Schema | protobuf-net |
 | [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text) | Binary | ServiceStack type serializer (non-JSON) |
 | [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
 | [SharpSerializer](https://github.com/polenter/SharpSerializer) | Binary / XML | SharpSerializer |
 | [SharpYaml](https://github.com/xoofx/SharpYaml) | YAML | SharpYaml |
-| [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift) | Binary / CBOR | ShapeShift's source-generated CBOR serializer; string mode = Base64 of bytes |
+| [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift) | Binary / CBOR | ShapeShift's source-generated CBOR serializer; bytes path is the library payload |
 | [ShapeShift.Json](https://github.com/AArnott/ShapeShift) | JSON | ShapeShift's source-generated JSON serializer |
-| [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift) | Binary / MessagePack | ShapeShift's source-generated MessagePack serializer; string mode = Base64 of bytes |
-| [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift) | Schema / Protobuf | ShapeShift's source-generated protobuf-style serializer; string mode = Base64 of bytes |
+| [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift) | Binary / MessagePack | ShapeShift's source-generated MessagePack serializer; bytes path is the library payload |
+| [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift) | Schema / Protobuf | ShapeShift's source-generated protobuf-style serializer; bytes path is the library payload |
 | [ShapeShift.Taml](https://github.com/AArnott/ShapeShift) | TAML | ShapeShift's source-generated TAML serializer (all suite data except `strings`) |
 | [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) | TOML | ShapeShift's source-generated TOML serializer |
 | [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) | YAML | ShapeShift's source-generated YAML serializer |
@@ -130,7 +130,7 @@ Apache Avro was created for Hadoop-era pipelines: compact binary records with th
 
 #### [arrow-ipc](https://github.com/apache/arrow-dotnet)
 
-Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Apache.Arrow 23.0.0 stream writer and reader on the string path (Base64 of the IPC stream), not the Arrow file format. Row-to-column conversion stays inside serialize. table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no net10.0 asset; the net10.0 project consumes the net8.0 asset. No compliance decoder.
+Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times Apache.Arrow 23.0.0 stream writer and reader on the bytes path, not the Arrow file format. Row-to-column conversion stays inside serialize. table_project reads the FFloat0 value buffer. NuGet 23.0.0 has no net10.0 asset; the net10.0 project consumes the net8.0 asset. No compliance decoder.
 
 #### [BinaryPack](https://github.com/Sergio0694/BinaryPack)
 
@@ -158,7 +158,7 @@ FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so reader
 
 #### [fory](https://github.com/apache/fory)
 
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted.
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers. The bytes path is the library payload, and the stream path is adapted.
 
 #### [FsPickler](https://github.com/mbraceproject/FsPickler)
 
@@ -250,7 +250,7 @@ NetSerializer is a compact, fast binary serializer for .NET. It was written to p
 
 #### [parquet](https://github.com/aloneguid/parquet-dotnet)
 
-Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Parquet.Net 6.1.0 at the library default, Snappy. The timed call is the string path (Base64 of the Parquet bytes). table_project reads the FFloat0 data field. The package has an explicit net10.0 asset. No compliance decoder.
+Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times Parquet.Net 6.1.0 at the library default, Snappy. The timed call is the bytes path. table_project reads the FFloat0 data field. The package has an explicit net10.0 asset. No compliance decoder.
 
 #### [parquet-uncompressed](https://github.com/aloneguid/parquet-dotnet)
 
@@ -278,19 +278,19 @@ SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet line
 
 #### [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes the CBOR bytes. The package has no stream API, so the stream row adapts its byte-array API.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the CBOR payload. The package has no stream API, so the stream row adapts its byte-array API.
 
 #### [ShapeShift.Json](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is UTF-8 of the serializer's text API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
 
 #### [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the MessagePack payload. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
 
 #### [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the library payload. The package has no stream API, so the stream row adapts its byte-array API.
 
 #### [ShapeShift.Taml](https://github.com/AArnott/ShapeShift)
 
@@ -331,7 +331,7 @@ ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary seriali
 
 ### Columnar fixtures
 
-The three new rows time **bytes only**: the harness string path, which is Base64 of the IPC stream or Parquet payload. That Base64 encode and decode is inside the timer. The stream path is **adapted** (the same buffer is copied onto the harness `Stream`). It is not a native streaming writer, and it is not the number to quote for these rows. There is **no compliance decoder** for Arrow or Parquet.
+Arrow and Parquet time the **bytes** path: the IPC or Parquet buffer. The stream path is **adapted** (the same buffer is copied onto the harness `Stream`). It is not a native streaming writer. There is **no compliance decoder** for Arrow or Parquet.
 
 `Supports` on these rows is true only for `table`, `table_project`, `nested_table`, and `signal`. Older classes still default `Supports` to true. A columnar run without a comma-separated allow-list is forbidden: an empty filter selects all 50 names, and a filter with no comma is still a case-insensitive substring (`json` matches every JSON library). With a comma, names must match exactly, ignoring case. `json,` selects nothing. `protobuf,` selects only `ProtoBuf`, not `Google.Protobuf`, LightProto, or ShapeShift.Protobuf.
 
@@ -356,7 +356,7 @@ BENCHMARK_RUN_CONFIG=../config/library/columnar-smoke.yaml \
   "arrow-ipc,parquet,parquet-uncompressed,System.Text.Json,Google.Protobuf,FlatSharp,Apache.Avro"
 ```
 
-The C# runner still times string and stream even when the YAML lists `io_modes: [bytes]`. Quote the string column for these rows. In-process checks (no second harness): `dotnet run --project src -c Release -- selfcheck`.
+I/O modes come from the run config. `io_modes: [bytes]` still adds `stream` when a selected name is on the shared opt-in list, the same rule as the other runners. In-process checks: `dotnet run --project src -c Release -- selfcheck`.
 
 ### Envelope codecs (not native domain wire)
 
@@ -365,31 +365,31 @@ These rows stay in the matrix for history and size noise, but **Dashboard number
 | Log name | Timed wire | Untimed fidelity | Stream mode |
 |----------|------------|------------------|-------------|
 | **ExtendedXmlSerializer** | ExtendedXml of `{ TypeName, Json }` where `Json` is Newtonsoft of the domain object | `ToDomain` deserializes JSON | **Adapted** — UTF-8 `StreamWriter` of the XML string |
-| **Migrant** | Migrant of the same JSON envelope POCO | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope only; **string mode** is Base64 of those bytes |
+| **Migrant** | Migrant of the same JSON envelope POCO | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope; the bytes path is those same bytes |
 
 Source: [`ExtendedXmlSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs), [`MigrantSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/MigrantSerializerSer.cs).
 
 **Compare fairly:** use **MS XmlSerializer** / **YAXLib** / **MS DataContract** for real XML-ish paths; use **Ceras**, **MemoryPack**, **NetSerializer**, etc. for binary domain graphs — not Migrant’s envelope row.
 
-### String mode vs stream mode
+### Bytes mode and stream mode
 
-CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labels: **bytes mode** often means the non-stream column; for C# that column is the **string** path).
+CSV column `StringOrStream` is **`bytes`** or **`stream`**, the same labels as the other languages. Older logs in this tree say `string` and `Stream`. On those older rows, binary codecs timed Base64 of the payload.
 
-| Path | Meaning on C# |
-|------|----------------|
-| **Stream** | `Serialize`/`Deserialize` with `Stream`. |
-| **string** | `Serialize`/`Deserialize` with `string`. **Text** codecs return real text. **Binary** codecs usually return **Base64** of the byte payload (extra encode/decode on the timed path). |
+| Path | Meaning |
+|------|---------|
+| **bytes** | `SerializeBytes` / `DeserializeBytes`. Binary codecs time the library byte payload. Text codecs time UTF-8 of the library text. |
+| **stream** | `Serialize` / `Deserialize` with `Stream`. |
 
 **Stream honesty**
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | **arrow-ipc**, **parquet**, **parquet-uncompressed** (full IPC/Parquet buffer copied onto the harness stream; the honest columnar number is the string/bytes path), ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+| **Adapted stream** | Stream path writes or reads a finished buffer rather than a native streaming API | **arrow-ipc**, **parquet**, **parquet-uncompressed** (the IPC or Parquet buffer copied onto the harness stream), ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper, fastJson, NetJSON, Ceras |
 | **Native text stream** | Library writes/reads `Stream` directly with its text codec API | ShapeShift.Json |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
-When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
+When stream and bytes are within a few percent, check which kind applies. Compare inside one mode. Older binary rows that say `string` include Base64, so that size is not the raw payload.
 
 ### Caveats
 

@@ -35,11 +35,11 @@ namespace GLD.SerializerBenchmark.Serializers
             _deser = TypedSer.BindDeserializeBytes(nativeRoot, deserOpen);
         }
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(_ser(NativeOf(serializable)));
+        public override byte[] SerializeBytes(object serializable)
+            => _ser(NativeOf(serializable));
 
-        public override object Deserialize(string serialized)
-            => _deser(Convert.FromBase64String(serialized));
+        public override object DeserializeBytes(byte[] serialized)
+            => _deser(serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
         {

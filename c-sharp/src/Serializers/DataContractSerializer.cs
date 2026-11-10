@@ -26,7 +26,7 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "MS DataContract"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             Initialize();
             using (var stream = new MemoryStream())
@@ -34,14 +34,14 @@ namespace GLD.SerializerBenchmark.Serializers
                 _serializer.WriteObject(stream, serializable);
                 stream.Flush();
                 stream.Position = 0;
-                return Convert.ToBase64String(stream.ToArray());
+                return stream.ToArray();
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
             Initialize();
-            var b = Convert.FromBase64String(serialized);
+            var b = serialized;
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);

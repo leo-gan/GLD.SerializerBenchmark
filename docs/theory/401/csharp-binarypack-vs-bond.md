@@ -8,7 +8,7 @@ This page compares the two timed wrappers and the library code they invoke. Afte
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking. The C# “string” path (canonical `mode=bytes`) Base64-encodes binary codecs; compare ranks, not raw byte sizes against other languages.
+not a universal ranking. That published slice timed Base64 around both binary codecs. Compare ranks inside C#, not those sizes against another language.
 
 [Open this slice on the Dashboard](../../dashboard/?lang=csharp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=BinaryPack&ser=BinaryPack&ser=MS%20Bond%20Fast#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
@@ -29,11 +29,11 @@ BinaryPack emits **raw fields in declaration order**. Bond Fast emits **a type b
 
 ## The two timed call sites
 
-**BinaryPack** binds a closed generic once and, during the timed call, serializes then Base64-encodes (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`):
+**BinaryPack** binds a closed generic once and, during the timed call, serializes to bytes (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`):
 
 ```csharp
-public override string Serialize(object serializable)
-    => Convert.ToBase64String(_serBytes(serializable));
+public override byte[] SerializeBytes(object serializable)
+    => _serBytes(serializable);
 ```
 
 `_serBytes` is `BinaryConverter.Serialize<T>` for the prepared `T`.
@@ -41,16 +41,15 @@ public override string Serialize(object serializable)
 **Bond Fast** builds `Serializer<FastBinaryWriter<OutputBuffer>>` once, then allocates a 2 KiB `OutputBuffer` on every encode (`c-sharp/src/Serializers/BondFastSerializer.cs`):
 
 ```csharp
-public override string Serialize(object serializable)
+public override byte[] SerializeBytes(object serializable)
 {
-    Ensure();
     var output = new OutputBuffer(2 * 1024);
     _serializer.Serialize(serializable, new FastBinaryWriter<OutputBuffer>(output));
-    return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
+    return output.Data.ToArray();
 }
 ```
 
-Both pay Base64. That cost is shared. It does not explain the rank.
+The published numbers include a shared Base64 step. That cost does not explain the rank. The wrappers now time the library bytes.
 
 ## What BinaryPack generates
 
@@ -108,7 +107,7 @@ Eight line items, each with three fields, plus the document header: the type-and
 
 ## Honesty
 
-1. **Base64 is timed** for both. Do not compare these sizes to Rust or C byte counts.
+1. **The quoted table includes Base64** on both sides. Do not compare those sizes to Rust or C byte counts.
 2. **MemoryPack** is also specialized (source-generated formatters on the models). This runner calls the non-generic `MemoryPackSerializer.Serialize(Type, object)` API, so the measured MemoryPack row is not the fastest MemoryPack path. That is why this page uses Bond Fast as the schema-driven counterpart.
 3. Bond Compact would change the integer encoding. It is a different row on the Dashboard.
 

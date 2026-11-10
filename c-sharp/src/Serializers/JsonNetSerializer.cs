@@ -17,19 +17,19 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "Json.Net"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using (var sw = new StringWriter())
             using (var jw = new JsonTextWriter(sw))
             {
                 _serializer.Serialize(jw, serializable);
-                return sw.ToString();
+                return Utf8Bytes(sw.ToString());
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            using (var sr = new StringReader(serialized))
+            using (var sr = new StringReader(Utf8Text(serialized)))
             using (var jr = new JsonTextReader(sr))
             {
                 return _serializer.Deserialize(jr, _primaryType);
