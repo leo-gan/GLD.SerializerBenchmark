@@ -1461,6 +1461,29 @@ const GROUP_IDENTITY_KEYS = new Set([
   'variants',
 ]);
 
+function hydrateMetricAliases(target) {
+  if (!target || typeof target !== 'object') return target;
+  if (target.ser_mean_ns == null && target.avg_time_ser_ns != null) {
+    target.ser_mean_ns = target.avg_time_ser_ns;
+  }
+  if (target.deser_mean_ns == null && target.avg_time_deser_ns != null) {
+    target.deser_mean_ns = target.avg_time_deser_ns;
+  }
+  if (target.total_mean_ns == null && target.avg_time_total_ns != null) {
+    target.total_mean_ns = target.avg_time_total_ns;
+  }
+  if (target.ser_p50_ns == null && target.ser_median_ns != null) {
+    target.ser_p50_ns = target.ser_median_ns;
+  }
+  if (target.deser_p50_ns == null && target.deser_median_ns != null) {
+    target.deser_p50_ns = target.deser_median_ns;
+  }
+  if (target.total_p50_ns == null && target.total_median_ns != null) {
+    target.total_p50_ns = target.total_median_ns;
+  }
+  return target;
+}
+
 /**
  * Expand schema 2.2 identity+variants groups into flat per-policy rows.
  * Merges catalog label/description into each filter block (export omits them).
@@ -1503,17 +1526,43 @@ function expandVariantGroups(slimGroups, catalog) {
       if (filter.label == null && cat.label) filter.label = cat.label;
       if (filter.description == null && cat.description) filter.description = cat.description;
       if (filter.policy == null) filter.policy = pid;
-      const row = {
+      if (filter.method == null && cat.outlier_method != null) filter.method = cat.outlier_method;
+      if (filter.iqr_k == null && cat.iqr_k != null) filter.iqr_k = cat.iqr_k;
+      if (filter.winsorize_percentiles == null && cat.winsorize_percentiles != null) {
+        filter.winsorize_percentiles = cat.winsorize_percentiles;
+      }
+      if (filter.paired == null && cat.paired != null) filter.paired = cat.paired;
+      if (filter.exclude_warmup == null && cat.exclude_warmup != null) {
+        filter.exclude_warmup = cat.exclude_warmup;
+      }
+      if (
+        filter.min_samples_for_outlier_filter == null &&
+        cat.min_samples_for_outlier_filter != null
+      ) {
+        filter.min_samples_for_outlier_filter = cat.min_samples_for_outlier_filter;
+      }
+      if (filter.runs_raw == null && metrics.runs_raw != null) filter.runs_raw = metrics.runs_raw;
+      if (filter.warmup_skipped == null && metrics.warmup_skipped != null) {
+        filter.warmup_skipped = metrics.warmup_skipped;
+      }
+      if (filter.runs_kept == null && metrics.runs != null) filter.runs_kept = metrics.runs;
+      if (filter.outliers_removed == null && metrics.outliers_removed != null) {
+        filter.outliers_removed = metrics.outliers_removed;
+      }
+      if (filter.values_clipped == null && metrics.values_clipped != null) {
+        filter.values_clipped = metrics.values_clipped;
+      }
+      const row = hydrateMetricAliases({
         ...identity,
         ...metrics,
         filter,
         test_data: fixtureKey({ ...identity, ...metrics }),
-      };
+      });
       applyDimensionLabels(row, dimensionLabels);
       row.io_parent = g.io_parent || '';
       row.optional = (Array.isArray(g.optional) ? g.optional : []).map((child) => {
         const childMetrics = (child.variants && child.variants[pid]) || {};
-        return {
+        return hydrateMetricAliases({
           level: child.level,
           mode: child.mode,
           StreamMode: child.StreamMode,
@@ -1522,7 +1571,7 @@ function expandVariantGroups(slimGroups, catalog) {
           test_data: row.test_data,
           io_child: true,
           ...childMetrics,
-        };
+        });
       });
       if (!byPolicy[pid]) byPolicy[pid] = [];
       byPolicy[pid].push(row);
