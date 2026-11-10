@@ -153,7 +153,7 @@ def _split(groups: list) -> tuple[list, list]:
 def select_language(language: str) -> None:
     global LANGUAGE, MATRIX, STANDARDS, REMOVED
     LANGUAGE = language
-    if language == "mojo":
+    if language in ("mojo", "csharp"):
         MATRIX = {"gld-kiln": TENSOR_TYPES}
         STANDARDS = {"gld-kiln": "kiln"}
         REMOVED = ()
@@ -202,7 +202,7 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="python", choices=("python", "mojo"))
+    parser.add_argument("--language", default="python", choices=("python", "mojo", "csharp"))
     parser.add_argument("--csv", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
