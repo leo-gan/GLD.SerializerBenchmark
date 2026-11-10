@@ -7,15 +7,6 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-
-from .stats import prepare_analysis_records
-
-
 # Machine key: type_id@n=<DataTypeInstanceCount> (filenames / join keys).
 _FIXTURE_KEY_RE = re.compile(r"^(.*?)(?:@n=(\d+))+$", re.IGNORECASE)
 
@@ -52,305 +43,6 @@ def _format_fixture_display(label: str) -> str:
     unit = "instance" if n == 1 else "instances"
     return f"{pretty} · {n} {unit}"
 
-
-def _records_to_melted_df(
-    records: List[Dict],
-    language: str,
-    *,
-    stats_config: Optional[Dict] = None,
-    pre_sanitized: bool = False,
-    language_hint: Optional[str] = None,
-) -> pd.DataFrame:
-    """Convert records to a melted dataframe for latency-distribution plots.
-
-    Uses the unified :func:`prepare_analysis_records` pipeline (warmup drop,
-    config time-unit normalization, all-or-nothing paired IQR) so latency
-    distributions reflect the *exact* sample population used for summary tables.
-    Pass ``pre_sanitized=True`` when *records* already came from that pipeline.
-    """
-    if not records:
-        return pd.DataFrame()
-
-    if pre_sanitized:
-        clean = list(records)
-    else:
-        # language_hint should be a language *id* (e.g. python), not display name
-        hint = language_hint
-        clean, _ = prepare_analysis_records(
-            records, config=stats_config, language_hint=hint
-        )
-    if not clean:
-        return pd.DataFrame()
-
-    df = pd.DataFrame(clean)
-    if "Language" not in df.columns:
-        df["Language"] = language_hint or language
-
-    # Split violins by instance count (N=1 vs N=100, …).
-    if "DataTypeInstanceCount" in df.columns and "TestDataName" in df.columns:
-        def _td_label(row: Any) -> str:
-            n = row.get("DataTypeInstanceCount")
-            base = row.get("TestDataName") or ""
-            if n is None or (isinstance(n, float) and pd.isna(n)) or n == "":
-                return str(base)
-            try:
-                return f"{base}@n={int(n)}"
-            except (TypeError, ValueError):
-                return str(base)
-
-        df["TestDataName"] = df.apply(_td_label, axis=1)
-
-    # Melt serialize/deserialize into Operation column. Times are already ns.
-    need = [
-        "SerializerName",
-        "TestDataName",
-        "StringOrStream",
-        "TimeSer",
-        "TimeDeser",
-        "Language",
-        "RepetitionIndex",
-    ]
-    for col in need:
-        if col not in df.columns:
-            if col == "RepetitionIndex":
-                df[col] = -1
-            else:
-                return pd.DataFrame()
-
-    ser = df[
-        ["SerializerName", "TestDataName", "StringOrStream", "TimeSer", "Language", "RepetitionIndex"]
-    ].copy()
-    ser["Operation"] = "Serialize"
-    ser = ser.rename(columns={"TimeSer": "Time_ns"})
-    if "OpPerSecSer" in df.columns:
-        ser["OpPerSec"] = df["OpPerSecSer"].values
-    else:
-        ser["OpPerSec"] = 0
-
-    deser = df[
-        ["SerializerName", "TestDataName", "StringOrStream", "TimeDeser", "Language", "RepetitionIndex"]
-    ].copy()
-    deser["Operation"] = "Deserialize"
-    deser = deser.rename(columns={"TimeDeser": "Time_ns"})
-    if "OpPerSecDeser" in df.columns:
-        deser["OpPerSec"] = df["OpPerSecDeser"].values
-    else:
-        deser["OpPerSec"] = 0
-
-    melted = pd.concat([ser, deser], ignore_index=True)
-    if melted.empty:
-        return melted
-
-    # Drop non-positive (invalid) only — no extra q99 tail clip / independent IQR.
-    melted = melted[melted["Time_ns"] > 0]
-    return melted
-
-
-def _generate_violin_plot(
-    melted_df: pd.DataFrame,
-    data_type: str,
-    output_dir: str,
-    language: str = "",
-    lang_id: str = "",
-    top_n: Optional[int] = None,
-    data_source: str = "",
-) -> Optional[str]:
-    """Generate combined mean-bar + violin figure for one fixture.
-
-    Layout (shared Y = serializer rank, both linear µs from 0):
-      left  — horizontal bars at **mean** ser / deser (easy ranking; aligns with ops/s)
-      right — split violins of full sample density (spread / shape)
-
-    Embeds mapping metadata (fixture, language id, log path, modes, n) in the
-    title/footer so plots can be tied back to CSV results.
-    """
-    if melted_df.empty or data_type not in melted_df['TestDataName'].values:
-        return None
-
-    subset = melted_df[melted_df['TestDataName'] == data_type].copy()
-    if subset.empty:
-        return None
-
-    # Time_ns already normalized + filtered by the shared stats pipeline.
-    subset['Time_us'] = subset['Time_ns'].astype(float) / 1000.0
-    # Timings cannot be negative; drop any bad rows before KDE.
-    subset = subset[subset['Time_us'] > 0].copy()
-    if subset.empty:
-        return None
-
-    # Filter to top N serializers by mean time (default: top 5 for every language).
-    # This is a *display* choice (plot density), not a change to the analysis sample
-    # used for tables — tables always include every serializer.
-    if top_n is None:
-        top_n = VIOLIN_TOP_N_SERIALIZERS
-    if top_n > 0:
-        mean_times = subset.groupby("SerializerName")["Time_us"].mean().sort_values()
-        # If fewer than top_n exist, head() returns all of them.
-        top_serializers = mean_times.head(int(top_n)).index.tolist()
-        subset = subset[subset["SerializerName"].isin(top_serializers)].copy()
-
-    # No additional p99 winsorization: seaborn cut=0 already limits KDE to the
-    # observed data range, and tables/plots must share the same sample values.
-
-    order = subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
-    # Always linear X from 0 (no log): absolute µs stay comparable.
-
-    try:
-        # Per-serializer mean ser / deser for the bar panel (same family as ops/s).
-        means = (
-            subset.groupby(["SerializerName", "Operation"], as_index=False)["Time_us"]
-            .mean()
-            .rename(columns={"Time_us": "Mean_us"})
-        )
-        hue_order = ["Serialize", "Deserialize"]
-        # Stable palette matching historical violin hues (blue / orange).
-        palette = {"Serialize": "#4c72b0", "Deserialize": "#dd8452"}
-
-        n_ser = max(len(order), 1)
-        fig_h = max(5.5, 0.55 * n_ser + 2.2)
-        fig_w = 12.0
-        # Left bars (ranking) narrower; right violins (density) wider.
-        fig, (ax_bar, ax_vio) = plt.subplots(
-            1,
-            2,
-            sharey=True,
-            figsize=(fig_w, fig_h),
-            gridspec_kw={"width_ratios": [1.0, 1.55], "wspace": 0.08},
-        )
-
-        sns.barplot(
-            data=means,
-            x="Mean_us",
-            y="SerializerName",
-            hue="Operation",
-            order=order,
-            hue_order=hue_order,
-            palette=palette,
-            ax=ax_bar,
-            errorbar=None,
-            edgecolor="white",
-            linewidth=0.4,
-        )
-        ax_bar.set_xlabel("Mean time (µs)")
-        ax_bar.set_ylabel("Serializer")
-        ax_bar.set_title("Mean (rank)", fontsize=11)
-        bar_hi = float(means["Mean_us"].max()) if len(means) else 0.0
-        ax_bar.set_xlim(0, bar_hi * 1.12 if bar_hi > 0 else None)
-        ax_bar.grid(axis="x", linestyle=":", alpha=0.45)
-        ax_bar.set_axisbelow(True)
-        # Shared legend above both panels (avoids covering the slowest bars).
-        handles, labels = ax_bar.get_legend_handles_labels()
-        leg = ax_bar.get_legend()
-        if leg is not None:
-            leg.remove()
-        if handles:
-            fig.legend(
-                handles,
-                labels,
-                title="Operation",
-                loc="upper center",
-                bbox_to_anchor=(0.5, 0.98),
-                ncol=2,
-                frameon=True,
-                fontsize=9,
-            )
-
-        sns.violinplot(
-            data=subset,
-            x="Time_us",
-            y="SerializerName",
-            hue="Operation",
-            order=order,
-            hue_order=hue_order,
-            palette=palette,
-            split=True,
-            cut=0,
-            inner=None,
-            ax=ax_vio,
-            density_norm="width",
-        )
-        ax_vio.set_xlabel("Time (µs)")
-        ax_vio.set_ylabel("")
-        ax_vio.set_title("Distribution (density)", fontsize=11)
-        vio_hi = float(subset["Time_us"].max())
-        ax_vio.set_xlim(0, vio_hi * 1.05 if vio_hi > 0 else None)
-        ax_vio.grid(axis="x", linestyle=":", alpha=0.45)
-        ax_vio.set_axisbelow(True)
-        # Avoid duplicate legend on the violin panel.
-        leg_v = ax_vio.get_legend()
-        if leg_v is not None:
-            leg_v.remove()
-
-        lang_key = (lang_id or _lang_file_key("", language)).lower().replace("#", "sharp")
-        safe_fixture = data_type.replace(" ", "_")
-        img_name = f"{lang_key}_{safe_fixture}.png"
-        src = data_source or f"logs/{lang_key}/benchmark-log.csv"
-        modes = sorted(
-            {str(m) for m in subset.get("StringOrStream", pd.Series(dtype=str)).dropna().unique()}
-        )
-        modes_s = ",".join(modes) if modes else "n/a"
-        n_pts = len(subset)
-        top_note = f" · Top {int(top_n)}" if top_n and int(top_n) > 0 else ""
-
-        fig.suptitle(
-            f"{language or lang_key} · {_format_fixture_display(data_type)}{top_note}",
-            fontsize=12,
-            y=1.02,
-        )
-
-        # Footer: file + CSV + samples + mode (+ optional run id). No seed.
-        run_bit = ""
-        try:
-            from .environment import load_run_config
-            from .config_loader import repo_root as _repo_root
-
-            cfg_doc = None
-            if data_source:
-                candidates = [data_source]
-                if not os.path.isabs(data_source):
-                    candidates.append(os.path.abspath(data_source))
-                    try:
-                        candidates.append(str(_repo_root() / data_source))
-                    except Exception:
-                        pass
-                for cand in candidates:
-                    if not cand:
-                        continue
-                    cfg_doc = load_run_config(cand)
-                    if cfg_doc:
-                        break
-            if cfg_doc:
-                ts = cfg_doc.get("benchmark_ts")
-                if not ts and isinstance(cfg_doc.get("run"), dict):
-                    ts = cfg_doc["run"].get("benchmark_ts")
-                if ts:
-                    run_bit = f"  |  run={ts}"
-        except Exception:
-            run_bit = ""
-        fig.text(
-            0.5,
-            -0.02,
-            f"{img_name}  |  {src}  |  samples={n_pts}  |  mode={modes_s}{run_bit}",
-            ha="center",
-            va="top",
-            fontsize=8,
-            color="#444444",
-            wrap=True,
-        )
-
-        img_path = os.path.join(output_dir, img_name)
-        fig.savefig(img_path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        return os.path.basename(img_path)
-    except Exception as e:
-        lang_info = f" ({language})" if language else ""
-        print(f"Warning: Could not generate violin plot for {data_type}{lang_info}: {e}")
-        plt.close('all')
-        return None
-
-
-# Latency distributions: always show this many fastest serializers per fixture (all languages).
-VIOLIN_TOP_N_SERIALIZERS = 5
 
 # CSV StringOrStream values → human labels (not "number of bytes")
 _MODE_DISPLAY = {
@@ -1252,47 +944,24 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
 
 def generate_language_results_pages(
     multi_lang_stats: Optional[Dict],
-    violin_images: Optional[Dict[str, str]],
     docs_root: str,
-    plot_rel_from_lang: str = "../analysis/plots/violin",
     lang_sources: Optional[Dict[str, str]] = None,
     metrics_profile: str = "multi_way",
 ) -> List[str]:
     """Write ``<docs_root>/<docs_dir>/results.md`` (unpublished language report).
 
     ``docs_root`` is typically ``reports/`` so C# lands at
-    ``reports/c-sharp/results.md`` via ``_lang_docs_dir_map``. Pass empty
-    ``violin_images`` to omit latency-chart embeds.
+    ``reports/c-sharp/results.md`` via ``_lang_docs_dir_map``.
 
     Multi-way pages emphasize **high-importance** metrics (see METRICS.md).
     Important run-config fields from ``*.configs.json`` are published when present.
     """
     by_lang = _stats_by_language(multi_lang_stats)
-    violin_images = dict(violin_images or {})
-    plot_meta = violin_images.pop("_meta", None) or {}
     lang_sources = lang_sources or {}
     written: List[str] = []
 
-    # Group plot keys by lang_id
-    plots_by_lang: Dict[str, List[Tuple[str, str]]] = {}
-    for key, fname in sorted(violin_images.items()):
-        if key == "_meta" or not isinstance(fname, str):
-            continue
-        lang_key = None
-        dtype = None
-        # Longest key first so "javascript" wins over a future "java"
-        docs_map = _lang_docs_dir_map()
-        for candidate in sorted(docs_map.keys(), key=len, reverse=True):
-            if key.startswith(candidate + "_"):
-                lang_key = candidate
-                dtype = key[len(candidate) + 1 :]
-                break
-        if lang_key is None:
-            continue
-        plots_by_lang.setdefault(lang_key, []).append((dtype, fname))
-
-    langs = [l for l in _lang_order_list() if l in by_lang or l in plots_by_lang]
-    for extra in sorted(set(by_lang) | set(plots_by_lang)):
+    langs = [l for l in _lang_order_list() if l in by_lang]
+    for extra in sorted(by_lang):
         if extra not in langs:
             langs.append(extra)
 
@@ -1303,7 +972,7 @@ def generate_language_results_pages(
         out_path = os.path.join(docs_root, docs_dir, "results.md")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-        src_csv = lang_sources.get(lang_id) or (plot_meta.get(lang_id) or {}).get("source")
+        src_csv = lang_sources.get(lang_id)
         lines = [
             f"# {title} — Benchmark Results",
             "",
@@ -1459,41 +1128,6 @@ def generate_language_results_pages(
             lines.append("*No statistics for this language in the current snapshot.*")
             lines.append("")
 
-        items = plots_by_lang.get(lang_id) or []
-        if items:
-            lines.append("## Latency distributions")
-            lines.append("")
-            lines.append(
-                "Each figure is a picture of **how long** serialize and deserialize took "
-                "across many trials for one **data type** (and batch size):"
-            )
-            lines.append("")
-            lines.append(
-                "- **Left — mean bars:** average serialize time and average deserialize time "
-                "in microseconds (scale starts at 0)."
-            )
-            lines.append(
-                "- **Right — split violins:** the full distribution of sample times "
-                "(thickness shows where trials cluster)."
-            )
-            lines.append(
-                "- **Top 5 only:** charts show the five fastest serializers by mean total time "
-                "for that data type so the picture stays readable. Tables above still list everyone."
-            )
-            lines.append(
-                "- Each image also prints the data type, source CSV, modes, and sample size."
-            )
-            lines.append("")
-            for dtype, fname in items:
-                pretty = _format_fixture_display(dtype)
-                lines.append(f"### {pretty}")
-                lines.append("")
-                lines.append(f"![{pretty}]({plot_rel_from_lang}/{fname}){{ width=\"80%\" }}")
-                lines.append("")
-        else:
-            lines.append("*No latency distributions for this language in the current snapshot.*")
-            lines.append("")
-
         lines.append("## How to regenerate this page")
         lines.append("")
         lines.append(
@@ -1507,8 +1141,7 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That writes unpublished tables under `reports/<docs_dir>/results.md` "
-            "and, with `--violins`, latency images under `reports/plots/violin/`. "
+            "That writes unpublished tables under `reports/<docs_dir>/results.md`. "
             "The hub [Results summary](../analysis/BENCHMARK_SUMMARY.md) is a **static** "
             "link index and is not rewritten by the CLI. "
             "Do not commit `reports/<docs_dir>/results.md` to the published site."
@@ -1525,98 +1158,3 @@ def generate_language_results_pages(
         print(f"Unpublished language report written to: {out_path}")
 
     return written
-
-
-def _lang_file_key(lang_id: str, display: str) -> str:
-    """Stable key used in plots/violin/<key>_<TestData>.png filenames."""
-    if lang_id:
-        return lang_id.lower().replace("#", "sharp")
-    return display.lower().replace("#", "sharp").replace(" ", "_")
-
-
-def generate_violin_plots(
-    output_dir: str,
-    multi_lang_records: Optional[Dict] = None,
-    lang_sources: Optional[Dict[str, str]] = None,
-    *,
-    stats_config: Optional[Dict] = None,
-    pre_sanitized: bool = False,
-    **_kwargs,
-) -> Dict[str, str]:
-    """Generate violin plot images for all languages with records.
-
-    ``multi_lang_records`` maps lang_id -> list of row dicts.
-    ``lang_sources`` optional map lang_id -> CSV path used for those records
-    (embedded on the PNG for result↔plot mapping).
-
-    When ``pre_sanitized`` is True, records are assumed to already have been
-    processed by :func:`prepare_analysis_records` (same population as tables).
-
-    Returns a dict mapping ``{lang_key}_{TestDataName}`` to image filenames.
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    lang_sources = lang_sources or {}
-
-    by_lang: Dict[str, List[Dict]] = {}
-    if multi_lang_records:
-        for k, recs in multi_lang_records.items():
-            if recs:
-                by_lang[str(k).lower()] = list(recs)
-
-    # Stable ordering for docs / reports (prefer master config order).
-    order = _lang_order_list()
-    lang_ids = [lid for lid in order if lid in by_lang] + sorted(
-        lid for lid in by_lang if lid not in order
-    )
-
-    violin_images: Dict[str, str] = {}
-    # lang_id -> {fixture -> plot filename} plus source path for results.md
-    plot_meta: Dict[str, Dict] = {}
-
-    for lang_id in lang_ids:
-        records = by_lang[lang_id]
-        display = _lang_display_map().get(lang_id, lang_id)
-        melted = _records_to_melted_df(
-            records,
-            display,
-            stats_config=stats_config,
-            pre_sanitized=pre_sanitized,
-            language_hint=lang_id,
-        )
-        if melted.empty:
-            continue
-        # Same top-N for csharp, python, rust, c, javascript, go, …
-        top_n = VIOLIN_TOP_N_SERIALIZERS
-        file_key = _lang_file_key(lang_id, display)
-        src = lang_sources.get(lang_id) or lang_sources.get(file_key)
-        if src:
-            # Prefer path relative to repo if under logs/
-            src_disp = src.replace("\\", "/")
-            if "/logs/" in src_disp:
-                src_disp = "logs/" + src_disp.split("/logs/", 1)[1]
-            data_source = src_disp
-        else:
-            data_source = f"logs/{lang_id}/benchmark-log.csv"
-        plot_meta[lang_id] = {"source": data_source, "files": {}}
-        for dtype in sorted(melted["TestDataName"].unique()):
-            img_name = _generate_violin_plot(
-                melted,
-                dtype,
-                output_dir,
-                language=display,
-                lang_id=file_key,
-                top_n=top_n,
-                data_source=data_source,
-            )
-            if img_name:
-                violin_images[f"{file_key}_{dtype}"] = img_name
-                plot_meta[lang_id]["files"][dtype] = img_name
-
-    generated = list(violin_images.values())
-    if generated:
-        print(f"Generated {len(generated)} latency distributions in: {output_dir}")
-    # Attach meta for callers (results pages) without breaking dict return type
-    violin_images["_meta"] = plot_meta  # type: ignore[assignment]
-    return violin_images
-
-

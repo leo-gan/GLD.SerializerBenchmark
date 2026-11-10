@@ -177,8 +177,6 @@ BENCHMARK_TS=2026-07-02-173247 ./scripts/verify-results.sh
 | Raw CSVs / sidecars | `logs/<lang>/` (gitignored) |
 | Stats JSON | `reports/stats_<lang>_latest.json` (always) |
 | Unpublished language report | `reports/<docs_dir>/results.md` (default; `--no-markdown-report` skips) |
-| Violin PNGs | `reports/plots/violin/` only with `--violins` (gitignored) |
-| Local iteration plots | `reports/plots/` (gitignored) |
 | Baseline JSON | path you pass / config |
 
 ```bash
