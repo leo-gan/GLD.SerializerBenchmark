@@ -214,6 +214,45 @@ def _sanitize(value):
     return value
 
 
+_CASE_METADATA_KEYS = (
+    "title",
+    "paragraph",
+    "section",
+    "section_title",
+    "section_url",
+    "input",
+    "input_encoding",
+    "requirement",
+    "expect",
+)
+
+
+def slim_failure_rows(rows: list[dict]) -> list[dict]:
+    """Deduplicate repeated case metadata and strip unused skip fields in compliance-failures.json.gz."""
+    seen_cases: set[tuple] = set()
+    slim: list[dict] = []
+    for r in rows:
+        if r.get("outcome") == "skip":
+            slim.append({"outcome": "skip"})
+            continue
+        ckey = (r.get("format"), r.get("standard"), r.get("id"))
+        first_time = ckey not in seen_cases
+        seen_cases.add(ckey)
+        out: dict = {}
+        for k, v in r.items():
+            if v in (None, ""):
+                continue
+            if k in ("standard_url", "version", "version_key"):
+                continue
+            if k == "detail" and r.get("observed"):
+                continue
+            if not first_time and k in _CASE_METADATA_KEYS:
+                continue
+            out[k] = v
+        slim.append(out)
+    return slim
+
+
 def build_payload(raw: dict, source_name: str) -> dict:
     default_lang = raw.get("language") or "python"
     results = _normalize_results(
@@ -284,7 +323,7 @@ def main() -> int:
     # The table reads the matrix. Failure text is a second file so the first
     # paint does not parse every case.
     summary = {key: value for key, value in payload.items() if key != "results"}
-    failures = payload["results"]
+    failures = slim_failure_rows(payload["results"])
     summary_blob = json.dumps(summary, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     failure_blob = json.dumps(failures, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     gz_path = out_path.with_suffix(out_path.suffix + ".gz")

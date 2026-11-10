@@ -17,11 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1] / "data"
 
 
-def dump(rel: str, doc: dict) -> None:
-    path = ROOT / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"wrote {path.relative_to(ROOT.parent)} ({len(doc['cases'])} cases)")
+from catalog_io import dump_catalog as dump
 
 
 def C(**kwargs) -> dict:

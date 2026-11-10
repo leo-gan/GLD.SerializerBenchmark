@@ -25,11 +25,11 @@ VENDOR = ROOT / "vendor"
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/compliance-suites")
 
 
+from catalog_io import dump_catalog
+
+
 def _dump(rel: str, doc: dict) -> None:
-    path = DATA / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
-    print(f"wrote {path.relative_to(ROOT)} ({len(doc['cases'])} cases)")
+    dump_catalog(rel, doc, ensure_ascii=True)
 
 
 def _load_existing(rel: str) -> list[dict]:
