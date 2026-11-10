@@ -14,7 +14,6 @@ fi
 if [[ -x "${HOME}/.local/maven/bin/mvn" ]]; then
   export PATH="${HOME}/.local/maven/bin:${PATH}"
 fi
-# Also pick any jdk under ~/.local/jdk*
 if [[ -z "${JAVA_HOME:-}" ]]; then
   for d in "${HOME}/.local"/jdk-*; do
     if [[ -x "$d/bin/java" ]]; then
@@ -25,40 +24,7 @@ if [[ -z "${JAVA_HOME:-}" ]]; then
   done
 fi
 
-LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/java}"
-mkdir -p "$LOG_DIR"
-
-MODE="${1:-all-single}"
-FILTER_SER="${2:-}"
-FILTER_DATA="${3:-}"
-
-VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
-case " $VALID_MODES custom " in
-  *" $MODE "*) ;;
-  *)
-    echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
-    echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
-    exit 1
-    ;;
-esac
-
-if [[ "$MODE" == "custom" ]]; then
-  REPS="${2:-10}"; FILTER_SER="${3:-}"; FILTER_DATA="${4:-}"
-else
-  REPS="$(bench_mode_reps "$MODE")"
-  if [[ "$MODE" == "smoke" ]]; then
-    FILTER_SER="${FILTER_SER:-jackson}"
-    FILTER_DATA="${FILTER_DATA:-message}"
-  fi
-fi
-
-export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
-export BENCHMARK_SEED="$(bench_random_seed)"
-export BENCHMARK_LANGUAGE=java
-
-# Library run config from master config (data_model_v2.smoke_run_config / default_run_config).
-# Caller may override with BENCHMARK_RUN_CONFIG=...
-bench_export_run_config "$MODE"
+bench_init_runner java jackson "$@"
 
 if ! command -v java >/dev/null 2>&1; then
   echo "[ERROR] java not found. Run: ./scripts/install-host-requirements.sh java" >&2
@@ -79,7 +45,6 @@ fi
 echo "[INFO] Building Java benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $JAVA_VER"
 cd "$JAVA_DIR"
 
-# Ensure protoc on PATH for protobuf-maven-plugin
 export PROTOC="${PROTOC:-$(command -v protoc || true)}"
 if [[ -x "${HOME}/.local/bin/protoc" ]]; then
   export PATH="${HOME}/.local/bin:${PATH}"
@@ -91,7 +56,6 @@ mvn -q -DskipTests package
 
 JAR="$JAVA_DIR/target/serializer-benchmark-java-1.0.0-SNAPSHOT.jar"
 if [[ ! -f "$JAR" ]]; then
-  # shade may produce original + shaded; find the shaded jar
   JAR="$(ls -1 "$JAVA_DIR"/target/serializer-benchmark-java-*.jar 2>/dev/null | grep -v original | head -1)"
 fi
 if [[ ! -f "$JAR" ]]; then
@@ -99,27 +63,14 @@ if [[ ! -f "$JAR" ]]; then
   exit 1
 fi
 
-ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
-[[ -n "$FILTER_SER" ]] && ARGS+=("--serializer" "$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && ARGS+=("--data" "$FILTER_DATA")
+JAVA_ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
+[[ -n "$FILTER_SER" ]] && JAVA_ARGS+=("--serializer" "$FILTER_SER")
+[[ -n "$FILTER_DATA" ]] && JAVA_ARGS+=("--data" "$FILTER_DATA")
 
-export LOG_DIR
 # Kryo / FST need reflective access on JDK 21.
 JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/sun.misc=ALL-UNNAMED"
-echo "[INFO] Running: java $JAVA_OPTS -jar $JAR ${ARGS[*]}"
+echo "[INFO] Running: java $JAVA_OPTS -jar $JAR ${JAVA_ARGS[*]}"
 # shellcheck disable=SC2086
-java $JAVA_OPTS -jar "$JAR" "${ARGS[@]}"
+java $JAVA_OPTS -jar "$JAR" "${JAVA_ARGS[@]}"
 
-CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
-ENV_JSON="${CSV%.csv}.configs.json"
-if [[ -f "$CSV" ]]; then
-  if BENCHMARK_TS="${BENCHMARK_TS}" BENCHMARK_LANGUAGE=java \
-      PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
-      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-    echo "[INFO] Run config captured -> $ENV_JSON"
-  else
-    echo "[WARN] Could not write configs.json (analysis package optional for standalone runs)"
-  fi
-fi
-
-echo "[SUCCESS] Java logs in $LOG_DIR"
+bench_finish_runner Java

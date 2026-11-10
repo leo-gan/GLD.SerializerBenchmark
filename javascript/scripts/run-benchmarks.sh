@@ -6,44 +6,7 @@ PROJECT_ROOT="$(cd "$JS_DIR/.." && pwd)"
 # shellcheck source=../../scripts/lib/config.sh
 source "$PROJECT_ROOT/scripts/lib/config.sh"
 
-LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/javascript}"
-mkdir -p "$LOG_DIR"
-
-MODE="${1:-all-single}"
-FILTER_SER="${2:-}"
-FILTER_DATA="${3:-}"
-
-VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
-case " $VALID_MODES custom " in
-  *" $MODE "*) ;;
-  *)
-    echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
-    echo "  custom: $0 custom <reps> <serializerFilter> [dataFilter]"
-    echo "  dataFilter type_ids: message|document|telemetry|strings|event|table|table_project|nested_table|signal"
-    echo "  serializerFilter: substring, or a comma-separated exact allow-list (smoke default data: message)"
-    exit 1
-    ;;
-esac
-
-if [[ "$MODE" == "custom" ]]; then
-  # Does not force a data filter. Pass columnar-smoke.yaml via BENCHMARK_RUN_CONFIG.
-  REPS="${2:-10}"
-  FILTER_SER="${3:-}"
-  FILTER_DATA="${4:-}"
-else
-  REPS="$(bench_mode_reps "$MODE")"
-  if [[ "$MODE" == "smoke" ]]; then
-    FILTER_SER="${FILTER_SER:-JSON}"
-    FILTER_DATA="${FILTER_DATA:-message}"
-  fi
-fi
-
-export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
-export BENCHMARK_SEED="$(bench_random_seed)"
-
-# Library run config from master config (data_model_v2.smoke_run_config / default_run_config).
-# Caller may override with BENCHMARK_RUN_CONFIG=...
-bench_export_run_config "$MODE"
+bench_init_runner javascript JSON "$@"
 
 cd "$JS_DIR"
 if [[ ! -d node_modules ]]; then
@@ -51,22 +14,7 @@ if [[ ! -d node_modules ]]; then
   npm install --no-fund --no-audit 2>&1 | tail -8
 fi
 
-export LOG_DIR
-ARGS=("$REPS")
-[[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && ARGS+=("$FILTER_DATA")
 echo "[INFO] node src/runner.js ${ARGS[*]} (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
 node src/runner.js "${ARGS[@]}"
 
-CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
-ENV_JSON="${CSV%.csv}.configs.json"
-if [[ -f "$CSV" ]]; then
-  if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
-      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-    echo "[INFO] Run config captured -> $ENV_JSON"
-  else
-    echo "[WARN] Could not write configs.json (analysis package optional for standalone runs)"
-  fi
-fi
-
-echo "[SUCCESS] JS logs in $LOG_DIR"
+bench_finish_runner JS

@@ -10,34 +10,7 @@ if [[ -x "${HOME}/.pixi/bin/pixi" ]]; then
   export PATH="${HOME}/.pixi/bin:${PATH}"
 fi
 
-LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/mojo}"
-mkdir -p "$LOG_DIR"
-
-MODE="${1:-all-single}"
-FILTER_SER="${2:-}"
-FILTER_DATA="${3:-}"
-
-VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
-case " $VALID_MODES custom " in
-  *" $MODE "*) ;;
-  *)
-    echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"
-    echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
-    exit 1
-    ;;
-esac
-
-REPS="$(bench_mode_reps "$MODE")"
-if [[ "$MODE" == "smoke" ]]; then
-  FILTER_SER="${FILTER_SER:-EmberJson}"
-  FILTER_DATA="${FILTER_DATA:-message}"
-fi
-
-export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
-export BENCHMARK_SEED="$(bench_random_seed)"
-export BENCHMARK_LANGUAGE=mojo
-
-bench_export_run_config "$MODE"
+bench_init_runner mojo EmberJson "$@"
 
 if ! command -v pixi >/dev/null 2>&1; then
   echo "[ERROR] pixi not found. Run: ./scripts/install-host-requirements.sh mojo" >&2
@@ -61,22 +34,7 @@ PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
 export BENCHMARK_RESOLVED_JSON="$RESOLVED"
 
 INCLUDE=(-I src -I src/gen/dagr -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src -I vendor/gldtoml_src -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src -I vendor/msgpack_src -I vendor/fb_src -I vendor/avro_src -I vendor/emberjson_src -I vendor/bson_src -I vendor/ion_src -I vendor/smile_src -I vendor/arrow_src -I vendor/parquet_src -I vendor/hdf5_src -I vendor/kiln_src)
-export LOG_DIR
-ARGS=("$REPS")
-[[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && ARGS+=("$FILTER_DATA")
 echo "[INFO] pixi run mojo run ${INCLUDE[*]} src/main.mojo -- ${ARGS[*]} (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
 pixi run mojo run "${INCLUDE[@]}" src/main.mojo -- "${ARGS[@]}"
 
-CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
-ENV_JSON="${CSV%.csv}.configs.json"
-if [[ -f "$CSV" ]]; then
-  if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
-      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-    echo "[INFO] Run config captured -> $ENV_JSON"
-  else
-    echo "[WARN] Could not write configs.json (analysis package optional for standalone runs)"
-  fi
-fi
-
-echo "[SUCCESS] Mojo logs in $LOG_DIR"
+bench_finish_runner Mojo
