@@ -6,116 +6,16 @@ import glob
 import re
 
 from snapshot_io import load_json_gz, write_json_gz
-
-# Timestamped benchmark logs: YYYY-MM-DD-HHMMSS.csv
-# Columnar publication CSVs use names like 2026-10-02-py-columnar-full.csv so
-# they are NOT selected here. dashboard/scripts/splice-columnar-stats.py appends
-# those groups onto the five-type snapshot. Dagr publication CSVs use names like
-# 2026-10-08-cpp-dagr-full.csv. dashboard/scripts/splice-dagr-stats.py appends
-# those groups. Graph publication CSVs use names like 2026-10-09-<lang>-graph-full.csv.
-# dashboard/scripts/splice-graph-stats.py appends those groups.
-# Array publication CSVs use names like 2026-10-10-fortran-array-full.csv.
-# dashboard/scripts/splice-array-stats.py appends those groups and drops the
-# old suite rows for hdf5-fortran, netcdf-fortran, and adios2.
-# Tensor publication CSVs use names like 2026-10-17-python-tensor-full.csv.
-# dashboard/scripts/splice-tensor-stats.py appends those groups.
-# Do not let this script drop any of those splices.
-_RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
-_COLUMNAR_TYPES = {"table", "table_project", "nested_table", "signal"}
-_GRAPH_TYPES = {"graph"}
-_ARRAY_TYPES = {"grid", "grid_window"}
-_TENSOR_TYPES = {"tensor", "tensor_view", "prompt", "shard", "request"}
-_DAGR_SERIALIZERS = {
-    "dagr-frozen",
-    "dagr-frozen-packed",
-    "dagr-packed",
-    "dagr-regular",
-}
-
-
-def _base_types(stats):
-    found = set()
-    for group in (stats or {}).get("groups") or []:
-        base = str(group.get("test_data") or "").split("@n=")[0]
-        if base:
-            found.add(base)
-    return found
-
-
-def _serializer_names(stats):
-    found = set()
-    for group in (stats or {}).get("groups") or []:
-        name = str(group.get("serializer") or "")
-        if name:
-            found.add(name)
-    return found
-
-
-def _replace_flag(name):
-    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes")
-
-
-def _carry_spliced_groups(lang, existing_stats, new_stats):
-    """Keep publication splices the suite CSV does not measure.
-
-    Columnar, graph, array, tensor, and Dagr rows are appended by separate
-    scripts. A later suite sync must not erase them.
-    """
-    if not existing_stats or not new_stats or not new_stats.get("groups"):
-        return
-    new_types = _base_types(new_stats)
-    new_names = _serializer_names(new_stats)
-    keep_types = set()
-    if not _replace_flag("DASHBOARD_REPLACE_COLUMNAR"):
-        keep_types |= _COLUMNAR_TYPES
-    if not _replace_flag("DASHBOARD_REPLACE_GRAPH"):
-        keep_types |= _GRAPH_TYPES
-    if not _replace_flag("DASHBOARD_REPLACE_ARRAY"):
-        keep_types |= _ARRAY_TYPES
-    if not _replace_flag("DASHBOARD_REPLACE_TENSOR"):
-        keep_types |= _TENSOR_TYPES
-    keep_dagr = not _replace_flag("DASHBOARD_REPLACE_DAGR")
-    carried = []
-    for group in existing_stats.get("groups") or []:
-        base = str(group.get("test_data") or "").split("@n=")[0]
-        name = str(group.get("serializer") or "")
-        if base in keep_types and base not in new_types:
-            carried.append(group)
-        elif keep_dagr and name in _DAGR_SERIALIZERS and name not in new_names:
-            carried.append(group)
-    if not carried:
-        return
-    new_stats.setdefault("groups", []).extend(carried)
-    print(f"{lang}: carried {len(carried)} spliced groups from the previous snapshot")
-
-
-# A suite sync must not erase groups a splice script added. The flag replaces
-# that splice on purpose. Dagr is matched by serializer name; the others by type.
-_SPLICE_GUARDS = (
-    ("DASHBOARD_REPLACE_COLUMNAR", _COLUMNAR_TYPES, None, "columnar types", "splice-columnar-stats.py"),
-    ("DASHBOARD_REPLACE_DAGR", None, _DAGR_SERIALIZERS, "Dagr serializers", "splice-dagr-stats.py"),
-    ("DASHBOARD_REPLACE_GRAPH", _GRAPH_TYPES, None, "graph types", "splice-graph-stats.py"),
-    ("DASHBOARD_REPLACE_ARRAY", _ARRAY_TYPES, None, "array types", "splice-array-stats.py"),
-    ("DASHBOARD_REPLACE_TENSOR", _TENSOR_TYPES, None, "tensor types", "splice-tensor-stats.py"),
+from splice_rows import (
+    carry_spliced_groups as _carry_spliced_groups,
+    refuse_splice_loss as _refuse_splice_loss,
 )
 
-
-def _refuse_splice_loss(lang, existing_stats, new_stats):
-    """Abort when a sync would erase groups a splice script published."""
-    for env, types, names, label, script in _SPLICE_GUARDS:
-        if types is not None:
-            lost = (_base_types(existing_stats) & types) - _base_types(new_stats)
-        else:
-            lost = (_serializer_names(existing_stats) & names) - _serializer_names(new_stats)
-        if not lost:
-            continue
-        if _replace_flag(env):
-            print(f"WARNING: {lang} replacing snapshot and dropping {label} {sorted(lost)}")
-            continue
-        print(f"ERROR: {lang} snapshot has {label} {sorted(lost)} that this sync would drop.")
-        print(f"That snapshot was built by {script}. Refusing to overwrite.")
-        print(f"Set {env}=1 to replace the snapshot anyway.")
-        sys.exit(1)
+# Timestamped benchmark logs: YYYY-MM-DD-HHMMSS.csv
+# Columnar, Dagr, graph, array, and tensor publication CSVs use non-timestamped
+# stems so they are NOT selected here; splice-*-stats.py appends those groups
+# and splice_rows.py guards them against accidental removal.
+_RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 
 
 def find_latest_run(lang_logs_dir):
