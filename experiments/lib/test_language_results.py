@@ -123,5 +123,53 @@ class SummarizeKeepsCombinedFileTest(unittest.TestCase):
             self.assertFalse((folder / "go" / "results.json").exists())
 
 
+class ConsolidatedExperimentScriptsTest(unittest.TestCase):
+    def test_all_15_summarize_wrappers_render_combined_and_language_markdown(self) -> None:
+        exp_dirs = sorted( (REPO / "experiments").glob("[0-9][0-9]-*") )
+        self.assertEqual(len(exp_dirs), 15)
+        for exp_dir in exp_dirs:
+            spec = importlib.util.spec_from_file_location(
+                f"summarize_{exp_dir.name}", exp_dir / "summarize.py"
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            cfg = mod._load_cfg()
+            saved = load_language_blocks(exp_dir)
+            self.assertTrue(saved, f"expected saved languages in {exp_dir.name}")
+            comb_md = mod.write_combined_markdown(cfg, saved)
+            self.assertIn(cfg["question"], comb_md)
+            payload = mod.experiment_payload(cfg, saved)
+            self.assertEqual(payload["experiment_id"], cfg["id"])
+            for lang, pack in saved.items():
+                lang_md = mod.write_language_markdown(lang, pack)
+                self.assertIn(f"— {lang}", lang_md)
+
+    def test_save_sample_shared_module_matches_saved_sample_json(self) -> None:
+        for extra in (REPO / "python" / "src", REPO / "analysis" / "src"):
+            s = str(extra)
+            if s not in sys.path:
+                sys.path.insert(0, s)
+        exp_dir = REPO / "experiments" / "01-json-library-bakeoff"
+        spec = importlib.util.spec_from_file_location(
+            "save_sample_01", exp_dir / "python" / "save_sample.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        before = (exp_dir / "sample.json").read_text(encoding="utf-8")
+        self.assertEqual(mod.main([]), 0)
+        after = (exp_dir / "sample.json").read_text(encoding="utf-8")
+        self.assertEqual(before, after)
+
+    def test_all_14_run_sh_wrappers_delegate_to_run_experiment_sh(self) -> None:
+        exp_dirs = sorted((REPO / "experiments").glob("[0-9][0-9]-*"))
+        delegating = [
+            d for d in exp_dirs if d.name != "15-fortran-ffi-tax"
+        ]
+        self.assertEqual(len(delegating), 14)
+        for d in delegating:
+            text = (d / "run.sh").read_text(encoding="utf-8")
+            self.assertIn("run_experiment.sh", text)
+
+
 if __name__ == "__main__":
     unittest.main()
