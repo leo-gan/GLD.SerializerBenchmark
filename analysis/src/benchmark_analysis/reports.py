@@ -1341,7 +1341,7 @@ def generate_language_results_pages(
             "(CSV `TestDataName`; older text may say “fixture”). "
             "The last four are on the columnar run config. |",
             "| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer). "
-            "On C# this is often the **string** path — see [Modes](../analysis/modes.md). |",
+            "See [Modes](../analysis/modes.md). |",
             "| **stream mode** | Stream-style API (write/read through a stream). "
             "May be native or adapted — see [Modes](../analysis/modes.md). |",
             "| **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |",

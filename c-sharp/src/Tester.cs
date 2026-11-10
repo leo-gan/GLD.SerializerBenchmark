@@ -9,7 +9,7 @@ namespace GLD.SerializerBenchmark
     internal class Tester
     {
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
-            int repetitions)
+            int repetitions, List<string> modes)
         {
             // Prefer LOG_DIR (orchestrator) so monorepo logs/csharp stays consistent.
             var logDir = Environment.GetEnvironmentVariable("LOG_DIR");
@@ -46,7 +46,7 @@ namespace GLD.SerializerBenchmark
                 Console.WriteLine(
                     $"\n[PROGRESS] Testing Data: {testDataDescription.Name} N={n} " +
                     $"(Targeting {serializers.Count} serializers, {repetitions} reps)");
-                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors, n, hash);
+                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors, modes, n, hash);
                 Error.SaveErrors(errors, errorsPath);
             }
 
@@ -97,7 +97,7 @@ namespace GLD.SerializerBenchmark
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
-            int instanceCount = 1, string typeConfigHash = "")
+            List<string> modes, int instanceCount = 1, string typeConfigHash = "")
         {
             // Untimed: Initialize + PrepareData once per fixture (not inside Stopwatch).
             var prepareFailed = new Dictionary<string, bool>();
@@ -129,17 +129,22 @@ namespace GLD.SerializerBenchmark
                 }
             }
 
-            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
-                instanceCount, typeConfigHash, prepareFailed);
-            var streamSerializers = new List<ISerDeser>();
-            foreach (var serializer in serializers)
+            foreach (var mode in modes)
             {
-                if (OptionalIo.IsStreamOptIn(serializer.Name))
-                    streamSerializers.Add(serializer);
-            }
-            if (streamSerializers.Count > 0)
-            {
-                TestsOnRepetition(testDataDescription, true, repetitions, streamSerializers, logStorage, errors,
+                var streaming = mode == "stream";
+                var cohort = serializers;
+                if (streaming)
+                {
+                    cohort = new List<ISerDeser>();
+                    foreach (var serializer in serializers)
+                    {
+                        if (OptionalIo.IsStreamOptIn(serializer.Name))
+                            cohort.Add(serializer);
+                    }
+                    if (cohort.Count == 0)
+                        continue;
+                }
+                TestsOnRepetition(testDataDescription, streaming, repetitions, cohort, logStorage, errors,
                     instanceCount, typeConfigHash, prepareFailed);
             }
         }
@@ -163,7 +168,7 @@ namespace GLD.SerializerBenchmark
                     wasError[kv.Key] = true;
             }
             var original = testDataDescription;
-            var modeLabel = streaming ? "Stream" : "string";
+            var modeLabel = streaming ? "stream" : "bytes";
             var strategy = _scheduleStrategy;
 
             for (var i = 0; i < repetitions; i++)
@@ -245,7 +250,7 @@ namespace GLD.SerializerBenchmark
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
         {
             isRepeatedError = false;
-            string serializedString = null;
+            byte[] serializedBytes = null;
             MemoryStream serializedStream = null;
             if (streaming)
             {
@@ -285,8 +290,8 @@ namespace GLD.SerializerBenchmark
                 }
                 else
                 {
-                    serializedString = serializer.Serialize(original.Data);
-                    log.Size = serializedString.Length;
+                    serializedBytes = serializer.SerializeBytes(original.Data);
+                    log.Size = serializedBytes?.Length ?? 0;
                 }
                 serSuccessful = true;
                 // Nanoseconds from high-resolution Stopwatch ticks (not TimeSpan.TotalNanoseconds,
@@ -296,11 +301,11 @@ namespace GLD.SerializerBenchmark
                 if (streaming)
                     GC.KeepAlive(serializedStream);
                 else
-                    GC.KeepAlive(serializedString);
+                    GC.KeepAlive(serializedBytes);
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
-                    : serializer.Deserialize(serializedString);
+                    : serializer.DeserializeBytes(serializedBytes);
                 log.TimeDeser = ElapsedNanoseconds(sw) - log.TimeSer;
                 sw.Stop();
                 GC.KeepAlive(processed);
@@ -312,9 +317,7 @@ namespace GLD.SerializerBenchmark
                 if (streaming)
                     raw = serializedStream.ToArray();
                 else
-                    raw = serializedString != null
-                        ? System.Text.Encoding.UTF8.GetBytes(serializedString)
-                        : System.Array.Empty<byte>();
+                    raw = serializedBytes ?? System.Array.Empty<byte>();
                 Compress.Sizes(raw, out var gz, out var zs);
                 log.SizeGzip = gz;
                 log.SizeZstd = zs;

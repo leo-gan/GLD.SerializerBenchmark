@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
-use super::{ver, BenchSerializer, CountWrite, StreamMode};
+use super::{counted_write, ver, BenchSerializer, StreamMode};
 
 #[derive(Default)]
 pub struct RmpSerde;
@@ -54,9 +54,10 @@ impl BenchSerializer for CiboriumSer {
         Ok(ciborium::from_reader(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let mut counter = CountWrite { inner: w, n: 0 };
-        ciborium::into_writer(fixture, &mut counter)?;
-        Ok(counter.n)
+        counted_write(w, |out| {
+            ciborium::into_writer(fixture, out)?;
+            Ok(())
+        })
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
         Ok(ciborium::from_reader(r)?)

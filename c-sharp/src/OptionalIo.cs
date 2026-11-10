@@ -15,6 +15,36 @@ namespace GLD.SerializerBenchmark
             return serializerName != null && _names.Contains(serializerName);
         }
 
+        /// <summary>
+        /// Configured modes, then stream when one of the selected names is on the opt-in list.
+        /// Same rule as the other language runners.
+        /// </summary>
+        public static List<string> Modes(IEnumerable<string> configured, IEnumerable<string> presentNames)
+        {
+            var modes = new List<string>();
+            if (configured != null)
+            {
+                foreach (var mode in configured)
+                {
+                    var label = Schedule.NormalizeMode(mode);
+                    if (label.Length == 0 || modes.Contains(label)) continue;
+                    modes.Add(label);
+                }
+            }
+            if (modes.Count == 0)
+                modes.Add("bytes");
+            if (!modes.Contains("stream") && presentNames != null)
+            {
+                foreach (var name in presentNames)
+                {
+                    if (!IsStreamOptIn(name)) continue;
+                    modes.Add("stream");
+                    break;
+                }
+            }
+            return modes;
+        }
+
         static HashSet<string> Load()
         {
             var set = new HashSet<string>(StringComparer.Ordinal);

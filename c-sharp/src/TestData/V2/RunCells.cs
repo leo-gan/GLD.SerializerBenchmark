@@ -38,9 +38,21 @@ namespace GLD.SerializerBenchmark.TestData.V2
         public string TypeConfigHash { get; }
     }
 
+    public sealed class ResolvedRun
+    {
+        public ResolvedRun(List<RunCellDescription> cells, List<string> ioModes)
+        {
+            Cells = cells;
+            IoModes = ioModes;
+        }
+
+        public List<RunCellDescription> Cells { get; }
+        public List<string> IoModes { get; }
+    }
+
     public static class RunCells
     {
-        public static List<RunCellDescription> Load(
+        public static ResolvedRun Load(
             string runConfigPath = null,
             int seed = 42,
             string dataFilter = null)
@@ -84,6 +96,17 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 throw new InvalidOperationException($"resolve_run_config failed: {stderr}\n{stdout}");
 
             using var doc = JsonDocument.Parse(stdout);
+            var ioModes = new List<string>();
+            if (doc.RootElement.TryGetProperty("execution", out var execution) &&
+                execution.TryGetProperty("io_modes", out var modes) &&
+                modes.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var mode in modes.EnumerateArray())
+                {
+                    var label = mode.GetString();
+                    if (!string.IsNullOrEmpty(label)) ioModes.Add(label);
+                }
+            }
             var cells = new List<RunCellDescription>();
             foreach (var cell in doc.RootElement.GetProperty("cells").EnumerateArray())
             {
@@ -98,7 +121,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 var (data, dataType, secondary) = Generator.BuildPayload(typeId, typeConfig, n, seed);
                 cells.Add(new RunCellDescription(typeId, n, hash, data, dataType, secondary));
             }
-            return cells;
+            return new ResolvedRun(cells, ioModes);
         }
 
         public static string FindRepoRoot()

@@ -96,3 +96,13 @@ func (c *countWriter) Write(p []byte) (int, error) {
 	c.n += n
 	return n, err
 }
+
+// countedWrite runs a native stream encode and returns how many bytes it wrote.
+// An error from encode reports zero bytes, which is what each call site did.
+func countedWrite(w io.Writer, encode func(io.Writer) error) (int, error) {
+	cw := &countWriter{w: w}
+	if err := encode(cw); err != nil {
+		return 0, err
+	}
+	return cw.n, nil
+}

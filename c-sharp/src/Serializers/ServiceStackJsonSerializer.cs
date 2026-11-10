@@ -12,14 +12,14 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "ServiceStack Json"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return JsonSerializer.SerializeToString(serializable);
+            return Utf8Bytes(JsonSerializer.SerializeToString(serializable));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return JsonSerializer.DeserializeFromString(serialized, _primaryType);
+            return JsonSerializer.DeserializeFromString(Utf8Text(serialized), _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

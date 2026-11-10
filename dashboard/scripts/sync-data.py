@@ -2,9 +2,10 @@
 import os
 import sys
 import json
-import gzip
 import glob
 import re
+
+from snapshot_io import load_json_gz, write_json_gz
 
 # Timestamped benchmark logs: YYYY-MM-DD-HHMMSS.csv
 # Columnar publication CSVs use names like 2026-10-02-py-columnar-full.csv so
@@ -231,22 +232,12 @@ def main():
         dest_stats_gz_path = os.path.join(target_data_dir, f"stats_{lang}_latest.json.gz")
         existing_stats = {}
         if os.path.exists(dest_stats_gz_path):
-            try:
-                with gzip.open(dest_stats_gz_path, "rt", encoding="utf-8") as f:
-                    existing_stats = json.load(f)
-            except Exception as e:
-                print(f"Warning: could not read existing stats for {lang}: {e}")
+            existing_stats = load_json_gz(dest_stats_gz_path)
         _carry_spliced_groups(lang, existing_stats, stats_data)
         _refuse_splice_loss(lang, existing_stats, stats_data)
         if stats_data:
-            stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
-                "utf-8"
-            )
-            print(f"Writing gzipped stats to: {dest_stats_gz_path} ({len(stats_bytes)} raw bytes)")
-            with gzip.open(dest_stats_gz_path, "wb", compresslevel=9) as f:
-                f.write(stats_bytes)
-            from bench_versions import save_language_versions
-            save_language_versions(target_data_dir, lang, stats_data)
+            print(f"Writing gzipped stats to: {dest_stats_gz_path}")
+            write_json_gz(dest_stats_gz_path, stats_data)
             # Remove plain JSON if present (avoid double storage in git)
             if os.path.exists(dest_stats_path):
                 print(f"Removing plain stats file: {dest_stats_path}")
@@ -277,13 +268,9 @@ def main():
             payload["csv_omitted"] = True
             payload["csv_bytes"] = len(csv_data.encode("utf-8"))
 
-        # Write as gzip-compressed JSON
         dest_gzip_path = os.path.join(target_data_dir, f"{lang}_latest.json.gz")
         print(f"Saving compressed payload to: {dest_gzip_path}")
-        
-        json_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-        with gzip.open(dest_gzip_path, "wb") as f:
-            f.write(json_bytes)
+        write_json_gz(dest_gzip_path, payload)
 
     # Regression baselines stay in reports/baseline.json (gitignored).
     # The dashboard does not read that file.

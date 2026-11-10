@@ -11,22 +11,25 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
-import gzip
-import json
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    load_records,
+    refuse_error_rows,
+    export_stats,
+    as_whole as _norm,
+    base_type as _base,
+    count_bases as _counts,
+    require_finite as _finite,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
 
 DATA = REPO / "dashboard" / "public" / "data"
 GRAPH_TYPES = ("graph",)
@@ -51,16 +54,6 @@ DEFAULT_CSVS = {
 }
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
 def _core(group: dict) -> tuple:
     return (
         group.get("serializer"),
@@ -73,50 +66,6 @@ def _core(group: dict) -> tuple:
     )
 
 
-def _counts(groups: list, names: tuple[str, ...]) -> dict[str, int]:
-    out = {name: 0 for name in names}
-    for group in groups:
-        base = _base(group.get("test_data"))
-        if base in out:
-            out[base] += 1
-    return out
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _dump(payload: dict) -> str:
-    return json.dumps(payload, separators=(",", ":"))
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = _dump(payload).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
-
-
-def _finite(value, path: str) -> None:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise SystemExit(f"non-finite number at {path}")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _finite(item, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            _finite(item, f"{path}[{index}]")
-
-
 def _allowed_version(lang: str, name: str) -> str:
     if name in DAGR_NAMES:
         return DAGR_VERSION
@@ -125,24 +74,9 @@ def _allowed_version(lang: str, name: str) -> str:
     raise SystemExit(f"{lang}: serializer {name!r} is not on the graph allow-list")
 
 
-def _error_rows(csv_path: Path) -> int:
-    err_path = csv_path.with_name(csv_path.stem + ".errors.csv")
-    if not err_path.is_file():
-        return 0
-    with err_path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.reader(handle))
-    return max(0, len(rows) - 1) if rows else 0
-
-
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
-    error_rows = _error_rows(csv_path)
-    if error_rows:
-        raise SystemExit(f"{csv_path}: refusing to publish; {error_rows} error row(s)")
-    records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
-    if skipped:
-        raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    refuse_error_rows(csv_path)
+    records = load_records(csv_path, lang)
 
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if reps != [MIN_REPS]:
@@ -182,11 +116,7 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
         if seen != set(range(MIN_REPS)):
             raise SystemExit(f"{csv_path}: {key} repetition indexes are not 0..{MIN_REPS - 1}")
 
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
+    fresh = export_stats(records, lang)
     meta = {
         "reps": reps,
         "serializers": sorted(names),
@@ -252,7 +182,7 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
     if not stats_path.is_file():
         raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
 
     stats_groups = list(stats.get("groups") or [])
     fresh, meta = _analyze(lang, csv_path)
@@ -290,7 +220,7 @@ def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
         raise SystemExit(f"{lang}: columnar counts changed")
     if stats.get("dagr_splice") != dagr_note or stats.get("columnar_splice") != columnar_note:
         raise SystemExit(f"{lang}: an existing splice note changed")
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(f"{lang}: wrote {len(new_groups)} graph groups")
 
 
@@ -305,7 +235,6 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"{lang}: CSV not found: {path}")
         splice_language(lang, path, dry_run=args.dry_run)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

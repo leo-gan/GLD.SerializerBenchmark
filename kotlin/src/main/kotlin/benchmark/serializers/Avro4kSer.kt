@@ -3,8 +3,6 @@ package benchmark.serializers
 import benchmark.model.Fixture
 import com.github.avrokotlin.avro4k.Avro
 import kotlinx.serialization.KSerializer
-import java.io.InputStream
-import java.io.OutputStream
 
 /**
  * Avro4k — Kotlin-native Apache Avro via kotlinx.serialization.
@@ -30,12 +28,4 @@ class Avro4kSer : BenchSerializer {
     override fun serializeBytes(fx: Fixture): ByteArray = avro.encodeToByteArray(serializer, fx.value)
 
     override fun deserializeBytes(data: ByteArray): Any = avro.decodeFromByteArray(serializer, data)
-
-    override fun serializeStream(fx: Fixture, out: OutputStream): Int {
-        val bytes = serializeBytes(fx)
-        out.write(bytes)
-        return bytes.size
-    }
-
-    override fun deserializeStream(input: InputStream): Any = deserializeBytes(input.readAllBytes())
 }

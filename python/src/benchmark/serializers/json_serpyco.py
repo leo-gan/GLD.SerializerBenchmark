@@ -9,7 +9,6 @@ cells). Timed path:
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 import orjson
@@ -40,9 +39,3 @@ class SerpycoSerializer(Serializer):
     def deserialize_bytes(self, data: bytes) -> Any:
         return self._codec.load(orjson.loads(data))
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

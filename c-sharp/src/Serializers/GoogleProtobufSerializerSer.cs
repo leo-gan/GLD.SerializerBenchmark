@@ -27,15 +27,15 @@ namespace GLD.SerializerBenchmark.Serializers
             _parser = (MessageParser)parserProp.GetValue(null);
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var msg = (IMessage)NativeOf(serializable);
-            return Convert.ToBase64String(msg.ToByteArray());
+            return msg.ToByteArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var msg = _parser.ParseFrom(Convert.FromBase64String(serialized));
+            var msg = _parser.ParseFrom(serialized);
             return IsTableProject ? ColumnarProject.FFloat0(msg) : msg;
         }
 

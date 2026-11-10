@@ -11,22 +11,25 @@ from __future__ import annotations
 
 import argparse
 import csv
-import gzip
-import json
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    load_records,
+    refuse_error_rows,
+    export_stats,
+    as_whole as _norm,
+    base_type as _base,
+    count_bases as _counts,
+    require_finite as _finite,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
 
 DATA = REPO / "dashboard" / "public" / "data"
 LANGUAGE = "python"
@@ -47,74 +50,9 @@ ARRAY_TYPES = ("grid", "grid_window")
 MIN_REPS = 100
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
-
-
-def _finite(value, path: str) -> None:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise SystemExit(f"non-finite number at {path}")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _finite(item, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            _finite(item, f"{path}[{index}]")
-
-
-def _error_rows(csv_path: Path) -> int:
-    err_path = csv_path.with_name(csv_path.stem + ".errors.csv")
-    if not err_path.is_file():
-        return 0
-    with err_path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.reader(handle))
-    return max(0, len(rows) - 1) if rows else 0
-
-
-def _counts(groups: list, names: tuple[str, ...]) -> dict[str, int]:
-    out = {name: 0 for name in names}
-    for group in groups:
-        base = _base(group.get("test_data"))
-        if base in out:
-            out[base] += 1
-    return out
-
-
 def _analyze(csv_path: Path) -> tuple[dict, dict]:
-    error_rows = _error_rows(csv_path)
-    if error_rows:
-        raise SystemExit(f"{csv_path}: refusing to publish; {error_rows} error row(s)")
-    records, skipped = parse_csv_file(str(csv_path), language_hint=LANGUAGE)
-    if skipped:
-        raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    refuse_error_rows(csv_path)
+    records = load_records(csv_path, LANGUAGE)
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if reps != [MIN_REPS]:
         raise SystemExit(f"{csv_path}: repetitions {reps}; expected {MIN_REPS}")
@@ -153,11 +91,7 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
             if indexes.get((name, type_id)) != set(range(MIN_REPS)):
                 raise SystemExit(f"{csv_path}: {(name, type_id)} repetition indexes are not 0..{MIN_REPS - 1}")
 
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=LANGUAGE)
-    fresh = build_stats_export_payload(by_policy, LANGUAGE)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
+    fresh = export_stats(records, LANGUAGE)
     meta = {"reps": reps, "serializers": sorted(versions), "versions": versions, "rows": len(records)}
     return fresh, meta
 
@@ -219,7 +153,7 @@ def _split(groups: list) -> tuple[list, list]:
 def select_language(language: str) -> None:
     global LANGUAGE, MATRIX, STANDARDS, REMOVED
     LANGUAGE = language
-    if language == "mojo":
+    if language in ("mojo", "csharp"):
         MATRIX = {"gld-kiln": TENSOR_TYPES}
         STANDARDS = {"gld-kiln": "kiln"}
         REMOVED = ()
@@ -230,7 +164,7 @@ def select_language(language: str) -> None:
 
 def splice(csv_path: Path, *, dry_run: bool) -> None:
     stats_path = DATA / f"stats_{LANGUAGE}_latest.json.gz"
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     fresh, meta = _analyze(csv_path)
     new_groups = _validate_fresh(fresh, list(stats.get("groups") or []))
     stats_keep, stats_old = _split(list(stats.get("groups") or []))
@@ -262,13 +196,13 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
         raise SystemExit("python: suite counts changed")
     if _counts(stats["groups"], ARRAY_TYPES) != before_array:
         raise SystemExit("python: array counts changed")
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(f"{LANGUAGE}: wrote {len(new_groups)} tensor groups")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="python", choices=("python", "mojo"))
+    parser.add_argument("--language", default="python", choices=("python", "mojo", "csharp"))
     parser.add_argument("--csv", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -279,7 +213,6 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"CSV not found: {csv_path}")
     splice(csv_path, dry_run=args.dry_run)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

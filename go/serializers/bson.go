@@ -96,11 +96,9 @@ func (s *mongoBSON) DeserializeBytes(data []byte) (any, error) {
 }
 
 func (s *mongoBSON) SerializeStream(_ model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := encodeBSON(cw, s.payload); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return encodeBSON(cw, s.payload)
+	})
 }
 
 func (s *mongoBSON) DeserializeStream(r io.Reader) (any, error) {

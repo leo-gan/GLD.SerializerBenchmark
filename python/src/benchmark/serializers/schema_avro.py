@@ -96,9 +96,3 @@ class AvroSerializer(Serializer):
             return project_f_float_0(decoded)
         return decoded
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

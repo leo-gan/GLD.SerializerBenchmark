@@ -17,23 +17,25 @@ is run metadata and does not carry a second copy of these rows.
 from __future__ import annotations
 
 import argparse
-import gzip
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    load_records,
+    export_stats,
+    as_whole as _norm,
+    base_type as _base,
+    count_bases as _counts,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
 
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
 from benchmark_analysis.serializer_data_sets import allow_list  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    _EXPORT_IDENTITY_KEYS,
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
+from benchmark_analysis.stats import _EXPORT_IDENTITY_KEYS  # noqa: E402
 
 DATA = REPO / "dashboard" / "public" / "data"
 COLUMNAR_TYPES = ("table", "table_project", "nested_table", "signal")
@@ -55,55 +57,14 @@ DEFAULT_CSVS = {
 CORE = ("python", "cpp", "csharp", "go", "java", "rust")
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
 def _ident(group: dict) -> tuple:
     return tuple(_norm(group.get(key)) for key in _EXPORT_IDENTITY_KEYS) + (
         _norm(group.get("StreamMode")),
     )
 
 
-def _counts(groups: list) -> dict[str, int]:
-    out = {name: 0 for name in ROW_TYPES}
-    for group in groups:
-        base = _base(group.get("test_data"))
-        if base in out:
-            out[base] += 1
-    return out
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
-
-
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
-    records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
-    if skipped:
-        raise SystemExit(f"{csv_path}: refusing to publish; parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    records = load_records(csv_path, lang)
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if not reps or min(reps) < MIN_REPS:
         raise SystemExit(
@@ -113,11 +74,7 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
     foreign = sorted(base for base in bases if base not in COLUMNAR_TYPES)
     if foreign:
         raise SystemExit(f"{csv_path}: refusing non-columnar types {foreign}")
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"analysis produced schema {fresh.get('schema_version')}, expected 2.2")
+    fresh = export_stats(records, lang)
     meta = {
         "reps": reps,
         "serializers": sorted({str(row.get("SerializerName") or "") for row in records if row.get("SerializerName")}),
@@ -131,12 +88,12 @@ def splice_language(lang: str, csv_path: Path) -> None:
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
     if not stats_path.is_file():
         raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     if stats.get("schema_version") != "2.2":
         raise SystemExit(f"{lang}: published schema is {stats.get('schema_version')}, expected 2.2")
 
     before_groups = list(stats.get("groups") or [])
-    before_counts = _counts(before_groups)
+    before_counts = _counts(before_groups, ROW_TYPES)
     fresh, meta = _analyze(lang, csv_path)
     expected = set(allow_list(lang, "columnar"))
     got = set(meta["serializers"])
@@ -159,7 +116,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     kept = [group for group in before_groups if _base(group.get("test_data")) not in COLUMNAR_TYPES]
     replaced = len(before_groups) - len(kept)
     stats["groups"] = kept + added
-    after_counts = _counts(stats["groups"])
+    after_counts = _counts(stats["groups"], ROW_TYPES)
     if after_counts != before_counts:
         raise SystemExit(f"{lang}: row-type counts changed {before_counts} -> {after_counts}")
 
@@ -182,7 +139,7 @@ def splice_language(lang: str, csv_path: Path) -> None:
     }
     stats["columnar_splice"] = note
 
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(
         f"{lang}: replaced {replaced} columnar groups with {len(added)}, "
         f"row counts {after_counts}, serializers {meta['serializers']}"
@@ -227,7 +184,6 @@ def main(argv: list[str] | None = None) -> int:
     for lang, path in jobs:
         splice_language(lang, path)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

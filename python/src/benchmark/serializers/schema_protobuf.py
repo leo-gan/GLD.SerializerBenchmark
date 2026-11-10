@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 from .base import Serializer
@@ -67,9 +66,3 @@ class ProtobufSerializer(Serializer):
             return project_f_float_0(msg)
         return msg
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

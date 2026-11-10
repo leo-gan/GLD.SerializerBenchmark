@@ -49,11 +49,11 @@ namespace GLD.SerializerBenchmark.Serializers
             _deserStream = TypedSer.BindDeserializeStream(t, deserStream);
         }
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(_serBytes(serializable));
+        public override byte[] SerializeBytes(object serializable)
+            => _serBytes(serializable);
 
-        public override object Deserialize(string serialized)
-            => _deserBytes(Convert.FromBase64String(serialized));
+        public override object DeserializeBytes(byte[] serialized)
+            => _deserBytes(serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
             => _serStream(serializable, outputStream);

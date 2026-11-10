@@ -26,10 +26,6 @@ final class YamlPeclSer extends BytesSer
         return 'text_on_stream';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return yaml_emit($value);

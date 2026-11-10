@@ -6,7 +6,6 @@ Call-path: prepare_data → dict (untimed). Timed path is json.dumps/loads only.
 
 from __future__ import annotations
 
-import io
 import json
 from typing import Any
 
@@ -31,10 +30,3 @@ class StdlibJsonSerializer(Serializer):
     def deserialize_bytes(self, data: bytes) -> Any:
         return json.loads(data)
 
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        # json.dump writes text; adapt via encode for bytes stream parity
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())

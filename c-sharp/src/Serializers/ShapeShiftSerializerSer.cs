@@ -47,9 +47,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string StreamMode => this.serializeToStream is null ? "adapted" : "native";
 
-        public override string Serialize(object serializable) => serialize(serializable);
+        public override byte[] SerializeBytes(object serializable) => Utf8Bytes(serialize(serializable));
 
-        public override object Deserialize(string serialized) => deserialize(serialized);
+        public override object DeserializeBytes(byte[] serialized) => deserialize(Utf8Text(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
         {
@@ -99,7 +99,7 @@ namespace GLD.SerializerBenchmark.Serializers
     }
 
     /// <summary>
-    /// Bridges a ShapeShift binary serializer to the suite's Base64 string and stream paths.
+    /// Bridges a ShapeShift binary serializer to the suite's bytes and stream paths.
     /// </summary>
     internal abstract class ShapeShiftBinarySerializerSer : ShapeShiftSerializerSer
     {
@@ -110,9 +110,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string StreamMode => this.serializeToStream is null ? "adapted" : "native";
 
-        public override string Serialize(object serializable) => Convert.ToBase64String(serialize(serializable));
+        public override byte[] SerializeBytes(object serializable) => serialize(serializable);
 
-        public override object Deserialize(string serialized) => deserialize(Convert.FromBase64String(serialized));
+        public override object DeserializeBytes(byte[] serialized) => deserialize(serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
         {

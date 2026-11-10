@@ -72,11 +72,9 @@ func (s *fxamackerCBOR) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *fxamackerCBOR) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := s.em.NewEncoder(cw).Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return s.em.NewEncoder(cw).Encode(fx.Value)
+	})
 }
 
 func (s *fxamackerCBOR) DeserializeStream(r io.Reader) (any, error) {

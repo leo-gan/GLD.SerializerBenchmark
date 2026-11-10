@@ -14,29 +14,30 @@ from __future__ import annotations
 
 import argparse
 import csv
-import gzip
-import json
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from snapshot_io import load_json_gz, write_json_gz
+
+from splice_rows import (
+    load_records,
+    refuse_error_rows,
+    export_stats,
+    as_whole as _norm,
+    base_type as _base,
+    require_finite as _finite,
+)
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "analysis" / "src"))
-
-from benchmark_analysis.parser import parse_csv_file  # noqa: E402
-from benchmark_analysis.stats import (  # noqa: E402
-    build_stats_export_payload,
-    compute_statistics_multi_policy,
-    load_stats_config,
-)
 
 DATA = REPO / "dashboard" / "public" / "data"
 NAME = "gld-kiln"
 SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 TENSOR_TYPES = ("tensor", "tensor_view", "prompt", "shard", "request")
 MIN_REPS = 100
-# C# bytes mode records the Base64 text length. The wire size is the other languages.
+# Published C# tensor sizes are the Base64 length from that snapshot. The wire size is the other languages.
 CSHARP_SIZE = {
     "tensor": 5_592_424,
     "tensor_view": 5_592_424,
@@ -101,56 +102,6 @@ RUNS = {
 }
 
 
-def _base(test_data: object) -> str:
-    return str(test_data or "").split("@n=")[0]
-
-
-def _norm(value):
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
-
-
-def _load_gz(path: Path) -> dict:
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path} is not a JSON object")
-    return data
-
-
-def _write_gz(path: Path, payload: dict) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with gzip.open(tmp, "wb", compresslevel=9) as handle:
-        handle.write(raw)
-    tmp.replace(path)
-    from bench_versions import note_stats_file
-    note_stats_file(path, payload)
-
-
-def _finite(value, path: str) -> None:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise SystemExit(f"non-finite number at {path}")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _finite(item, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            _finite(item, f"{path}[{index}]")
-
-
-def _error_rows(csv_path: Path) -> int:
-    err_path = csv_path.with_name(csv_path.stem + ".errors.csv")
-    if not err_path.is_file():
-        return 0
-    with err_path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.reader(handle))
-    return max(0, len(rows) - 1) if rows else 0
-
-
 def _census(groups: list) -> dict[tuple, int]:
     out: dict[tuple, int] = {}
     for group in groups:
@@ -181,16 +132,11 @@ def _check_sizes(lang: str, csv_path: Path, kind: str) -> None:
 
 
 def _analyze(lang: str, csv_path: Path, kind: str) -> tuple[list, dict]:
-    if _error_rows(csv_path):
-        raise SystemExit(f"{csv_path}: refusing to publish; error rows present")
+    refuse_error_rows(csv_path)
     _check_sizes(lang, csv_path, kind)
     allowed = SUITE_TYPES if kind == "suite" else TENSOR_TYPES
     want_n = {1, 100} if kind == "suite" else {1}
-    records, skipped = parse_csv_file(str(csv_path), language_hint=lang)
-    if skipped:
-        raise SystemExit(f"{csv_path}: parser skipped {skipped} row(s)")
-    if not records:
-        raise SystemExit(f"{csv_path}: no records")
+    records = load_records(csv_path, lang)
     names = {str(row.get("SerializerName") or "") for row in records}
     if names != {NAME}:
         raise SystemExit(f"{csv_path}: serializers {sorted(names)}")
@@ -213,11 +159,7 @@ def _analyze(lang: str, csv_path: Path, kind: str) -> tuple[list, dict]:
         if str(row.get("Language") or "") != lang:
             raise SystemExit(f"{csv_path}: language {row.get('Language')!r}")
 
-    config = load_stats_config()
-    by_policy = compute_statistics_multi_policy(records, config=config, language_hint=lang)
-    fresh = build_stats_export_payload(by_policy, lang)
-    if fresh.get("schema_version") != "2.2":
-        raise SystemExit(f"{csv_path}: schema {fresh.get('schema_version')}")
+    fresh = export_stats(records, lang)
     groups = list(fresh.get("groups") or [])
     meta = {"rows": len(records), "reps": reps, "version": "0.2.0"}
     return groups, meta
@@ -291,7 +233,7 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
         if not path.is_file():
             raise SystemExit(f"CSV not found: {path}")
     stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    stats = _load_gz(stats_path)
+    stats = load_json_gz(stats_path)
     published = list(stats.get("groups") or [])
     suite_groups, suite_meta = _analyze(lang, suite_csv, "suite")
     tensor_groups, tensor_meta = _analyze(lang, tensor_csv, "tensor")
@@ -334,7 +276,7 @@ def splice_language(lang: str, *, dry_run: bool) -> None:
     stats["kiln_splice"] = note
     if _census(stats["groups"]) != before:
         raise SystemExit(f"{lang}: other serializers changed")
-    _write_gz(stats_path, stats)
+    write_json_gz(stats_path, stats)
     print(f"{lang}: wrote {len(new_groups)} gld-kiln groups")
 
 
@@ -347,7 +289,6 @@ def main(argv: list[str] | None = None) -> int:
     for lang in langs:
         splice_language(lang, dry_run=args.dry_run)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

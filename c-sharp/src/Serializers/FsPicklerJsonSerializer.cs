@@ -20,19 +20,18 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "FsPicklerJson"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using (var ms = new MemoryStream())
             {
                 _serializer.Serialize(ms, serializable);
-                return Encoding.UTF8.GetString(ms.ToArray());
+                return ms.ToArray();
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var b = Encoding.UTF8.GetBytes(serialized);
-            using (var stream = new MemoryStream(b))
+            using (var stream = new MemoryStream(serialized))
             {
                 //stream.Seek(0, SeekOrigin.Begin);
                 return _serializer.Deserialize<object>(stream);

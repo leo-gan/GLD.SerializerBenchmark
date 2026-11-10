@@ -9,16 +9,16 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             _serMs.SetLength(0);
             LightProto.Serializer.SerializeNonGeneric(_serMs,serializable, LightProto.Serializer.GetProtoWriter(_primaryType));
-            return Convert.ToBase64String(_serMs.GetBuffer(), 0, (int)_serMs.Length);
+            return _serMs.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var b = Convert.FromBase64String(serialized);
+            var b = serialized;
             return LightProto.Serializer.DeserializeNonGeneric(b, LightProto.Serializer.GetProtoReader(_primaryType));
         }
 

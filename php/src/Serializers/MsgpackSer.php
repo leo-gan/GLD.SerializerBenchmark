@@ -7,7 +7,7 @@ namespace Benchmark\Serializers;
 use MessagePack\BufferUnpacker;
 use MessagePack\Packer;
 
-final class MsgpackSer implements Serializer
+final class MsgpackSer extends BytesSer
 {
     private Packer $packer;
     private BufferUnpacker $unpacker;
@@ -33,10 +33,6 @@ final class MsgpackSer implements Serializer
         return 'adapted';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return $this->packer->pack($value);
@@ -46,21 +42,5 @@ final class MsgpackSer implements Serializer
     {
         $this->unpacker->reset($data);
         return $this->unpacker->unpack();
-    }
-
-    public function serializeStream(mixed $value, $out): int
-    {
-        $bytes = $this->serializeBytes($value);
-        fwrite($out, $bytes);
-        return strlen($bytes);
-    }
-
-    public function deserializeStream($in): mixed
-    {
-        $data = stream_get_contents($in);
-        if ($data === false) {
-            throw new \RuntimeException('msgpack stream read failed');
-        }
-        return $this->deserializeBytes($data);
     }
 }

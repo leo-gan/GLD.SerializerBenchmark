@@ -17,15 +17,15 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "MessagePack-CSharp";
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var bytes = MessagePackSerializer.Serialize(_primaryType, serializable, Options);
-            return Convert.ToBase64String(bytes);
+            return bytes;
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             return MessagePackSerializer.Deserialize(_primaryType, bytes, Options);
         }
 

@@ -88,7 +88,6 @@ Building that object is **prepare**. Writing it out is **serialize**.
 |-----------|---------------|-----------------|
 | Parse-only library (no public encoder) | simdjson is a parser | Encode is another JSON writer, timed. Decode is the parser. The 401 simdjson page is the model. |
 | Columnar and SBE layout conversion | Shredding rows into columns, or packing an SBE body, is the format | Rule 8. Schema compile stays in `prepare`. The conversion stays in `serialize`. `table_project` deserialize returns one column. |
-| C# in-memory path is a `string` | Many .NET APIs return strings | Binary codecs often Base64 that string. Both sides of a C# pair must do the same. Do not compare those nanoseconds to a Rust `Vec<u8>` row. |
 | Envelope / teaching wrapper | C `ubj` wraps custom-binary | The 401 page must say the envelope is the measured extra work. |
 | In-place layout used as a classical decoder | rkyv `from_bytes` builds an owned struct | The 401 rkyv page must say `access` is not timed. |
 | 401 pair whose other library has no separate native type | Protostuff and FlatBuffers encode the suite object | Both sides time suite value → bytes → suite value. |
@@ -119,7 +118,7 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [C: custom-binary vs ubj](../theory/401/c-custom-binary-vs-ubj.md) | ubj encodes custom-binary, then an envelope | Documented. Honest for that choice. |
 | [C++: Bitsery vs YAS](../theory/401/cpp-bitsery-vs-yas.md) | Both encode the C++ value | Same work. Honest. |
 | [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode is nlohmann `dump` of a prepared object. Decode is simdjson parse, then a DOM walk | Encode is **not** simdjson. Must stay labelled. |
-| [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode then Base64 on the string path | Same extra work. Honest **within C#**. |
+| [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode the library byte payload. The published table on that page still includes a shared Base64 step | Same extra work in that table. Honest **within C#**. |
 | [Go: kelindar vs Avro](../theory/401/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
 | [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
 | [Kotlin: Protostuff vs protobuf](../theory/401/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |

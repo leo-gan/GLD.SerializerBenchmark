@@ -16,14 +16,14 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "ServiceStack"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return TypeSerializer.SerializeToString(serializable, _primaryType);
+            return Utf8Bytes(TypeSerializer.SerializeToString(serializable, _primaryType));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return TypeSerializer.DeserializeFromString(serialized, _primaryType);
+            return TypeSerializer.DeserializeFromString(Utf8Text(serialized), _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

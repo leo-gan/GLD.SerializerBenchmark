@@ -36,16 +36,16 @@ namespace GLD.SerializerBenchmark.Serializers
             }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using var ms = new MemoryStream();
             WriteRoot(serializable, ms);
-            return Convert.ToBase64String(ms.ToArray());
+            return ms.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             using var ms = new MemoryStream(bytes, writable: false);
             return ReadRoot(ms);
         }

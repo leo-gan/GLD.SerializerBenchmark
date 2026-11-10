@@ -44,11 +44,9 @@ func (s *jsonIter) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *jsonIter) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := s.api.NewEncoder(cw).Encode(fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return s.api.NewEncoder(cw).Encode(fx.Value)
+	})
 }
 
 func (s *jsonIter) DeserializeStream(r io.Reader) (any, error) {

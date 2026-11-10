@@ -26,10 +26,6 @@ final class IgbinarySer extends BytesSer
         return 'adapted';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         $out = igbinary_serialize($value);

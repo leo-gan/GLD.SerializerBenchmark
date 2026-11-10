@@ -46,13 +46,15 @@ namespace GLD.SerializerBenchmark
                 seed = seedParsed;
 
             List<ITestDataDescription> allTestDataDescriptions;
+            List<string> configuredModes = null;
             try
             {
-                var cells = GLD.SerializerBenchmark.TestData.V2.RunCells.Load(
+                var resolved = GLD.SerializerBenchmark.TestData.V2.RunCells.Load(
                     runConfigPath: null, seed: seed, dataFilter: testDataFilter);
-                allTestDataDescriptions = new List<ITestDataDescription>(cells);
+                allTestDataDescriptions = new List<ITestDataDescription>(resolved.Cells);
+                configuredModes = resolved.IoModes;
                 System.Console.WriteLine(
-                    $"[PROGRESS] Run-config cells: {cells.Count} (seed={seed})");
+                    $"[PROGRESS] Run-config cells: {resolved.Cells.Count} (seed={seed})");
             }
             catch (System.Exception ex)
             {
@@ -82,9 +84,11 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
+            var modes = OptionalIo.Modes(configuredModes, serializers.Select(s => s.Name));
             System.Console.WriteLine("[PROGRESS] Serializers: " + string.Join(",", serializers.Select(s => s.Name)));
+            System.Console.WriteLine("[PROGRESS] Modes: " + string.Join(",", modes));
 
-            Tester.Tests(serializers, testDataDescriptions, repetitions);
+            Tester.Tests(serializers, testDataDescriptions, repetitions, modes);
         }
 
         internal static List<ISerDeser> CreateSerializers() => new List<ISerDeser>

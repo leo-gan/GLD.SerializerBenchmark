@@ -19,16 +19,16 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "MS Bond Json";
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using var tw = new StringWriter();
             _serializer.Serialize(serializable, new SimpleJsonWriter(tw));
-            return tw.ToString();
+            return Utf8Bytes(tw.ToString());
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            using var tr = new StringReader(serialized);
+            using var tr = new StringReader(Utf8Text(serialized));
             return _deserializer.Deserialize(new SimpleJsonReader(tr));
         }
 

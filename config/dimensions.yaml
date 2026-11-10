@@ -64,32 +64,32 @@ optional_io:
   # First opt-in from published stats_*_latest iqr_1.5, suite types, N=100.
   # Inverse-variance pool of fixture log median-ratios. SE of each median
   # from its IQR. |pool| > 10% and the 95% CI excludes 0.
-  # level: stream = second API, same size. level: string = Base64 child.
+  # level: stream = second API. Older C# logs may still contain a Base64 string row.
   opt_in:
     - {language: c, serializer: ion-c, level: stream, stream_mode: native}
     - {language: c, serializer: yyjson, level: stream, stream_mode: native}
     - {language: cpp, serializer: arduinojson, level: stream, stream_mode: native}
     - {language: cpp, serializer: cereal, level: stream, stream_mode: native}
     - {language: cpp, serializer: rapidjson, level: stream, stream_mode: native}
-    - {language: csharp, serializer: BinaryPack, level: string, stream_mode: native}
-    - {language: csharp, serializer: FlatSharp, level: string, stream_mode: native}
-    - {language: csharp, serializer: Google.Protobuf, level: string, stream_mode: native}
-    - {language: csharp, serializer: GroBuf, level: string, stream_mode: native}
-    - {language: csharp, serializer: Hyperion, level: string, stream_mode: native}
-    - {language: csharp, serializer: LightProto, level: string, stream_mode: native}
-    - {language: csharp, serializer: "MS Binary", level: string, stream_mode: native}
-    - {language: csharp, serializer: "MS Bond Compact", level: string, stream_mode: native}
-    - {language: csharp, serializer: "MS Bond Fast", level: string, stream_mode: native}
-    - {language: csharp, serializer: "MS DataContract", level: string, stream_mode: text_on_stream}
-    - {language: csharp, serializer: MemoryPack, level: string, stream_mode: native}
-    - {language: csharp, serializer: MessagePack-CSharp, level: string, stream_mode: native}
-    - {language: csharp, serializer: Migrant, level: string, stream_mode: native}
-    - {language: csharp, serializer: Nerdbank.MessagePack, level: string, stream_mode: native}
-    - {language: csharp, serializer: NetSerializer, level: string, stream_mode: native}
-    - {language: csharp, serializer: ProtoBuf, level: string, stream_mode: native}
+    - {language: csharp, serializer: BinaryPack, level: stream, stream_mode: native}
+    - {language: csharp, serializer: FlatSharp, level: stream, stream_mode: native}
+    - {language: csharp, serializer: Google.Protobuf, level: stream, stream_mode: native}
+    - {language: csharp, serializer: GroBuf, level: stream, stream_mode: native}
+    - {language: csharp, serializer: Hyperion, level: stream, stream_mode: native}
+    - {language: csharp, serializer: LightProto, level: stream, stream_mode: native}
+    - {language: csharp, serializer: "MS Binary", level: stream, stream_mode: native}
+    - {language: csharp, serializer: "MS Bond Compact", level: stream, stream_mode: native}
+    - {language: csharp, serializer: "MS Bond Fast", level: stream, stream_mode: native}
+    - {language: csharp, serializer: "MS DataContract", level: stream, stream_mode: text_on_stream}
+    - {language: csharp, serializer: MemoryPack, level: stream, stream_mode: native}
+    - {language: csharp, serializer: MessagePack-CSharp, level: stream, stream_mode: native}
+    - {language: csharp, serializer: Migrant, level: stream, stream_mode: native}
+    - {language: csharp, serializer: Nerdbank.MessagePack, level: stream, stream_mode: native}
+    - {language: csharp, serializer: NetSerializer, level: stream, stream_mode: native}
+    - {language: csharp, serializer: ProtoBuf, level: stream, stream_mode: native}
     - {language: csharp, serializer: ShapeShift.Json, level: stream, stream_mode: native}
-    - {language: csharp, serializer: ShapeShift.MsgPack, level: string, stream_mode: native}
-    - {language: csharp, serializer: ZeroFormatter, level: string, stream_mode: native}
+    - {language: csharp, serializer: ShapeShift.MsgPack, level: stream, stream_mode: native}
+    - {language: csharp, serializer: ZeroFormatter, level: stream, stream_mode: native}
     - {language: go, serializer: encoding/json, level: stream, stream_mode: native}
     - {language: go, serializer: fxamacker/cbor, level: stream, stream_mode: native}
     - {language: go, serializer: goccy/go-json, level: stream, stream_mode: native}

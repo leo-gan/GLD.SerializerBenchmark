@@ -4,7 +4,7 @@ use crate::data::{collect_f_float_0, Fixture};
 use anyhow::Result;
 use std::io::{Read, Write};
 
-use super::{ver, BenchSerializer, CountWrite, StreamMode};
+use super::{counted_write, ver, BenchSerializer, StreamMode};
 
 pub struct SerdeJson {
     kind: &'static str,
@@ -54,9 +54,10 @@ impl BenchSerializer for SerdeJson {
         self.finish(serde_json::from_slice(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let mut counter = CountWrite { inner: w, n: 0 };
-        serde_json::to_writer(&mut counter, fixture)?;
-        Ok(counter.n)
+        counted_write(w, |out| {
+            serde_json::to_writer(out, fixture)?;
+            Ok(())
+        })
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
         self.finish(serde_json::from_reader(r)?)

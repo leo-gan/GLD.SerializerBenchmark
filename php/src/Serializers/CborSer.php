@@ -34,10 +34,6 @@ final class CborSer extends BytesSer
         return 'adapted';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return $this->encoder->encode($value);

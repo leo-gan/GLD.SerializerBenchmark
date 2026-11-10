@@ -14,16 +14,16 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name => "MemoryPack";
         public override bool Supports(string testDataName) => !IsArrayType(testDataName);
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             // byte[] Serialize(Type type, object? value, ...)
             var bytes = MemoryPackSerializer.Serialize(_primaryType, serializable);
-            return Convert.ToBase64String(bytes);
+            return bytes;
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             return MemoryPackSerializer.Deserialize(_primaryType, (ReadOnlySpan<byte>)bytes);
         }
 

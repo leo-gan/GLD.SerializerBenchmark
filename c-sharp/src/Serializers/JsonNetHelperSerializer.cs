@@ -17,14 +17,14 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "Json.Net (Helper)"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return JsonConvert.SerializeObject(serializable, _settings);
+            return Utf8Bytes(JsonConvert.SerializeObject(serializable, _settings));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return JsonConvert.DeserializeObject(serialized, _primaryType, _settings);
+            return JsonConvert.DeserializeObject(Utf8Text(serialized), _primaryType, _settings);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

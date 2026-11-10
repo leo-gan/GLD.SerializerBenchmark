@@ -12,14 +12,14 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "NetJSON"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return NetJSON.NetJSON.Serialize(serializable);
+            return Utf8Bytes(NetJSON.NetJSON.Serialize(serializable));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return NetJSON.NetJSON.Deserialize(_primaryType, serialized);
+            return NetJSON.NetJSON.Deserialize(_primaryType, Utf8Text(serialized));
         }
 
         public override void Serialize(object serializable, Stream outputStream)

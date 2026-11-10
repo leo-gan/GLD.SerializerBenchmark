@@ -12,14 +12,14 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "fastJson"; }
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return fastJSON.JSON.ToJSON(serializable);
+            return Utf8Bytes(fastJSON.JSON.ToJSON(serializable));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return fastJSON.JSON.ToObject(serialized, _primaryType);
+            return fastJSON.JSON.ToObject(Utf8Text(serialized), _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

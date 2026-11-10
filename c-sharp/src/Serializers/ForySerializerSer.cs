@@ -49,8 +49,8 @@ namespace GLD.SerializerBenchmark.Serializers
         }
 
         public override void PrepareData(object data) => _decode(_encode(data));
-        public override string Serialize(object value) => Convert.ToBase64String(_encode(value));
-        public override object Deserialize(string value) => _decode(Convert.FromBase64String(value));
+        public override byte[] SerializeBytes(object value) => _encode(value);
+        public override object DeserializeBytes(byte[] value) => _decode(value);
         public override void Serialize(object value, Stream output)
         {
             var bytes = _encode(value);

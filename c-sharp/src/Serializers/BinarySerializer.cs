@@ -16,20 +16,20 @@ namespace GLD.SerializerBenchmark.Serializers
         }
 
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             using (var ms = new MemoryStream())
             {
                 _formatter.Serialize(ms, serializable);
                 ms.Flush();
                 ms.Position = 0;
-                return Convert.ToBase64String(ms.ToArray());
+                return ms.ToArray();
             }
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var b = Convert.FromBase64String(serialized);
+            var b = serialized;
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);

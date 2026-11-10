@@ -26,10 +26,6 @@ final class BsonSer extends BytesSer
         return 'adapted';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         $root = is_array($value) && array_is_list($value) ? ['batch' => $value] : $value;

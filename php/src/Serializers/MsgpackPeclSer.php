@@ -26,10 +26,6 @@ final class MsgpackPeclSer extends BytesSer
         return 'adapted';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return msgpack_pack($value);

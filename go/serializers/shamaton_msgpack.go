@@ -42,11 +42,9 @@ func (s *shamatonMsgpack) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *shamatonMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	if err := msgpack.MarshalWrite(cw, fx.Value); err != nil {
-		return 0, err
-	}
-	return cw.n, nil
+	return countedWrite(w, func(cw io.Writer) error {
+		return msgpack.MarshalWrite(cw, fx.Value)
+	})
 }
 
 func (s *shamatonMsgpack) DeserializeStream(r io.Reader) (any, error) {

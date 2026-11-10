@@ -6,6 +6,7 @@
  * Case rows are the failures the page can open.
  */
 import './compliance.css';
+import { escapeHtml, fetchJsonMaybeGzip } from './page.js';
 import { serializerDisplayName, serializerSelectLabel } from './format.js';
 import {
   loadSerializerSources,
@@ -65,14 +66,6 @@ let ui = {
   serializer: '',
   panel: null,
 };
-
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function langLabel(id) {
   if (id === ALL_LANG) return 'All';
@@ -204,24 +197,6 @@ async function loadBenchVersions() {
     benchVersions = {};
   }
   return benchVersions;
-}
-
-async function fetchJsonMaybeGzip(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: ${res.status}`);
-  const buf = await res.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
-  if (!isGzip) return JSON.parse(new TextDecoder().decode(bytes));
-  if (typeof DecompressionStream === 'undefined') {
-    throw new Error('gzip payload but DecompressionStream is unavailable');
-  }
-  const ds = new DecompressionStream('gzip');
-  const writer = ds.writable.getWriter();
-  writer.write(bytes);
-  writer.close();
-  const text = await new Response(ds.readable).text();
-  return JSON.parse(text);
 }
 
 async function loadPayload() {

@@ -46,8 +46,10 @@ namespace GLD.SerializerBenchmark
                 // For each serializer, show result or FAILURE
                 foreach (var serializer in serializers)
                 {
-                    foreach (var mode in new[] { "string", "Stream" })
+                    foreach (var mode in new[] { "bytes", "stream" })
                     {
+                        if (mode == "stream" && !OptionalIo.IsStreamOptIn(serializer.Name))
+                            continue;
                         if (aggregatedResults.TryGetValue((testData.Name, serializer.Name, mode), out var result))
                         {
                             OnAggregator(result);

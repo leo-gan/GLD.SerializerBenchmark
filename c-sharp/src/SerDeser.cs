@@ -54,10 +54,32 @@ namespace GLD.SerializerBenchmark
 
         public virtual object ToDomain(object decoded) => decoded;
 
-        public abstract string Serialize(object serializable);
-        public abstract object Deserialize(string serialized);
+        public abstract byte[] SerializeBytes(object serializable);
+        public abstract object DeserializeBytes(byte[] serialized);
+
+        protected static byte[] Utf8Bytes(string text) =>
+            System.Text.Encoding.UTF8.GetBytes(text ?? "");
+
+        protected static string Utf8Text(byte[] data) =>
+            System.Text.Encoding.UTF8.GetString(data ?? System.Array.Empty<byte>());
 
         public abstract void Serialize(object serializable, Stream outputStream);
         public abstract object Deserialize(Stream inputStream);
+
+        /// Write a finished buffer. Used by codecs whose stream path is the byte path.
+        protected static void WriteAll(Stream output, byte[] bytes)
+        {
+            output.Write(bytes, 0, bytes.Length);
+        }
+
+        /// Read a stream into a buffer. rewind=false seeks only when the stream can.
+        protected static byte[] ReadAll(Stream input, bool rewind)
+        {
+            if (rewind || input.CanSeek)
+                input.Seek(0, SeekOrigin.Begin);
+            using var ms = new MemoryStream();
+            input.CopyTo(ms);
+            return ms.ToArray();
+        }
     }
 }

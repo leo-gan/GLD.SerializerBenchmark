@@ -7,7 +7,6 @@ serialize, which is the timed path. ``table_project`` deserialize returns
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 import pyarrow as pa
@@ -127,13 +126,6 @@ class _ColumnarSerializer(Serializer):
     def deserialize_bytes(self, data: bytes) -> Any:
         columns = ["f_float_0"] if self._type_id == "table_project" else None
         return self._materialize(self._read(data, columns))
-
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())
 
 
 class ArrowIpcSerializer(_ColumnarSerializer):

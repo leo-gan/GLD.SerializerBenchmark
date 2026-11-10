@@ -13,32 +13,32 @@
 
 const IN_MEMORY = new Set(['bytes', 'string', 'buffer']);
 
-/** Opt-in second level. level "stream" averages; level "string" is the C# Base64 child. */
+/** Opt-in second level. level "stream" averages. A C# Base64 string row stays a child of the raw bytes. */
 export const FOLD_OPT_IN = [
   { language: 'c', serializer: 'ion-c', level: 'stream' },
   { language: 'c', serializer: 'yyjson', level: 'stream' },
   { language: 'cpp', serializer: 'arduinojson', level: 'stream' },
   { language: 'cpp', serializer: 'cereal', level: 'stream' },
   { language: 'cpp', serializer: 'rapidjson', level: 'stream' },
-  { language: 'csharp', serializer: 'BinaryPack', level: 'string' },
-  { language: 'csharp', serializer: 'FlatSharp', level: 'string' },
-  { language: 'csharp', serializer: 'Google.Protobuf', level: 'string' },
-  { language: 'csharp', serializer: 'GroBuf', level: 'string' },
-  { language: 'csharp', serializer: 'Hyperion', level: 'string' },
-  { language: 'csharp', serializer: 'LightProto', level: 'string' },
-  { language: 'csharp', serializer: 'MS Binary', level: 'string' },
-  { language: 'csharp', serializer: 'MS Bond Compact', level: 'string' },
-  { language: 'csharp', serializer: 'MS Bond Fast', level: 'string' },
-  { language: 'csharp', serializer: 'MS DataContract', level: 'string' },
-  { language: 'csharp', serializer: 'MemoryPack', level: 'string' },
-  { language: 'csharp', serializer: 'MessagePack-CSharp', level: 'string' },
-  { language: 'csharp', serializer: 'Migrant', level: 'string' },
-  { language: 'csharp', serializer: 'Nerdbank.MessagePack', level: 'string' },
-  { language: 'csharp', serializer: 'NetSerializer', level: 'string' },
-  { language: 'csharp', serializer: 'ProtoBuf', level: 'string' },
+  { language: 'csharp', serializer: 'BinaryPack', level: 'stream' },
+  { language: 'csharp', serializer: 'FlatSharp', level: 'stream' },
+  { language: 'csharp', serializer: 'Google.Protobuf', level: 'stream' },
+  { language: 'csharp', serializer: 'GroBuf', level: 'stream' },
+  { language: 'csharp', serializer: 'Hyperion', level: 'stream' },
+  { language: 'csharp', serializer: 'LightProto', level: 'stream' },
+  { language: 'csharp', serializer: 'MS Binary', level: 'stream' },
+  { language: 'csharp', serializer: 'MS Bond Compact', level: 'stream' },
+  { language: 'csharp', serializer: 'MS Bond Fast', level: 'stream' },
+  { language: 'csharp', serializer: 'MS DataContract', level: 'stream' },
+  { language: 'csharp', serializer: 'MemoryPack', level: 'stream' },
+  { language: 'csharp', serializer: 'MessagePack-CSharp', level: 'stream' },
+  { language: 'csharp', serializer: 'Migrant', level: 'stream' },
+  { language: 'csharp', serializer: 'Nerdbank.MessagePack', level: 'stream' },
+  { language: 'csharp', serializer: 'NetSerializer', level: 'stream' },
+  { language: 'csharp', serializer: 'ProtoBuf', level: 'stream' },
   { language: 'csharp', serializer: 'ShapeShift.Json', level: 'stream' },
-  { language: 'csharp', serializer: 'ShapeShift.MsgPack', level: 'string' },
-  { language: 'csharp', serializer: 'ZeroFormatter', level: 'string' },
+  { language: 'csharp', serializer: 'ShapeShift.MsgPack', level: 'stream' },
+  { language: 'csharp', serializer: 'ZeroFormatter', level: 'stream' },
   { language: 'go', serializer: 'encoding/json', level: 'stream' },
   { language: 'go', serializer: 'fxamacker/cbor', level: 'stream' },
   { language: 'go', serializer: 'goccy/go-json', level: 'stream' },
@@ -306,7 +306,7 @@ export function foldIoGroups(groups, config = {}) {
     const chosen = optIn.get(pairKey(language, serializer));
     if (language === 'csharp' && isBase64Pair(levels, ratio, tolerance)) {
       const parent = withOptional(rawBytes(levels), [], 'raw_bytes');
-      if (chosen && chosen.level === 'string') {
+      if (chosen) {
         const stringLevel = levels.find((group) => modeOf(group) === 'string');
         if (stringLevel) parent.optional = [child(stringLevel, 'string')];
       }

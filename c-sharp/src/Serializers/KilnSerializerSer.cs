@@ -321,15 +321,15 @@ namespace GLD.SerializerBenchmark.Serializers
             return _batch ? BatchFrom(decoded) : FromStruct(_elemType, decoded, _fields);
         }
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
             var mem = Encode(serializable);
-            return Convert.ToBase64String(mem.Span);
+            return mem.ToArray();
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
+            var bytes = serialized;
             return Decode(bytes);
         }
 

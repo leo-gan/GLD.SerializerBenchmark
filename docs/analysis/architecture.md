@@ -84,12 +84,12 @@ CSV rows also record how the serializer was called:
 
 | Label on the Dashboard | Meaning |
 |------------------------|---------|
-| **bytes mode** | Work with in-memory byte arrays (or equivalent; C# often uses **string**) |
+| **bytes mode** | Work with an in-memory buffer |
 | **stream mode** | Work through a stream-style API |
 
 These names describe the **programming interface**, not whether the payload is “large” or “small.”
 
-**Full explanation** (why both exist, C# string/Base64, native vs adapted stream, fair comparison): **[Modes](modes.md)**.
+**Full explanation** (why both exist, native vs adapted stream, fair comparison): **[Modes](modes.md)**.
 
 ---
 
@@ -174,7 +174,7 @@ Every language runner must satisfy this contract so analysis can treat files the
 | Output file | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` matching `csv_schema` |
 | `Language` column | Language id (`csharp`, `python`, `rust`, …) |
 | Time unit | **Nanoseconds** for every benchmark runner (including C#) |
-| Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
+| Modes | `bytes` / `stream` |
 | Schedule | Default `block_shuffle`; see [Timed-trial schedule](#timed-trial-schedule) |
 | Timed section | Serialize and deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |

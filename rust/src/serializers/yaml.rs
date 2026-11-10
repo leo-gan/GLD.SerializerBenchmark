@@ -4,7 +4,7 @@ use crate::data::Fixture;
 use anyhow::Result;
 use std::io::{Read, Write};
 
-use super::{ver, BenchSerializer, CountWrite, StreamMode};
+use super::{counted_write, ver, BenchSerializer, StreamMode};
 
 #[derive(Default)]
 pub struct SerdeYaml;
@@ -30,9 +30,10 @@ impl BenchSerializer for SerdeYaml {
         Ok(serde_yaml::from_slice(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let mut counter = CountWrite { inner: w, n: 0 };
-        serde_yaml::to_writer(&mut counter, fixture)?;
-        Ok(counter.n)
+        counted_write(w, |out| {
+            serde_yaml::to_writer(out, fixture)?;
+            Ok(())
+        })
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
         Ok(serde_yaml::from_reader(r)?)

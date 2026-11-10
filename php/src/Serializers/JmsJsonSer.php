@@ -31,10 +31,6 @@ final class JmsJsonSer extends BytesSer
         return 'text_on_stream';
     }
 
-    public function prepare(mixed $value): void
-    {
-    }
-
     public function serializeBytes(mixed $value): string
     {
         return $this->jms->serialize($value, 'json');

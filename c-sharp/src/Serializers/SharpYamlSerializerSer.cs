@@ -9,14 +9,14 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         public override string Name => "SharpYaml";
 
-        public override string Serialize(object serializable)
+        public override byte[] SerializeBytes(object serializable)
         {
-            return SharpYaml.YamlSerializer.Serialize(serializable);
+            return Utf8Bytes(SharpYaml.YamlSerializer.Serialize(serializable));
         }
 
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            return SharpYaml.YamlSerializer.Deserialize(serialized, _primaryType);
+            return SharpYaml.YamlSerializer.Deserialize(Utf8Text(serialized), _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

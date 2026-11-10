@@ -40,11 +40,11 @@ namespace GLD.SerializerBenchmark.Serializers
             catch { /* best-effort warm */ }
         }
 
-        public override string Serialize(object serializable)
-            => Convert.ToBase64String(_serBytes(serializable));
+        public override byte[] SerializeBytes(object serializable)
+            => _serBytes(serializable);
 
-        public override object Deserialize(string serialized)
-            => _serializer.Deserialize(_primaryType, Convert.FromBase64String(serialized));
+        public override object DeserializeBytes(byte[] serialized)
+            => _serializer.Deserialize(_primaryType, serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
         {

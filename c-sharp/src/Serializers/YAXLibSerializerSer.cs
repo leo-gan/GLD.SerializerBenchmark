@@ -10,18 +10,17 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class YAXLibSerializerSer : SerDeser
     {
         public override string Name => "YAXLib";
-        public override string Serialize(object serializable) {
+        public override byte[] SerializeBytes(object serializable) {
             var serializer = new YAXLib.YAXSerializer(serializable.GetType());
-            return serializer.Serialize(serializable);
+            return Utf8Bytes(serializer.Serialize(serializable));
         }
-        public override object Deserialize(string serialized)
+        public override object DeserializeBytes(byte[] serialized)
         {
-            // Use reflection to call generic YAXSerializer(_primaryType) and Deserialize(string)
             var serializerType = typeof(YAXLib.YAXSerializer);
             var serializer = Activator.CreateInstance(serializerType, _primaryType);
             var method = serializerType.GetMethods()
                 .First(m => m.Name == "Deserialize" && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(string));
-            return method.Invoke(serializer, new[] { serialized });
+            return method.Invoke(serializer, new object[] { Utf8Text(serialized) });
         }
         public override void Serialize(object serializable, Stream outputStream) {
             var serializer = new YAXLib.YAXSerializer(serializable.GetType());
