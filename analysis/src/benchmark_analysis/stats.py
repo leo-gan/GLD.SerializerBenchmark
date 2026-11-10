@@ -227,7 +227,7 @@ def resolve_time_scale_to_ns(
     2. ``csv_schema.time_unit`` (suite baseline; default ``nanoseconds``)
 
     All current benchmark runners emit nanoseconds; this central resolution guarantees
-    stats tables and latency distributions apply the *same* conversion.
+    stats tables apply the same conversion.
     """
     cache_key = f"{language or ''}|{config_path or ''}"
     if cache_key in _time_scale_cache:
@@ -452,14 +452,14 @@ def prepare_analysis_records(
     3. All-or-nothing paired IQR (or configured method) per group.
 
     This function is the **only** place that should drop warmup / outliers for
-    published tables and plots. Language benchmark runners must write complete raw CSVs
+    published tables. Language benchmark runners must write complete raw CSVs
     (every successful rep, including index 0) with no filtering on disk.
 
     Returns
     -------
     sanitized
         Row dicts with ``TimeSer`` / ``TimeDeser`` / ``TimeSerAndDeser`` in ns.
-        Ready for aggregation *or* violin melting — same sample population.
+        Ready for aggregation.
     group_meta
         Per ``(serializer, test_data, mode, language)`` counters:
         ``warmup_skipped``, ``outliers_removed``, ``runs_raw``.
@@ -897,7 +897,7 @@ def compute_statistics(
     """Compute aggregate statistics by (serializer, test_data, mode) [+ language].
 
     By default runs the unified :func:`prepare_analysis_records` pipeline so
-    summary tables and latency distributions share the same sample population. Pass
+    summary tables use one sample population. Pass
     ``pre_sanitized=True`` with already-cleaned records (and optional
     ``group_meta`` from that prepare call) to avoid double-filtering when the
     CLI sanitizes once and fans out to multiple consumers.

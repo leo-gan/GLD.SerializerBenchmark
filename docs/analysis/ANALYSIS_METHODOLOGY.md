@@ -335,7 +335,6 @@ For research-oriented L2/L3 collection tips and soft host checks, see [Claims an
 |--------|---------|
 | `reports/stats_<lang>_latest.json` | Multi-policy stats export (Dashboard sync input; **always** written) |
 | `reports/<docs_dir>/results.md` | Unpublished language report (pivot tables + exploratory-rank banner). Default on; `--no-markdown-report` skips. `csharp` → `reports/c-sharp/results.md`. Do not commit to the site. |
-| `reports/plots/violin/*.png` | Combined mean bars (serialize/deserialize) plus split violin shapes (µs, linear from 0; top five by mean total). **Opt-in** via `--violins`. |
 | [Dashboard](../dashboard/) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
 | `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
 | `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |
@@ -343,7 +342,7 @@ For research-oriented L2/L3 collection tips and soft host checks, see [Claims an
 
 Latency charts use the **same** sanitized records as the summary tables. There is no separate hidden filter for plots. Display may still limit charts to the top five serializers by mean time; that does not change table membership.
 
-How to run the CLI: `analyze-benchmarks` writes `reports/`; pack the Dashboard with `python3 dashboard/scripts/sync-data.py`. Claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).
+How to run the CLI: `analyze-benchmarks` writes `reports/`; pack the Dashboard with `python3 dashboard/scripts/sync-data.py`. Claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md). The Dashboard draws the published comparisons.
 
 ---
 
@@ -396,4 +395,3 @@ Honest methodology includes what the suite **cannot** claim.
 ### Other
 
 - Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences).
-- [Seaborn violin / catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html).

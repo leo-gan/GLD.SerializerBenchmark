@@ -5,7 +5,6 @@ __version__ = "0.1.0"
 __all__ = [
     "parse_csv_file",
     "compute_statistics",
-    "generate_violin_plots",
     "generate_language_results_pages",
     "check_regression",
     "save_baseline",
@@ -15,7 +14,7 @@ __all__ = [
 
 
 def __getattr__(name: str):
-    """Lazy-load submodules so light tools (e.g. environment capture) need no numpy/matplotlib."""
+    """Lazy-load submodules so light tools (e.g. environment capture) need no numpy."""
     if name == "parse_csv_file":
         from .parser import parse_csv_file
         return parse_csv_file
@@ -28,10 +27,7 @@ def __getattr__(name: str):
     if name in ("capture_environment", "load_environment"):
         from . import environment as _environment
         return getattr(_environment, name)
-    if name in (
-        "generate_violin_plots",
-        "generate_language_results_pages",
-    ):
+    if name == "generate_language_results_pages":
         from . import reports as _reports
         return getattr(_reports, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

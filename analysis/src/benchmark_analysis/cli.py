@@ -428,40 +428,20 @@ def _run_multi_session(
 
 def _generate_artifacts(
     *,
-    all_records: Dict[str, List[Dict]],
     all_stats: Dict,
     lang_paths: Dict[str, Optional[str]],
     reports_root: Path,
     stats_config: Optional[Dict] = None,
-    pre_sanitized: bool = True,
     write_markdown: bool = True,
-    write_violins: bool = False,
 ) -> None:
-    """Write unpublished language reports and optional latency distributions.
+    """Write unpublished language reports.
 
-    Output lives under ``reports_root`` (``reports/<docs_dir>/results.md``,
-    and ``reports/plots/violin/`` only when ``write_violins``). Never writes
-    ``docs/<lang>/results.md``.
-
-    ``all_records`` should be the *same* sanitized population used to build
-    ``all_stats`` (see :func:`prepare_analysis_records`) so plots and tables
-    cannot diverge.
+    Output lives under ``reports_root`` (``reports/<docs_dir>/results.md``).
+    Never writes ``docs/<lang>/results.md``.
     """
-    # Lazy import: reports pulls matplotlib (heavy / optional in some envs).
-    from .reports import generate_language_results_pages, generate_violin_plots
+    from .reports import generate_language_results_pages
 
     lang_sources = {k: v for k, v in lang_paths.items() if v}
-    # Empty unless --violins: do not embed missing PNG paths in the markdown.
-    violin_images: Dict = {}
-    if write_violins:
-        plots_dir = str(reports_root / "plots" / "violin")
-        violin_images = generate_violin_plots(
-            plots_dir,
-            multi_lang_records=all_records,
-            lang_sources=lang_sources,
-            stats_config=stats_config,
-            pre_sanitized=pre_sanitized,
-        )
 
     if not write_markdown:
         return
@@ -473,7 +453,6 @@ def _generate_artifacts(
     )
     generate_language_results_pages(
         multi_lang_stats=all_stats,
-        violin_images=violin_images,
         docs_root=str(reports_root),
         lang_sources=lang_sources,
         metrics_profile=str(metrics_profile),
@@ -497,14 +476,12 @@ def main():
     parser = argparse.ArgumentParser(
         description=(
             "Analyze serializer benchmarks and write unpublished reports "
-            "(stats JSON + language markdown; violins only with --violins)."
+            "(stats JSON + language markdown)."
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
             "  reports/stats_<lang>_latest.json\n"
             "  reports/<docs_dir>/results.md   (e.g. reports/c-sharp/results.md)\n"
-            "With --violins:\n"
-            "  reports/plots/violin/<lang>_*.png\n"
             "(docs/analysis/BENCHMARK_SUMMARY.md is a static hub and is not overwritten.)\n"
             "Do not commit reports/<docs_dir>/results.md to the published site.\n"
             "\n"
@@ -550,12 +527,7 @@ def main():
     parser.add_argument(
         "--skip-generate",
         action="store_true",
-        help="Do not write reports markdown/plots (use with --compare-a/--check-regression/--save-baseline only)",
-    )
-    parser.add_argument(
-        "--violins",
-        action="store_true",
-        help="Write unpublished violin PNGs under reports/plots/violin/ (skipped by default)",
+        help="Do not write the reports markdown (use with --compare-a/--check-regression/--save-baseline only)",
     )
     parser.add_argument(
         "--no-markdown-report",
@@ -689,19 +661,17 @@ def main():
         print("No log files found for the requested --language filter.")
         sys.exit(1)
 
-    all_records: Dict[str, List[Dict]] = {}
     all_stats: Dict = {}
     total_loaded = 0
     total_sanitized = 0
     for lang, path in lang_paths.items():
         if not path or not os.path.isfile(path):
-            all_records[lang] = []
             continue
         recs, skipped = parse_csv_file(path, language_hint=lang)
         total_loaded += len(recs)
         if recs:
             # Multi-policy stats for dashboard outlier research; default policy
-            # still feeds markdown tables / latency distributions.
+            # still feeds markdown tables.
             from .stats import (
                 DEFAULT_FILTER_POLICY,
                 build_stats_export_payload,
@@ -718,12 +688,11 @@ def main():
             st = by_policy.get(default_pid) or {}
             all_stats.update(st)
 
-            # Sanitize once under default policy for shared plot population
+            # Count the sanitized rows that the stats export kept.
             default_cfg = config_for_filter_policy(stats_cfg, default_pid)
             clean, _meta = prepare_analysis_records(
                 recs, config=default_cfg, language_hint=lang
             )
-            all_records[lang] = clean
             total_sanitized += len(clean)
 
             # Export machine-readable JSON with all filter policies
@@ -746,8 +715,6 @@ def main():
                 f"× {len(by_policy)} filter policies "
                 f"(parse-skipped {skipped})"
             )
-        else:
-            all_records[lang] = []
 
     print(
         f"Total: {total_loaded} raw records, {total_sanitized} sanitized, "
@@ -761,14 +728,11 @@ def main():
             print("No records loaded; skipping artifact generation.")
         else:
             _generate_artifacts(
-                all_records=all_records,
                 all_stats=all_stats,
                 lang_paths=lang_paths,
                 reports_root=reports_root,
                 stats_config=stats_cfg,
-                pre_sanitized=True,
                 write_markdown=not args.no_markdown_report,
-                write_violins=args.violins,
             )
 
     if args.compare_a and args.compare_b:
