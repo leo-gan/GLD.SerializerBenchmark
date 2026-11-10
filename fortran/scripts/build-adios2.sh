@@ -29,6 +29,7 @@ cmake -S "$SRC" -B "$BUILD" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_Fortran_COMPILER="$FC" \
+  -DCMAKE_CXX_FLAGS="${CXXFLAGS:-} -include cstdint" \
   -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath-link,${BUILD}/lib" \
   -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath-link,${BUILD}/lib" \
   -DADIOS2_USE_MPI=OFF \

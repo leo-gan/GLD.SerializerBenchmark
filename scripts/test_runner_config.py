@@ -65,7 +65,8 @@ class RunnerConfigTest(unittest.TestCase):
                 [
                     "bash",
                     "-c",
-                    f'source "{CONFIG_SH}" && LOG_DIR="{tmp}" bench_init_runner rust serde_json custom 25 rkyv telemetry && '
+                    f'set -euo pipefail; source "{CONFIG_SH}"; LOG_DIR="{tmp}"; '
+                    'bench_init_runner rust serde_json custom 25 rkyv telemetry; '
                     'printf "%s|%s|%s|%s|%s\n" "$MODE" "$REPS" "$FILTER_SER" "$FILTER_DATA" "${ARGS[*]}"',
                 ],
                 capture_output=True,
@@ -75,6 +76,43 @@ class RunnerConfigTest(unittest.TestCase):
             self.assertEqual(
                 res_custom.stdout.strip().splitlines()[-1],
                 "custom|25|rkyv|telemetry|25 rkyv telemetry",
+            )
+
+            # Columnar smoke in CI invokes: custom 2 "arrow-ipc,..." with no dataFilter under set -euo pipefail.
+            res_columnar = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    f'set -euo pipefail; source "{CONFIG_SH}"; LOG_DIR="{tmp}"; '
+                    f'BENCHMARK_RUN_CONFIG="{REPO}/config/library/columnar-smoke.yaml"; export BENCHMARK_RUN_CONFIG; '
+                    'bench_init_runner python json custom 2 "arrow-ipc,parquet,orc"; '
+                    'printf "%s|%s|%s|%s|%s\n" "$MODE" "$REPS" "$FILTER_SER" "$FILTER_DATA" "${ARGS[*]}"',
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(
+                res_columnar.stdout.strip().splitlines()[-1],
+                "custom|2|arrow-ipc,parquet,orc||2 arrow-ipc,parquet,orc",
+            )
+
+            # Unfiltered mode (all-single) with both FILTER_SER and FILTER_DATA empty under set -euo pipefail.
+            res_all_single = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    f'set -euo pipefail; source "{CONFIG_SH}"; LOG_DIR="{tmp}"; '
+                    'bench_init_runner go "encoding/json" all-single; '
+                    'printf "%s|%s|%s|%s|%s\n" "$MODE" "$REPS" "$FILTER_SER" "$FILTER_DATA" "${ARGS[*]}"',
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(
+                res_all_single.stdout.strip().splitlines()[-1],
+                "all-single|10|||10",
             )
 
 

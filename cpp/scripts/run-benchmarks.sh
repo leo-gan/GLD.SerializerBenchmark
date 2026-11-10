@@ -23,8 +23,12 @@ cmake -S "$CPP_DIR" -B "$CPP_DIR/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$CPP_DIR/build" -j"$(nproc 2>/dev/null || echo 2)" --target serializer_benchmark_cpp
 
 CPP_ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
-[[ -n "$FILTER_SER" ]] && CPP_ARGS+=("--serializer" "$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && CPP_ARGS+=("--data" "$FILTER_DATA")
+if [[ -n "$FILTER_SER" ]]; then
+  CPP_ARGS+=("--serializer" "$FILTER_SER")
+fi
+if [[ -n "$FILTER_DATA" ]]; then
+  CPP_ARGS+=("--data" "$FILTER_DATA")
+fi
 echo "[INFO] Running serializer_benchmark_cpp ${CPP_ARGS[*]}"
 "$CPP_DIR/build/serializer_benchmark_cpp" "${CPP_ARGS[@]}"
 
