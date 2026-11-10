@@ -11,61 +11,22 @@
  * Rules match analysis/src/benchmark_analysis/fold_io.py and config/dimensions.yaml.
  */
 
+import dimensionLabels from './public/data/dimension-labels.json' with { type: 'json' };
+
 const IN_MEMORY = new Set(['bytes', 'string', 'buffer']);
+const OPTIONAL_IO = dimensionLabels.optional_io || {};
 
 /** Opt-in second level. level "stream" averages. A C# Base64 string row stays a child of the raw bytes. */
-export const FOLD_OPT_IN = [
-  { language: 'c', serializer: 'ion-c', level: 'stream' },
-  { language: 'c', serializer: 'yyjson', level: 'stream' },
-  { language: 'cpp', serializer: 'arduinojson', level: 'stream' },
-  { language: 'cpp', serializer: 'cereal', level: 'stream' },
-  { language: 'cpp', serializer: 'rapidjson', level: 'stream' },
-  { language: 'csharp', serializer: 'BinaryPack', level: 'stream' },
-  { language: 'csharp', serializer: 'FlatSharp', level: 'stream' },
-  { language: 'csharp', serializer: 'Google.Protobuf', level: 'stream' },
-  { language: 'csharp', serializer: 'GroBuf', level: 'stream' },
-  { language: 'csharp', serializer: 'Hyperion', level: 'stream' },
-  { language: 'csharp', serializer: 'LightProto', level: 'stream' },
-  { language: 'csharp', serializer: 'MS Binary', level: 'stream' },
-  { language: 'csharp', serializer: 'MS Bond Compact', level: 'stream' },
-  { language: 'csharp', serializer: 'MS Bond Fast', level: 'stream' },
-  { language: 'csharp', serializer: 'MS DataContract', level: 'stream' },
-  { language: 'csharp', serializer: 'MemoryPack', level: 'stream' },
-  { language: 'csharp', serializer: 'MessagePack-CSharp', level: 'stream' },
-  { language: 'csharp', serializer: 'Migrant', level: 'stream' },
-  { language: 'csharp', serializer: 'Nerdbank.MessagePack', level: 'stream' },
-  { language: 'csharp', serializer: 'NetSerializer', level: 'stream' },
-  { language: 'csharp', serializer: 'ProtoBuf', level: 'stream' },
-  { language: 'csharp', serializer: 'ShapeShift.Json', level: 'stream' },
-  { language: 'csharp', serializer: 'ShapeShift.MsgPack', level: 'stream' },
-  { language: 'csharp', serializer: 'ZeroFormatter', level: 'stream' },
-  { language: 'go', serializer: 'encoding/json', level: 'stream' },
-  { language: 'go', serializer: 'fxamacker/cbor', level: 'stream' },
-  { language: 'go', serializer: 'goccy/go-json', level: 'stream' },
-  { language: 'go', serializer: 'hamba/avro', level: 'stream' },
-  { language: 'go', serializer: 'jsoniter', level: 'stream' },
-  { language: 'go', serializer: 'kelindar/binary', level: 'stream' },
-  { language: 'go', serializer: 'segmentio/encoding/json', level: 'stream' },
-  { language: 'go', serializer: 'shamaton/msgpack', level: 'stream' },
-  { language: 'go', serializer: 'shamaton/msgpack (array)', level: 'stream' },
-  { language: 'go', serializer: 'sonic', level: 'stream' },
-  { language: 'go', serializer: 'ugorji/cbor', level: 'stream' },
-  { language: 'go', serializer: 'ugorji/json', level: 'stream' },
-  { language: 'go', serializer: 'ugorji/msgpack', level: 'stream' },
-  { language: 'go', serializer: 'vmihailenco/msgpack', level: 'stream' },
-];
+export const FOLD_OPT_IN = OPTIONAL_IO.opt_in || [];
 
 /** Serializers whose only timed API is a file. One stream parent, no bytes row. */
-export const FOLD_FILE_ONLY = [
-  { language: 'fortran', serializer: 'netcdf-fortran' },
-  { language: 'fortran', serializer: 'adios2' },
-];
+export const FOLD_FILE_ONLY = OPTIONAL_IO.file_only || [];
 
 const DEFAULT_CONFIG = {
   optIn: FOLD_OPT_IN,
   fileOnly: FOLD_FILE_ONLY,
-  base64Ratio: 0.75,
-  base64Tolerance: 0.05,
+  base64Ratio: OPTIONAL_IO.base64_size_ratio ?? 0.75,
+  base64Tolerance: OPTIONAL_IO.base64_size_tolerance ?? 0.05,
 };
 
 function modeOf(group) {
