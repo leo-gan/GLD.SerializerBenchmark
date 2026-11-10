@@ -161,9 +161,12 @@ def main():
     sources_src = os.path.join(repo_root, "config", "serializer-sources.json")
     sources_dst = os.path.join(target_data_dir, "serializer-sources.json")
     if os.path.isfile(sources_src):
-        import shutil
-        shutil.copy2(sources_src, sources_dst)
-        print(f"Copied serializer-sources.json → {sources_dst}")
+        rel_src = os.path.relpath(sources_src, target_data_dir)
+        if not (os.path.islink(sources_dst) and os.readlink(sources_dst) == rel_src):
+            if os.path.exists(sources_dst) or os.path.islink(sources_dst):
+                os.unlink(sources_dst)
+            os.symlink(rel_src, sources_dst)
+        print(f"Linked serializer-sources.json → {rel_src}")
 
     languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift", "zig", "mojo", "fortran"]
     available_runs = {}
