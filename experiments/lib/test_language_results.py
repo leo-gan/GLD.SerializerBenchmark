@@ -170,6 +170,33 @@ class ConsolidatedExperimentScriptsTest(unittest.TestCase):
             text = (d / "run.sh").read_text(encoding="utf-8")
             self.assertIn("run_experiment.sh", text)
 
+    def test_results_json_omits_redundant_median_us_and_formats_inline_rows(self) -> None:
+        from summarize_core import dumps_experiment_results
+
+        exp_dirs = sorted((REPO / "experiments").glob("[0-9][0-9]-*"))
+        for exp_dir in exp_dirs:
+            raw = (exp_dir / "results.json").read_text(encoding="utf-8")
+            data = json.loads(raw)
+            self.assertEqual(dumps_experiment_results(data), raw)
+            for block in (data.get("languages") or {}).values():
+                for row in block.get("rows") or []:
+                    self.assertNotIn("write_median_us", row)
+                    self.assertNotIn("read_median_us", row)
+                    self.assertNotIn("total_median_us", row)
+                    self.assertIn("total_median_ns", row)
+
+    def test_sample_json_stores_single_preview_record_per_cell(self) -> None:
+        exp_dirs = sorted((REPO / "experiments").glob("[0-9][0-9]-*"))
+        for exp_dir in exp_dirs:
+            sample_path = exp_dir / "sample.json"
+            if not sample_path.is_file():
+                continue
+            blob = json.loads(sample_path.read_text(encoding="utf-8"))
+            for cell in blob.get("cells") or []:
+                self.assertEqual(len(cell.get("records") or []), 1)
+                self.assertGreaterEqual(int(cell.get("how_many_records") or 0), 1)
+                self.assertTrue(cell.get("settings_hash"))
+
 
 if __name__ == "__main__":
     unittest.main()

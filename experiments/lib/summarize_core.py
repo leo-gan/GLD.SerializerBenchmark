@@ -64,12 +64,6 @@ def _ns(v: Any) -> int | None:
     return int(round(float(v)))
 
 
-def _us(v: Any) -> float | None:
-    if v is None:
-        return None
-    return round(float(v) / NS_PER_US, 4)
-
-
 def _median_extra(
     records: list[dict], name: str, mode: str, field: str, kind: str | None = None
 ) -> int | None:
@@ -420,9 +414,6 @@ def summarize_language_for(
                 "write_median_ns": _ns(g.get("ser_median_ns")),
                 "read_median_ns": _ns(g.get("deser_median_ns")),
                 "total_median_ns": _ns(g.get("total_median_ns")),
-                "write_median_us": _us(g.get("ser_median_ns")),
-                "read_median_us": _us(g.get("deser_median_ns")),
-                "total_median_us": _us(g.get("total_median_ns")),
                 "total_mean_ns": _ns(g.get("total_mean_ns")),
                 "total_p95_ns": _ns(g.get("total_p95_ns")),
                 "total_p99_ns": _ns(g.get("total_p99_ns")),
@@ -1455,13 +1446,49 @@ def write_outputs_for(here: Path, language: str, pack: dict, write_language_mark
     (dest / "results.md").write_text(write_language_markdown_fn(language, pack), encoding="utf-8")
 
 
+def dumps_experiment_results(payload: dict) -> str:
+    """Format experiment results JSON with 2-space outer indent and one line per row/top_group."""
+    import copy
+
+    clone = copy.deepcopy(payload)
+    inline_map: dict[str, str] = {}
+    idx = 0
+    for lang_block in (clone.get("languages") or {}).values():
+        if not isinstance(lang_block, dict):
+            continue
+        for key in ("rows", "top_groups"):
+            items = lang_block.get(key)
+            if isinstance(items, list):
+                new_items = []
+                for item in items:
+                    token = f"__INLINE_{idx}__"
+                    idx += 1
+                    inline_map[f'"{token}"'] = json.dumps(
+                        item, separators=(",", ":"), ensure_ascii=False
+                    )
+                    new_items.append(token)
+                lang_block[key] = new_items
+        tg = lang_block.get("top_group")
+        if isinstance(tg, dict):
+            token = f"__INLINE_{idx}__"
+            idx += 1
+            inline_map[f'"{token}"'] = json.dumps(
+                tg, separators=(",", ":"), ensure_ascii=False
+            )
+            lang_block["top_group"] = token
+    out = json.dumps(clone, indent=2, ensure_ascii=False)
+    for k, v in inline_map.items():
+        out = out.replace(k, v)
+    return out + "\n"
+
+
 def write_aggregate_for(
     here: Path, cfg: dict, languages: dict, experiment_payload_fn, write_combined_markdown_fn
 ) -> Path:
     rel = (cfg.get("paths") or {}).get("results") or "results.json"
     out = here / rel
     out.write_text(
-        json.dumps(experiment_payload_fn(cfg, languages), indent=2, ensure_ascii=False) + "\n",
+        dumps_experiment_results(experiment_payload_fn(cfg, languages)),
         encoding="utf-8",
     )
     md_rel = (cfg.get("paths") or {}).get("summary") or "results.md"

@@ -75,7 +75,7 @@ For a dashboard, load **[`results.json`](results.json)** only.
 | `languages.<id>.csv` | path of the local raw file (not in git) |
 | `languages.<id>.rows[]` | one row per library and call style |
 
-Each row has times in **nanoseconds** (`*_ns`) and **microseconds** (`*_us`), size in bytes, gzip size when present, a yes/no for named fields, and how many trials were kept.
+Each row has times in **nanoseconds** (`*_ns`), size in bytes, gzip size when present, a yes/no for named fields, and how many trials were kept.
 
 To **recalculate** after you change the stall rule or the library list, do not re-time if the local CSVs are still on disk:
 
