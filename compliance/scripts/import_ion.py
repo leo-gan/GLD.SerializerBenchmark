@@ -25,11 +25,11 @@ SYMBOLS = "https://amazon-ion.github.io/ion-docs/docs/symbols.html"
 SPEC_11 = "https://amazon-ion.github.io/ion-docs/books/ion-1-1/"
 
 
+from catalog_io import dump_catalog
+
+
 def _dump(rel: str, doc: dict) -> None:
-    path = DATA / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
-    print(f"wrote {path.relative_to(ROOT)} ({len(doc['cases'])} cases)")
+    dump_catalog(rel, doc, ensure_ascii=True)
 
 
 def _bytes_to_input(raw: bytes) -> tuple[str, str]:

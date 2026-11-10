@@ -212,10 +212,40 @@ async function loadPayload() {
   }
 }
 
+const CASE_METADATA_KEYS = [
+  'title',
+  'paragraph',
+  'section',
+  'section_title',
+  'section_url',
+  'input',
+  'input_encoding',
+  'requirement',
+  'expect',
+];
+
+function hydrateFailureRows(rows) {
+  const caseById = new Map();
+  return rows.map((row) => {
+    if (!row || row.outcome === 'skip') return row;
+    const ckey = `${row.format || ''}\0${row.standard || ''}\0${row.id || ''}`;
+    let meta = caseById.get(ckey);
+    if (!meta) {
+      meta = {};
+      for (const k of CASE_METADATA_KEYS) {
+        if (row[k] != null) meta[k] = row[k];
+      }
+      caseById.set(ckey, meta);
+      return row;
+    }
+    return { ...meta, ...row };
+  });
+}
+
 function loadFailures() {
   if (failureRows) return Promise.resolve(failureRows);
   if (Array.isArray(payload?.results)) {
-    failureRows = payload.results;
+    failureRows = hydrateFailureRows(payload.results);
     return Promise.resolve(failureRows);
   }
   if (!failurePromise) {
@@ -223,7 +253,7 @@ function loadFailures() {
       .then((doc) => {
         const rows = Array.isArray(doc) ? doc : doc?.results;
         if (!Array.isArray(rows)) throw new Error('failure payload is empty');
-        failureRows = rows;
+        failureRows = hydrateFailureRows(rows);
         return failureRows;
       })
       .catch((err) => {

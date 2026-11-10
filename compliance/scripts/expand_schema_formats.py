@@ -28,11 +28,7 @@ AVRO_SRC = Path("/tmp/compliance-suites/avro")
 FB_SRC = Path("/tmp/compliance-suites/flatbuffers")
 
 
-def dump(rel: str, doc: dict) -> None:
-    path = DATA / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"wrote {path.relative_to(ROOT)} ({len(doc['cases'])} cases)")
+from catalog_io import dump_catalog as dump
 
 
 def C(**kwargs) -> dict:
