@@ -173,9 +173,86 @@ _bench_apply_dataset_filter() {
 # Also fills an empty FILTER_SER for specialized sets on exact-comma runners.
 bench_export_run_config() {
   local mode="${1:-all-single}"
+  local caller="${2:-${BASH_SOURCE[1]:-}}"
   if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
     export BENCHMARK_RUN_CONFIG
     BENCHMARK_RUN_CONFIG="$(bench_run_config_for_mode "$mode")"
   fi
-  _bench_apply_dataset_filter "${BASH_SOURCE[1]:-}"
+  _bench_apply_dataset_filter "$caller"
+}
+
+# Initialize a language benchmark runner:
+#   bench_init_runner <lang_id> <default_smoke_serializer> "$@"
+# Sets and exports LOG_DIR, MODE, REPS, FILTER_SER, FILTER_DATA, ARGS,
+# BENCHMARK_TS, BENCHMARK_SEED, BENCHMARK_REPO_ROOT, BENCHMARK_LANGUAGE,
+# and BENCHMARK_RUN_CONFIG.
+bench_init_runner() {
+  local lang="$1"
+  local smoke_ser="$2"
+  shift 2
+
+  export LOG_DIR="${LOG_DIR:-${_BENCH_REPO_ROOT}/logs/${lang}}"
+  mkdir -p "$LOG_DIR"
+
+  MODE="${1:-all-single}"
+  FILTER_SER="${2:-}"
+  FILTER_DATA="${3:-}"
+
+  local valid_modes
+  valid_modes="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
+  case " $valid_modes custom " in
+    *" $MODE "*) ;;
+    *)
+      echo "Usage: ${BASH_SOURCE[1]:-$0} [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
+      echo "  custom: ${BASH_SOURCE[1]:-$0} custom <reps> [serializerFilter] [dataFilter]"
+      echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
+      exit 1
+      ;;
+  esac
+
+  if [[ "$MODE" == "custom" ]]; then
+    REPS="${2:-10}"
+    FILTER_SER="${3:-}"
+    FILTER_DATA="${4:-}"
+  else
+    REPS="$(bench_mode_reps "$MODE")"
+    if [[ "$MODE" == "smoke" ]]; then
+      FILTER_SER="${FILTER_SER:-$smoke_ser}"
+      if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+        FILTER_DATA="${FILTER_DATA:-message}"
+      fi
+    fi
+  fi
+
+  export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
+  export BENCHMARK_SEED="$(bench_random_seed)"
+  export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-${_BENCH_REPO_ROOT}}"
+  export BENCHMARK_LANGUAGE="${BENCHMARK_LANGUAGE:-$lang}"
+
+  bench_export_run_config "$MODE" "${BASH_SOURCE[1]:-}"
+
+  ARGS=("$REPS")
+  [[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")
+  [[ -n "$FILTER_DATA" ]] && ARGS+=("$FILTER_DATA")
+}
+
+# Capture run environment metadata into <timestamp>.configs.json and print completion.
+#   bench_finish_runner [display_label]
+bench_finish_runner() {
+  local label="${1:-${BENCHMARK_LANGUAGE:-benchmark}}"
+  local csv="$LOG_DIR/${BENCHMARK_TS}.csv"
+  if [[ ! -f "$csv" && -n "${BENCHMARK_LANGUAGE:-}" && -f "$LOG_DIR/${BENCHMARK_LANGUAGE}/${BENCHMARK_TS}.csv" ]]; then
+    csv="$LOG_DIR/${BENCHMARK_LANGUAGE}/${BENCHMARK_TS}.csv"
+  fi
+  local env_json="${csv%.csv}.configs.json"
+  if [[ -f "$csv" ]]; then
+    if BENCHMARK_TS="${BENCHMARK_TS}" BENCHMARK_LANGUAGE="${BENCHMARK_LANGUAGE:-}" \
+        PYTHONPATH="${_BENCH_REPO_ROOT}/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
+        python3 -m benchmark_analysis.environment "$csv" >/dev/null 2>&1; then
+      echo "[INFO] Run config captured -> $env_json"
+    else
+      echo "[WARN] Could not write configs.json (analysis package optional for standalone runs)"
+    fi
+  fi
+  echo "[SUCCESS] ${label} logs in $(dirname "$csv")"
 }

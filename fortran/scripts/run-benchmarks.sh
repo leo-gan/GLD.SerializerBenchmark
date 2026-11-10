@@ -7,37 +7,8 @@ PROJECT_ROOT="$(cd "$FORTRAN_DIR/.." && pwd)"
 # shellcheck source=../../scripts/lib/config.sh
 source "$PROJECT_ROOT/scripts/lib/config.sh"
 
-LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/fortran}"
-mkdir -p "$LOG_DIR" "$FORTRAN_DIR/build"
-
-MODE="${1:-all-single}"
-FILTER_SER="${2:-}"
-FILTER_DATA="${3:-}"
-
-VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
-case " $VALID_MODES " in
-  *" $MODE "*) ;;
-  *)
-    echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"
-    exit 1
-    ;;
-esac
-
-REPS="$(bench_mode_reps "$MODE")"
-if [[ "$MODE" == "smoke" ]]; then
-  FILTER_SER="${FILTER_SER:-json-fortran}"
-  # Suite smoke stays on message. A caller that sets BENCHMARK_RUN_CONFIG
-  # (array-smoke, for example) keeps every type in that file unless they
-  # pass a data filter as the third argument.
-  if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
-    FILTER_DATA="${FILTER_DATA:-message}"
-  fi
-fi
-
-export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
-export BENCHMARK_SEED="$(bench_random_seed)"
-export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
-bench_export_run_config "$MODE"
+bench_init_runner fortran json-fortran "$@"
+mkdir -p "$FORTRAN_DIR/build"
 
 echo "[INFO] Building Fortran benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 export PATH="${HOME}/.local/bin:${PATH}"
@@ -83,13 +54,4 @@ echo "[INFO] Running serializer_benchmark_fortran"
     "$REPS" "$CELLS" "$LOG_DIR" "$BENCHMARK_TS" "$FILTER_SER" "$FILTER_DATA"
 )
 
-CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
-if [[ -f "$CSV" ]]; then
-  if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
-      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-    echo "[INFO] Run config captured -> ${CSV%.csv}.configs.json"
-  else
-    echo "[WARN] Could not write configs.json"
-  fi
-fi
-echo "[SUCCESS] Fortran logs in $LOG_DIR"
+bench_finish_runner Fortran
