@@ -12,12 +12,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from splice_rows import (
     as_whole,
     base_type,
+    carry_spliced_groups,
     count_bases,
     error_row_count,
     export_stats,
     load_records,
     refuse_error_rows,
+    refuse_splice_loss,
     require_finite,
+    validate_group_variants,
 )
 
 
@@ -153,6 +156,52 @@ class ExportStatsTest(unittest.TestCase):
         self.assertEqual(calls["language"], "python")
         self.assertEqual(calls["records"], [{"row": 1}])
         self.assertEqual(calls["built_for"], "python")
+
+
+class SharedSpliceGuardsAndValidatorsTest(unittest.TestCase):
+    def test_carry_spliced_groups_and_refuse_splice_loss(self) -> None:
+        existing = {
+            "groups": [
+                {"serializer": "orjson", "test_data": "message"},
+                {"serializer": "arrow-ipc", "test_data": "table"},
+                {"serializer": "dagr-regular", "test_data": "message"},
+            ]
+        }
+        fresh = {"groups": [{"serializer": "orjson", "test_data": "message"}]}
+        carry_spliced_groups("python", existing, fresh)
+        self.assertEqual(len(fresh["groups"]), 3)
+        refuse_splice_loss("python", existing, fresh)
+
+        incomplete = {"groups": [{"serializer": "orjson", "test_data": "message"}]}
+        with self.assertRaises(SystemExit):
+            refuse_splice_loss("python", existing, incomplete)
+
+    def test_validate_group_variants_checks_common_invariants(self) -> None:
+        good = {
+            "serializer": "dagr-regular",
+            "language": "python",
+            "mode": "published",
+            "variants": {
+                "iqr_1.5": {
+                    "mean_fidelity": 1.0,
+                    "runs_raw": 100,
+                    "warmup_skipped": 1,
+                    "median_size_bytes": 64.0,
+                    "avg_time_total_ns": 500.0,
+                }
+            },
+        }
+        validate_group_variants(
+            "python",
+            good,
+            {"iqr_1.5"},
+            100,
+            require_warmup_1=True,
+            require_positive_size_and_time=True,
+        )
+        bad = dict(good, language="go")
+        with self.assertRaises(SystemExit):
+            validate_group_variants("python", bad, {"iqr_1.5"}, 100)
 
 
 if __name__ == "__main__":

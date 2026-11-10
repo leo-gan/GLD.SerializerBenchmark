@@ -1,62 +1,58 @@
 #!/usr/bin/env python3
-"""Append array.yaml groups onto a published language snapshot.
+"""Append array.yaml groups onto a published language snapshot."""
 
-The CSV name is not YYYY-MM-DD-HHMMSS, so sync-data.py does not select it.
-This script analyzes that full run and appends grid and grid_window.
-It replaces previous groups only for the array serializers of that language.
-"""
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
-from snapshot_io import load_json_gz, write_json_gz
-
+from snapshot_io import write_json_gz
 from splice_rows import (
-    load_records,
-    refuse_error_rows,
-    export_stats,
+    ARRAY_TYPES,
+    REPO,
+    SUITE_TYPES,
     as_whole as _norm,
     base_type as _base,
     count_bases as _counts,
-    require_finite as _finite,
+    export_stats,
+    load_published_stats,
+    now_iso,
+    validate_csv_records,
+    validate_group_variants,
 )
 
-REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "analysis" / "src"))
-
-
-DATA = REPO / "dashboard" / "public" / "data"
-ARRAY_TYPES = ("grid", "grid_window")
-LANGUAGE = "fortran"
-ARRAY_NAMES = ("hdf5-fortran", "netcdf-fortran", "adios2", "gld-arrow")
-SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
 MIN_REPS = 100
-DEFAULT_CSV = REPO / "logs/fortran/2026-10-19-fortran-array-full.csv"
-STANDARDS = {
-    "hdf5-fortran": "hdf5",
-    "netcdf-fortran": "netcdf",
-    "adios2": "adios2",
-    "gld-arrow": "arrow",
+PROFILES = {
+    "fortran": (
+        ("hdf5-fortran", "netcdf-fortran", "adios2", "gld-arrow"),
+        {"hdf5-fortran": "hdf5", "netcdf-fortran": "netcdf", "adios2": "adios2", "gld-arrow": "arrow"},
+        {"hdf5-fortran": "bytes", "netcdf-fortran": "stream", "adios2": "stream", "gld-arrow": "bytes"},
+    ),
+    "python": (("h5py", "netCDF4", "adios2"), {"h5py": "hdf5", "netCDF4": "netcdf", "adios2": "adios2"}, "bytes"),
+    "c": (("hdf5",), {"hdf5": "hdf5"}, "bytes"),
+    "cpp": (("highfive",), {"highfive": "hdf5"}, "bytes"),
+    "rust": (("hdf5-metno",), {"hdf5-metno": "hdf5"}, "bytes"),
+    "javascript": (("h5wasm",), {"h5wasm": "hdf5"}, "bytes"),
+    "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "bytes"),
+    "mojo": (("gld-hdf5",), {"gld-hdf5": "hdf5"}, "bytes"),
 }
-MODES = {
-    "hdf5-fortran": "bytes",
-    "netcdf-fortran": "stream",
-    "adios2": "stream",
-    "gld-arrow": "bytes",
-}
+LANGUAGE = "fortran"
+ARRAY_NAMES, STANDARDS, MODES = PROFILES["fortran"]
+
+
+def _select_language(language: str) -> None:
+    global ARRAY_NAMES, STANDARDS, MODES, LANGUAGE
+    if language not in PROFILES:
+        raise SystemExit(f"unsupported language {language}")
+    LANGUAGE = language
+    names, standards, mode = PROFILES[language]
+    ARRAY_NAMES = names
+    STANDARDS = standards
+    MODES = mode if isinstance(mode, dict) else {name: mode for name in names}
 
 
 def _analyze(csv_path: Path) -> tuple[dict, dict]:
-    refuse_error_rows(csv_path)
-    records = load_records(csv_path, LANGUAGE)
-
-    reps = sorted({int(row.get("Repetitions") or 0) for row in records})
-    if reps != [MIN_REPS]:
-        raise SystemExit(f"{csv_path}: repetitions {reps}; expected {MIN_REPS}")
-
+    records, reps = validate_csv_records(csv_path, LANGUAGE, MIN_REPS)
     versions: dict[str, str] = {}
     indexes: dict[tuple, set[int]] = {}
     for row in records:
@@ -64,220 +60,109 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
         if name not in STANDARDS:
             raise SystemExit(f"{csv_path}: unexpected serializer {name!r}")
         version = str(row.get("SerializerVersion") or "").strip()
-        if not version:
-            raise SystemExit(f"{csv_path}: {name} has an empty version")
-        previous = versions.setdefault(name, version)
-        if previous != version:
-            raise SystemExit(f"{csv_path}: {name} version changed from {previous!r} to {version!r}")
+        if not version or versions.setdefault(name, version) != version:
+            raise SystemExit(f"{csv_path}: invalid or changing version for {name}")
         type_id = _base(row.get("TestDataName"))
-        if type_id not in ARRAY_TYPES:
-            raise SystemExit(f"{csv_path}: refusing type {type_id!r}")
-        count = _norm(row.get("DataTypeInstanceCount"))
-        if count != 1:
-            raise SystemExit(f"{csv_path}: refusing instance count {count!r}")
+        if type_id not in ARRAY_TYPES or _norm(row.get("DataTypeInstanceCount")) != 1:
+            raise SystemExit(f"{csv_path}: invalid type or count for {name} {type_id}")
         mode = str(row.get("StringOrStream") or "")
         if mode != MODES[name] and not (MODES[name] == "bytes" and mode == "string"):
             raise SystemExit(f"{csv_path}: {name} I/O mode {mode!r}")
         stream_mode = str(row.get("StreamMode") or "").strip()
-        if MODES[name] == "stream" and stream_mode != "native":
+        if (MODES[name] == "stream" and stream_mode != "native") or (
+            MODES[name] == "bytes" and stream_mode not in ("", "adapted")
+        ):
             raise SystemExit(f"{csv_path}: {name} StreamMode {row.get('StreamMode')!r}")
-        if MODES[name] == "bytes" and stream_mode not in ("", "adapted"):
-            raise SystemExit(f"{csv_path}: {name} StreamMode {row.get('StreamMode')!r}")
-        if str(row.get("Language") or "") != LANGUAGE:
-            raise SystemExit(f"{csv_path}: row language {row.get('Language')!r}")
-        fidelity = row.get("FidelityScore")
-        if not isinstance(fidelity, (int, float)) or abs(float(fidelity) - 1.0) > 1e-9:
-            raise SystemExit(f"{csv_path}: fidelity {fidelity!r} for {name} {type_id}")
         indexes.setdefault((name, type_id), set()).add(int(row.get("RepetitionIndex") or 0))
-
     for name in ARRAY_NAMES:
         for type_id in ARRAY_TYPES:
-            seen = indexes.get((name, type_id))
-            if seen != set(range(MIN_REPS)):
+            if indexes.get((name, type_id)) != set(range(MIN_REPS)):
                 raise SystemExit(f"{csv_path}: {(name, type_id)} repetition indexes are not 0..{MIN_REPS - 1}")
-
-    fresh = export_stats(records, LANGUAGE)
-    meta = {
+    return export_stats(records, LANGUAGE), {
         "reps": reps,
         "serializers": sorted(versions),
         "versions": versions,
         "rows": len(records),
     }
-    return fresh, meta
 
 
 def _validate_fresh(fresh: dict, published_groups: list) -> list:
     groups = list(fresh.get("groups") or [])
     if not published_groups:
-        raise SystemExit("fortran: published snapshot has no groups to append to")
+        raise SystemExit(f"{LANGUAGE}: published snapshot has no groups to append to")
     expected_policies = set((published_groups[0].get("variants") or {}))
     cells = set()
     for group in groups:
-        _finite(group, f"fortran/{group.get('serializer')}")
+        validate_group_variants(LANGUAGE, group, expected_policies, MIN_REPS)
         name = str(group.get("serializer") or "")
-        if name not in STANDARDS:
-            raise SystemExit(f"fortran: unexpected serializer {name!r}")
-        if group.get("language") != LANGUAGE:
-            raise SystemExit(f"fortran: analysis group language is {group.get('language')!r}")
-        if _base(group.get("test_data")) not in ARRAY_TYPES:
-            raise SystemExit(f"fortran: analysis test_data {group.get('test_data')!r}")
-        if group.get("data_set") != "array":
-            raise SystemExit(f"fortran: {name} data_set is {group.get('data_set')!r}")
-        if group.get("standard") != STANDARDS[name]:
-            raise SystemExit(f"fortran: {name} standard is {group.get('standard')!r}")
-        if group.get("mode") != "published":
-            raise SystemExit(f"fortran: {name} mode is {group.get('mode')!r}")
-        if _norm(group.get("data_type_instance_count")) != 1:
-            raise SystemExit(f"fortran: {name} instance count {group.get('data_type_instance_count')!r}")
-        cell = (name, _base(group.get("test_data")))
+        type_id = _base(group.get("test_data"))
+        if (
+            name not in STANDARDS
+            or type_id not in ARRAY_TYPES
+            or group.get("data_set") != "array"
+            or group.get("standard") != STANDARDS[name]
+            or _norm(group.get("data_type_instance_count")) != 1
+        ):
+            raise SystemExit(f"{LANGUAGE}: invalid array group {name} {type_id}")
+        cell = (name, type_id)
         if cell in cells:
-            raise SystemExit(f"fortran: duplicate group {cell}")
+            raise SystemExit(f"{LANGUAGE}: duplicate group {cell}")
         cells.add(cell)
-        variants = group.get("variants") or {}
-        if set(variants) != expected_policies:
-            raise SystemExit(f"fortran: {name} policies {sorted(variants)} != {sorted(expected_policies)}")
-        for policy, metrics in variants.items():
-            fidelity = metrics.get("mean_fidelity")
-            if not isinstance(fidelity, (int, float)) or abs(float(fidelity) - 1.0) > 1e-9:
-                raise SystemExit(f"fortran: {name} {policy} fidelity {fidelity!r}")
-            filt = metrics.get("filter") or {}
-            if int(filt.get("runs_raw") or 0) != MIN_REPS:
-                raise SystemExit(f"fortran: {name} {policy} runs_raw {filt.get('runs_raw')!r}")
     expected = {(name, type_id) for name in ARRAY_NAMES for type_id in ARRAY_TYPES}
     if cells != expected:
-        raise SystemExit(f"fortran: array cells {sorted(cells)} != {sorted(expected)}")
+        raise SystemExit(f"{LANGUAGE}: array cells {sorted(cells)} != {sorted(expected)}")
     return groups
 
 
-def _split(groups: list) -> tuple[list, list]:
-    """Replace array cells only. A later tensor splice on the same row stays."""
-    keep, old = [], []
-    for group in groups:
-        name = str(group.get("serializer") or "")
-        base = _base(group.get("test_data"))
-        if name in STANDARDS and base in ARRAY_TYPES:
-            old.append(group)
-        else:
-            keep.append(group)
-    return keep, old
-
-
 def splice(csv_path: Path, *, dry_run: bool, language: str = "fortran") -> None:
-    stats_path = DATA / f"stats_{language}_latest.json.gz"
-    if not stats_path.is_file():
-        raise SystemExit(f"{language}: missing {stats_path.name}")
-    stats = load_json_gz(stats_path)
-
+    stats_path, stats, published = load_published_stats(language)
     fresh, meta = _analyze(csv_path)
-    new_groups = _validate_fresh(fresh, list(stats.get("groups") or []))
-    stats_keep, stats_old = _split(list(stats.get("groups") or []))
+    new_groups = _validate_fresh(fresh, published)
+    stats_keep = [
+        g for g in published if not (str(g.get("serializer") or "") in STANDARDS and _base(g.get("test_data")) in ARRAY_TYPES)
+    ]
+    replaced = len(published) - len(stats_keep)
     before_suite = _counts(stats_keep, SUITE_TYPES)
-    names = ", ".join(ARRAY_NAMES)
-    if LANGUAGE == "fortran":
-        kept = (
-            "Suite rows for hdf5-fortran, netcdf-fortran, and adios2 were removed. "
-            "The six interchange serializers were not recomputed."
-        )
-    else:
-        kept = (
-            f"Previous groups for {names} were removed. "
-            "Other groups for this language were not recomputed."
-        )
-    note = {
-        "source_csv": str(csv_path.relative_to(REPO)),
-        "run_config": "config/library/array.yaml",
-        "analyzed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "rows": meta["rows"],
-        "reps": meta["reps"],
-        "serializers": meta["serializers"],
-        "versions": meta["versions"],
-        "groups_added": len(new_groups),
-        "groups_replaced": len(stats_old),
-        "note": (
-            "Array groups were measured in a separate full-mode run "
-            "(config/library/array.yaml, 100 repetitions) and appended. "
-            + kept
-        ),
-    }
-    print(
-        f"{language}: {meta['rows']} rows, {len(new_groups)} groups, "
-        f"remove {len(stats_old)} previous groups for {', '.join(ARRAY_NAMES)}"
+    kept = (
+        "Suite rows for hdf5-fortran, netcdf-fortran, and adios2 were removed. The six interchange serializers were not recomputed."
+        if LANGUAGE == "fortran"
+        else f"Previous groups for {', '.join(ARRAY_NAMES)} were removed. Other groups for this language were not recomputed."
     )
+    print(f"{language}: {meta['rows']} rows, {len(new_groups)} groups, remove {replaced} previous groups for {', '.join(ARRAY_NAMES)}")
     if dry_run:
-        print(f"{language}: dry-run, snapshots not written")
         return
     stats["groups"] = stats_keep + new_groups
-    stats["array_splice"] = note
+    stats["array_splice"] = {
+        "source_csv": str(csv_path.relative_to(REPO)),
+        "run_config": "config/library/array.yaml",
+        "analyzed_at": now_iso(),
+        **meta,
+        "groups_added": len(new_groups),
+        "groups_replaced": replaced,
+        "note": f"Array groups were measured in a separate full-mode run (config/library/array.yaml, 100 repetitions) and appended. {kept}",
+    }
     if _counts(stats["groups"], SUITE_TYPES) != before_suite:
         raise SystemExit(f"{language}: suite counts for the other serializers changed")
-    if any(
-        str(group.get("serializer") or "") in STANDARDS
-        and group.get("data_set") not in ("array", "tensor")
-        for group in stats["groups"]
-    ):
+    if any(str(g.get("serializer") or "") in STANDARDS and g.get("data_set") not in ("array", "tensor") for g in stats["groups"]):
         raise SystemExit(f"{language}: an array serializer still has a group outside array and tensor")
     write_json_gz(stats_path, stats)
     print(f"{language}: wrote {len(new_groups)} array groups")
 
 
-def _select_language(language: str) -> None:
-    global ARRAY_NAMES, STANDARDS, MODES, LANGUAGE
-    LANGUAGE = language
-    profiles = {
-        "fortran": None,
-        "python": (
-            ("h5py", "netCDF4", "adios2"),
-            {"h5py": "hdf5", "netCDF4": "netcdf", "adios2": "adios2"},
-            "bytes",
-        ),
-        "c": (("hdf5",), {"hdf5": "hdf5"}, "bytes"),
-        "cpp": (("highfive",), {"highfive": "hdf5"}, "bytes"),
-        "rust": (("hdf5-metno",), {"hdf5-metno": "hdf5"}, "bytes"),
-        "javascript": (("h5wasm",), {"h5wasm": "hdf5"}, "bytes"),
-        # C# now logs bytes. Older logs say string; the row check accepts both.
-        "csharp": (("PureHDF",), {"PureHDF": "hdf5"}, "bytes"),
-        "mojo": (("gld-hdf5",), {"gld-hdf5": "hdf5"}, "bytes"),
-    }
-    if language not in profiles:
-        raise SystemExit(f"unsupported language {language}")
-    chosen = profiles[language]
-    if chosen is None:
-        return
-    names, standards, mode = chosen
-    ARRAY_NAMES = names
-    STANDARDS = standards
-    MODES = {name: mode for name in names}
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--language",
-        default="fortran",
-        choices=("fortran", "python", "c", "cpp", "rust", "javascript", "csharp", "mojo"),
-    )
+    parser.add_argument("--language", default="fortran", choices=tuple(PROFILES))
     parser.add_argument("--csv", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     _select_language(args.language)
-    defaults = {
-        "fortran": DEFAULT_CSV,
-        "python": REPO / "logs/python/2026-10-19-python-array-full.csv",
-        "c": REPO / "logs/c/2026-10-19-c-array-full.csv",
-        "cpp": REPO / "logs/cpp/2026-10-19-cpp-array-full.csv",
-        "rust": REPO / "logs/rust/2026-10-19-rust-array-full.csv",
-        "javascript": REPO / "logs/javascript/2026-10-19-javascript-array-full.csv",
-        "csharp": REPO / "logs/csharp/2026-10-19-csharp-array-full.csv",
-        "mojo": REPO / "logs/mojo/2026-10-19-mojo-array-full.csv",
-    }
-    csv_path = args.csv or defaults[args.language]
-    if not csv_path.is_absolute():
-        csv_path = REPO / csv_path
-    csv_path = csv_path.resolve()
+    csv_path = args.csv or (REPO / f"logs/{args.language}/2026-10-19-{args.language}-array-full.csv")
+    csv_path = (csv_path if csv_path.is_absolute() else REPO / csv_path).resolve()
     if not csv_path.is_file():
         raise SystemExit(f"CSV not found: {csv_path}")
     splice(csv_path, dry_run=args.dry_run, language=args.language)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

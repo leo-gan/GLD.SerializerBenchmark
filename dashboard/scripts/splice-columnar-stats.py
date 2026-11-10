@@ -1,75 +1,38 @@
 #!/usr/bin/env python3
-"""Replace columnar.yaml groups on the published dashboard snapshots.
+"""Replace columnar.yaml groups on the published dashboard snapshots."""
 
-sync-data.py publishes only logs named YYYY-MM-DD-HHMMSS.csv, and it replaces
-the whole language snapshot. The columnar full runs use other filenames on
-purpose. Several timestamped files under logs/ are columnar smokes; publishing
-those would erase the five-type matrix. This script does not call sync-data.
-
-It analyzes one columnar CSV with the same statistics pipeline as
-analyze-benchmarks, drops the previous columnar groups, and writes the new
-ones. Suite, graph, array, and tensor groups are not recomputed. The serializer
-names must match serializer_data_sets for that language.
-
-Groups are written only to stats_<lang>_latest.json.gz. The language pack
-is run metadata and does not carry a second copy of these rows.
-"""
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
-from snapshot_io import load_json_gz, write_json_gz
-
+from snapshot_io import write_json_gz
 from splice_rows import (
-    load_records,
-    export_stats,
-    as_whole as _norm,
+    COLUMNAR_TYPES,
+    REPO,
+    SUITE_TYPES,
     base_type as _base,
     count_bases as _counts,
+    export_stats,
+    load_published_stats,
+    load_records,
+    now_iso,
 )
+from benchmark_analysis.serializer_data_sets import allow_list
 
-REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "analysis" / "src"))
-
-from benchmark_analysis.serializer_data_sets import allow_list  # noqa: E402
-from benchmark_analysis.stats import _EXPORT_IDENTITY_KEYS  # noqa: E402
-
-DATA = REPO / "dashboard" / "public" / "data"
-COLUMNAR_TYPES = ("table", "table_project", "nested_table", "signal")
-ROW_TYPES = ("message", "document", "telemetry", "strings", "event")
 MIN_REPS = 50
-
-# Full columnar CSVs. Names must not match sync-data's latest-run regex.
 DEFAULT_CSVS = {
-    "python": REPO / "logs/python/2026-10-19-python-columnar-full.csv",
-    "cpp": REPO / "logs/cpp/2026-10-19-cpp-columnar-full.csv",
-    "csharp": REPO / "logs/csharp/2026-10-19-csharp-columnar-full.csv",
-    "go": REPO / "logs/go/2026-10-19-go-columnar-full.csv",
-    "java": REPO / "logs/java/2026-10-19-java-columnar-full.csv",
-    "rust": REPO / "logs/rust/2026-10-19-rust-columnar-full.csv",
-    "javascript": REPO / "logs/javascript/2026-10-19-javascript-columnar-full.csv",
-    "kotlin": REPO / "logs/kotlin/2026-10-19-kotlin-columnar-full.csv",
-    "mojo": REPO / "logs/mojo/2026-10-19-mojo-columnar-full.csv",
+    lang: REPO / f"logs/{lang}/2026-10-19-{lang}-columnar-full.csv"
+    for lang in ("python", "cpp", "csharp", "go", "java", "rust", "javascript", "kotlin", "mojo")
 }
 CORE = ("python", "cpp", "csharp", "go", "java", "rust")
-
-
-def _ident(group: dict) -> tuple:
-    return tuple(_norm(group.get(key)) for key in _EXPORT_IDENTITY_KEYS) + (
-        _norm(group.get("StreamMode")),
-    )
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
     records = load_records(csv_path, lang)
     reps = sorted({int(row.get("Repetitions") or 0) for row in records})
     if not reps or min(reps) < MIN_REPS:
-        raise SystemExit(
-            f"{csv_path}: repetitions {reps} are below {MIN_REPS}; refusing a smoke snapshot"
-        )
+        raise SystemExit(f"{csv_path}: repetitions {reps} are below {MIN_REPS}; refusing a smoke snapshot")
     bases = {_base(row.get("TestDataName")) for row in records}
     foreign = sorted(base for base in bases if base not in COLUMNAR_TYPES)
     if foreign:
@@ -85,15 +48,8 @@ def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
 
 
 def splice_language(lang: str, csv_path: Path) -> None:
-    stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    if not stats_path.is_file():
-        raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = load_json_gz(stats_path)
-    if stats.get("schema_version") != "2.2":
-        raise SystemExit(f"{lang}: published schema is {stats.get('schema_version')}, expected 2.2")
-
-    before_groups = list(stats.get("groups") or [])
-    before_counts = _counts(before_groups, ROW_TYPES)
+    stats_path, stats, before_groups = load_published_stats(lang)
+    before_counts = _counts(before_groups, SUITE_TYPES)
     fresh, meta = _analyze(lang, csv_path)
     expected = set(allow_list(lang, "columnar"))
     got = set(meta["serializers"])
@@ -102,28 +58,26 @@ def splice_language(lang: str, csv_path: Path) -> None:
 
     added = []
     for group in fresh.get("groups") or []:
-        base = _base(group.get("test_data"))
-        if base not in COLUMNAR_TYPES:
+        if _base(group.get("test_data")) not in COLUMNAR_TYPES:
             raise SystemExit(f"{lang}: analysis emitted non-columnar group {group.get('serializer')} {group.get('test_data')}")
-        if not group.get("language"):
-            group["language"] = lang
+        group.setdefault("language", lang)
         if group.get("language") != lang:
             raise SystemExit(f"{lang}: analysis group language is {group.get('language')}")
         added.append(group)
     if not added:
         raise SystemExit(f"{lang}: analysis produced no columnar groups")
 
-    kept = [group for group in before_groups if _base(group.get("test_data")) not in COLUMNAR_TYPES]
+    kept = [g for g in before_groups if _base(g.get("test_data")) not in COLUMNAR_TYPES]
     replaced = len(before_groups) - len(kept)
     stats["groups"] = kept + added
-    after_counts = _counts(stats["groups"], ROW_TYPES)
+    after_counts = _counts(stats["groups"], SUITE_TYPES)
     if after_counts != before_counts:
         raise SystemExit(f"{lang}: row-type counts changed {before_counts} -> {after_counts}")
 
-    note = {
+    stats["columnar_splice"] = {
         "source_csv": str(csv_path.relative_to(REPO)),
         "run_config": "config/library/columnar.yaml",
-        "analyzed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "analyzed_at": now_iso(),
         "rows": meta["rows"],
         "reps": meta["reps"],
         "types": meta["types"],
@@ -137,29 +91,17 @@ def splice_language(lang: str, csv_path: Path) -> None:
             "published snapshot and were not recomputed."
         ),
     }
-    stats["columnar_splice"] = note
-
     write_json_gz(stats_path, stats)
-    print(
-        f"{lang}: replaced {replaced} columnar groups with {len(added)}, "
-        f"row counts {after_counts}, serializers {meta['serializers']}"
-    )
+    print(f"{lang}: replaced {replaced} columnar groups with {len(added)}, row counts {after_counts}, serializers {meta['serializers']}")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--language",
-        action="append",
-        default=[],
-        help="Language id to splice. Repeatable. Default: every known CSV that exists.",
-    )
-    parser.add_argument("--csv", default="", help="CSV path, only with a single --language.")
+    parser.add_argument("--language", action="append", default=[])
+    parser.add_argument("--csv", default="")
     args = parser.parse_args(argv)
-
     if args.csv and len(args.language) != 1:
         raise SystemExit("--csv requires exactly one --language")
-
     if args.language:
         missing = [lang for lang in args.language if lang not in DEFAULT_CSVS and not args.csv]
         if missing:
@@ -174,16 +116,11 @@ def main(argv: list[str] | None = None) -> int:
         missing_core = [lang for lang in CORE if not DEFAULT_CSVS[lang].is_file()]
         if missing_core:
             raise SystemExit(f"missing core columnar CSV(s): {missing_core}")
-        jobs = []
-        for lang, path in DEFAULT_CSVS.items():
-            if path.is_file():
-                jobs.append((lang, path))
-            else:
-                print(f"{lang}: skip, CSV not present ({path.relative_to(REPO)})")
-
+        jobs = [(lang, path) for lang, path in DEFAULT_CSVS.items() if path.is_file()]
     for lang, path in jobs:
         splice_language(lang, path)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

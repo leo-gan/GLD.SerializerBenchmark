@@ -1,69 +1,38 @@
 #!/usr/bin/env python3
-"""Append graph.yaml groups onto the published dashboard snapshots.
+"""Append graph.yaml groups onto the published dashboard snapshots."""
 
-sync-data.py publishes only logs named YYYY-MM-DD-HHMMSS.csv. Graph full runs
-use names like 2026-10-09-<lang>-graph-full.csv. This script analyzes one of
-those CSVs and appends the graph data type. On a re-run it replaces previously
-spliced graph groups. Suite and columnar groups are not recomputed.
-"""
 from __future__ import annotations
 
 import argparse
 import copy
-import csv
-import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
-from snapshot_io import load_json_gz, write_json_gz
-
+from snapshot_io import write_json_gz
 from splice_rows import (
-    load_records,
-    refuse_error_rows,
-    export_stats,
+    ALLOWED_STREAM_MODES,
+    COLUMNAR_TYPES,
+    DAGR_VERSION,
+    GRAPH_TYPES,
+    REPO,
+    SUITE_TYPES,
     as_whole as _norm,
     base_type as _base,
     count_bases as _counts,
-    require_finite as _finite,
+    export_stats,
+    load_published_stats,
+    now_iso,
+    validate_csv_records,
+    validate_group_variants,
 )
 
-REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "analysis" / "src"))
-
-
-DATA = REPO / "dashboard" / "public" / "data"
-GRAPH_TYPES = ("graph",)
 DAGR_NAMES = ("dagr-regular", "dagr-frozen")
-# Python's comma filter is a substring match, so "pickle" also selects cloudpickle.
 PYTHON_EXTRA = {"pickle": "python-3.14.0", "cloudpickle": "3.1.2"}
-DAGR_VERSION = "2026.10.1"
 INSTANCE_COUNTS = (1, 100)
 MIN_REPS = 100
-ALLOWED_STREAM_MODES = {"", "native", "adapted", "text_on_stream", "text"}
-COLUMNAR_TYPES = ("table", "table_project", "nested_table", "signal")
-SUITE_TYPES = ("message", "document", "telemetry", "strings", "event")
-
 DEFAULT_CSVS = {
-    "python": REPO / "logs/python/2026-10-19-python-graph-full.csv",
-    "cpp": REPO / "logs/cpp/2026-10-19-cpp-graph-full.csv",
-    "rust": REPO / "logs/rust/2026-10-19-rust-graph-full.csv",
-    "go": REPO / "logs/go/2026-10-19-go-graph-full.csv",
-    "javascript": REPO / "logs/javascript/2026-10-19-javascript-graph-full.csv",
-    "mojo": REPO / "logs/mojo/2026-10-19-mojo-graph-full.csv",
-    "swift": REPO / "logs/swift/2026-10-19-swift-graph-full.csv",
+    lang: REPO / f"logs/{lang}/2026-10-19-{lang}-graph-full.csv"
+    for lang in ("python", "cpp", "rust", "go", "javascript", "mojo", "swift")
 }
-
-
-def _core(group: dict) -> tuple:
-    return (
-        group.get("serializer"),
-        group.get("test_data"),
-        group.get("type_config_hash"),
-        _norm(group.get("data_type_instance_count")),
-        group.get("mode"),
-        group.get("language"),
-        str(group.get("serializer_version") or ""),
-    )
 
 
 def _allowed_version(lang: str, name: str) -> str:
@@ -75,54 +44,27 @@ def _allowed_version(lang: str, name: str) -> str:
 
 
 def _analyze(lang: str, csv_path: Path) -> tuple[dict, dict]:
-    refuse_error_rows(csv_path)
-    records = load_records(csv_path, lang)
-
-    reps = sorted({int(row.get("Repetitions") or 0) for row in records})
-    if reps != [MIN_REPS]:
-        raise SystemExit(f"{csv_path}: repetitions {reps}; expected {MIN_REPS}")
-
+    records, reps = validate_csv_records(csv_path, lang, MIN_REPS)
     indexes: dict[tuple, set[int]] = {}
     for row in records:
         name = str(row.get("SerializerName") or "")
         version = _allowed_version(lang, name)
         if str(row.get("SerializerVersion") or "") != version:
-            raise SystemExit(
-                f"{csv_path}: {name} version {row.get('SerializerVersion')!r} != {version}"
-            )
+            raise SystemExit(f"{csv_path}: {name} version {row.get('SerializerVersion')!r} != {version}")
         type_id = _base(row.get("TestDataName"))
-        if type_id not in GRAPH_TYPES:
-            raise SystemExit(f"{csv_path}: refusing non-graph type {type_id!r}")
         count = _norm(row.get("DataTypeInstanceCount"))
-        if count not in INSTANCE_COUNTS:
-            raise SystemExit(f"{csv_path}: refusing instance count {count!r}")
-        if str(row.get("StringOrStream") or "") != "bytes":
-            raise SystemExit(f"{csv_path}: refusing I/O mode {row.get('StringOrStream')!r}")
-        if str(row.get("Language") or "") != lang:
-            raise SystemExit(f"{csv_path}: row language {row.get('Language')!r} != {lang}")
-        fidelity = row.get("FidelityScore")
-        if not isinstance(fidelity, (int, float)) or abs(float(fidelity) - 1.0) > 1e-9:
-            raise SystemExit(f"{csv_path}: fidelity {fidelity!r} for {name} n={count}")
-        stream_mode = str(row.get("StreamMode") or "").strip()
-        if stream_mode not in ALLOWED_STREAM_MODES:
-            raise SystemExit(f"{csv_path}: unexpected StreamMode {stream_mode!r}")
+        if type_id not in GRAPH_TYPES or count not in INSTANCE_COUNTS or str(row.get("StringOrStream") or "") != "bytes":
+            raise SystemExit(f"{csv_path}: invalid graph row {name} {type_id} n={count}")
+        if str(row.get("StreamMode") or "").strip() not in ALLOWED_STREAM_MODES:
+            raise SystemExit(f"{csv_path}: unexpected StreamMode {row.get('StreamMode')!r}")
         indexes.setdefault((name, count), set()).add(int(row.get("RepetitionIndex") or 0))
-
-    names = {name for name, _count in indexes}
-    missing = [name for name in DAGR_NAMES if name not in names]
-    if missing:
-        raise SystemExit(f"{csv_path}: missing Dagr rows {missing}")
+    names = {name for name, _ in indexes}
+    if any(name not in names for name in DAGR_NAMES):
+        raise SystemExit(f"{csv_path}: missing Dagr rows")
     for key, seen in indexes.items():
         if seen != set(range(MIN_REPS)):
             raise SystemExit(f"{csv_path}: {key} repetition indexes are not 0..{MIN_REPS - 1}")
-
-    fresh = export_stats(records, lang)
-    meta = {
-        "reps": reps,
-        "serializers": sorted(names),
-        "rows": len(records),
-    }
-    return fresh, meta
+    return export_stats(records, lang), {"reps": reps, "serializers": sorted(names), "rows": len(records)}
 
 
 def _validate_fresh(lang: str, fresh: dict, published_groups: list) -> list:
@@ -130,94 +72,56 @@ def _validate_fresh(lang: str, fresh: dict, published_groups: list) -> list:
     if not published_groups:
         raise SystemExit(f"{lang}: published snapshot has no groups to append to")
     expected_policies = set((published_groups[0].get("variants") or {}))
-    if not expected_policies:
-        raise SystemExit(f"{lang}: published groups have no filter-policy variants")
     cells = set()
     for group in groups:
-        _finite(group, f"{lang}/{group.get('serializer')}")
+        validate_group_variants(lang, group, expected_policies, MIN_REPS)
         name = str(group.get("serializer") or "")
-        if group.get("language") != lang:
-            raise SystemExit(f"{lang}: analysis group language is {group.get('language')!r}")
-        if _base(group.get("test_data")) != "graph":
-            raise SystemExit(f"{lang}: analysis test_data {group.get('test_data')!r}")
-        if group.get("data_set") != "graph":
-            raise SystemExit(f"{lang}: {name} data_set is {group.get('data_set')!r}")
-        if group.get("standard") != "custom":
-            raise SystemExit(f"{lang}: {name} standard is {group.get('standard')!r}")
-        if group.get("mode") != "published":
-            raise SystemExit(f"{lang}: {name} mode is {group.get('mode')!r}")
-        if str(group.get("serializer_version") or "") != _allowed_version(lang, name):
-            raise SystemExit(f"{lang}: {name} version {group.get('serializer_version')!r}")
         count = _norm(group.get("data_type_instance_count"))
+        if (
+            _base(group.get("test_data")) != "graph"
+            or group.get("data_set") != "graph"
+            or group.get("standard") != "custom"
+            or str(group.get("serializer_version") or "") != _allowed_version(lang, name)
+        ):
+            raise SystemExit(f"{lang}: invalid graph group {name}")
         cell = (name, count)
         if cell in cells:
             raise SystemExit(f"{lang}: duplicate group {cell}")
         cells.add(cell)
-        variants = group.get("variants") or {}
-        if set(variants) != expected_policies:
-            raise SystemExit(f"{lang}: {name} policies {sorted(variants)} != {sorted(expected_policies)}")
-        for policy, metrics in variants.items():
-            fidelity = metrics.get("mean_fidelity")
-            if not isinstance(fidelity, (int, float)) or abs(float(fidelity) - 1.0) > 1e-9:
-                raise SystemExit(f"{lang}: {name} {policy} fidelity {fidelity!r}")
-            filt = metrics.get("filter") or {}
-            if int(filt.get("runs_raw") or 0) != MIN_REPS:
-                raise SystemExit(f"{lang}: {name} {policy} runs_raw {filt.get('runs_raw')!r}")
     if not all((name, count) in cells for name in DAGR_NAMES for count in INSTANCE_COUNTS):
         raise SystemExit(f"{lang}: Dagr graph cells are incomplete: {sorted(cells)}")
     return groups
 
 
-def _split(groups: list) -> tuple[list, list]:
-    keep, old = [], []
-    for group in groups:
-        if _base(group.get("test_data")) == "graph":
-            old.append(group)
-        else:
-            keep.append(group)
-    return keep, old
-
-
 def splice_language(lang: str, csv_path: Path, *, dry_run: bool) -> None:
-    stats_path = DATA / f"stats_{lang}_latest.json.gz"
-    if not stats_path.is_file():
-        raise SystemExit(f"{lang}: missing {stats_path.name}")
-    stats = load_json_gz(stats_path)
-
-    stats_groups = list(stats.get("groups") or [])
+    stats_path, stats, stats_groups = load_published_stats(lang)
     fresh, meta = _analyze(lang, csv_path)
     new_groups = _validate_fresh(lang, fresh, stats_groups)
-    stats_keep, stats_old = _split(stats_groups)
+    stats_keep = [g for g in stats_groups if _base(g.get("test_data")) != "graph"]
+    replaced = len(stats_groups) - len(stats_keep)
     before_suite = _counts(stats_keep, SUITE_TYPES)
     before_columnar = _counts(stats_keep, COLUMNAR_TYPES)
-    note = {
+    print(f"{lang}: {meta['rows']} rows, {len(new_groups)} groups, replace {replaced}")
+    if dry_run:
+        return
+    dagr_note = copy.deepcopy(stats.get("dagr_splice"))
+    columnar_note = copy.deepcopy(stats.get("columnar_splice"))
+    stats["groups"] = stats_keep + new_groups
+    stats["graph_splice"] = {
         "source_csv": str(csv_path.relative_to(REPO)),
         "run_config": "config/library/graph.yaml",
-        "analyzed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "rows": meta["rows"],
-        "reps": meta["reps"],
-        "serializers": meta["serializers"],
+        "analyzed_at": now_iso(),
+        **meta,
         "groups_added": len(new_groups),
-        "groups_replaced": len(stats_old),
+        "groups_replaced": replaced,
         "note": (
             "Graph groups were measured in a separate full-mode run "
             "(config/library/graph.yaml, 100 repetitions) and appended. "
             "Existing suite and columnar groups were not recomputed."
         ),
     }
-    print(f"{lang}: {meta['rows']} rows, {len(new_groups)} groups, replace {len(stats_old)}")
-    if dry_run:
-        print(f"{lang}: dry-run, snapshots not written")
-        return
-
-    dagr_note = copy.deepcopy(stats.get("dagr_splice"))
-    columnar_note = copy.deepcopy(stats.get("columnar_splice"))
-    stats["groups"] = stats_keep + new_groups
-    stats["graph_splice"] = note
-    if _counts(stats["groups"], SUITE_TYPES) != before_suite:
-        raise SystemExit(f"{lang}: suite counts changed")
-    if _counts(stats["groups"], COLUMNAR_TYPES) != before_columnar:
-        raise SystemExit(f"{lang}: columnar counts changed")
+    if _counts(stats["groups"], SUITE_TYPES) != before_suite or _counts(stats["groups"], COLUMNAR_TYPES) != before_columnar:
+        raise SystemExit(f"{lang}: suite or columnar counts changed")
     if stats.get("dagr_splice") != dagr_note or stats.get("columnar_splice") != columnar_note:
         raise SystemExit(f"{lang}: an existing splice note changed")
     write_json_gz(stats_path, stats)
@@ -235,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"{lang}: CSV not found: {path}")
         splice_language(lang, path, dry_run=args.dry_run)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
