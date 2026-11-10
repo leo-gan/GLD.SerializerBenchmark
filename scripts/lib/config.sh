@@ -232,8 +232,12 @@ bench_init_runner() {
   bench_export_run_config "$MODE" "${BASH_SOURCE[1]:-}"
 
   ARGS=("$REPS")
-  [[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")
-  [[ -n "$FILTER_DATA" ]] && ARGS+=("$FILTER_DATA")
+  if [[ -n "$FILTER_SER" ]]; then
+    ARGS+=("$FILTER_SER")
+  fi
+  if [[ -n "$FILTER_DATA" ]]; then
+    ARGS+=("$FILTER_DATA")
+  fi
 }
 
 # Capture run environment metadata into <timestamp>.configs.json and print completion.

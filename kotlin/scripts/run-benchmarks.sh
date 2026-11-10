@@ -56,8 +56,12 @@ if [[ ! -f "$JAR" ]]; then
 fi
 
 KT_ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
-[[ -n "$FILTER_SER" ]] && KT_ARGS+=("--serializer" "$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && KT_ARGS+=("--data" "$FILTER_DATA")
+if [[ -n "$FILTER_SER" ]]; then
+  KT_ARGS+=("--serializer" "$FILTER_SER")
+fi
+if [[ -n "$FILTER_DATA" ]]; then
+  KT_ARGS+=("--data" "$FILTER_DATA")
+fi
 
 JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
 echo "[INFO] Running: java $JAVA_OPTS -jar $JAR ${KT_ARGS[*]}"

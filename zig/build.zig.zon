@@ -25,7 +25,7 @@
             .hash = "json-0.2.0-XOh3KrE4AgCdShVOsbwBkMkH2H2oAHX_L3cPVQlU8bOE",
         },
         .s2s = .{
-            .url = "https://github.com/ziglibs/s2s/archive/refs/heads/master.tar.gz",
+            .url = "https://github.com/ziglibs/s2s/archive/2ad1e7e4eb73f6ed90218d305472d8922b109d69.tar.gz",
             .hash = "s2s-0.0.1-qt8ajXF9AABu59Lb3VhU2fa84NnRRpLsds6qQUOwJcOx",
         },
         .protobuf = .{

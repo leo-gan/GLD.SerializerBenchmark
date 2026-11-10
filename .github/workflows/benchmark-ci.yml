@@ -102,58 +102,72 @@ jobs:
           filters: |
             csharp:
               - 'c-sharp/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             python:
               - 'python/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             rust:
               - 'rust/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             c:
               - 'c/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             javascript:
               - 'javascript/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             go:
               - 'go/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             java:
               - 'java/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             kotlin:
               - 'kotlin/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             php:
               - 'php/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             cpp:
               - 'cpp/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             swift:
               - 'swift/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             zig:
               - 'zig/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             mojo:
               - 'mojo/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             fortran:
               - 'fortran/**'
+              - 'scripts/lib/config.sh'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             analysis:
@@ -730,7 +744,9 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.fortran == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 (GCC 15). This job installs gfortran-13 and
+    # Ubuntu 24.04's libhdf5-dev / libnetcdff-dev Fortran modules.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

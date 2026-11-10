@@ -64,8 +64,12 @@ if [[ ! -f "$JAR" ]]; then
 fi
 
 JAVA_ARGS=("--reps" "$REPS" "--log-dir" "$LOG_DIR")
-[[ -n "$FILTER_SER" ]] && JAVA_ARGS+=("--serializer" "$FILTER_SER")
-[[ -n "$FILTER_DATA" ]] && JAVA_ARGS+=("--data" "$FILTER_DATA")
+if [[ -n "$FILTER_SER" ]]; then
+  JAVA_ARGS+=("--serializer" "$FILTER_SER")
+fi
+if [[ -n "$FILTER_DATA" ]]; then
+  JAVA_ARGS+=("--data" "$FILTER_DATA")
+fi
 
 # Kryo / FST need reflective access on JDK 21.
 JAVA_OPTS="${JAVA_OPTS:-} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/sun.misc=ALL-UNNAMED"
