@@ -469,13 +469,25 @@ def test_multi_policy_all_four_and_export_payload():
     assert sample["data_set"] == "suite"
     assert "avg_ops_per_sec" in sample["variants"][DEFAULT_FILTER_POLICY]
     _assert_published_precision(payload["groups"])
-    # D: catalog text not repeated per group
-    fb = sample["variants"][DEFAULT_FILTER_POLICY].get("filter") or {}
+    # D: catalog text and static policy fields not repeated per group
+    v_def = sample["variants"][DEFAULT_FILTER_POLICY]
+    fb = v_def.get("filter") or {}
     assert "label" not in fb and "description" not in fb
+    assert "method" not in fb and "runs_kept" not in fb
     assert fb.get("policy") == DEFAULT_FILTER_POLICY
+    for alias in (
+        "ser_p50_ns",
+        "deser_p50_ns",
+        "total_p50_ns",
+        "ser_mean_ns",
+        "deser_mean_ns",
+        "total_mean_ns",
+    ):
+        assert alias not in v_def
+    assert "ser_median_ns" in v_def and "avg_time_ser_ns" in v_def
     assert "label" in payload["filter_policies"][DEFAULT_FILTER_POLICY]
     assert not any(str(k).startswith("_") for k in sample)
-    assert not any(str(k).startswith("_") for k in sample["variants"][DEFAULT_FILTER_POLICY])
+    assert not any(str(k).startswith("_") for k in v_def)
 
 
 def _assert_published_precision(value):

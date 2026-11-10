@@ -1113,6 +1113,68 @@ _EXPORT_IDENTITY_KEYS: Tuple[str, ...] = (
     "data_set",
 )
 
+# Duplicate metric aliases omitted on schema 2.2 export and hydrated client-side.
+_EXPORT_OMIT_METRIC_ALIASES: Tuple[str, ...] = (
+    "ser_p50_ns",
+    "deser_p50_ns",
+    "total_p50_ns",
+    "ser_mean_ns",
+    "deser_mean_ns",
+    "total_mean_ns",
+)
+
+# Per-group filter keys kept in exported variants (static policy keys live in filter_policies).
+_EXPORT_FILTER_KEEP_KEYS: Tuple[str, ...] = (
+    "policy",
+    "fence_total_low_ns",
+    "fence_total_high_ns",
+)
+
+
+def slim_export_variant(
+    metrics: Dict[str, Any], *, is_child: bool = False
+) -> Dict[str, Any]:
+    """Omit duplicate metric aliases and repeated static filter fields for schema 2.2 export."""
+    out: Dict[str, Any] = {}
+    for k, v in metrics.items():
+        if k in _EXPORT_OMIT_METRIC_ALIASES:
+            continue
+        if is_child and (
+            k == "filter"
+            or k == "fastest_in_group"
+            or str(k).startswith("effect_vs_fastest")
+        ):
+            continue
+        if k == "filter" and isinstance(v, dict):
+            v = {
+                fk: fv
+                for fk, fv in v.items()
+                if fk in _EXPORT_FILTER_KEEP_KEYS and fv is not None
+            }
+        out[k] = v
+    return out
+
+
+def slim_export_groups(groups: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Apply slim_export_variant to every group's variants and optional child variants."""
+    for g in groups:
+        variants = g.get("variants")
+        if isinstance(variants, dict):
+            g["variants"] = {
+                pid: slim_export_variant(m) if isinstance(m, dict) else m
+                for pid, m in variants.items()
+            }
+        for child in g.get("optional") or []:
+            c_vars = child.get("variants")
+            if isinstance(c_vars, dict):
+                child["variants"] = {
+                    pid: slim_export_variant(m, is_child=True)
+                    if isinstance(m, dict)
+                    else m
+                    for pid, m in c_vars.items()
+                }
+    return groups
+
 
 def _build_filter_block(
     policy_id: Optional[str],
@@ -1439,7 +1501,7 @@ def build_stats_export_payload(
 
     from benchmark_analysis.fold_io import fold_io_groups
 
-    slim_groups = fold_io_groups(slim_groups)
+    slim_groups = slim_export_groups(fold_io_groups(slim_groups))
 
     missing = [
         f"{g.get('language')}/{g.get('serializer')}"
