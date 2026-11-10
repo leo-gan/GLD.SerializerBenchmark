@@ -234,40 +234,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
         fi
     done
     CS_OUT="$LOG_DIR/${TS}-csharp.json"
-    python3 - "$CS_PART" "$CS_OUT" <<'PY'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-parts = sorted(Path(sys.argv[1]).glob("*.json"))
-rows, errs, fmts = [], [], set()
-for p in parts:
-    d = json.loads(p.read_text())
-    rows.extend(d.get("results") or [])
-    errs.extend(d.get("serializer_errors") or [])
-    for r in d.get("results") or []:
-        if r.get("format"):
-            fmts.add(r["format"])
-passed = sum(1 for r in rows if r.get("outcome") == "pass")
-failed = sum(1 for r in rows if r.get("outcome") == "fail")
-skipped = sum(1 for r in rows if r.get("outcome") == "skip")
-doc = {
-    "schema": "gld.dashboard.compliance/1",
-    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "language": "csharp",
-    "languages": ["csharp"],
-    "policy": "report-only",
-    "scope": {"formats": sorted(fmts)},
-    "passed": passed,
-    "failed": failed,
-    "skipped": skipped,
-    "errors": len(rows) - passed - failed - skipped,
-    "catalog_errors": [],
-    "serializer_errors": errs,
-    "results": rows,
-}
-Path(sys.argv[2]).write_text(json.dumps(doc))
-print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
-PY
+    python3 "$PROJECT_ROOT/compliance/scripts/merge_parts.py" merge "$CS_PART" "$CS_OUT" --lang csharp
     if [[ -s "$CS_OUT" ]]; then
         cp -f "$CS_OUT" "$LOG_DIR/latest-csharp.json"
     fi
@@ -366,34 +333,7 @@ if want_lang zig && [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/build.zig" ]]; the
             fi
         done
         ZIG_OUT="$LOG_DIR/${TS}-zig.json"
-        python3 - "$ZIG_PART" "$ZIG_OUT" <<'PY'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-parts = sorted(Path(sys.argv[1]).glob("*.json"))
-rows = []
-for p in parts:
-    rows.extend(json.loads(p.read_text()).get("results") or [])
-passed = sum(1 for r in rows if r.get("outcome") == "pass")
-failed = sum(1 for r in rows if r.get("outcome") == "fail")
-doc = {
-    "schema": "gld.dashboard.compliance/1",
-    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "language": "zig",
-    "languages": ["zig"],
-    "policy": "report-only",
-    "scope": {"formats": sorted({r.get("format") for r in rows if r.get("format")})},
-    "passed": passed,
-    "failed": failed,
-    "skipped": 0,
-    "errors": 0,
-    "catalog_errors": [],
-    "serializer_errors": [],
-    "results": rows,
-}
-Path(sys.argv[2]).write_text(json.dumps(doc))
-print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
-PY
+        python3 "$PROJECT_ROOT/compliance/scripts/merge_parts.py" merge "$ZIG_PART" "$ZIG_OUT" --lang zig
         if [[ -s "$ZIG_OUT" ]]; then
             cp -f "$ZIG_OUT" "$LOG_DIR/latest-zig.json"
         fi
@@ -457,36 +397,7 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then
-        python3 - "$PROJECT_ROOT/compliance/data" "$MOJO_PART" <<'PY'
-import json, sys
-from pathlib import Path
-root, dest = Path(sys.argv[1]), Path(sys.argv[2])
-# EmberJson OOMs on official YAML catalogs (~230KB). Split those into small chunks.
-for src in sorted(root.rglob("*.json")):
-    if src.name.startswith("_"):
-        continue
-    rel = src.relative_to(root)
-    # Wire v2 is scored by mojo/src/compliance_kiln_v2.mojo against gld-kiln 0.3.0.
-    if rel.as_posix() == "kiln/v2.json":
-        continue
-    # YAML catalogs are large enough to OOM EmberJson. Smile is split per
-    # case because one truncated header makes gld-smile 0.2.0 loop.
-    # TOML chunks stay small: a few DataBooth documents OOM the process.
-    step = 20 if src.parent.name == "yaml" else 4 if src.parent.name == "toml" else 1 if src.parent.name == "smile" else 0
-    if step:
-        doc = json.loads(src.read_text())
-        cases = doc.get("cases") or []
-        meta = {k: v for k, v in doc.items() if k != "cases"}
-        prefix = src.parent.name
-        for i in range(0, len(cases), step):
-            chunk = dict(meta)
-            chunk["cases"] = cases[i : i + step]
-            out = dest / f"{prefix}-{src.stem}-{i:04d}.json"
-            out.write_text(json.dumps(chunk, separators=(",", ":")))
-    else:
-        (dest / f"{rel.parent}-{src.stem}.json").write_text(src.read_text())
-print("mojo catalog chunks ready")
-PY
+        python3 "$PROJECT_ROOT/compliance/scripts/merge_parts.py" split-mojo "$PROJECT_ROOT/compliance/data" "$MOJO_PART"
         for chunk in "$MOJO_PART"/*.json; do
             [[ "$chunk" == *-out.json ]] && continue
             list="$chunk.list"
@@ -498,47 +409,8 @@ PY
             set -e
             if [[ $st -eq 124 ]]; then
                 echo -e "${YELLOW}⚠ mojo chunk $(basename "$chunk") timed out${NC}"
-                python3 - "$chunk" "$out" "$PROJECT_ROOT/compliance/serializer-standards.json" <<'PY'
-import json, sys
-from pathlib import Path
-suite = json.loads(Path(sys.argv[1]).read_text())
-standards = json.loads(Path(sys.argv[3]).read_text())
-fmt = suite.get("format") or ""
-version = suite.get("version") or ""
-names = [
-    name
-    for name, fmts in (standards.get("languages") or {}).get("mojo", {}).items()
-    if fmt in (fmts or [])
-]
-rows = []
-for case in suite.get("cases") or []:
-    for name in names or [""]:
-        rows.append({
-            "id": case.get("id") or "",
-            "language": "mojo",
-            "serializer": name,
-            "serializer_version": "0.2.0" if name == "mojo-smile" else "",
-            "format": fmt,
-            "standard": suite.get("standard") or "",
-            "standard_url": suite.get("standard_url") or "",
-            "version": version,
-            "version_key": f"{fmt}.{version}" if fmt else "",
-            "requirement": case.get("requirement") or "",
-            "expect": case.get("expect") or "",
-            "section": "",
-            "section_title": "",
-            "section_url": case.get("section_url") or "",
-            "paragraph": "",
-            "title": "",
-            "input": "",
-            "input_encoding": "",
-            "detail": "decoder did not finish within 25s",
-            "observed": "timeout",
-            "outcome": "error",
-        })
-Path(sys.argv[2]).write_text(json.dumps({"results": rows}))
-print(f"  recorded {len(rows)} timeout error(s)")
-PY
+                python3 "$PROJECT_ROOT/compliance/scripts/merge_parts.py" timeout-mojo \
+                    "$chunk" "$out" "$PROJECT_ROOT/compliance/serializer-standards.json"
             elif [[ $st -ne 0 || ! -s "$out" ]]; then
                 echo -e "${YELLOW}⚠ mojo chunk $(basename "$chunk") exited ${st}${NC}"
                 rm -f "$out"
@@ -559,35 +431,7 @@ PY
         else
             echo -e "${YELLOW}⚠ kiln v2 compliance failed to build${NC}"
         fi
-        python3 - "$MOJO_PART" "$MOJO_OUT" <<'PY'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-rows = []
-for p in sorted(Path(sys.argv[1]).glob("*-out.json")):
-    rows.extend(json.loads(p.read_text()).get("results") or [])
-passed = sum(1 for r in rows if r.get("outcome") == "pass")
-failed = sum(1 for r in rows if r.get("outcome") == "fail")
-skipped = sum(1 for r in rows if r.get("outcome") == "skip")
-errors = sum(1 for r in rows if r.get("outcome") not in ("pass", "fail", "skip"))
-doc = {
-    "schema": "gld.dashboard.compliance/1",
-    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "language": "mojo",
-    "languages": ["mojo"],
-    "policy": "report-only",
-    "scope": {"formats": sorted({r.get("format") for r in rows if r.get("format")})},
-    "passed": passed,
-    "failed": failed,
-    "skipped": skipped,
-    "errors": errors,
-    "catalog_errors": [],
-    "serializer_errors": [],
-    "results": rows,
-}
-Path(sys.argv[2]).write_text(json.dumps(doc))
-print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
-PY
+        python3 "$PROJECT_ROOT/compliance/scripts/merge_parts.py" merge "$MOJO_PART" "$MOJO_OUT" --lang mojo --pattern "*-out.json"
         if [[ -s "$MOJO_OUT" ]]; then
             cp -f "$MOJO_OUT" "$LOG_DIR/latest-mojo.json"
         fi
