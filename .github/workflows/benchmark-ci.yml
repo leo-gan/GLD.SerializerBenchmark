@@ -744,7 +744,9 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.fortran == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 (GCC 15). This job installs gfortran-13 and
+    # Ubuntu 24.04's libhdf5-dev / libnetcdff-dev Fortran modules.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
