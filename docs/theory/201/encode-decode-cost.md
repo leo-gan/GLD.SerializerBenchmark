@@ -1,8 +1,6 @@
 # Encode/decode cost
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/encode_decode_cost.ipynb)
-**Lab notebook:** [Encode/decode cost playground](../notebooks/201/encode_decode_cost.ipynb)
-
 
 ## Problem
 

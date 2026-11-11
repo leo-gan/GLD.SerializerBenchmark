@@ -1,8 +1,6 @@
 # Self-describing vs schema
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/self_describing_vs_schema.ipynb)
-**Lab notebook:** [Self-describing vs schema lab](../notebooks/201/self_describing_vs_schema.ipynb)
-
 
 ## Problem
 

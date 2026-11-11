@@ -1,7 +1,6 @@
 # Protobuf wire format step-by-step
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/wire_format_playground.ipynb)
-**Lab notebook:** [wire format playground](../notebooks/401/wire_format_playground.ipynb) · full MiniUser lab: [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb)
 
 ## Why this article exists
 

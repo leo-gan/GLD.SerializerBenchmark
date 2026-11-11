@@ -1,7 +1,6 @@
 # Two schema cultures: Avro vs Protobuf
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/two_schema_cultures.ipynb)
-**Lab notebook:** [Two schema cultures experiment](../notebooks/301/two_schema_cultures.ipynb)
 
 ## Problem
 

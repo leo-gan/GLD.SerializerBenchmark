@@ -1,7 +1,6 @@
 # Data Science Perspective
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/101/data_science_perspective.ipynb)
-**Lab notebook:** [Data science lab](../notebooks/101/data_science_perspective.ipynb)
 
 ## Who this page is for
 
