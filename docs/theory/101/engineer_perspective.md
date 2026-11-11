@@ -46,7 +46,7 @@ Work through these questions in order:
    - **Yes** → a language-native library, only inside a hard trust boundary.  
    - **Shared nodes that another language must read** → the graph data set (`dagr-regular` or `dagr-frozen`). Packed Dagr cannot store the cycle.  
    - **No** → a schemaless binary standard such as MessagePack or CBOR, **and** validation at the edges.  
-4. **Which library?** Open the [Dashboard](../../dashboard/) with **Language** and **Standard** set, on the same data set and data type. That is an implementation comparison. If the question is the specification, open [Compliance](../../dashboard/#compliance) for that standard.
+4. **Which library?** Open the [Dashboard](../../dashboard/index.html) with **Language** and **Standard** set, on the same data set and data type. That is an implementation comparison. If the question is the specification, open [Compliance](../../dashboard/index.html#compliance) for that standard.
 
 ---
 
@@ -84,7 +84,7 @@ These are convenient for object graphs inside one runtime. Treat them as **unsaf
 
 ## Performance mechanics
 
-Numbers belong on the [Dashboard](../../dashboard/). These are the mechanisms those numbers come from. Understanding the mechanisms helps you interpret any benchmark.
+Numbers belong on the [Dashboard](../../dashboard/index.html). These are the mechanisms those numbers come from. Understanding the mechanisms helps you interpret any benchmark.
 
 ### Data locality and processor caches
 
@@ -221,7 +221,7 @@ user2.ParseFromString(data)
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  
 4. **Untrusted deserialize is a security boundary.** Native serializers are not “just faster JSON.”  
 5. **Evolution is a process** of identifiers, registries, and API versions. It is not only a file format.  
-6. **Measure on your payloads** with this suite’s topologies and your language’s [Dashboard](../../dashboard/) slice.
+6. **Measure on your payloads** with this suite’s topologies and your language’s [Dashboard](../../dashboard/index.html) slice.
 
 ---
 

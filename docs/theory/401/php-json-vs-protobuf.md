@@ -10,9 +10,9 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from a local PHP `all-single` run. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=php&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=json&ser=protobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [PHP overview](../../php/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=php&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=json&ser=protobuf#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [PHP overview](../../php/index.md)
 
 ## Short answer
 

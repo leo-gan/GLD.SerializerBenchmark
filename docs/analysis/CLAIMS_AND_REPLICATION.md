@@ -153,4 +153,4 @@ Details: [Analysis methodology — exploratory ranks](ANALYSIS_METHODOLOGY.md#ex
 | [Analysis methodology](ANALYSIS_METHODOLOGY.md) | Warmup, outliers, CIs, ranks, multi-session command |
 | [Metrics](METRICS.md) | Column definitions including effect-vs-fastest fields |
 | [Modes](modes.md) | Smoke vs full vs research run presets |
-| [Dashboard](../dashboard/) | Published L1 numbers (run chrome + Details / Compare) |
+| [Dashboard](../dashboard/index.html) | Published L1 numbers (run chrome + Details / Compare) |

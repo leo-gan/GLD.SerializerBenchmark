@@ -212,7 +212,7 @@ If you finish early, try one of the following. None of them is required for “d
 - `uint64` or fixed32.
 - Reject remaining garbage after a nested length (strict nested consume).
 - Fuzz skip paths with random unknown tags, using the [301 untrusted input](../301/untrusted-input.md) mindset.
-- **Same goldens in another language:** [Go](../notebooks/companions/go/) · [Rust](../notebooks/companions/rust/) appendices (encode MiniUser until G1–G5 match).
+- **Same goldens in another language:** [Go](../notebooks/companions/go/README.md) · [Rust](../notebooks/companions/rust/README.md) appendices (encode MiniUser until G1–G5 match).
 
 ## What this lab is not
 

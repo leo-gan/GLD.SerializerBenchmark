@@ -12,4 +12,4 @@ Spec: [Kiln wire format, version 2](https://leo-gan.github.io/gld-kiln/spec/).
 
 The cases cover the version-2 directory, a `tensors` field, the frame hash of that field, and the allocation check on lists. A case fails when the library accepts a byte the spec forbids, or when an accepted value does not match the case.
 
-Pass/fail cells are on the [Dashboard → Compliance](../dashboard/#compliance) view, standard **Kiln**, column **Kiln wire v2**.
+Pass/fail cells are on the [Dashboard → Compliance](../dashboard/index.html#compliance) view, standard **Kiln**, column **Kiln wire v2**.

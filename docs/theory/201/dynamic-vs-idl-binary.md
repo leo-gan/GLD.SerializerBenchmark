@@ -138,7 +138,7 @@ A MessagePack library is not guaranteed to outperform a Protocol Buffers library
 | Schemaless binary | Python `msgpack` / `cbor2`; JavaScript `msgpackr` / `cbor-x`; Go MessagePack/CBOR libraries; Rust `rmp-serde` / CBOR crates; C mpack/msgpack/cbor variants |
 | Schema-driven | Protocol Buffers bindings where registered; other IDL or schema codecs per language |
 
-Compare within one language, one standard, one data set, and one data type. MessagePack and CBOR are standards. Protocol Buffers is a standard. A family chart is a teaching cut. A cross-standard ranking is a decision input when the workload sits on the boundary between two contracts. See [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/).
+Compare within one language, one standard, one data set, and one data type. MessagePack and CBOR are standards. Protocol Buffers is a standard. A family chart is a teaching cut. A cross-standard ranking is a decision input when the workload sits on the boundary between two contracts. See [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/index.html).
 
 ---
 

@@ -44,7 +44,7 @@ Use this checklist **before** quoting a Dashboard number:
 
 1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
 2. **Same standard?** This is the Dashboard **Standard** control. A cross-standard chart is allowed when the product question is which contract. Speed is then one axis among others.
-3. **Conformance?** If the question is whether the library follows the specification, open [Compliance](../../dashboard/#compliance) for that standard. A speed row does not answer it. **No public spec** has no score.
+3. **Conformance?** If the question is whether the library follows the specification, open [Compliance](../../dashboard/index.html#compliance) for that standard. A speed row does not answer it. **No public spec** has no score.
 4. **Same data set?** The sets are on the [test data](../../analysis/test_data_configuration.md) page. A standard can appear on more than one set. Read the data set, then the data type.
 5. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
 6. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
@@ -100,7 +100,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 |----------|------------|
 | [Families](../../analysis/families.md) | Families as orientation, then the named standard |
 | Language **Overview** | Registered names, categories, fidelity caveats (inventory source of truth) |
-| [Dashboard](../../dashboard/) | Published timings and sizes (filter by language) |
+| [Dashboard](../../dashboard/index.html) | Published timings and sizes (filter by language) |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
 | [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
@@ -121,7 +121,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 ### Setup
 
 1. Write the decision question in one sentence. One example is “Which JSON library in Python for message-shaped RPC?”
-2. Open [Families](../../analysis/families.md) and the language **Overview** / [Dashboard](../../dashboard/) for the runtime you will ship.
+2. Open [Families](../../analysis/families.md) and the language **Overview** / [Dashboard](../../dashboard/index.html) for the runtime you will ship.
 3. Note analysis configuration from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables. Include warmup and outlier policy.
 
 ### Procedure

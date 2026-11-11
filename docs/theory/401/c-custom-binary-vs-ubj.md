@@ -10,9 +10,9 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [C overview](../../c/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [C overview](../../c/index.md)
 
 ## Short answer
 

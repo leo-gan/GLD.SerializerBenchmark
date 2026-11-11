@@ -295,5 +295,5 @@ An **experiment** answers one everyday question. It keeps the libraries that cou
 | Column names | [Metrics](METRICS.md) |
 | L1, L2, and L3 | [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 | One-question tests | [Experiments](../experiments/index.md) |
-| Specification cases | [Compliance](../dashboard/#compliance) |
-| Live numbers | [Dashboard](../dashboard/) |
+| Specification cases | [Compliance](../dashboard/index.html#compliance) |
+| Live numbers | [Dashboard](../dashboard/index.html) |

@@ -8,4 +8,4 @@ Spec: [SBE 1.0 message structure](https://github.com/FIXTradingCommunity/fix-sim
 |---------|---------|
 | 1.0 | `compliance/data/sbe/v1.0.json` |
 
-Pass/fail cells are on the [Dashboard → Compliance](../dashboard/#compliance) view, standard **SBE**.
+Pass/fail cells are on the [Dashboard → Compliance](../dashboard/index.html#compliance) view, standard **SBE**.

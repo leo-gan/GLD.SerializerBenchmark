@@ -224,7 +224,7 @@ The shape and the access pattern choose the standard. The library is the next qu
 
 ## How this suite helps (and what it does not)
 
-These measurements are the encode and decode cost of one fixture. [How to compare](index.md#how-to-compare) states which questions a number can answer. The [Dashboard](../../dashboard/) shows the numbers for one language, one standard, one data set, and one data type. The shapes are on the [test data](../../analysis/test_data_configuration.md) page.
+These measurements are the encode and decode cost of one fixture. [How to compare](index.md#how-to-compare) states which questions a number can answer. The [Dashboard](../../dashboard/index.html) shows the numbers for one language, one standard, one data set, and one data type. The shapes are on the [test data](../../analysis/test_data_configuration.md) page.
 
 Data platform success also depends on input/output layout, compression, partitioning, cluster execution, and schema governance. Those topics are larger than a single serialize call. Use this page to choose the workload and the standard. Choose the library after that, inside one language.
 

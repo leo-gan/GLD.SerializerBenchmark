@@ -2,13 +2,13 @@
 
 Families are a teaching map. They group contracts by the job they are built for. A family is coarser than a standard. The Dashboard filters by **Standard**, not by family. A language **Overview** lists that language’s roster. The Standard control lists who claims a given contract.
 
-Theory pages cover product trade-offs. Timings live on the [Dashboard](../dashboard/).
+Theory pages cover product trade-offs. Timings live on the [Dashboard](../dashboard/index.html).
 
 | If you need… | Go here |
 |--------------|---------|
 | Workload, standard, implementation, and how to compare | [Serialization 101](../theory/101/index.md) |
 | Full registered names and caveats | Language **Overview** pages |
-| Timings and plots | [Dashboard](../dashboard/) |
+| Timings and plots | [Dashboard](../dashboard/index.html) |
 
 ---
 
@@ -52,7 +52,7 @@ Work through these questions in order:
    - **Yes** → a language-native library, only inside a hard trust boundary.
    - **No, but the payload really is a shared graph** → the **graph** data set. See [Data sets](test_data_configuration.md).
    - **No** → a schemaless binary standard such as MessagePack or CBOR.
-4. **Which standard inside that family?** JSON, YAML, and TOML are different contracts. Protocol Buffers, Avro, and FlatBuffers are different contracts. Arrow IPC, Parquet, and ORC are different contracts. Open the [Dashboard](../dashboard/) with that standard selected, then compare libraries.
+4. **Which standard inside that family?** JSON, YAML, and TOML are different contracts. Protocol Buffers, Avro, and FlatBuffers are different contracts. Arrow IPC, Parquet, and ORC are different contracts. Open the [Dashboard](../dashboard/index.html) with that standard selected, then compare libraries.
 
 Product-oriented guidance: [engineering perspective](../theory/101/engineer_perspective.md).
 
@@ -74,7 +74,7 @@ Product-oriented guidance: [engineering perspective](../theory/101/engineer_pers
 
 Compare libraries in the **same language**, on the **same standard**, on the **same data set**, and on the **same data type**. Rank the parent row. A family is coarser than the standard id.
 
-Schema-driven standards are often smaller and faster inside one language. That is not a universal ranking. Metrics live on the [Dashboard](../dashboard/).
+Schema-driven standards are often smaller and faster inside one language. That is not a universal ranking. Metrics live on the [Dashboard](../dashboard/index.html).
 
 ## Further reading
 
