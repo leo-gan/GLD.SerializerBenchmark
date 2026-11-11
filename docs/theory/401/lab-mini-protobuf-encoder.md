@@ -3,7 +3,6 @@
 > Build a **deliberately small** Protocol Buffers binary codec for a teaching message. This is not production Protocol Buffers. It is not the full benchmark suite fixture.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/lab_mini_protobuf_encoder.ipynb)
-**Lab notebook:** [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb) · wire playground: [wire_format_playground.ipynb](../notebooks/401/wire_format_playground.ipynb)
 
 ## Goal
 

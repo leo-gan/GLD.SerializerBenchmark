@@ -1,8 +1,6 @@
 # Schema evolution
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/schema_evolution.ipynb)
-**Lab notebook:** [Schema evolution lab](../notebooks/201/schema_evolution.ipynb)
-
 
 ## Problem
 
