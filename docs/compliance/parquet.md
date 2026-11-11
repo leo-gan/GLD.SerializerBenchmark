@@ -8,4 +8,4 @@ Spec: [Parquet file format](https://parquet.apache.org/docs/file-format/).
 |---------|---------|
 | File format | `compliance/data/parquet/file-format.json` |
 
-Pass/fail cells are on the [Dashboard → Compliance](../dashboard/#compliance) view, standard **Parquet**.
+Pass/fail cells are on the [Dashboard → Compliance](../dashboard/index.html#compliance) view, standard **Parquet**.

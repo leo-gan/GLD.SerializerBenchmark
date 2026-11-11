@@ -81,7 +81,7 @@ An architecture decision record says “use JSON for the public API.” Three se
 | Resource | Role |
 |----------|------|
 | Language **Overview** | Registered `SerializerName` values and categories |
-| [Dashboard](../../dashboard/) | Within-language, within-fixture comparisons |
+| [Dashboard](../../dashboard/index.html) | Within-language, within-fixture comparisons |
 | [Families](../../analysis/families.md) | Family map. The standard is the filter |
 | [Metrics](../../analysis/METRICS.md) / [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | What means and confidence intervals mean |
 | [Using this suite](using-this-suite.md) | Anti-leaderboard checklist |

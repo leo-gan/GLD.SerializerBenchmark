@@ -8,4 +8,4 @@ Spec: [ORC v1](https://orc.apache.org/specification/ORCv1/).
 |---------|---------|
 | v1 | `compliance/data/orc/v1.json` |
 
-Pass/fail cells are on the [Dashboard → Compliance](../dashboard/#compliance) view, standard **ORC**.
+Pass/fail cells are on the [Dashboard → Compliance](../dashboard/index.html#compliance) view, standard **ORC**.

@@ -11,7 +11,7 @@ Think of it as the **lab design** for the experiment. How we turn raw timings in
 | JSON vs binary vs schema families | [Families](families.md) |
 | How to add another language | [Adding a language](ADDING_A_LANGUAGE.md) |
 | How to add one library to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
-| Published numbers | [Dashboard](../dashboard/) · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
+| Published numbers | [Dashboard](../dashboard/index.html) · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 ---
 

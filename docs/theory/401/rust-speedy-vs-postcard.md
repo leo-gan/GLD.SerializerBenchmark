@@ -10,9 +10,9 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [Rust overview](../../rust/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Rust overview](../../rust/index.md)
 
 ## Short answer
 

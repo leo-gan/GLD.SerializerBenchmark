@@ -94,7 +94,7 @@ Separately, an SSRF-style bug appears. **Server-side request forgery** means tri
 |----------|------|
 | [Families](../../analysis/families.md) | Labels the **language-native** family versus portable families |
 | Language **Overview** | Shows which native codecs are registered (if any) and their caveats |
-| [Dashboard](../../dashboard/) | Speed and size **inside one comparison cell**—never a reason by itself to put native bytes on the wire |
+| [Dashboard](../../dashboard/index.html) | Speed and size **inside one comparison cell**—never a reason by itself to put native bytes on the wire |
 | [Using this suite](using-this-suite.md) | How not to misread those numbers |
 | [Engineering perspective](../101/engineer_perspective.md) | Product framing of native versus portable choices |
 

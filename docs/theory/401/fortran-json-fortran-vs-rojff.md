@@ -6,9 +6,9 @@ Fortran's JSON rows do not use compiler reflection. Each adapter walks the suite
 
 This page opens those two timed call sites on the suite **document** fixture (one shop order). Measured times belong on the Dashboard slice below. The call sites are the part you can read without a chart.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=fortran&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json-fortran&ser=json-fortran&ser=rojff#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [Fortran overview](../../fortran/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=fortran&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json-fortran&ser=json-fortran&ser=rojff#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Fortran overview](../../fortran/index.md)
 
 ## The two timed call sites
 

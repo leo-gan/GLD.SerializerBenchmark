@@ -4,9 +4,9 @@
 
 Mojo has a widely used **JSON** library (EmberJson) and a native **Avro** library (`leo-gan/gld-avro`). They do not write the same bytes. This page opens both timed wrappers on the suite **document** fixture (one shop order: an id, a status, and eight line items).
 
-[Open this slice on the Dashboard](../../dashboard/?lang=mojo&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=EmberJson&ser=EmberJson&ser=mojo-avro#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [Mojo overview](../../mojo/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=mojo&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=EmberJson&ser=EmberJson&ser=mojo-avro#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Mojo overview](../../mojo/index.md)
 
 ## The two timed call sites
 

@@ -12,7 +12,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 | I/O modes and run modes | [Modes](modes.md) |
 | Data-type meanings | [Data sets](test_data_configuration.md) |
 | Paradigms | [Families](families.md) |
-| How to regenerate published numbers | [Dashboard](../dashboard/) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
+| How to regenerate published numbers | [Dashboard](../dashboard/index.html) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.
 
@@ -153,7 +153,7 @@ Markdown language pages still use the configured single `statistics.outlier_meth
 | Throughput | Operations per second from mean total time |
 | Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
 
-Published numbers live on the [Dashboard](../dashboard/).
+Published numbers live on the [Dashboard](../dashboard/index.html).
 
 ### Bootstrap confidence interval on the mean
 
@@ -327,7 +327,7 @@ For research-oriented L2/L3 collection tips and soft host checks, see [Claims an
 | Output | Content |
 |--------|---------|
 | `reports/stats_<lang>_latest.json` | Multi-policy stats export (Dashboard sync input; **always** written) |
-| [Dashboard](../dashboard/) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
+| [Dashboard](../dashboard/index.html) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
 | `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
 | `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |
 | Console | Load counts, warmup and outlier tallies |

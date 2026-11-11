@@ -10,9 +10,9 @@ Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
-[Open this slice on the Dashboard](../../dashboard/?lang=swift&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=FlatBuffers&ser=FlatBuffers&ser=SwiftProtobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
-· [Swift overview](../../swift/)
+[Open this slice on the Dashboard](../../dashboard/index.html?lang=swift&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=FlatBuffers&ser=FlatBuffers&ser=SwiftProtobuf#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Swift overview](../../swift/index.md)
 
 ## Short answer
 

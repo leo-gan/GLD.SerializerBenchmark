@@ -16,7 +16,7 @@ the format; it replaces 7049 in place.
 
 - Appendix A integers, `true` / `false` / `null`, empty text / bytes /
   array / map (IETF Code Components — see
-  [`THIRD_PARTY_NOTICES.md`](../../compliance/THIRD_PARTY_NOTICES.md))
+  [`THIRD_PARTY_NOTICES.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/THIRD_PARTY_NOTICES.md))
 - Indefinite-length array and byte string
 - Rejects: truncated `ai=24`, lone `0xff` break, odd-length map,
   two-byte simple `0xf800` (8949 §3.3)

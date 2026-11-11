@@ -1,7 +1,7 @@
 /**
  * Languages sidebar: compact rows "C# · Dashboard".
  * - Language name → Overview URL
- * - Dashboard → /dashboard/?lang=<catalog-id>
+ * - Dashboard → <site-root>dashboard/?lang=<catalog-id>
  * - Flat sibling <a> elements (not Material nested-toggle targets)
  *
  * Why the name was unclickable before: Material treats the first
@@ -184,7 +184,15 @@
         if (nameSpan) nameSpan.textContent = name;
         nameLink.classList.toggle("lang-nav-active", overviewActive);
 
-        const dashUrl = new URL("../dashboard/", window.location.href);
+        // Logo href is the site root at every page depth (".", "..", "../../..").
+        // A fixed "../dashboard/" misses on theory/401/article/ and on other
+        // nested pages, and a leading-slash /dashboard/ misses the GitHub
+        // project prefix.
+        const logo = document.querySelector("a.md-header__button.md-logo");
+        const rootHref = (logo && logo.getAttribute("href")) || "./";
+        const root = new URL(rootHref, window.location.href);
+        if (!root.pathname.endsWith("/")) root.pathname += "/";
+        const dashUrl = new URL("dashboard/", root);
         dashUrl.searchParams.set(
           "lang",
           catalogIdFromOverviewHref(overviewA.getAttribute("href"))

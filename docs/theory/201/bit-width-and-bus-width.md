@@ -80,7 +80,7 @@ Eight 4-bit values fit in one 32-bit word. Stored one value per byte, the same e
    4b   4b   4b   4b   4b   4b   4b   4b
 ```
 
-The same arithmetic applies to a long array. One million 12-bit samples occupy 1,500,000 bytes when packed tightly. Stored in 16-bit integers they occupy 2,000,000 bytes. The packed array is three quarters of the 16-bit array. These counts leave out headers, shared multipliers, and padding for alignment. They are teaching arithmetic, not a measurement from this benchmark. The [Dashboard](../../dashboard/) owns measured sizes for this suite.
+The same arithmetic applies to a long array. One million 12-bit samples occupy 1,500,000 bytes when packed tightly. Stored in 16-bit integers they occupy 2,000,000 bytes. The packed array is three quarters of the 16-bit array. These counts leave out headers, shared multipliers, and padding for alignment. They are teaching arithmetic, not a measurement from this benchmark. The [Dashboard](../../dashboard/index.html) owns measured sizes for this suite.
 
 The packed form is smaller on disk and on the wire. A program that wants to add two samples has to extract them first. Extracting one value is a shift and a mask. Extracting a block, as FastLanes does, handles many values in one pass. A smaller file and numbers the processor can use directly are two different costs.
 
@@ -146,7 +146,7 @@ A matrix of 4-bit weights has the same split, one step further along. The stored
 
 The catalog primitives are `bool`, `int32`, `int64`, `float64`, `utf8_string`, and a datetime stored as an `int64` count of milliseconds since the epoch. The fixtures do not include a 12-bit sample, a 4-bit element, or a 17-bit identifier. Where a language registers Arrow IPC, Parquet, or ORC, those rows measure columns. Where it registers SBE (Simple Binary Encoding), those rows measure fixed field offsets inside one record. The stride is the bytes from the start of one record to the start of the next. Variable-length fields change that distance. SBE is schema-driven. It is not a columnar file format like Parquet. None of these rows measure values narrower than a byte.
 
-On the Dashboard, `mean_fidelity` is the average of the per-trial fidelity scores. It is 1.0 when every round trip reproduces the fixture. That check writes a fixture and reads it back. It is not a specification-compliance score. It is the right check for these codecs when the goal is an exact round trip. Quantization stores an approximation on purpose, so exact equality should not be the only score for it. The [Dashboard](../../dashboard/) does not answer questions about bit width. A missing row means the suite did not measure that case. It is not a ranking. Family labels are a teaching cut. They are listed in [Families](../../analysis/families.md).
+On the Dashboard, `mean_fidelity` is the average of the per-trial fidelity scores. It is 1.0 when every round trip reproduces the fixture. That check writes a fixture and reads it back. It is not a specification-compliance score. It is the right check for these codecs when the goal is an exact round trip. Quantization stores an approximation on purpose, so exact equality should not be the only score for it. The [Dashboard](../../dashboard/index.html) does not answer questions about bit width. A missing row means the suite did not measure that case. It is not a ranking. Family labels are a teaching cut. They are listed in [Families](../../analysis/families.md).
 
 ---
 
