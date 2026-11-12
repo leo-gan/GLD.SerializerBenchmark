@@ -204,6 +204,13 @@ public final class Compliance {
             }));
     ObjectMapper yaml = new YAMLMapper();
     out.add(new Adapter("jackson-yaml", "yaml", Versions.of(YAMLMapper.class), (b, s) -> yaml.readValue(b, Object.class)));
+    out.add(new Adapter("jtoon", "toon", Versions.of(dev.toonformat.jtoon.JToon.class), (b, s) ->
+        dev.toonformat.jtoon.JToon.decode(new String(b, StandardCharsets.UTF_8))));
+    com.cedarsoftware.io.ReadOptions strictToon =
+        new com.cedarsoftware.io.ReadOptionsBuilder().strictToon().build();
+    out.add(new Adapter("json-io", "toon", Versions.of(com.cedarsoftware.io.JsonIo.class), (b, s) ->
+        com.cedarsoftware.io.JsonIo.fromToon(new String(b, StandardCharsets.UTF_8), strictToon)
+            .asClass(Object.class)));
     out.add(new Adapter("protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite.class), Compliance::decodeProtobuf));
     try {
       ObjectMapper ion = new ObjectMapper(new com.fasterxml.jackson.dataformat.ion.IonFactory());

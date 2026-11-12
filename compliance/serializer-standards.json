@@ -183,7 +183,16 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "toon-format": [
+        "toon"
+      ],
+      "toons": [
+        "toon"
+      ],
+      "ctoon": [
+        "toon"
+      ]
     },
     "javascript": {
       "JSON.stringify": [
@@ -269,7 +278,10 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "toon": [
+        "toon"
+      ]
     },
     "go": {
       "encoding/json": [
@@ -359,7 +371,10 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "toon-go": [
+        "toon"
+      ]
     },
     "java": {
       "jackson": [
@@ -435,6 +450,12 @@
       ],
       "gld-kiln": [
         "kiln"
+      ],
+      "jtoon": [
+        "toon"
+      ],
+      "json-io": [
+        "toon"
       ]
     },
     "kotlin": {
@@ -528,6 +549,9 @@
       ],
       "sbe": [
         "sbe"
+      ],
+      "ktoon": [
+        "toon"
       ]
     },
     "csharp": {
@@ -650,6 +674,15 @@
       "fory": [],
       "gld-kiln": [
         "kiln"
+      ],
+      "Toon.Format": [
+        "toon"
+      ],
+      "ToonNet": [
+        "toon"
+      ],
+      "Corvus.Toon": [
+        "toon"
       ]
     },
     "rust": {
@@ -720,7 +753,16 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "toon-format": [
+        "toon"
+      ],
+      "ctoon": [
+        "toon"
+      ],
+      "tru": [
+        "toon"
+      ]
     },
     "cpp": {
       "nlohmann_json": [
@@ -884,7 +926,10 @@
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": []
+      "dagr-frozen-packed": [],
+      "ToonFormat": [
+        "toon"
+      ]
     },
     "php": {
       "json": [
@@ -931,7 +976,10 @@
       "yaml-pecl": [
         "yaml"
       ],
-      "igbinary": []
+      "igbinary": [],
+      "toon": [
+        "toon"
+      ]
     },
     "zig": {
       "std.json": [

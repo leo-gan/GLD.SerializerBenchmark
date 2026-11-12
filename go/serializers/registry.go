@@ -28,6 +28,7 @@ func All() []BenchSerializer {
 		newGldKiln(),
 		// Text document formats
 		newGoccyYAML(),
+		newToonGo(),
 		newPelletierTOML(),
 		// Schema / IDL
 		newGoogleProtobuf(),

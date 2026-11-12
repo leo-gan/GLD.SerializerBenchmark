@@ -33,18 +33,18 @@ Compare 400+ serialization libraries across **14 languages**.
 ## Supported languages
 
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 21 serializers
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 52
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 56
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 40
 - [Fortran](https://leo-gan.github.io/GLD.SerializerBenchmark/fortran/) — 9
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 34
-- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 27
-- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 32
-- [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 32
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 35
+- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 30
+- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 34
+- [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 34
 - [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 21
-- [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
-- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 34
-- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 30
-- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 21
+- [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 18
+- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 37
+- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 33
+- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 23
 - [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 17
 
 ---

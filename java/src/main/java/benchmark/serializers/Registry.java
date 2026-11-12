@@ -33,6 +33,8 @@ public final class Registry {
           new Entry("gld-kiln", KilnSer::new),
           new Entry("bson", BsonSer::new),
           new Entry("jackson-yaml", JacksonYamlSer::new),
+          new Entry("jtoon", JToonSer::new),
+          new Entry("json-io", JsonIoToonSer::new),
           // Schema
           new Entry("protobuf", ProtobufSer::new),
           new Entry("avro", AvroSer::new),

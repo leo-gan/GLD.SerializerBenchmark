@@ -31,7 +31,7 @@ This is the spec-quality counterpart to run-all-benchmarks.sh: same libraries,
 cited RFC/spec sections, no timings.
 
 OPTIONS:
-    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile amf0 amf3 kiln
+    -f, --format NAME     Limit to a format (repeatable): json yaml toml toon cbor msgpack protobuf avro bson flatbuffers ion ubjson smile amf0 amf3 kiln
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
     -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c fortran
     -d, --detailed        Print every case, not only the summary and failures
@@ -205,7 +205,8 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
     echo ""
     echo -e "${BLUE}csharp compliance…${NC}"
     CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net10.0/GLD.SerializerBenchmark.dll"
-    if [[ ! -f "$CS_DLL" ]]; then
+    # A DLL left from an earlier run hides a new adapter. Rebuild when sources are newer.
+    if [[ ! -f "$CS_DLL" ]] || find "$PROJECT_ROOT/c-sharp/src" -name '*.cs' -newer "$CS_DLL" | grep -q .; then
         (cd "$PROJECT_ROOT/c-sharp/src" && dotnet build -c Release --nologo -v q) || true
     fi
     CS_PART="$LOG_DIR/csharp-parts"
@@ -214,7 +215,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
         "System.Text.Json" "Json.Net" "Json.Net (Helper)" "SpanJson" "Utf8Json" "NetJSON"
         "ShapeShift.Json" "ShapeShift.Cbor" "ShapeShift.MsgPack" "ShapeShift.Toml" "ShapeShift.Yaml"
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
-        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
+        "YamlDotNet" "Toon.Format" "ToonNet" "Corvus.Toon" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
         "arrow-ipc" "parquet" "parquet-uncompressed" "PureHDF"
     )

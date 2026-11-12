@@ -46,6 +46,15 @@ standards:
       YAML's indentation rules. Typical uses are tool settings and package
       manifests, such as Cargo.toml and pyproject.toml.
 
+  toon:
+    label: TOON
+    explanation: >-
+      TOON (Token-Oriented Object Notation) is a text encoding of the JSON
+      data model. It was created so a prompt could carry the same objects,
+      arrays, and primitives as JSON in fewer tokens. Typical uses are LLM
+      prompts and other text where a tokenizer is the cost. The document is
+      UTF-8. A token count is a separate measure from the byte length.
+
   cbor:
     label: CBOR
     explanation: >-

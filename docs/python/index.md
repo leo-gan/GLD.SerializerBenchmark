@@ -92,6 +92,9 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | [rapidjson](https://github.com/python-rapidjson/python-rapidjson) | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
 | [serpyco-rs](https://github.com/opengovsg/serpyco-rs) | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
 | [yaml](https://github.com/yaml/pyyaml) | Text | `pyyaml` | dict | text_on_stream | `safe_dump` / `safe_load` |
+| [toon-format](https://github.com/toon-format/toon-python) | Text | `toon-format` | dict | adapted | Official TOON. UTF-8 bytes, not a token count |
+| [toons](https://github.com/alesanfra/toons) | Text | `toons` | dict | adapted | TOON with a Rust core. UTF-8 bytes |
+| [ctoon](https://github.com/MohammadRaziei/ctoon) | Text | `ctoon` | dict | adapted | C99 core. Size is UTF-8 bytes |
 
 ### Specifics
 
@@ -220,6 +223,18 @@ serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The probl
 #### [yaml](https://github.com/yaml/pyyaml)
 
 PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load.
+
+#### [toon-format](https://github.com/toon-format/toon-python)
+
+toon-format is the official Python codec for TOON, a text encoding of the JSON data model made so prompts can carry the same values in fewer tokens. The timed path is encode and decode. The Size column is the UTF-8 byte length. A token count is a separate measure and is not timed.
+
+#### [toons](https://github.com/alesanfra/toons)
+
+toons is a Python TOON codec whose core is Rust. It speaks the same JSON data model through loads and dumps. The timed path is that text. The Size column is the UTF-8 byte length, not a token count.
+
+#### [ctoon](https://github.com/MohammadRaziei/ctoon)
+
+ctoon is a C99 TOON core. This row is the Python binding. The timed path is dumps and loads. The Size column is the UTF-8 byte length.
 
 
 ### Call-path contract (fair timing)

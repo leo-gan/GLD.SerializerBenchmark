@@ -145,14 +145,14 @@ mod tests {
                 .iter()
                 .filter(|s| serializer_selected(s.name(), None))
                 .count(),
-            30
+            33
         );
         assert_eq!(
             all_serializers()
                 .iter()
                 .filter(|s| serializer_selected(s.name(), Some(" , ")))
                 .count(),
-            30
+            33
         );
     }
 }

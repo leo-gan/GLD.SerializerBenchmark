@@ -35,6 +35,7 @@ import (
 	amf0 "github.com/yutopp/go-amf0"
 	goccyjson "github.com/goccy/go-json"
 	goccyyaml "github.com/goccy/go-yaml"
+	toongo "github.com/toon-format/toon-go"
 	hambaavro "github.com/hamba/avro/v2"
 	jsoniter "github.com/json-iterator/go"
 	goavro "github.com/linkedin/goavro/v2"
@@ -376,6 +377,9 @@ func builtin() []adapter {
 		{"segmentio/encoding/json", "json", moduleVer("github.com/segmentio/encoding"), jsonDec(segmentiojson.Unmarshal)},
 		{"ugorji/json", "json", moduleVer("github.com/ugorji/go/codec"), ugorjiJSON},
 		{"goccy/go-yaml", "yaml", moduleVer("github.com/goccy/go-yaml"), jsonDec(goccyyaml.Unmarshal)},
+		{"toon-go", "toon", moduleVer("github.com/toon-format/toon-go"), func(b []byte, _ string) (any, error) {
+			return toongo.Decode(b)
+		}},
 		{"pelletier/go-toml", "toml", moduleVer("github.com/pelletier/go-toml/v2"), jsonDec(toml.Unmarshal)},
 		{"fxamacker/cbor", "cbor", moduleVer("github.com/fxamacker/cbor/v2"), jsonDec(cbor.Unmarshal)},
 		{"ugorji/cbor", "cbor", moduleVer("github.com/ugorji/go/codec"), ugorjiCBOR},

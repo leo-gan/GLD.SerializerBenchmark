@@ -45,6 +45,7 @@ The catalog covers every standard in this table.
 | Smile | 1.0, 1.0 shared names, 1.0.4 | `newsmile` |
 | Thrift | binary, compact | (catalog; Python adapter not wired) |
 | TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
+| TOON | 4.4 | `toon-format` |
 | UBJSON | Draft 8, Draft 9, Draft 12 | `py-ubjson` |
 | YAML | 1.1, 1.2, 1.2.2 | PyYAML `safe_load` |
 | ZON | 1 | (catalog) |

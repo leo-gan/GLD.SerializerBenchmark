@@ -1,5 +1,6 @@
 import Foundation
 import IkigaJSON
+import ToonFormat
 import Yams
 import SwiftCbor
 import SwiftMsgpack
@@ -12,6 +13,58 @@ import Ion
 import TOML
 
 enum PBError: Error { case truncated, badWire, badJSON, badType }
+
+/// Any JSON value, so a TOON document is accepted only when the decoder can read it.
+enum ToonJSON: Decodable {
+    case null
+    case bool(Bool)
+    case number(Double)
+    case string(String)
+    case array([ToonJSON])
+    case object([String: ToonJSON])
+
+    init(from decoder: Swift.Decoder) throws {
+        if let keyed = try? decoder.container(keyedBy: ToonKey.self), keyed.allKeys.count > 0 {
+            var obj: [String: ToonJSON] = [:]
+            for key in keyed.allKeys {
+                obj[key.stringValue] = try keyed.decode(ToonJSON.self, forKey: key)
+            }
+            self = .object(obj)
+            return
+        }
+        if var unkeyed = try? decoder.unkeyedContainer() {
+            var items: [ToonJSON] = []
+            while !unkeyed.isAtEnd {
+                items.append(try unkeyed.decode(ToonJSON.self))
+            }
+            self = .array(items)
+            return
+        }
+        let single = try decoder.singleValueContainer()
+        if single.decodeNil() {
+            self = .null
+        } else if let value = try? single.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? single.decode(Double.self) {
+            self = .number(value)
+        } else if let value = try? single.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? single.decode([ToonJSON].self) {
+            self = .array(value)
+        } else if let value = try? single.decode([String: ToonJSON].self) {
+            self = .object(value)
+        } else {
+            throw DecodingError.dataCorruptedError(in: single, debugDescription: "TOON value")
+        }
+    }
+}
+
+private struct ToonKey: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+    init?(stringValue: String) { self.stringValue = stringValue }
+    init?(intValue: Int) { self.stringValue = String(intValue); self.intValue = intValue }
+}
 
 func pbVarint(_ data: Data, _ i: inout Int) throws -> UInt64 {
     var r: UInt64 = 0
@@ -324,6 +377,9 @@ func adapters() -> [Adapter] {
             let text = String(data: data, encoding: .utf8) ?? ""
             guard let node = try Parser(yaml: text).singleRoot() else { throw PBError.truncated }
             return node
+        },
+        Adapter(name: "ToonFormat", format: "toon") { data, _ in
+            try TOONDecoder().decode(ToonJSON.self, from: data)
         },
         Adapter(name: "SwiftCbor", format: "cbor") { data, _ in
             // CborDecoder SIGILLs on truncated additional-info; walk first.

@@ -16,6 +16,7 @@ public func allSerializers() -> [any BenchSerializer] {
         SwiftBSONSerializer(),
         // Text document formats
         YamsSerializer(),
+        ToonFormatSerializer(),
         XMLCoderSerializer(),
         TOMLSerializer(),
         // Schema / IDL

@@ -39,6 +39,9 @@ dependencies = [
     "h5py>=3.16,<4",
     "netCDF4>=1.7,<2",
     "adios2>=2.10,<3",
+    "toon-format>=1.2,<2",
+    "toons>=0.9,<1",
+    "ctoon>=0.9,<2",
 ]
 
 [project.optional-dependencies]

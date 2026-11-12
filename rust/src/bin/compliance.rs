@@ -171,6 +171,29 @@ fn input_bytes(c: &Value) -> Result<Vec<u8>> {
     Ok(input.as_bytes().to_vec())
 }
 
+fn ctoon_value_to_json(v: &ctoon::Value) -> serde_json::Value {
+    match v {
+        ctoon::Value::Null => serde_json::Value::Null,
+        ctoon::Value::Bool(b) => serde_json::Value::Bool(*b),
+        ctoon::Value::Uint(n) => serde_json::Value::Number((*n).into()),
+        ctoon::Value::Sint(n) => serde_json::Value::Number((*n).into()),
+        ctoon::Value::Real(n) => serde_json::Number::from_f64(*n)
+            .map(serde_json::Value::Number)
+            .unwrap_or(serde_json::Value::Null),
+        ctoon::Value::Str(s) => serde_json::Value::String(s.clone()),
+        ctoon::Value::Array(items) => {
+            serde_json::Value::Array(items.iter().map(ctoon_value_to_json).collect())
+        }
+        ctoon::Value::Object(fields) => {
+            let mut map = serde_json::Map::new();
+            for (k, child) in fields {
+                map.insert(k.clone(), ctoon_value_to_json(child));
+            }
+            serde_json::Value::Object(map)
+        }
+    }
+}
+
 fn too_deep(b: &[u8]) -> bool {
     b.len() > 200_000 || b.iter().filter(|&&c| c == b'[' || c == b'{').count() > 4_000
 }
@@ -222,6 +245,36 @@ fn builtin() -> Vec<Adapter> {
             decode: |b, _| {
                 let v: serde_json::Value = serde_yaml::from_slice(b)?;
                 Ok(v)
+            },
+        },
+        Adapter {
+            name: "toon-format",
+            format: "toon",
+            version: crate_version("toon-format").to_string(),
+            decode: |b, _| {
+                let text = std::str::from_utf8(b)?;
+                let v: serde_json::Value = toon_format::decode_default(text)?;
+                Ok(v)
+            },
+        },
+        Adapter {
+            name: "ctoon",
+            format: "toon",
+            version: crate_version("ctoon").to_string(),
+            decode: |b, _| {
+                let text = std::str::from_utf8(b)?;
+                let value = ctoon::loads(text).map_err(|e| anyhow::anyhow!("{e}"))?;
+                Ok(ctoon_value_to_json(&value))
+            },
+        },
+        Adapter {
+            name: "tru",
+            format: "toon",
+            version: crate_version("tru").to_string(),
+            decode: |b, _| {
+                let text = std::str::from_utf8(b)?;
+                let parsed = toon::try_decode(text, None).map_err(|e| anyhow::anyhow!("{e}"))?;
+                Ok(serde_json::Value::from(parsed))
             },
         },
         Adapter {

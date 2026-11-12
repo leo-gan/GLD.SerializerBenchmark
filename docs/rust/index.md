@@ -84,6 +84,9 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [simd-json](https://github.com/simd-lite/simd-json) | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
 | [sonic-rs](https://github.com/cloudwego/sonic-rs) | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
 | [speedy](https://github.com/koute/speedy) | Binary | `speedy` | `Writable`/`Readable` | adapted | Fast binary framework |
+| [toon-format](https://github.com/toon-format/toon-rust) | Text | `toon-format` | Serde `encode_default` / `decode_default` | adapted | TOON text. Size is UTF-8 bytes |
+| [ctoon](https://github.com/MohammadRaziei/ctoon) | Text | `ctoon` | `dumps` / `loads` | adapted | C99 core. Size is UTF-8 bytes |
+| [tru](https://github.com/Dicklesworthstone/toon_rust) | Text | `tru` | `encode` / `try_decode` | adapted | Size is UTF-8 bytes |
 
 ### Specifics
 
@@ -200,6 +203,18 @@ sonic-rs is a SIMD-oriented JSON library for Rust, in the same family as ByteDan
 #### [speedy](https://github.com/koute/speedy)
 
 speedy is a fast binary framework for Rust with its own Writable/Readable traits. It was written to beat generic serde binaries on the encode/decode hot path.
+
+#### [toon-format](https://github.com/toon-format/toon-rust)
+
+toon-format is the official Rust codec for TOON, with Serde. The timed path is encode_default and decode_default of the suite value. The stream path writes that UTF-8 buffer. The Size column is the byte length, not a token count.
+
+#### [ctoon](https://github.com/MohammadRaziei/ctoon)
+
+ctoon is the Rust binding over the C99 TOON core. The crate has no Serde layer. The timed path builds that value tree and calls dumps and loads. The Size column is the UTF-8 byte length.
+
+#### [tru](https://github.com/Dicklesworthstone/toon_rust)
+
+tru is the published crate for Dicklesworthstone's TOON codec. The library name is toon. The timed path is encode and try_decode of the JSON value. The Size column is the UTF-8 byte length.
 
 
 ### Call-path contract (same idea as Python)

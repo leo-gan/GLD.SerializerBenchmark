@@ -1,4 +1,5 @@
 import Foundation
+import ToonFormat
 import Yams
 import XMLCoder
 
@@ -27,6 +28,34 @@ public final class YamsSerializer: CodableBenchSerializer {
                     let s = try encoder.encode(v)
                     return Data(s.utf8)
                 }
+            },
+            decoder: box
+        )
+    }
+}
+
+// MARK: - ToonFormat (TOON)
+// Official Swift codec, specification 4.1. UTF-8 encode/decode. Size is bytes.
+// https://github.com/toon-format/toon-swift
+
+private final class ToonDecoderBox: Fixture.GenericDecoder {
+    let decoder = TOONDecoder()
+    func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        try decoder.decode(type, from: data)
+    }
+}
+
+public final class ToonFormatSerializer: CodableBenchSerializer {
+    public init() {
+        let encoder = TOONEncoder()
+        let box = ToonDecoderBox()
+        let ver = PackageVersions.version(for: "toon-swift", fallback: "0.5.1")
+        super.init(
+            name: "ToonFormat",
+            version: ver,
+            streamMode: .adapted,
+            encode: { value in
+                try encodeOpened(value) { try encoder.encode($0) }
             },
             decoder: box
         )

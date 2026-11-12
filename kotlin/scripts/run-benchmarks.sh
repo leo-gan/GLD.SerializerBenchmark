@@ -46,7 +46,8 @@ fi
 
 "$GRADLEW" -q shadowJar -x test
 
-JAR="$KOTLIN_DIR/build/libs/serializer-benchmark-kotlin-1.0.0-SNAPSHOT.jar"
+# shadowJar writes *-all.jar. The plain jar has no Main-Class.
+JAR="$(ls -1 "$KOTLIN_DIR"/build/libs/serializer-benchmark-kotlin-*-all.jar 2>/dev/null | head -1 || true)"
 if [[ ! -f "$JAR" ]]; then
   JAR="$(ls -1 "$KOTLIN_DIR"/build/libs/serializer-benchmark-kotlin-*.jar 2>/dev/null | grep -v -E 'plain|sources|javadoc' | head -1 || true)"
 fi

@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (28)
+## Serializers (30)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -26,6 +26,8 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | protobuf | Schema | protobuf-java | Timed `toByteArray`/`parseFrom`; domain convert untimed |
 | avro | Schema | avro | ReflectDatumWriter/Reader + BinaryEncoder reuse |
 | jackson-yaml | YAML | jackson-dataformat-yaml | `YAMLFactory` typed writer/reader |
+| jtoon | Text | jtoon | `JToon.encode` / `JToon.decode`. Tree-to-domain is untimed. Size is UTF-8 bytes |
+| json-io | Text | json-io | `JsonIo.toToon` / `fromToon`. Tree-to-domain is untimed. Size is UTF-8 bytes |
 | flatbuffers | Schema | flatbuffers-java | Generated tables for the original five ids; columnar types are hand-built |
 | capnproto | Schema | capnproto runtime | Adapted stream over the bytes path |
 | arrow-ipc | Columnar | arrow-vector | IPC stream bytes. Schema in `prepare`. Row-to-column inside timed `serializeBytes`. `table_project` loads `f_float_0` only |

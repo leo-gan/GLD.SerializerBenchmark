@@ -130,6 +130,11 @@ function builtinAdapters(): array
             return \Symfony\Component\Yaml\Yaml::parse($b);
         }];
     }
+    if (class_exists(\HelgeSverre\Toon\Toon::class)) {
+        $out[] = ['name' => 'toon', 'format' => 'toon', 'version' => \Composer\InstalledVersions::getPrettyVersion('helgesverre/toon') ?: 'helgesverre/toon', 'decode' => function (string $b) {
+            return \HelgeSverre\Toon\Toon::decode($b, new \HelgeSverre\Toon\DecodeOptions(version: \HelgeSverre\Toon\SpecVersion::V4_4));
+        }];
+    }
     if (class_exists(\MessagePack\MessagePack::class)) {
         $out[] = ['name' => 'rybakit-msgpack', 'format' => 'msgpack', 'version' => '', 'decode' => function (string $b) {
             return \MessagePack\MessagePack::unpack($b);

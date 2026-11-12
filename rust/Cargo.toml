@@ -58,6 +58,9 @@ parquet = "=60.1.0"
 benchmark_v2 = { path = "gen/sbe" }
 # HDF5 array rows. System libhdf5 via pkg-config. No extra compression features.
 hdf5-metno = "0.15"
+toon-format = { version = "0.7.0", default-features = false }
+ctoon = { version = "0.9.0", default-features = false }
+tru = { version = "0.2.5", default-features = false }
 
 [build-dependencies]
 prost-build = "0.13"

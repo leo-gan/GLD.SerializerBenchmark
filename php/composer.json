@@ -19,6 +19,7 @@
     "ext-zlib": "*",
     "flix-tech/avro-php": "^5.1",
     "google/protobuf": "^4.29",
+    "helgesverre/toon": "^3.0",
     "jms/serializer": "^3.32",
     "leo-gan/gld-arrow-php": "0.2.0",
     "leo-gan/gld-ion-php": "0.2.0",

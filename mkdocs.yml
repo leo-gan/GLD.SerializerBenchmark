@@ -263,6 +263,7 @@ nav:
       - Smile: compliance/smile.md
       - Thrift: compliance/thrift.md
       - TOML: compliance/toml.md
+      - TOON: compliance/toon.md
       - UBJSON: compliance/ubjson.md
       - YAML: compliance/yaml.md
       - ZON: compliance/zon.md

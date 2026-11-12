@@ -16,7 +16,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 |----------|--------|--------------------|-----------|-----------------|------------|
 | go | ok | `goccy/go-json`, `protobuf` | — | `goccy/go-json`, `protobuf` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter`, `protobuf` | [java/results.md](java/results.md) |
-| kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
+| kotlin | ok | `moshi-codegen` | `protobuf` | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 | zig | ok | `flatbuffers` | `serde.msgpack` | `flatbuffers`, `serde.msgpack`, `protobuf` | [zig/results.md](zig/results.md) |
@@ -32,10 +32,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| goccy/go-json | 4.49 | 448 | JSON | fastest |
-| protobuf | 4.68 | 155 | Protocol Buffers | similar |
-| vmihailenco/msgpack | 7.09 | 405 | MessagePack | slower |
-| encoding/json | 9.01 | 448 | JSON — stdlib | slower |
+| goccy/go-json | 4.82 | 448 | JSON | fastest |
+| protobuf | 4.98 | 155 | Protocol Buffers | similar |
+| vmihailenco/msgpack | 7.51 | 405 | MessagePack | slower |
+| encoding/json | 9.29 | 448 | JSON — stdlib | slower |
 
 ### java
 
@@ -43,10 +43,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| jsoniter | 45.0 | 440 | JSON | fastest |
-| protobuf | 61.2 | 155 | Protocol Buffers | slower |
-| jackson | 105 | 440 | JSON — common default | slower |
-| msgpack | 128 | 317 | MessagePack | slower |
+| jsoniter | 53.5 | 440 | JSON | fastest |
+| protobuf | 101 | 155 | Protocol Buffers | slower |
+| jackson | 108 | 440 | JSON — common default | slower |
+| msgpack | 131 | 317 | MessagePack | slower |
 
 ### kotlin
 
@@ -54,10 +54,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| moshi-codegen | 50.2 | 440 | JSON | fastest |
-| protobuf | 68.7 | 155 | Protocol Buffers | slower |
-| jackson | 156 | 440 | JSON — common default | slower |
-| msgpack | 181 | 317 | MessagePack | slower |
+| moshi-codegen | 60.4 | 440 | JSON | fastest |
+| protobuf | 68.9 | 155 | Protocol Buffers | close |
+| jackson | 194 | 440 | JSON — common default | slower |
+| msgpack | 199 | 317 | MessagePack | slower |
 
 ### php
 
@@ -65,9 +65,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| json | 6.64 | 454 | JSON | fastest |
-| rybakit-msgpack | 22.3 | 335 | MessagePack | slower |
-| protobuf | 204 | 160 | Protocol Buffers | slower |
+| json | 6.39 | 454 | JSON | fastest |
+| rybakit-msgpack | 22.4 | 335 | MessagePack | slower |
+| protobuf | 205 | 160 | Protocol Buffers | slower |
 
 ### cpp
 

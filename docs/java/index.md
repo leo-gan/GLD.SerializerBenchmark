@@ -5,7 +5,7 @@ title: "Java"
 Java
 ====
 
-Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON, Kiln), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **28** serializers.
+Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON, Kiln), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **30** serializers.
 
 ## Runtime
 
@@ -79,6 +79,8 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 | [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
 | [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
 | [jackson-yaml](https://github.com/FasterXML/jackson-dataformats-text) | YAML | jackson-dataformat-yaml | YAMLFactory | native | Jackson YAML |
+| [jtoon](https://github.com/toon-format/toon-java) | Text | jtoon | `JToon.encode` / `decode` | adapted | Decode returns a JSON tree. `toDomain` is untimed. Size is UTF-8 bytes |
+| [json-io](https://github.com/jdereg/json-io) | Text | json-io | `toToon` / `fromToon` | adapted | `toDomain` is untimed. Size is UTF-8 bytes |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers-java | FlatBufferBuilder | adapted | Generated tables for the original five ids. Columnar types are hand-built in Java |
 | [capnproto](https://github.com/capnproto/capnproto-java) | Schema | runtime | message builder | adapted | Bytes path copied to the stream |
 | [arrow-ipc](https://arrow.apache.org/docs/java/) | Columnar | arrow-vector | ArrowStreamWriter | adapted | IPC stream bytes, not the Arrow file format. `table_project` loads `f_float_0` only |
@@ -171,6 +173,14 @@ protostuff was created to serialize Java objects with protobuf-like efficiency w
 #### [jackson-yaml](https://github.com/FasterXML/jackson-dataformats-text)
 
 Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's YAML mapper.
+
+#### [jtoon](https://github.com/toon-format/toon-java)
+
+jtoon is the official Java codec for TOON. JToon.encode writes the text. JToon.decode returns a JSON tree, and the untimed toDomain step turns that tree into the suite type. The Size column is the UTF-8 byte length.
+
+#### [json-io](https://github.com/jdereg/json-io)
+
+json-io writes TOON with toToon and reads it with fromToon. This row turns strictToon on. The untimed toDomain step turns the decoded tree into the suite type. The Size column is the UTF-8 byte length.
 
 #### [flatbuffers](https://github.com/google/flatbuffers)
 

@@ -435,6 +435,22 @@ export const CATALOG = [
   { language: "cpp", name: "dagr-regular", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "cpp", name: "dagr-frozen", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
   { language: "cpp", name: "dagr-frozen-packed", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "python", name: "toon-format", formats: ["toon"], docs: "https://github.com/toon-format/toon-python", evidence: "Official Python TOON codec. encode and decode are aliases of dumps and loads." },
+  { language: "python", name: "toons", formats: ["toon"], docs: "https://github.com/alesanfra/toons", evidence: "toons: Python TOON codec with a Rust core. loads and dumps follow the json module." },
+  { language: "javascript", name: "toon", formats: ["toon"], docs: "https://github.com/toon-format/toon", evidence: "@toon-format/toon: official TypeScript encode and decode." },
+  { language: "go", name: "toon-go", formats: ["toon"], docs: "https://github.com/toon-format/toon-go", evidence: "toon-go: Marshal and Unmarshal. Struct fields use toon tags, then json tags." },
+  { language: "rust", name: "toon-format", formats: ["toon"], docs: "https://github.com/toon-format/toon-rust", evidence: "toon-format: TOON for Serde. encode_default and decode_default." },
+  { language: "csharp", name: "Toon.Format", formats: ["toon"], docs: "https://github.com/toon-format/toon-dotnet", evidence: "Toon.Format: EncodeToBytes and Decode of UTF-8 TOON. Decode of a type goes through System.Text.Json." },
+  { language: "java", name: "jtoon", formats: ["toon"], docs: "https://github.com/toon-format/toon-java", evidence: "jtoon: JToon.encode and JToon.decode. Decode returns a JSON tree." },
+  { language: "kotlin", name: "ktoon", formats: ["toon"], docs: "https://github.com/lukelast/ktoon", evidence: "ktoon: kotlinx.serialization TOON format. No official Kotlin port is published." },
+  { language: "php", name: "toon", formats: ["toon"], docs: "https://github.com/HelgeSverre/toon-php", evidence: "helgesverre/toon. This row selects specification 4.4. The package default is 3.3." },
+  { language: "swift", name: "ToonFormat", formats: ["toon"], docs: "https://github.com/toon-format/toon-swift", evidence: "ToonFormat: TOONEncoder and TOONDecoder. The 0.5 line targets specification 4.1." },
+  { language: "python", name: "ctoon", formats: ["toon"], docs: "https://github.com/MohammadRaziei/ctoon", evidence: "ctoon Python binding. dumps and loads over the C99 core." },
+  { language: "rust", name: "ctoon", formats: ["toon"], docs: "https://github.com/MohammadRaziei/ctoon", evidence: "ctoon Rust binding. dumps and loads of the C99 value tree." },
+  { language: "rust", name: "tru", formats: ["toon"], docs: "https://github.com/Dicklesworthstone/toon_rust", evidence: "tru: encode and try_decode. The library name inside the crate is toon." },
+  { language: "csharp", name: "ToonNet", formats: ["toon"], docs: "https://github.com/selcukgural/ToonNet", evidence: "ToonNet.Core: Serialize and Deserialize of a type." },
+  { language: "csharp", name: "Corvus.Toon", formats: ["toon"], docs: "https://github.com/corvus-dotnet/Corvus.JsonSchema", evidence: "Corvus.Toon.SystemTextJson: ConvertToToonString and ConvertToJsonString." },
+  { language: "java", name: "json-io", formats: ["toon"], docs: "https://github.com/jdereg/json-io", evidence: "json-io: JsonIo.toToon and JsonIo.fromToon. Decode returns a JSON tree." },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

@@ -128,6 +128,24 @@ def _yaml_decode(data: bytes) -> Any:
     return yaml.safe_load(data)
 
 
+def _toon_format_decode(data: bytes) -> Any:
+    from toon_format import decode
+
+    return decode(data.decode("utf-8"))
+
+
+def _toons_decode(data: bytes) -> Any:
+    import toons
+
+    return toons.loads(data.decode("utf-8"))
+
+
+def _ctoon_decode(data: bytes) -> Any:
+    import ctoon
+
+    return ctoon.loads(data.decode("utf-8"))
+
+
 def _yaml_encode(obj: Any) -> bytes:
     import yaml
 
@@ -421,6 +439,9 @@ def builtin_adapters() -> list[Adapter]:
         ("mashumaro", "json", _mashumaro_decode, None, "mashumaro ORJSONDecoder(Any)", "mashumaro"),
         ("serpyco-rs", "json", _serpyco_decode, None, "orjson wire + serpyco-rs Serializer(dict)", "serpyco-rs"),
         ("yaml", "yaml", _yaml_decode, _yaml_encode, "PyYAML safe_load (YAML 1.1)", "PyYAML"),
+        ("toon-format", "toon", _toon_format_decode, None, "toon_format.decode", "toon-format"),
+        ("toons", "toon", _toons_decode, None, "toons.loads", "toons"),
+        ("ctoon", "toon", _ctoon_decode, None, "ctoon.loads", "ctoon"),
         ("tomllib", "toml", _toml_decode, None, "Python 3.11+ tomllib (TOML 1.0)", "stdlib"),
         ("cbor2", "cbor", _cbor2_decode, _cbor2_encode, "cbor2", "cbor2"),
         ("msgpack", "msgpack", _msgpack_decode, _msgpack_encode, "msgpack (use_bin_type=True)", "msgpack"),

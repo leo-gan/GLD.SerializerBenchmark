@@ -23,6 +23,7 @@ from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
 from .schema_dagr import DagrSerializer
 from .human_yaml import PyYamlSerializer
+from .human_toon import CtoonSerializer, ToonFormatSerializer, ToonsSerializer
 from .native_pickle import PickleSerializer
 from .native_fory import ForySerializer
 from .native_cloudpickle import CloudpickleSerializer
@@ -50,6 +51,9 @@ __all__ = [
     "FlatBuffersSerializer",
     "DagrSerializer",
     "PyYamlSerializer",
+    "ToonFormatSerializer",
+    "ToonsSerializer",
+    "CtoonSerializer",
     "PickleSerializer",
     "ForySerializer",
     "CloudpickleSerializer",

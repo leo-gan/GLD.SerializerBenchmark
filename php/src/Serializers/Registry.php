@@ -22,6 +22,7 @@ final class Registry
             new CborSer(),
             new AvroSer(),
             new YamlSer(),
+            new ToonSer(),
             new YamlPeclSer(),
             new SimdjsonSer(),
             new BsonSer(),

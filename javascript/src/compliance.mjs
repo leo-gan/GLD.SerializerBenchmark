@@ -12,6 +12,7 @@ import { toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
 import { tableFromIPC } from 'apache-arrow';
 import { parquetReadObjects } from 'hyparquet';
 import h5wasm from 'h5wasm';
+import { decode as decodeToon } from '@toon-format/toon';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -225,6 +226,7 @@ function makeAdapters() {
     const yaml = require('js-yaml');
     add('js-yaml', 'yaml', (buf) => yaml.load(buf.toString('utf8')), 'js-yaml load', 'js-yaml');
   } catch { /* optional */ }
+  add('toon', 'toon', (buf) => decodeToon(buf.toString('utf8')), '@toon-format/toon decode', '@toon-format/toon');
   try {
     const { Decoder } = require('cbor-x');
     const dec = new Decoder();

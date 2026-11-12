@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b5e090cd9d434a64f48d918b70f1a34",
+    "content-hash": "0a0cc68b6c6cd55265f3d21c7e4aabd5",
     "packages": [
         {
             "name": "brick/math",
@@ -297,6 +297,72 @@
                 "source": "https://github.com/protocolbuffers/protobuf-php/tree/v4.33.6"
             },
             "time": "2026-03-18T17:32:05+00:00"
+        },
+        {
+            "name": "helgesverre/toon",
+            "version": "v3.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/HelgeSverre/toon-php.git",
+                "reference": "6c9163b174fb77f31e64bd9840d428b6691964fc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/HelgeSverre/toon-php/zipball/6c9163b174fb77f31e64bd9840d428b6691964fc",
+                "reference": "6c9163b174fb77f31e64bd9840d428b6691964fc",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "infection/infection": "*",
+                "laravel/pint": "1.20.0",
+                "phpbench/phpbench": "^1.4",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "HelgeSverre\\Toon\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Helge Sverre",
+                    "email": "helge.sverre@gmail.com"
+                }
+            ],
+            "description": "Token-Oriented Object Notation - A compact data format for reducing token consumption when sending structured data to LLMs",
+            "keywords": [
+                "ai",
+                "anthropic",
+                "claude",
+                "compression",
+                "cost-reduction",
+                "format",
+                "gpt",
+                "laravel",
+                "llm",
+                "openai",
+                "optimization",
+                "prompt",
+                "serialization",
+                "token"
+            ],
+            "support": {
+                "issues": "https://github.com/HelgeSverre/toon-php/issues",
+                "source": "https://github.com/HelgeSverre/toon-php/tree/v3.3.0"
+            },
+            "time": "2026-11-06T13:07:31+00:00"
         },
         {
             "name": "jms/metadata",

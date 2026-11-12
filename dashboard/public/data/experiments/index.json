@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-11-12T19:24:51Z",
+  "generated_at": "2026-11-12T23:40:44Z",
   "count": 4,
   "with_results": 4,
   "experiments": [
@@ -756,7 +756,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-sensor-list-size.json.gz",
-      "generated_at": "2026-11-12T19:23:14Z",
+      "generated_at": "2026-11-12T23:37:23Z",
       "sample": {
         "kind": "telemetry",
         "n": 1
@@ -793,7 +793,7 @@
           "rows": 36
         }
       ],
-      "source_bytes": 182806
+      "source_bytes": 183041
     },
     {
       "id": "02-compression-size",
@@ -980,7 +980,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-compression-size.json.gz",
-      "generated_at": "2026-11-12T19:23:26Z",
+      "generated_at": "2026-11-12T23:39:26Z",
       "sample": {
         "kind": [
           "strings",
@@ -1061,7 +1061,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 158631
+      "source_bytes": 158629
     },
     {
       "id": "03-memory-vs-stream",
@@ -1106,7 +1106,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-memory-vs-stream.json.gz",
-      "generated_at": "2026-11-12T19:23:28Z",
+      "generated_at": "2026-11-12T23:39:03Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1148,7 +1148,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 38372
+      "source_bytes": 38420
     },
     {
       "id": "04-fortran-ffi-tax",

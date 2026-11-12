@@ -24,6 +24,7 @@
     "@jsonjoy.com/json-pack": "^18.28.0",
     "@msgpack/msgpack": "^3.0.0",
     "@timeleap/sia": "^2.3.0",
+    "@toon-format/toon": "^4.4.0",
     "amf-codec": "^1.4.1",
     "apache-arrow": "^21.2.0",
     "avsc": "^5.7.0",

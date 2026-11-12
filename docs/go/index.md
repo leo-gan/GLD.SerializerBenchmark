@@ -5,7 +5,7 @@ title: "Go"
 Go
 ===
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **32** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML, TOON), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **35** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
 
@@ -65,6 +65,7 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | [go-amf0](https://github.com/yutopp/go-amf0) | AMF0 | go-amf0 | reflection Encode/Decode | native | AMF0 objects and strict arrays |
 | [goccy/go-json](https://github.com/goccy/go-json) | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
+| [toon-go](https://github.com/toon-format/toon-go) | Text | toon-go | reused `Encoder.Marshal` / `Unmarshal` | adapted | TOON text. Size is UTF-8 bytes |
 | [hamba/avro](https://github.com/hamba/avro) | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
 | [ion-go](https://github.com/amazon-ion/ion-go) | Binary | ion-go | `MarshalBinary` / `Unmarshal` | **native** | Binary encoder stream; wire names are Go field names (no `ion` tags on the suite structs) |
 | [gld-kiln](https://github.com/leo-gan/gld-kiln-go) | Schema | gld-kiln-go | `Append` / `Decode` | **adapted** | Positional Kiln v2; schema once; buffer reused; five suite types |
@@ -127,13 +128,13 @@ Apache Fory (formerly Fury) was created for high-performance, cross-language ser
 
 fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values.
 
-#### [go-amf0](https://github.com/yutopp/go-amf0)
-
-go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an `Encoder` and calls `Encode` on the suite struct. Decode fills a new struct of the same type. The library does not implement AMF0 references, so a graph with a shared node is skipped.
-
 #### [gamf-amf0](https://github.com/gnolizuh/gamf)
 
 gamf is a second Go AMF codec. The AMF0 path is `Marshal`, shaped like `encoding/json`. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row. AMF0 and AMF3 stay separate standards so a later AMF3 library is not ranked with these AMF0 rows.
+
+#### [go-amf0](https://github.com/yutopp/go-amf0)
+
+go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an `Encoder` and calls `Encode` on the suite struct. Decode fills a new struct of the same type. The library does not implement AMF0 references, so a graph with a shared node is skipped.
 
 #### [goccy/go-json](https://github.com/goccy/go-json)
 
@@ -142,6 +143,10 @@ goccy/go-json was written as a faster drop-in for `encoding/json`. The problem w
 #### [goccy/go-yaml](https://github.com/goccy/go-yaml)
 
 goccy/go-yaml is a high-performance YAML 1.2 library for Go. The problem was that go-yaml v2/v3 was often the slow path in config-heavy services. It aims at a faster Marshal/Unmarshal.
+
+#### [toon-go](https://github.com/toon-format/toon-go)
+
+toon-go is the official Go codec for TOON. Struct fields use a toon tag and fall back to the json tag. The timed path reuses an Encoder and calls Marshal and Unmarshal. The stream path writes that buffer. The Size column is the UTF-8 byte length.
 
 #### [hamba/avro](https://github.com/hamba/avro)
 

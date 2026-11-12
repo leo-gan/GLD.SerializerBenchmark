@@ -22,9 +22,9 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | postcard | 91 | 286 | 1051 | 4128 | >128, >512 | postcard — compact Rust |
 | prost | 94 | 290 | 1054 | 4131 | >128, >512 | Protocol Buffers |
 | rmp-serde | 135 | 356 | 1216 | 4677 | >128, >512 | MessagePack |
-| sonic-rs | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — fast writer fast named JSON |
-| serde_json | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — usual Rust library |
 | ciborium | 135 | 355 | 1215 | 4677 | >128, >512 | CBOR |
+| serde_json | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — usual Rust library |
+| sonic-rs | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — fast writer fast named JSON |
 
 ### c
 
@@ -93,53 +93,53 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 ### rust
 
-**8 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
+**8 numbers** — not clearly slower: `gld-kiln`. Small gap: `postcard`.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.47 | 107 | fastest |
-| postcard | 0.56 | 91 | slower |
-| prost | 0.67 | 94 | slower |
-| rmp-serde | 1.02 | 135 | slower |
-| sonic-rs | 1.72 | 234 | slower |
-| serde_json | 1.74 | 234 | slower |
-| ciborium | 1.80 | 135 | slower |
+| gld-kiln | 0.83 | 107 | fastest |
+| postcard | 0.99 | 91 | close |
+| prost | 1.02 | 94 | slower |
+| rmp-serde | 1.83 | 135 | slower |
+| ciborium | 2.62 | 135 | slower |
+| serde_json | 2.78 | 234 | slower |
+| sonic-rs | 3.04 | 234 | slower |
 
 **32 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.48 | 302 | fastest |
-| postcard | 0.63 | 286 | slower |
-| prost | 0.90 | 290 | slower |
-| rmp-serde | 1.20 | 356 | slower |
-| ciborium | 2.23 | 355 | slower |
-| serde_json | 2.89 | 672 | slower |
-| sonic-rs | 3.00 | 672 | slower |
+| gld-kiln | 0.75 | 302 | fastest |
+| postcard | 0.95 | 286 | slower |
+| prost | 1.14 | 290 | slower |
+| rmp-serde | 1.93 | 356 | slower |
+| ciborium | 3.02 | 355 | slower |
+| sonic-rs | 4.01 | 672 | slower |
+| serde_json | 4.02 | 672 | slower |
 
 **128 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.55 | 1066 | fastest |
-| postcard | 0.90 | 1051 | slower |
-| prost | 1.29 | 1054 | slower |
-| rmp-serde | 1.67 | 1216 | slower |
-| ciborium | 3.95 | 1215 | slower |
-| serde_json | 6.55 | 2420 | slower |
-| sonic-rs | 7.55 | 2420 | slower |
+| gld-kiln | 0.85 | 1066 | fastest |
+| postcard | 1.23 | 1051 | slower |
+| prost | 1.59 | 1054 | slower |
+| rmp-serde | 2.40 | 1216 | slower |
+| ciborium | 4.69 | 1215 | slower |
+| serde_json | 9.16 | 2420 | slower |
+| sonic-rs | 9.37 | 2420 | slower |
 
 **512 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 1.08 | 4143 | fastest |
-| postcard | 2.09 | 4128 | slower |
-| prost | 2.84 | 4131 | slower |
-| rmp-serde | 3.88 | 4677 | slower |
-| ciborium | 11.6 | 4677 | slower |
-| serde_json | 22.9 | 9415 | slower |
-| sonic-rs | 27.5 | 9415 | slower |
+| gld-kiln | 1.11 | 4143 | fastest |
+| postcard | 2.16 | 4128 | slower |
+| prost | 2.92 | 4131 | slower |
+| rmp-serde | 4.40 | 4677 | slower |
+| ciborium | 12.1 | 4677 | slower |
+| serde_json | 28.5 | 9415 | slower |
+| sonic-rs | 29.3 | 9415 | slower |
 
 ### c
 
@@ -205,45 +205,45 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| moshi-codegen | 43.9 | 220 | fastest |
-| protobuf | 56.2 | 94 | close |
-| kotlinx-cbor | 67.8 | 127 | slower |
-| kotlinx-json | 93.1 | 220 | slower |
-| jackson-cbor | 123 | 125 | slower |
-| msgpack | 131 | 124 | slower |
+| moshi-codegen | 47.4 | 220 | fastest |
+| protobuf | 57.8 | 94 | close |
+| kotlinx-cbor | 78.7 | 127 | slower |
+| kotlinx-json | 116 | 220 | slower |
+| jackson-cbor | 141 | 125 | slower |
+| msgpack | 155 | 124 | slower |
 
 **32 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 30.0 | 291 | fastest |
-| moshi-codegen | 42.1 | 663 | slower |
-| kotlinx-cbor | 46.8 | 347 | slower |
-| jackson-cbor | 73.6 | 346 | slower |
-| kotlinx-json | 84.1 | 663 | slower |
-| msgpack | 89.6 | 346 | slower |
+| protobuf | 35.4 | 291 | fastest |
+| moshi-codegen | 46.0 | 663 | slower |
+| kotlinx-cbor | 51.7 | 347 | slower |
+| jackson-cbor | 87.3 | 346 | slower |
+| kotlinx-json | 89.5 | 663 | slower |
+| msgpack | 95.6 | 346 | slower |
 
 **128 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 25.4 | 1061 | fastest |
-| kotlinx-cbor | 34.9 | 1213 | slower |
-| jackson-cbor | 54.5 | 1212 | slower |
-| moshi-codegen | 55.5 | 2407 | slower |
-| msgpack | 58.4 | 1212 | slower |
-| kotlinx-json | 81.4 | 2407 | slower |
+| protobuf | 26.6 | 1061 | fastest |
+| kotlinx-cbor | 37.1 | 1213 | slower |
+| msgpack | 56.6 | 1212 | slower |
+| jackson-cbor | 57.8 | 1212 | slower |
+| moshi-codegen | 61.6 | 2407 | slower |
+| kotlinx-json | 92.2 | 2407 | slower |
 
 **512 numbers** — not clearly slower: `protobuf`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 21.0 | 4128 | fastest |
-| kotlinx-cbor | 51.5 | 4664 | slower |
-| jackson-cbor | 53.8 | 4664 | slower |
-| msgpack | 62.8 | 4663 | slower |
-| moshi-codegen | 168 | 9363 | slower |
-| kotlinx-json | 172 | 9363 | slower |
+| protobuf | 29.7 | 4128 | fastest |
+| kotlinx-cbor | 59.1 | 4664 | slower |
+| jackson-cbor | 67.8 | 4664 | slower |
+| msgpack | 69.2 | 4663 | slower |
+| kotlinx-json | 185 | 9363 | slower |
+| moshi-codegen | 187 | 9363 | slower |
 
 ### php
 
@@ -251,37 +251,37 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 8.07 | 217 | fastest |
-| rybakit-msgpack | 10.7 | 121 | slower |
-| cbor | 53.8 | 121 | slower |
-| protobuf | 65.8 | 91 | slower |
+| json | 8.31 | 217 | fastest |
+| rybakit-msgpack | 11.2 | 121 | slower |
+| cbor | 55.6 | 121 | slower |
+| protobuf | 68.4 | 91 | slower |
 
 **32 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 19.3 | 339 | fastest |
-| json | 23.1 | 654 | slower |
-| cbor | 95.1 | 338 | slower |
-| protobuf | 109 | 284 | slower |
+| rybakit-msgpack | 20.5 | 339 | fastest |
+| json | 24.9 | 654 | slower |
+| cbor | 101 | 338 | slower |
+| protobuf | 115 | 284 | slower |
 
 **128 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 50.8 | 1203 | fastest |
-| json | 86.0 | 2406 | slower |
-| cbor | 263 | 1202 | slower |
-| protobuf | 282 | 1052 | slower |
+| rybakit-msgpack | 53.3 | 1203 | fastest |
+| json | 87.9 | 2406 | slower |
+| cbor | 270 | 1202 | slower |
+| protobuf | 291 | 1052 | slower |
 
 **512 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 172 | 4659 | fastest |
-| json | 321 | 9380 | slower |
-| cbor | 901 | 4659 | slower |
-| protobuf | 946 | 4124 | slower |
+| rybakit-msgpack | 185 | 4659 | fastest |
+| json | 338 | 9380 | slower |
+| cbor | 948 | 4659 | slower |
+| protobuf | 1006 | 4124 | slower |
 
 ### zig
 

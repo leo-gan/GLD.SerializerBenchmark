@@ -128,6 +128,16 @@
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
+      <groupId>dev.toonformat</groupId>
+      <artifactId>jtoon</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.cedarsoftware</groupId>
+      <artifactId>json-io</artifactId>
+      <version>4.117.0</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.flatbuffers</groupId>
       <artifactId>flatbuffers-java</artifactId>
       <version>24.3.25</version>
