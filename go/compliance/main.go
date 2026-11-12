@@ -31,6 +31,8 @@ import (
 	"github.com/amazon-ion/ion-go/ion"
 	"github.com/bytedance/sonic"
 	"github.com/fxamacker/cbor/v2"
+	gamf "github.com/gnolizuh/gamf"
+	amf0 "github.com/yutopp/go-amf0"
 	goccyjson "github.com/goccy/go-json"
 	goccyyaml "github.com/goccy/go-yaml"
 	hambaavro "github.com/hamba/avro/v2"
@@ -401,7 +403,37 @@ func builtin() []adapter {
 		{"parquet", "parquet", moduleVer("github.com/apache/arrow-go/v18"), decodeParquet},
 		{"parquet-uncompressed", "parquet", moduleVer("github.com/apache/arrow-go/v18"), decodeParquet},
 		{"sbe", "sbe", "1.40.2", decodeSBE},
+		{"go-amf0", "amf0", moduleVer("github.com/yutopp/go-amf0"), decodeGoAmf0},
+		{"gamf-amf0", "amf0", moduleVer("github.com/gnolizuh/gamf"), decodeGamfAmf0},
 	}
+}
+
+func decodeGoAmf0(b []byte, _ string) (out any, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("go-amf0: %v", rec)
+		}
+	}()
+	var v any
+	dec := amf0.NewDecoder(bytes.NewReader(b))
+	if err = dec.Decode(&v); err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func decodeGamfAmf0(b []byte, _ string) (out any, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("gamf-amf0: %v", rec)
+		}
+	}()
+	var v any
+	dec := gamf.NewDecoder().WithReader(bytes.NewReader(b))
+	if err = dec.Decode(&v); err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 func decodeArrowIPC(b []byte, _ string) (any, error) {

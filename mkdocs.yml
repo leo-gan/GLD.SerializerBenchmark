@@ -239,6 +239,8 @@ nav:
       - Overview: compliance/index.md
       - ADIOS2: compliance/adios2.md
       - Amazon Ion: compliance/ion.md
+      - AMF0: compliance/amf0.md
+      - AMF3: compliance/amf3.md
       - Arrow IPC: compliance/arrow.md
       - Avro: compliance/avro.md
       - Bebop: compliance/bebop.md

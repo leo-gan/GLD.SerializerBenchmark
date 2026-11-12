@@ -267,6 +267,39 @@ def _smile_decode(data: bytes) -> Any:
     return SmileDecoder().decode(data)
 
 
+def _amf_plain(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _amf_plain(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_amf_plain(item) for item in value]
+    return value
+
+
+def _pyamf_decode(encoding: int):
+    def decode(data: bytes) -> Any:
+        import pyamf
+
+        try:
+            value = next(pyamf.decode(data, encoding=encoding))
+        except StopIteration as exc:
+            raise ValueError("empty AMF value") from exc
+        return _amf_plain(value)
+
+    return decode
+
+
+def _pyamf0_decode(data: bytes) -> Any:
+    import pyamf
+
+    return _pyamf_decode(pyamf.AMF0)(data)
+
+
+def _pyamf3_decode(data: bytes) -> Any:
+    import pyamf
+
+    return _pyamf_decode(pyamf.AMF3)(data)
+
+
 def _arrow_ipc_decode(data: bytes) -> Any:
     import pyarrow as pa
 
@@ -421,6 +454,8 @@ def builtin_adapters() -> list[Adapter]:
         ("amazon-ion", "ion", _ion_decode, None, "amazon.ion simpleion", "amazon-ion"),
         ("py-ubjson", "ubjson", _ubjson_decode, None, "py-ubjson (Draft 12)", "py-ubjson"),
         ("newsmile", "smile", _smile_decode, None, "newsmile SmileDecoder", "newsmile"),
+        ("py3amf-amf0", "amf0", _pyamf0_decode, None, "Py3AMF AMF0", "Py3AMF"),
+        ("py3amf-amf3", "amf3", _pyamf3_decode, None, "Py3AMF AMF3", "Py3AMF"),
         ("plistlib", "plist", _plist_decode, None, "Python stdlib plistlib", "stdlib"),
         ("arrow-ipc", "arrow", _arrow_ipc_decode, None, "pyarrow IPC stream reader", "pyarrow"),
         ("parquet", "parquet", _parquet_decode, None, "pyarrow Parquet reader", "pyarrow"),

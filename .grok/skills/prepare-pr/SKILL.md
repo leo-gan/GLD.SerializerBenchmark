@@ -277,6 +277,26 @@ fi
 
 Do **not** skip this because benches already passed, or because only a lockfile / `VERSIONS.md` / vendor pin changed.
 
+### Standard columns (always, even when no language changed)
+
+A format in `config/compliance-catalog.json` is a Compliance column only when the docs page, the corpus, and a scored matrix cell all exist. Registering the name in `config/standards.yaml` and re-running an old suite does not create that column.
+
+```bash
+python3 .grok/skills/prepare-pr/scripts/check-standard-columns.py
+```
+
+The script checks every catalog format id. Hard fail when any of these is missing:
+
+| Piece | Where |
+|-------|--------|
+| Page | `docs/compliance/<id>.md`, linked from `mkdocs.yml` and named in `docs/compliance/index.md` |
+| Corpus | `compliance/data/<id>/*.json` with `"format": "<id>"` and at least one case |
+| Column | `dashboard/public/data/compliance.json.gz` has a matrix cell for that format with `total > 0` |
+
+On failure: add the page, the corpus, and a decoder in each language that lists the format, re-run `./scripts/run-compliance.sh --lang …` for those languages (a full language run, not `--format` alone — a filtered run does not publish the dashboard gzip), then run the check again.
+
+Do **not** ship a new standard as an empty menu entry. AMF0 and AMF3 are separate format ids, so each one needs its own page, corpus, and column.
+
 ---
 
 ## 9. Update dashboard data (**required**)
@@ -394,6 +414,7 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | `dashboard/scripts/sync-data.py` | Build compressed dashboard payloads + `available_runs.json` from latest logs |
 | `./scripts/run-compliance.sh --lang …` | Spec suite for changed langs; writes `logs/compliance/latest-<lang>.json` |
 | `dashboard/scripts/sync-compliance.py` | Merge latest compliance reports → `dashboard/public/data/compliance.json.gz` |
+| `.grok/skills/prepare-pr/scripts/check-standard-columns.py` | Fail if a catalog format has no docs page, corpus, or scored Compliance column |
 
 ---
 
@@ -408,6 +429,7 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | Analysis fails for a re-benched language | Stop |
 | An experiment run fails for a changed language | Stop |
 | Compliance runner fails or `latest-<lang>.json` missing for a changed lang | Stop |
+| `check-standard-columns.py` fails | Stop; add the page, corpus, and scored column, then re-run |
 | Dashboard `sync-data.py` fails or missing `*_latest.json.gz` | Stop |
 | Push rejected | Stop; report |
 
