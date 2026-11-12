@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Memory layout with padding</title>
+  <desc id="desc">A 16-byte structure layout showing flag, padding, id, and score fields with example little-endian bytes.</desc>
+  <defs>
+    <style type="text/css"><![CDATA[
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #e0e0e0; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #90a4ae; }
+      .small { font-size: 11px; fill: #90a4ae; }
+      .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #c5cae9; }
+      .mono-lg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; fill: #c5cae9; }
+      .arrow-label {
+        font-family: "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        fill: #eceff1;
+        text-anchor: middle;
+      }
+      .panel-title { font-size: 14px; font-weight: 600; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#b0bec5"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="360" fill="#1a1a1a"/>
+  <rect x="40" y="40" width="920" height="280" rx="10" fill="#242424" stroke="#5c6bc0" stroke-width="1.5" stroke-opacity="0.55"/>
+  <text class="label title" x="60" y="72">In-memory layout with padding</text>
+  <text class="label caption" x="60" y="94">flag · id · score on a typical 64-bit C-like layout (little-endian example)</text>
+  <rect x="80" y="120" width="46" height="44" rx="4" fill="#1565c0" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="103.0" y="138" text-anchor="middle">01</text>
+  <text class="label small" x="103.0" y="156" text-anchor="middle" fill="#e0e0e0">F</text>
+  <text class="label small" x="103.0" y="112" text-anchor="middle">00</text>
+  <rect x="128" y="120" width="46" height="44" rx="4" fill="#37474f" stroke="#78909c" stroke-width="1.25"/>
+  <text class="mono" x="151.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="151.0" y="156" text-anchor="middle" fill="#e0e0e0">p</text>
+  <text class="label small" x="151.0" y="112" text-anchor="middle">01</text>
+  <rect x="176" y="120" width="46" height="44" rx="4" fill="#37474f" stroke="#78909c" stroke-width="1.25"/>
+  <text class="mono" x="199.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="199.0" y="156" text-anchor="middle" fill="#e0e0e0">p</text>
+  <text class="label small" x="199.0" y="112" text-anchor="middle">02</text>
+  <rect x="224" y="120" width="46" height="44" rx="4" fill="#37474f" stroke="#78909c" stroke-width="1.25"/>
+  <text class="mono" x="247.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="247.0" y="156" text-anchor="middle" fill="#e0e0e0">p</text>
+  <text class="label small" x="247.0" y="112" text-anchor="middle">03</text>
+  <rect x="272" y="120" width="46" height="44" rx="4" fill="#303f9f" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="295.0" y="138" text-anchor="middle">2a</text>
+  <text class="label small" x="295.0" y="156" text-anchor="middle" fill="#e0e0e0">I</text>
+  <text class="label small" x="295.0" y="112" text-anchor="middle">04</text>
+  <rect x="320" y="120" width="46" height="44" rx="4" fill="#303f9f" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="343.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="343.0" y="156" text-anchor="middle" fill="#e0e0e0">I</text>
+  <text class="label small" x="343.0" y="112" text-anchor="middle">05</text>
+  <rect x="368" y="120" width="46" height="44" rx="4" fill="#303f9f" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="391.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="391.0" y="156" text-anchor="middle" fill="#e0e0e0">I</text>
+  <text class="label small" x="391.0" y="112" text-anchor="middle">06</text>
+  <rect x="416" y="120" width="46" height="44" rx="4" fill="#303f9f" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="439.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="439.0" y="156" text-anchor="middle" fill="#e0e0e0">I</text>
+  <text class="label small" x="439.0" y="112" text-anchor="middle">07</text>
+  <rect x="464" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="487.0" y="138" text-anchor="middle">07</text>
+  <text class="label small" x="487.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="487.0" y="112" text-anchor="middle">08</text>
+  <rect x="512" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="535.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="535.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="535.0" y="112" text-anchor="middle">09</text>
+  <rect x="560" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="583.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="583.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="583.0" y="112" text-anchor="middle">10</text>
+  <rect x="608" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="631.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="631.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="631.0" y="112" text-anchor="middle">11</text>
+  <rect x="656" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="679.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="679.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="679.0" y="112" text-anchor="middle">12</text>
+  <rect x="704" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="727.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="727.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="727.0" y="112" text-anchor="middle">13</text>
+  <rect x="752" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="775.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="775.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="775.0" y="112" text-anchor="middle">14</text>
+  <rect x="800" y="120" width="46" height="44" rx="4" fill="#6a1b9a" stroke="#9fa8da" stroke-width="1.25" fill-opacity="0.45"/>
+  <text class="mono" x="823.0" y="138" text-anchor="middle">00</text>
+  <text class="label small" x="823.0" y="156" text-anchor="middle" fill="#e0e0e0">S</text>
+  <text class="label small" x="823.0" y="112" text-anchor="middle">15</text>
+  <text class="label caption" x="60" y="200">offsets</text>
+  <text class="label caption" x="60" y="248">F = flag (1) · p = padding · I = id (42) · S = score (7) — 13 data bytes + 3 pad → often 16 total</text>
+  <text class="label small" x="60" y="280">Padding exists for alignment, not for domain meaning. Another machine cannot assume these gaps.</text>
+</svg>
