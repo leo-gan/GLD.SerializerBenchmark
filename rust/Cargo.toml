@@ -18,6 +18,7 @@ simd-json = { version = "0.14", features = ["serde_impl"] }
 sonic-rs = "0.3"
 rmp-serde = "1"
 ciborium = "0.2"
+scuffle-amf0 = { version = "0.2", features = ["serde"] }
 bincode = { version = "2", features = ["serde"] }
 postcard = { version = "1", features = ["alloc", "use-std"] }
 bitcode = { version = "0.6", features = ["serde"] }

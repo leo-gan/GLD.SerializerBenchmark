@@ -138,6 +138,7 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 	for _, want := range []string{
 		"encoding/json", "encoding/json/v2", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
+		"go-amf0", "gamf-amf0",
 		"encoding/gob", "mongo-bson", "ion-go", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
 		if !names[want] {
@@ -268,6 +269,8 @@ func TestStreamModeLabels(t *testing.T) {
 		"shamaton/msgpack (array)": StreamNative,
 		"ugorji/msgpack":           StreamNative,
 		"fxamacker/cbor":           StreamNative,
+		"go-amf0":                  StreamNative,
+		"gamf-amf0":                StreamAdapted,
 		"ugorji/cbor":              StreamNative,
 		"kelindar/binary":          StreamNative,
 		"encoding/gob":             StreamNative,

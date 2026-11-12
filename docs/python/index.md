@@ -69,6 +69,8 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen` (positional) nodes — no schema evolution. See [layouts](#dagr-node-layouts) |
 | [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen`+`packed` (positional, self-sizing) — smallest Dagr row, no schema evolution. See [layouts](#dagr-node-layouts) |
 | [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
+| [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF0. Every number is a double |
+| [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF3. Small integers stay integers |
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
@@ -126,6 +128,14 @@ Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes
 #### [cbor2](https://github.com/agronholm/cbor2)
 
 cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a binary JSON-like format for constrained devices and IETF protocols. cbor2 solves the Python side with a widely used encoder/decoder.
+
+#### [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF)
+
+Py3AMF is a Python 3 fork of PyAMF. It encodes and decodes Adobe Action Message Format. This row uses AMF0, the form RTMP still uses for commands. Every number is written as a double. The timed path calls `pyamf.encode` and `pyamf.decode` on a dict.
+
+#### [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF)
+
+The same library, with the AMF3 encoding. AMF3 can store a small integer more tightly than AMF0, and it can share repeated strings and objects. The timed path is the same encode and decode calls.
 
 #### [cloudpickle](https://github.com/cloudpipe/cloudpickle)
 

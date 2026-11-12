@@ -1,7 +1,7 @@
-# Experiment 3 results — go
+# Experiment 11 results — go
 
-**Date:** 2026-09-30
-**Raw file:** `experiments/03-memory-vs-stream/go/logs/go/2026-09-29-184737.csv`
+**Date:** 2026-11-12
+**Raw file:** `experiments/03-memory-vs-stream/go/logs/go/2026-11-12-122327.csv`
 **Language:** go
 **Sample:** one flat record (`message`), 1 record per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,19 +12,18 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| goccy/go-json | 0.10.6 | 1.79 | 2.70 | 4.70 | 448 | 234 | JSON | fastest | yes | 84 |
-| protobuf | 1.36.12 | 2.27 | 2.84 | 5.30 | 155 | 179 | Protocol Buffers | similar | yes | 92 |
-| vmihailenco/msgpack | 5.4.1 | 2.94 | 4.65 | 7.72 | 405 | 239 | MessagePack | slower | yes | 89 |
-| encoding/json | go1.24.13 | 2.41 | 10.0 | 12.2 | 448 | 234 | JSON — stdlib | slower | yes | 91 |
+| goccy/go-json | 0.10.6 | 1.85 | 2.59 | 4.49 | 448 | 233 | JSON | fastest | yes | 83 |
+| protobuf | 1.36.12 | 2.29 | 2.43 | 4.68 | 155 | 180 | Protocol Buffers | similar | yes | 87 |
+| vmihailenco/msgpack | 5.4.1 | 2.70 | 4.43 | 7.09 | 405 | 235 | MessagePack | slower | yes | 91 |
+| encoding/json | go1.27.1 | 2.90 | 5.89 | 9.01 | 448 | 233 | JSON — stdlib | slower | yes | 91 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| protobuf | 1 | 1.94 | 2.63 | 4.62 | copied |
-| goccy/go-json | 1 | 1.68 | 3.09 | 4.74 | real |
-| vmihailenco/msgpack | 1 | 3.35 | 4.26 | 7.65 | real |
-| encoding/json | 1 | 2.15 | 10.2 | 12.4 | real |
+| goccy/go-json | 1 | 0.75 | 1.80 | 2.54 | real |
+| vmihailenco/msgpack | 1 | 2.11 | 2.90 | 4.99 | real |
+| encoding/json | 1 | 1.98 | 4.73 | 6.74 | real |
 
 ## Libraries that belong in the conversation
 

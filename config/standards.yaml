@@ -119,6 +119,25 @@ standards:
       Typical uses are embedded and application data where a text JSON document
       is bulky and a separate schema is unnecessary.
 
+  amf0:
+    label: AMF0
+    explanation: >-
+      AMF0 is the first Action Message Format, from Adobe Flash. It writes
+      numbers, strings, objects, and arrays. Every number is a double. It was
+      created so a Flash client and a server could exchange object graphs.
+      Typical uses are old web remoting and the command messages inside RTMP
+      live streams. It does not have AMF3's shared strings or typed lists.
+
+  amf3:
+    label: AMF3
+    explanation: >-
+      AMF3 is the compact Action Message Format from later Flash players. It
+      adds a short integer, shared strings and objects, and typed lists. It
+      was created so the same remoting call could send a smaller payload than
+      AMF0. Typical uses are Flex remoting and the object body inside an RTMP
+      message. A reader must keep the string and object tables to expand
+      references.
+
   smile:
     label: Smile
     explanation: >-

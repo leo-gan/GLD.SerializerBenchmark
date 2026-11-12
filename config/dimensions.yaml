@@ -92,6 +92,7 @@ optional_io:
     - {language: csharp, serializer: ZeroFormatter, level: stream, stream_mode: native}
     - {language: go, serializer: encoding/json, level: stream, stream_mode: native}
     - {language: go, serializer: fxamacker/cbor, level: stream, stream_mode: native}
+    - {language: go, serializer: go-amf0, level: stream, stream_mode: native}
     - {language: go, serializer: goccy/go-json, level: stream, stream_mode: native}
     - {language: go, serializer: hamba/avro, level: stream, stream_mode: native}
     - {language: go, serializer: jsoniter, level: stream, stream_mode: native}

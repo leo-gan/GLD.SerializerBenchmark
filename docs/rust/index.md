@@ -61,6 +61,7 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [bitcode](https://github.com/SoftbearStudios/bitcode) | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | [bson](https://github.com/mongodb/bson-rust) | Document | `bson` | Serde | adapted | Document DB interop |
 | [ciborium](https://github.com/enarx/ciborium) | CBOR | `ciborium` | Serde | native | Reused write buffer |
+| [scuffle-amf0](https://github.com/scufflecloud/scuffle) | AMF | `scuffle-amf0` | Serde | native | AMF0. No object references |
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
 | [fory](https://github.com/apache/fory) | Binary | `fory` | `ForyStruct` derive; native mode | adapted | Reused output buffer; suite types only |
 | [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
@@ -107,6 +108,10 @@ BSON (Binary JSON) was created for MongoDB so documents could be stored and trav
 #### [ciborium](https://github.com/enarx/ciborium)
 
 ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSON-like format. The crate exists to give Rust a serde CBOR backend.
+
+#### [scuffle-amf0](https://github.com/scufflecloud/scuffle)
+
+scuffle-amf0 is a pure-Rust AMF0 encoder and decoder from the Scuffle RTMP stack. AMF0 is the command encoding inside RTMP. The timed path is `to_bytes` / `from_slice` and `to_writer` / `from_reader` through Serde. The crate does not write AMF0 object references, so a graph with a shared node or a cycle does not round-trip.
 
 #### [flexbuffers](https://github.com/google/flatbuffers)
 
@@ -231,7 +236,7 @@ The table is a family map of this roster. It is not the ranking key.
 | Rust-centric binary | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
 | Schema / zero-copy | `flexbuffers`, `rkyv`, `prost`, `sbe` |
 | Columnar | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
-| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde` |
+| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde`, `scuffle-amf0` |
 
 ## Numbers
 

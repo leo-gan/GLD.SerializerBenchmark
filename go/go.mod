@@ -19,6 +19,7 @@ require (
 	github.com/apache/fory/go/fory v1.7.7
 	github.com/bytedance/sonic v1.15.5
 	github.com/fxamacker/cbor/v2 v2.10.0
+	github.com/gnolizuh/gamf v1.0.0
 	github.com/goccy/go-json v0.10.6
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/flatbuffers v25.12.19+incompatible
@@ -33,6 +34,7 @@ require (
 	github.com/shamaton/msgpack/v3 v3.2.6
 	github.com/ugorji/go/codec v1.3.2
 	github.com/vmihailenco/msgpack/v5 v5.4.1
+	github.com/yutopp/go-amf0 v0.1.1
 	go.mongodb.org/mongo-driver v1.17.10
 	google.golang.org/protobuf v1.36.12
 )

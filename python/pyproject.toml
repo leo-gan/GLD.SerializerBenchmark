@@ -20,6 +20,7 @@ dependencies = [
     "python-rapidjson>=1.20,<2",
     "msgpack>=1.1.0,<2",
     "cbor2>=6.0.0,<7",
+    "Py3AMF>=0.9.0,<1",
     "fastavro>=1.10.0,<2",
     "cloudpickle>=3.1.0,<4",
     "pydantic>=2.10,<3",

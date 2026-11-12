@@ -117,14 +117,14 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | C# | **52** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **40** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
 | Fortran | **9** | [Overview](../fortran/index.md) | [Dashboard](../dashboard/?lang=fortran) |
-| Go | **31** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
+| Go | **34** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **27** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
-| JavaScript | **30** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
+| JavaScript | **32** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **32** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
 | Mojo | **21** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
 | PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
-| Python | **31** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
-| Rust | **28** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
+| Python | **34** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
+| Rust | **30** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **21** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
 | Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
 

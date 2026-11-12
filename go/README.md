@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (32)
+## Serializers (34)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -18,6 +18,8 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | shamaton/msgpack (array) | MessagePack | `github.com/shamaton/msgpack/v3` | `MarshalAsArray`/`UnmarshalAsArray`; **native stream** `MarshalWriteAsArray`/`UnmarshalReadAsArray` (struct-as-array, no field-name keys) |
 | ugorji/msgpack | MessagePack | `github.com/ugorji/go/codec` | `MsgpackHandle` + EncoderBytes reuse |
 | fxamacker/cbor | CBOR | `github.com/fxamacker/cbor/v2` | reused `EncMode`/`DecMode` |
+| go-amf0 | AMF0 | `github.com/yutopp/go-amf0` | reused `Encoder`; reflection `Encode`/`Decode`; **native stream**. No AMF0 references |
+| gamf-amf0 | AMF0 | `github.com/gnolizuh/gamf` | `Marshal`; **stream adapted**. AMF3 decode panics on a struct in v1.0.0, so it is not registered |
 | ugorji/cbor | CBOR | `github.com/ugorji/go/codec` | `CborHandle` + EncoderBytes reuse |
 | kelindar/binary | Binary | `github.com/kelindar/binary` | reused `Encoder.Reset`; Go-only wire |
 | fory | Native binary | `github.com/apache/fory/go/fory` | registered structs; `Serialize`/`Deserialize`; **stream adapted** |

@@ -58,6 +58,8 @@ export const FORMAT_LABELS = {
   flatbuffers: 'FlatBuffers',
   ion: 'Amazon Ion',
   ubjson: 'UBJSON',
+  amf0: 'AMF0',
+  amf3: 'AMF3',
   smile: 'Smile',
   kiln: 'Kiln',
   thrift: 'Thrift',

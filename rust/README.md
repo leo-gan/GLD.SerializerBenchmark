@@ -20,9 +20,9 @@ rust/src/serializers/
   sbe_ser.rs       # sbe-tool 1.40.2 flyweights (vendored rust/gen/sbe)
 ```
 
-## Serializers (29)
+## Serializers (30)
 
-`all_serializers()` registers 29 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
+`all_serializers()` registers 30 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -31,6 +31,7 @@ rust/src/serializers/
 | sonic-rs | JSON | `to_vec` / `from_slice` |
 | rmp-serde | MessagePack | `to_vec_named` / `from_slice` |
 | ciborium | CBOR | reusable buffer; native stream |
+| scuffle-amf0 | AMF0 | Serde `to_bytes` / `from_slice`; native stream. No object references |
 | bincode | Binary | config reused in `prepare` |
 | postcard | Binary | `to_allocvec` / `from_bytes` |
 | bitcode | Binary | `serialize` / `deserialize` |
