@@ -1,0 +1,576 @@
+{
+  "seed": 42,
+  "n": 1,
+  "types": {
+    "message": {
+      "record": {
+        "f_bool": true,
+        "f_int32": 442269,
+        "f_int64": 446816,
+        "f_float64": 649.1968904313869,
+        "f_string": "xljybqxfemz",
+        "f_bool_2": false,
+        "f_int32_2": 598855,
+        "f_string_2": "eobwzfgdqglt"
+      }
+    },
+    "document": {
+      "record": {
+        "id": "btimcpxm",
+        "status": 4,
+        "meta": {
+          "region": "al",
+          "version": 3
+        },
+        "items": [
+          {
+            "sku": "ytgl",
+            "qty": 10,
+            "price_minor": 55613
+          },
+          {
+            "sku": "sdwkhokqmf",
+            "qty": 38,
+            "price_minor": 2461
+          },
+          {
+            "sku": "gojhtifpuep",
+            "qty": 97,
+            "price_minor": 90854
+          },
+          {
+            "sku": "zia",
+            "qty": 79,
+            "price_minor": 67315
+          },
+          {
+            "sku": "pnjt",
+            "qty": 61,
+            "price_minor": 32619
+          },
+          {
+            "sku": "tftjldmqrott",
+            "qty": 54,
+            "price_minor": 90365
+          },
+          {
+            "sku": "uciperj",
+            "qty": 78,
+            "price_minor": 60676
+          },
+          {
+            "sku": "eheam",
+            "qty": 39,
+            "price_minor": 80173
+          }
+        ]
+      }
+    },
+    "telemetry": {
+      "record": {
+        "source": "nwlirjk",
+        "ts": 1704122143162,
+        "tags": [
+          "kvlhje",
+          "cshtvh"
+        ],
+        "values": [
+          86.94935066438121,
+          80.85878799624511,
+          13.340070236279256,
+          21.917136163568962,
+          12.733590694524366,
+          68.78890651137503,
+          80.93992282268184,
+          40.85598496387092,
+          37.46411399009252,
+          28.790198033306336,
+          74.71721509079124,
+          28.77669969430373,
+          7.624179179155643,
+          67.20935331473058,
+          89.64144851650524,
+          33.791130103402075,
+          1.5831390451406024,
+          83.4698306610859,
+          97.91434224267137,
+          18.905546083628288,
+          52.19674484982367,
+          21.82883349271415,
+          34.77149426083474,
+          43.911068646682175,
+          98.74137365776745,
+          1.9059462302402075,
+          0.6050444483568063,
+          17.23533537608133,
+          75.52072156283847,
+          77.90566973289934,
+          52.07354951512182,
+          15.121954611126288
+        ]
+      }
+    },
+    "strings": {
+      "record": {
+        "items": [
+          "onnmcmdfqriecps",
+          "nbfhfgtn",
+          "oronfndvtdn",
+          "efeupquqezcr",
+          "gssadmn",
+          "ufjfax",
+          "tbbakcpsbpfnysl",
+          "pudhprco",
+          "zkee",
+          "bpxyjtkrfkb",
+          "rkmhpiat",
+          "ninrvvceyoek",
+          "lgiuthadhdy",
+          "pudhprco",
+          "sryvhceinkfhwqf",
+          "nvximx",
+          "zmfvpgl",
+          "uifalrypxduedjn",
+          "xkvlsmob",
+          "gbipzp",
+          "sninhnufxol",
+          "jexfvv",
+          "hkxxclrwrdno",
+          "bpxyjtkrfkb",
+          "dsh",
+          "sqzgakfx",
+          "hchwgnembavdop",
+          "nrcnmdrbcgdrxw",
+          "pifpefppirh",
+          "yuiv",
+          "riq",
+          "hrxskgubnexas"
+        ]
+      }
+    },
+    "event": {
+      "record": {
+        "event_id": "hwvrjkalkhp",
+        "event_type": "qldjcfyvr",
+        "occurred_at": 1704142140270,
+        "producer": "iytknyg",
+        "attrs": [
+          {
+            "key": "zijtxz",
+            "value": "nwugys"
+          },
+          {
+            "key": "atwymdxchav",
+            "value": "knrgdho"
+          },
+          {
+            "key": "joy",
+            "value": "rruteloqk"
+          },
+          {
+            "key": "plfvkeworb",
+            "value": "mvxbhvr"
+          }
+        ]
+      }
+    },
+    "table": {
+      "record": {
+        "f_float_0": 838.9140298461415,
+        "f_float_1": 988.9209993901906,
+        "f_float_2": 542.3130709603015,
+        "f_float_3": 310.2330908815994,
+        "f_float_4": 280.1106741816646,
+        "f_float_5": 3.281600471172652,
+        "f_float_6": 237.37813304671974,
+        "f_float_7": 506.2173898402066,
+        "f_float_8": 376.1960691511025,
+        "f_float_9": 451.1855323561667,
+        "f_float_10": 311.11264431375116,
+        "f_float_11": 469.24480267481226,
+        "f_float_12": 786.0732630076117,
+        "f_float_13": 770.8104315653478,
+        "f_float_14": 413.4648995142147,
+        "f_float_15": 66.2110885195225,
+        "f_int_0": 656662,
+        "f_int_1": 579746,
+        "f_int_2": 549533,
+        "f_int_3": 498334,
+        "f_str_0": "iqnclhdcjrvnej",
+        "f_str_1": "jjoqtqxza"
+      }
+    },
+    "table_project": {
+      "record": {
+        "f_float_0": 504.4610630547783,
+        "f_float_1": 763.1950066172988,
+        "f_float_2": 924.9551515643005,
+        "f_float_3": 910.8742141651428,
+        "f_float_4": 191.17263424219223,
+        "f_float_5": 194.43835636838247,
+        "f_float_6": 853.3818970159105,
+        "f_float_7": 28.565965297237096,
+        "f_float_8": 465.98834504663654,
+        "f_float_9": 127.51496633453563,
+        "f_float_10": 92.2820200868113,
+        "f_float_11": 148.03417916905158,
+        "f_float_12": 122.4675074023719,
+        "f_float_13": 86.9321413148627,
+        "f_float_14": 206.3429100171933,
+        "f_float_15": 748.9802111971394,
+        "f_int_0": 747565,
+        "f_int_1": 145376,
+        "f_int_2": 700436,
+        "f_int_3": 166526,
+        "f_str_0": "otfyzw",
+        "f_str_1": "xdkzenthbj"
+      },
+      "note": "The write is this row. The timed read returns f_float_0 only."
+    },
+    "nested_table": {
+      "record": {
+        "id": "jfednbogfnb",
+        "status": 5,
+        "meta": {
+          "region": "dhx",
+          "version": 5
+        },
+        "items": [
+          {
+            "sku": "ndsawaikwd",
+            "qty": 23,
+            "price_minor": 19959
+          },
+          {
+            "sku": "yxgp",
+            "qty": 48,
+            "price_minor": 30710
+          },
+          {
+            "sku": "nhfzjalurejw",
+            "qty": 93,
+            "price_minor": 14669
+          },
+          {
+            "sku": "ixllwdf",
+            "qty": 3,
+            "price_minor": 50373
+          }
+        ]
+      }
+    },
+    "signal": {
+      "record": {
+        "seq": 258243004,
+        "ts": 1704151497823,
+        "price_mantissa": 522534991,
+        "qty": 5868,
+        "flags": 13445,
+        "symbol": "tan",
+        "venue": "atiatazgbdpg",
+        "legs": [
+          {
+            "leg_id": 775945,
+            "leg_qty": 1096,
+            "leg_pad": 0
+          },
+          {
+            "leg_id": 766011,
+            "leg_qty": 6598,
+            "leg_pad": 0
+          },
+          {
+            "leg_id": 247886,
+            "leg_qty": 8370,
+            "leg_pad": 0
+          },
+          {
+            "leg_id": 447529,
+            "leg_qty": 2368,
+            "leg_pad": 0
+          }
+        ]
+      }
+    },
+    "graph": {
+      "record": {
+        "regions": [
+          {
+            "code": "aziohqapki",
+            "note": "cdcqzthkbpeamczbaiiginztheqddazgojrieymjcgdyxortyhqrnowslfzgykbo",
+            "version": 10
+          },
+          {
+            "code": "ehigtenjtxtiukc",
+            "note": "gmixcwspjesgrxhjjaborygdejkctyziyajgelfreannfmlulfeqinzlpemxzomv",
+            "version": 2
+          },
+          {
+            "code": "clbofjxvowcasbf",
+            "note": "loevbockkgvxiheiqerrkhbcfwfcfluawlywvumwbjharttpsoysyhbmdwezboja",
+            "version": 3
+          },
+          {
+            "code": "zfabwbrbekb",
+            "note": "tllewdapkzeltqiqudoyjuvuhkcxajgpoqrprtgohabevgmrgnylgxfwrsfhboqk",
+            "version": 4
+          }
+        ],
+        "orders": [
+          {
+            "sku": "mizcgcjvijhsdnu",
+            "qty": 60,
+            "region": 0
+          },
+          {
+            "sku": "gxnwoxkiqyfad",
+            "qty": 75,
+            "region": 1
+          },
+          {
+            "sku": "cxfssrjc",
+            "qty": 84,
+            "region": 2
+          },
+          {
+            "sku": "vpeqbmuz",
+            "qty": 19,
+            "region": 3
+          },
+          {
+            "sku": "vyhuwpnqifsqmqsw",
+            "qty": 37,
+            "region": 0
+          },
+          {
+            "_more": 27
+          }
+        ],
+        "people": [
+          {
+            "name": "lrsykrmsdjdcmmit",
+            "next": 1
+          },
+          {
+            "name": "pccskypr",
+            "next": 2
+          },
+          {
+            "name": "crpvctcw",
+            "next": 3
+          },
+          {
+            "name": "wkwwhxuqjm",
+            "next": 4
+          },
+          {
+            "name": "jugulsdaactr",
+            "next": 5
+          },
+          {
+            "name": "kbdycovl",
+            "next": 6
+          },
+          {
+            "name": "wjdseakuek",
+            "next": 7
+          },
+          {
+            "name": "stkexdhecvbig",
+            "next": 0
+          }
+        ]
+      },
+      "note": "Orders share a region by index. People form a ring; next is the next person's index."
+    },
+    "grid": {
+      "record": {
+        "nx": 512,
+        "ny": 512,
+        "values": [
+          0.5884915536397971,
+          0.9020810112387517,
+          0.5681664530056755,
+          0.6984242358319879,
+          {
+            "_more": 262140
+          }
+        ],
+        "x0": 0,
+        "y0": 0,
+        "wx": 0,
+        "wy": 0
+      },
+      "note": "values run y outer, x inner. The list below is the start of the array."
+    },
+    "grid_window": {
+      "record": {
+        "nx": 512,
+        "ny": 512,
+        "values": [
+          0.31234966144179666,
+          0.953460706166097,
+          0.7182386896799245,
+          0.5710499599199881,
+          {
+            "_more": 262140
+          }
+        ],
+        "x0": 128,
+        "y0": 64,
+        "wx": 256,
+        "wy": 128
+      },
+      "note": "The write is this array. The timed read returns the interior window."
+    },
+    "tensor": {
+      "record": {
+        "rows": 1024,
+        "cols": 1024,
+        "values": [
+          "-0",
+          "NaN",
+          0.4001584053039551,
+          0.6624138951301575,
+          {
+            "_more": 1048572
+          }
+        ]
+      },
+      "note": "values[0] is negative zero and values[1] is a quiet NaN, written here as \"-0\" and \"NaN\"."
+    },
+    "tensor_view": {
+      "record": {
+        "rows": 1024,
+        "cols": 1024,
+        "values": [
+          "-0",
+          "NaN",
+          0.4001584053039551,
+          0.6624138951301575,
+          {
+            "_more": 1048572
+          }
+        ]
+      },
+      "note": "Same matrix as tensor. The timed read borrows the encoded bytes."
+    },
+    "prompt": {
+      "record": {
+        "batch": 4,
+        "seq": 256,
+        "input_ids": [
+          26938,
+          28467,
+          8582,
+          14674,
+          {
+            "_more": 1020
+          }
+        ],
+        "attention_mask": [
+          1,
+          1,
+          1,
+          1,
+          {
+            "_more": 1020
+          }
+        ],
+        "position_ids": [
+          0,
+          1,
+          2,
+          3,
+          {
+            "_more": 1020
+          }
+        ]
+      },
+      "note": "Each list is batch × seq, row-major. The lists below are the start."
+    },
+    "shard": {
+      "record": {
+        "vocab": 1024,
+        "hidden": 256,
+        "ffn": 512,
+        "tok_emb": [
+          0.8365275263786316,
+          0.5028012990951538,
+          0.858843207359314,
+          0.7404153347015381,
+          {
+            "_more": 262140
+          }
+        ],
+        "attn": [
+          0.933631956577301,
+          0.5697962641716003,
+          0.45570704340934753,
+          0.5503500699996948,
+          {
+            "_more": 65532
+          }
+        ],
+        "ffn_weight": [
+          0.7222509384155273,
+          0.4141031801700592,
+          0.39969104528427124,
+          0.8194829821586609,
+          {
+            "_more": 131068
+          }
+        ],
+        "norm": [
+          0.8310990929603577,
+          0.9371248483657837,
+          0.8102982640266418,
+          0.27096349000930786,
+          {
+            "_more": 252
+          }
+        ]
+      },
+      "note": "Weights are row-major. Each list below is the start of that block."
+    },
+    "request": {
+      "record": {
+        "request_id": 518916177,
+        "model": "zexeragdtnw",
+        "temperature": 1.1853501796722412,
+        "inputs": {
+          "batch": 4,
+          "seq": 256,
+          "input_ids": [
+            13099,
+            8705,
+            1766,
+            27502,
+            {
+              "_more": 1020
+            }
+          ],
+          "attention_mask": [
+            1,
+            1,
+            1,
+            1,
+            {
+              "_more": 1020
+            }
+          ],
+          "position_ids": [
+            0,
+            1,
+            2,
+            3,
+            {
+              "_more": 1020
+            }
+          ]
+        }
+      },
+      "note": "One call: an id, a model name, a temperature, and the prompt tensors."
+    }
+  }
+}

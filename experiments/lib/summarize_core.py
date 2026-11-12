@@ -1290,7 +1290,7 @@ def render_multi_sample_combined_markdown(
     lines.extend(
         [
             "",
-            "## Experiment 1 sample (A, N = 1) — not clearly slower",
+            "## One order (n=1) — not clearly slower",
             "",
             "| Language | Status | Not clearly slower | Small gap |",
             "|----------|--------|--------------------|-----------|",
@@ -1375,8 +1375,8 @@ def render_multi_sample_combined_markdown(
             "- **Python:** `orjson` is first on every sample and at both 1 and 100 records. "
             "On Sample A it is about **5.3 times** faster than `json`. That ratio stays "
             "put if we keep every trial after warm-up, drop more stalls (IQR 3.0), or "
-            "keep the first trial. Experiment 1 is a stable fact for named JSON in Python.",
-            "- **JavaScript, C, Rust, Swift (N = 1):** the Experiment 1 name stays first "
+            "keep the first trial. That gap is a stable fact for named JSON in Python.",
+            "- **JavaScript, C, Rust, Swift (N = 1):** the fast named-JSON library stays first "
             "on every sample (`JSON.stringify`, `yyjson`, `sonic-rs`, `IkigaJSON`).",
             "- **Go, Java, C++, C#:** the first place **depends on the sample**. "
             "Go moves among `goccy/go-json`, `segmentio/encoding/json`, and `sonic`. "

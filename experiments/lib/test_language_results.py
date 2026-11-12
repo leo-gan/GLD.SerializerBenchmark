@@ -56,7 +56,7 @@ class LanguageResultsTest(unittest.TestCase):
 
 
 def _load_summarize():
-    path = REPO / "experiments" / "01-json-library-bakeoff" / "summarize.py"
+    path = REPO / "experiments" / "01-sensor-list-size" / "summarize.py"
     spec = importlib.util.spec_from_file_location("summarize_exp01", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -124,9 +124,9 @@ class SummarizeKeepsCombinedFileTest(unittest.TestCase):
 
 
 class ConsolidatedExperimentScriptsTest(unittest.TestCase):
-    def test_all_15_summarize_wrappers_render_combined_and_language_markdown(self) -> None:
+    def test_summarize_wrappers_render_combined_and_language_markdown(self) -> None:
         exp_dirs = sorted( (REPO / "experiments").glob("[0-9][0-9]-*") )
-        self.assertEqual(len(exp_dirs), 15)
+        self.assertEqual(len(exp_dirs), 4)
         for exp_dir in exp_dirs:
             spec = importlib.util.spec_from_file_location(
                 f"summarize_{exp_dir.name}", exp_dir / "summarize.py"
@@ -149,7 +149,7 @@ class ConsolidatedExperimentScriptsTest(unittest.TestCase):
             s = str(extra)
             if s not in sys.path:
                 sys.path.insert(0, s)
-        exp_dir = REPO / "experiments" / "01-json-library-bakeoff"
+        exp_dir = REPO / "experiments" / "01-sensor-list-size"
         spec = importlib.util.spec_from_file_location(
             "save_sample_01", exp_dir / "python" / "save_sample.py"
         )
@@ -160,12 +160,12 @@ class ConsolidatedExperimentScriptsTest(unittest.TestCase):
         after = (exp_dir / "sample.json").read_text(encoding="utf-8")
         self.assertEqual(before, after)
 
-    def test_all_14_run_sh_wrappers_delegate_to_run_experiment_sh(self) -> None:
+    def test_run_sh_wrappers_delegate_to_run_experiment_sh(self) -> None:
         exp_dirs = sorted((REPO / "experiments").glob("[0-9][0-9]-*"))
         delegating = [
-            d for d in exp_dirs if d.name != "15-fortran-ffi-tax"
+            d for d in exp_dirs if d.name != "04-fortran-ffi-tax"
         ]
-        self.assertEqual(len(delegating), 14)
+        self.assertEqual(len(delegating), 3)
         for d in delegating:
             text = (d / "run.sh").read_text(encoding="utf-8")
             self.assertIn("run_experiment.sh", text)

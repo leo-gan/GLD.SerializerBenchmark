@@ -16,6 +16,12 @@ import {
 } from './charts.js';
 import { paretoOptimalGroups } from './pareto.js';
 import { escapeHtml, fetchJsonMaybeGzip } from './page.js';
+import {
+  exampleIsSingleRecord,
+  exampleSummary,
+  exampleTypeIds,
+  renderTypeExampleBody,
+} from './type-examples.js';
 import { aggregateCSVRecords, parseCSV } from './csv-upload.js';
 import {
   formatSig,
@@ -370,6 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyUiFromState();
   await loadSerializerSources();
   await loadDimensionLabels();
+  await loadTypeExamples();
   await loadHistoryList();
   await probeLogsAvailability();
   await loadLanguageData(state.currentLanguage);
@@ -1971,6 +1978,7 @@ function updateDimensionExplain() {
       if (el) el.hidden = true;
     }
   }
+  updateTypeExample();
   syncFilterExplain();
 }
 
@@ -2013,6 +2021,42 @@ function populateSelect(id, options, labelFn) {
  * @param {{ selectId?: string, previous?: string }} [cfg]
  */
 let dimensionLabels = null;
+/** @type {{ seed?: number, n?: number, types?: Record<string, { note?: string, record?: unknown }> } | null} */
+let typeExamples = null;
+
+async function loadTypeExamples() {
+  try {
+    const response = await fetch('data/type-examples.json');
+    if (!response.ok) return;
+    typeExamples = await response.json();
+    updateTypeExample();
+  } catch (e) {
+    console.warn('Could not load data-type examples:', e);
+  }
+}
+
+function updateTypeExample() {
+  const box = document.getElementById('datatype-example');
+  const summary = document.getElementById('datatype-example-summary');
+  const body = document.getElementById('datatype-example-body');
+  if (!box || !summary || !body) return;
+  const ids = exampleTypeIds(state.currentTestData).filter(
+    (id) => typeExamples?.types?.[id]?.record != null,
+  );
+  if (!ids.length) {
+    box.hidden = true;
+    body.replaceChildren();
+    return;
+  }
+  summary.textContent = exampleSummary(ids.length);
+  body.innerHTML = renderTypeExampleBody({
+    ids,
+    examples: typeExamples,
+    menuLabel: fixtureOptionLabel(state.currentTestData),
+    singleRecord: exampleIsSingleRecord(state.currentTestData),
+  });
+  box.hidden = false;
+}
 
 async function loadDimensionLabels() {
   try {

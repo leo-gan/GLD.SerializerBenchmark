@@ -402,6 +402,35 @@ body.dash-view-compare .toolbar > .tabs:not(.lang-tabs) {
   margin-top: 0.28rem;
 }
 
+.datatype-example {
+  margin-top: 0.45rem;
+}
+
+.datatype-example > summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.datatype-example-kind {
+  margin: 0.55rem 0 0;
+}
+
+.datatype-example-note {
+  margin: 0.35rem 0 0;
+}
+
+.datatype-example-pre {
+  font-size: 0.78rem;
+  background: #f8f9fa;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  overflow: auto;
+  max-height: 16rem;
+  margin: 0.35rem 0 0;
+}
+
 .filter-policy-meta {
   margin: 0;
   padding: 0.35rem 0.7rem;
@@ -461,6 +490,7 @@ body.dash-view-compare .toolbar > .tabs:not(.lang-tabs) {
 
 .filter-group-primary .select-wrapper select.std-select-all,
 .cmp-filter select.std-select-all,
+.exp-switch select.std-select-all,
 .filter-group-primary .select-wrapper select option.std-opt-all,
 .cmp-filter select option.std-opt-all,
 option.std-opt-all {

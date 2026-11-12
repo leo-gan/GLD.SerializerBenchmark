@@ -22,19 +22,10 @@ import {
 } from './exp-export.js';
 
 export const GRAPH_PROTOTYPE_IDS = new Set([
-  '01-json-library-bakeoff',
-  '02-flat-record-formats',
-  '03-one-language-store',
-  '04-sensor-list-size',
-  '05-event-log-formats',
-  '06-document-db-formats',
-  '07-write-once-read-many',
-  '08-human-files',
-  '09-compression-size',
-  '10-one-vs-hundred',
-  '11-memory-vs-stream',
-  '12-format-vs-library',
-  '13-ranking-accident',
+  '01-sensor-list-size',
+  '02-compression-size',
+  '03-memory-vs-stream',
+  '04-fortran-ffi-tax',
 ]);
 
 const KIND_AXIS = {
@@ -78,7 +69,7 @@ const tickColor = '#5f6368';
 /** Write vs read series — not green/red (those mean faster/slower). */
 const SERIES_WRITE = '#7eb6ff';
 const SERIES_READ = '#4a148c';
-/** Experiment 10: one vs a hundred — not the write/read pair (those were too close). */
+/** One series against another. The write/read pair is a different chart. */
 const SERIES_N1 = '#7eb6ff';
 const SERIES_N100 = '#5d4037';
 const tooltipChrome = {
@@ -184,28 +175,12 @@ function rowsMatching(rows, match = {}, ignore = {}) {
 export function figureTypesFor(id, rows, allRows, _opts = {}) {
   const view = rows || [];
   const types = [];
-  if (id === '07-write-once-read-many') {
-    if (hasFiniteSeries(view, 'write_median_ns') && hasFiniteSeries(view, 'read_median_ns')) types.push('W1');
-    const t = sizeTreatment(view);
-    if (t.kind === 'S1' || t.kind === 'S0') types.push(t.kind);
-    return types;
-  }
-  if (id === '04-sensor-list-size') {
+  if (id === '01-sensor-list-size') {
     types.push('C1');
     return types;
   }
-  if (id === '09-compression-size') {
+  if (id === '02-compression-size') {
     types.push('S2');
-    return types;
-  }
-  if (id === '10-one-vs-hundred') {
-    types.push('C2');
-    types.push('L1');
-    return types;
-  }
-  if (id === '13-ranking-accident') {
-    types.push('R1');
-    types.push('L1');
     return types;
   }
   types.push('L1');
@@ -1537,7 +1512,7 @@ export function compareFigurePng(which) {
 }
 
 /**
- * Compare page: the same Write + read and Write and Read charts as Experiment 1.
+ * Compare page: the same Write + read and Write and Read charts.
  * `rows` use the experiment row shape (write_median_ns, read_median_ns, total_median_ns).
  */
 export function mountCompareLatency(mount, rows, opts = {}) {
