@@ -21,6 +21,8 @@ The catalog covers every standard in this table.
 |--------|------------------------|-------------------------|
 | ADIOS2 | BP5 | `adios2` |
 | Amazon Ion | 1.0 text, 1.0 binary, 1.1 | `amazon-ion` |
+| AMF0 | type markers | `py3amf-amf0` |
+| AMF3 | U29, strings, arrays, objects | `py3amf-amf3` |
 | Arrow IPC | IPC stream | `arrow-ipc` |
 | Avro | 1.8, 1.11, 1.12 | `fastavro` |
 | Bebop | 1 | JS `bebop` (limited) |

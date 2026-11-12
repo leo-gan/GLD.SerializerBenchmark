@@ -31,7 +31,7 @@ This is the spec-quality counterpart to run-all-benchmarks.sh: same libraries,
 cited RFC/spec sections, no timings.
 
 OPTIONS:
-    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile kiln
+    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile amf0 amf3 kiln
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
     -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c fortran
     -d, --detailed        Print every case, not only the summary and failures

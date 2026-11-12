@@ -235,6 +235,14 @@ function makeAdapters() {
     add('cbor', 'cbor', (buf) => cbor.decodeFirstSync(buf), 'node-cbor decodeFirstSync', 'cbor');
   } catch { /* optional */ }
   try {
+    const { fromAMF } = require('amf-codec');
+    add('amf-codec', 'amf0', (buf) => fromAMF(buf), 'amf-codec fromAMF', 'amf-codec');
+  } catch { /* optional */ }
+  try {
+    const { decode: amf3Decode } = require('@biorate/amf');
+    add('biorate-amf', 'amf3', (buf) => amf3Decode(buf), '@biorate/amf decode', '@biorate/amf');
+  } catch { /* optional */ }
+  try {
     const { Unpackr } = require('msgpackr');
     const unpackr = new Unpackr({ useRecords: false });
     add('msgpackr', 'msgpack', (buf) => unpackr.unpack(buf), 'msgpackr Unpackr', 'msgpackr');

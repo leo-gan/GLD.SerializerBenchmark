@@ -234,6 +234,19 @@ fn builtin() -> Vec<Adapter> {
             },
         },
         Adapter {
+            name: "scuffle-amf0",
+            format: "amf0",
+            version: crate_version("scuffle-amf0").to_string(),
+            decode: |b, _| {
+                let result = catch_unwind(AssertUnwindSafe(|| scuffle_amf0::from_slice::<serde_json::Value>(b)));
+                match result {
+                    Ok(Ok(v)) => Ok(v),
+                    Ok(Err(e)) => anyhow::bail!("{e}"),
+                    Err(_) => anyhow::bail!("scuffle-amf0 panicked"),
+                }
+            },
+        },
+        Adapter {
             name: "rmp-serde",
             format: "msgpack",
             version: crate_version("rmp-serde").to_string(),

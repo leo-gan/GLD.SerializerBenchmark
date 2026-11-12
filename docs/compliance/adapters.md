@@ -67,7 +67,8 @@ compliance.catalog     load the catalog
 compliance.adapters    json / orjson / msgspec / rapidjson / pydantic /
                        mashumaro / serpyco-rs / yaml / tomllib / cbor2 /
                        msgpack / protobuf / fastavro / bson / flexbuffers /
-                       amazon-ion / py-ubjson / newsmile / plistlib /
+                       amazon-ion / py-ubjson / newsmile / py3amf-amf0 /
+                       py3amf-amf3 / plistlib /
                        pyarrow (Arrow IPC, Parquet, ORC) /
                        h5py / netCDF4 / adios2
 
