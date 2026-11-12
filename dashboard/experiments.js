@@ -223,55 +223,51 @@ function selectHtml(id, label, values, current, labelFn) {
     </div>`;
 }
 
+function experimentSwitcherHtml(selectedId) {
+  const items = (catalog?.experiments || []).filter((exp) => exp.has_results);
+  const options = ['<option value="" class="std-opt-all">All experiments</option>'].concat(
+    items.map((exp) => {
+      const title = exp.title || exp.question || exp.id;
+      const selected = exp.id === selectedId ? ' selected' : '';
+      return `<option value="${escapeHtml(exp.id)}"${selected}>${escapeHtml(title)}</option>`;
+    }),
+  );
+  return `
+    <div class="exp-switch">
+      <label class="filter-label" for="experiment-select">Experiment</label>
+      <div class="select-wrapper">
+        <select id="experiment-select" class="${selectedId ? '' : 'std-select-all'}" aria-label="Experiment">${options.join('')}</select>
+      </div>
+    </div>`;
+}
+
+function bindExperimentSwitcher(root) {
+  root.querySelector('#experiment-select')?.addEventListener('change', (event) => {
+    setHash(event.target.value || '');
+  });
+}
+
 function renderWhyExperiments() {
   return `
-    <details class="exp-howto exp-why glass-panel" open>
+    <details class="exp-inline">
       <summary>Why experiments, if the Dashboard already has every number?</summary>
       <p>
-        The main Dashboard is the <strong>full warehouse</strong>: every library, every record shape.
-        That is the right place to browse. It is the wrong place to pick a library for a real service
-        by sorting on speed.
+        Overview and Compare already hold one standard, one data type, one record or one hundred,
+        write time, read time, and raw size. Compliance holds spec pass and fail.
       </p>
       <p>
-        The fastest row in the big table may be a library you <strong>cannot use</strong>.
-        It might write bytes that only one language can read.
-        It might drop field names so partners cannot parse the text.
-        It might be built for a file you write once, not for a web request you write on every click.
-        The Dashboard will still put it first, because it is fast.
+        An experiment remains when those pages do not hold the cell: a sensor list that grows,
+        size after gzip and zstd, a real stream against a copied one, or the Fortran call
+        over the same C library.
       </p>
-      <p>
-        An experiment starts with a <strong>decision</strong>, not a sort.
-        Example: “We must keep JSON on the public website. Which JSON library is fast enough?”
-        We keep only the libraries that could be the answer. We time one shared record.
-        We write down what we would give up.
-      </p>
-      <p>
-        Think of a grocery store and a recipe. The store has every product — that is the main Dashboard.
-        The recipe lists only what you need for dinner, and why — that is an experiment.
-        You need both. The store does not tell you what to cook.
-      </p>
-      <p>
-        Concrete traps the big table does not prevent:
-      </p>
-      <ul>
-        <li><strong>Different jobs in one list.</strong> JSON, compact bytes, and a Python-only format can share a table. “What is fastest?” is not one question.</li>
-        <li><strong>A tiny gap looks like a winner.</strong> 1.7 µs vs 1.8 µs is not a reason to rewrite a service.</li>
-        <li><strong>Your constraint is invisible.</strong> If browsers must keep JSON, the big table still shows every format.</li>
-        <li><strong>One record is not one hundred.</strong> The winner at 1 can lose at 100.</li>
-        <li><strong>Numbers without a story.</strong> “Binary is faster” is how teams break a public website.</li>
-      </ul>
-      <p>
-        We do not run a second benchmark. We cut the same numbers down to a fair contest
-        and put the story next to them.
-        <a href="../experiments/">Longer notes</a>
-      </p>
+      <p><a href="../experiments/">Longer notes</a></p>
     </details>`;
 }
 
 function renderHowToRead({ mode, id } = { mode: 'table' }) {
   if (mode === 'list') {
     return `
-    <details class="exp-howto glass-panel">
+    <details class="exp-inline">
       <summary>How to read the numbers</summary>
       <ul>
         <li>Times are the <strong>middle</strong> value (median), in microseconds. Smaller is better.</li>
@@ -286,32 +282,27 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
   }
   if (mode === 'graphs') {
     return `
-    <details class="exp-howto glass-panel">
-      <summary>How to read these graphs</summary>
-      <ul>
-        <li>The <strong>bar</strong> is the middle time (median), in microseconds. Smaller is faster.</li>
-        <li>The <strong>whisker</strong> on <strong>Write + read</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
-        <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
-        <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
-        <li>On the <strong>All</strong> tab the bars use the same <strong>microsecond</strong> axis as a language tab, so you can compare languages. Color and “Vs fastest” stay vs that language’s fastest.</li>
-        <li>A single-language tab is one contest inside that runtime.</li>
-        ${
-          id === '01-json-library-bakeoff'
-            ? '<li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>.</li>'
-            : ''
-        }
-        <li><strong>Show</strong> keeps the fastest rows (top), the slowest rows (bottom), or every row.</li>
-        <li><strong>Write and Read</strong> can show write, read, or both. It sorts by the series that is on. With both on, it sorts by write + read. Each bar has the same whisker as Write + read: the spread of that write or that read.</li>
-        <li>Some experiments add a size, compression, or rank chart when that is the question.</li>
-        <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
-      </ul>
-      <p><a href="../experiments/">Full experiment notes</a></p>
+    <details class="exp-read-fold">
+      <summary>How to read these graphs.</summary>
+      <ul class="exp-read">
+      <li>The <strong>bar</strong> is the middle time (median), in microseconds. Smaller is faster.</li>
+      <li>The <strong>whisker</strong> on <strong>Write + read</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
+      <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
+      <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
+      <li>On the <strong>All</strong> tab the bars use the same <strong>microsecond</strong> axis as a language tab, so you can compare languages. Color and “Vs fastest” stay vs that language’s fastest.</li>
+      <li>A single-language tab is one contest inside that runtime.</li>
+      <li><strong>Show</strong> keeps the fastest rows (top), the slowest rows (bottom), or every row.</li>
+      <li><strong>Write and Read</strong> can show write, read, or both. It sorts by the series that is on. With both on, it sorts by write + read. Each bar has the same whisker as Write + read: the spread of that write or that read.</li>
+      <li>Some experiments add a size, compression, or rank chart when that is the question.</li>
+      <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
+    </ul>
+    <p><a href="../experiments/">Full experiment notes</a></p>
     </details>`;
   }
   return `
-    <details class="exp-howto glass-panel">
-      <summary>How to read this table</summary>
-      <ul>
+    <details class="exp-read-fold">
+      <summary>How to read this table.</summary>
+      <ul class="exp-read">
         <li>Times are the <strong>middle</strong> value, in microseconds. Smaller is better.</li>
         <li>A cell like <code>15.9 (1.2×)</code> means 15.9, and <strong>1.2 times</strong> the fastest row. Green is better. Red is worse.</li>
         <li><strong>Vs fastest</strong> is not simply Winner / Loser. Two libraries can be too close to call on this sample:
@@ -325,35 +316,55 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
     </details>`;
 }
 
-function renderStory(meta) {
-  const story = meta.story || {};
-  if (!story.why && !story.example && !story.tradeoff) return '';
-  return `
-    <div class="exp-story glass-panel">
-      ${story.why ? `<p><strong>Why we ran this.</strong> ${escapeHtml(story.why)}</p>` : ''}
-      ${story.example ? `<p><strong>Example.</strong> ${escapeHtml(story.example)}</p>` : ''}
-      ${story.tradeoff ? `<p><strong>Trade-off.</strong> ${escapeHtml(story.tradeoff)}</p>` : ''}
-    </div>`;
+function previewCaption(preview) {
+  const bits = [kindLabel(preview.kind)];
+  const values = preview.record && preview.record.values;
+  if (Array.isArray(values)) {
+    const more = values.find((item) => item && typeof item === 'object' && item._more);
+    const count = more ? values.filter((item) => !(item && item._more)).length + more._more : values.length;
+    bits.push(`${count} numbers`);
+  }
+  if (preview.how_many > 1) bits.push(`${preview.how_many} records in one write, first record shown`);
+  else bits.push('n=1');
+  return bits.join(' · ');
 }
 
 function renderSample(meta) {
   const previews = meta.sample_preview || [];
   if (!previews.length) return '';
+  const summary = previews.length === 1 ? 'Sample record (n=1)' : 'Sample records (n=1)';
   return `
-    <details class="exp-sample glass-panel">
-      <summary>The data we timed (${previews.length === 1 ? 'one record' : `${previews.length} records`})</summary>
+    <details class="exp-sample">
+      <summary>${summary}</summary>
       ${previews
-        .map((p) => {
-          const rec = { ...p.record };
-          if (rec && rec.items && rec.items.some((it) => it && it._more)) {
-            /* keep as stored */
-          }
-          return `
-            <p class="section-help">${escapeHtml(kindLabel(p.kind))}${p.how_many > 1 ? ` · ${p.how_many} records in one write (first record shown)` : ''}</p>
-            <pre class="exp-sample-pre">${escapeHtml(JSON.stringify(p.record, null, 2))}</pre>`;
-        })
+        .map((preview) => `
+            <p class="section-help">${escapeHtml(previewCaption(preview))}</p>
+            <pre class="exp-sample-pre">${escapeHtml(JSON.stringify(preview.record, null, 2))}</pre>`)
         .join('')}
     </details>`;
+}
+
+function renderStory(meta, howToMode, question) {
+  const story = meta.story || {};
+  const sample = renderSample(meta);
+  const howTo = howToMode ? renderHowToRead({ mode: howToMode }) : '';
+  const title = (meta.title || question || '').trim();
+  const lead = question && question.trim() !== title ? question.trim() : '';
+  const why = [lead, story.why].filter(Boolean).join(' ');
+  const tradeoff = story.tradeoff
+    ? `<p><strong>Trade-off.</strong> ${escapeHtml(story.tradeoff)}</p>`
+    : '';
+  const tradeField = tradeoff || howTo
+    ? `<div class="exp-tradeoff">${tradeoff}${howTo}</div>`
+    : '';
+  if (!why && !story.example && !sample && !tradeField) return '';
+  return `
+    <div class="exp-story glass-panel">
+      ${why ? `<p><strong>Why we ran this.</strong> ${escapeHtml(why)}</p>` : ''}
+      ${story.example ? `<p><strong>Example.</strong> ${escapeHtml(story.example)}</p>` : ''}
+      ${sample}
+      ${tradeField}
+    </div>`;
 }
 
 function chips(names, cls) {
@@ -589,9 +600,9 @@ function renderList(root) {
         Each item is <strong>one question</strong> — a fair slice of the big Dashboard, not a second set of clocks.
         Open <strong>All</strong> to see every language on one microsecond axis.
       </p>
+      ${renderWhyExperiments()}
+      ${renderHowToRead({ mode: 'list' })}
     </div>
-    ${renderWhyExperiments()}
-    ${renderHowToRead({ mode: 'list' })}
     <div class="exp-list" role="list">
       ${items
         .map((exp) => {
@@ -628,10 +639,10 @@ async function renderDetail(root, id, locLang = '') {
     replaceExperimentsHtml(
       root,
       `
-      <p class="section-help">Unknown experiment <code>${escapeHtml(id)}</code>.</p>
-      <button type="button" class="tab-btn" id="exp-back">All experiments</button>`
+      ${experimentSwitcherHtml('')}
+      <p class="section-help">Unknown experiment <code>${escapeHtml(id)}</code>.</p>`
     );
-    root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
+    bindExperimentSwitcher(root);
     return;
   }
   if (!meta.has_results) {
@@ -639,13 +650,13 @@ async function renderDetail(root, id, locLang = '') {
       root,
       `
       <div class="exp-header">
-        <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
+        ${experimentSwitcherHtml('')}
         <h2 class="chart-title">${escapeHtml(meta.title || meta.question)}</h2>
-        ${renderStory(meta)}
+        ${renderStory(meta, '', meta.question || '')}
         <p class="section-help">No results yet.</p>
       </div>`
     );
-    root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
+    bindExperimentSwitcher(root);
     return;
   }
   replaceExperimentsHtml(root, `<p class="section-help">Loading ${escapeHtml(id)}…</p>`);
@@ -656,10 +667,10 @@ async function renderDetail(root, id, locLang = '') {
     replaceExperimentsHtml(
       root,
       `
-      <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
+      ${experimentSwitcherHtml(id)}
       <p class="section-help">Could not load results: ${escapeHtml(err.message)}</p>`
     );
-    root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
+    bindExperimentSwitcher(root);
     return;
   }
   const langIds = Object.keys(data.languages || {}).filter((k) => data.languages[k]?.status === 'ok');
@@ -697,9 +708,7 @@ async function renderDetail(root, id, locLang = '') {
     n: ns.length > 1 ? ui.n : '',
     io: ios.length > 1 ? ui.io : '',
   };
-  const filtered = rowsFor(langBlock, filters).filter((row) =>
-    id === '01-json-library-bakeoff' ? !isShapeSkip(row) : true
-  );
+  const filtered = rowsFor(langBlock, filters);
   const group = crossLang ? null : matchingTopGroup(langBlock, filters);
   const graphs = usesExperimentGraphs(id);
   const howToMode = graphs ? 'graphs' : 'table';
@@ -712,15 +721,10 @@ async function renderDetail(root, id, locLang = '') {
     root,
     `
     <div class="exp-header">
-      <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
-      <p class="exp-kicker">Experiment ${meta.number != null ? meta.number : ''}</p>
+      ${experimentSwitcherHtml(id)}
       <h2 class="chart-title">${escapeHtml(meta.title || data.question || meta.question)}</h2>
-      <p class="section-help">${escapeHtml(meta.question || data.question || '')}</p>
-      <p class="section-help">This is a fair slice of the main Dashboard for one decision, not extra clocks. <a href="#experiments">Why we keep experiments separate</a></p>
     </div>
-    ${renderStory(meta)}
-    ${renderHowToRead({ mode: howToMode, id })}
-    ${renderSample(meta)}
+    ${renderStory(meta, howToMode, meta.question || data.question || '')}
     <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
       ${tabIds
         .map((idLang) => {
@@ -761,7 +765,7 @@ async function renderDetail(root, id, locLang = '') {
     wireExportControls(root, exportCtx);
     bindGraphControls(root);
   }
-  root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
+  bindExperimentSwitcher(root);
   root.querySelectorAll('[data-exp-lang]').forEach((btn) => {
     btn.addEventListener('click', () => {
       ui.lang = btn.getAttribute('data-exp-lang') || '';
@@ -791,9 +795,9 @@ async function render() {
   if (!root) return;
   const loc = parseHash();
   setExperimentsView(loc.view !== 'suite');
+  await loadCatalog();
   if (loc.view === 'suite') return;
   await loadSerializerSources();
-  await loadCatalog();
   if (catalogError) {
     replaceExperimentsHtml(
       root,

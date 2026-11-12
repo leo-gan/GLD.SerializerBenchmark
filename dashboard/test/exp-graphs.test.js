@@ -100,7 +100,7 @@ test('skipReason explains msgspec is timed, not failed', () => {
 });
 
 test('librariesByDisplayTier fills A bit slower when Cliff tier is slower but the median is within 1.5×', () => {
-  // Rust starter-kit shape: top_group.close is [] while the table says A bit slower.
+  // Stored top_group.close is [] while the table says A bit slower.
   const rows = [
     { library: 'prost', total_median_ns: 1566, tier: 'fastest', cliffs_label: 'reference', in_comparison: true, writes_named_fields: true },
     { library: 'rmp-serde', total_median_ns: 2265, tier: 'slower', cliffs_delta_vs_fastest: 0.9673, in_comparison: true, writes_named_fields: true },
@@ -226,8 +226,8 @@ test('wrapYTick splits slash names and prefixes only the first line', () => {
 });
 
 test('usesExperimentGraphs is on for every experiment id', () => {
-  assert.equal(usesExperimentGraphs('01-json-library-bakeoff'), true);
-  assert.equal(usesExperimentGraphs('13-ranking-accident'), true);
+  assert.equal(usesExperimentGraphs('01-sensor-list-size'), true);
+  assert.equal(usesExperimentGraphs('04-fortran-ffi-tax'), true);
   assert.equal(usesExperimentGraphs('unknown'), false);
 });
 
@@ -312,15 +312,13 @@ test('figureTypesFor All tab uses the same microsecond figures as a language tab
     { library: 'a', language: 'rust', write_median_ns: 1, read_median_ns: 2, total_median_ns: 3, size_bytes: 10, in_comparison: true },
     { library: 'b', language: 'java', write_median_ns: 20, read_median_ns: 40, total_median_ns: 60, size_bytes: 20, in_comparison: true },
   ];
-  const all = figureTypesFor('01-json-library-bakeoff', timed, timed, { crossLang: true });
-  const one = figureTypesFor('01-json-library-bakeoff', timed, timed);
+  const all = figureTypesFor('03-memory-vs-stream', timed, timed, { crossLang: true });
+  const one = figureTypesFor('03-memory-vs-stream', timed, timed);
   assert.deepEqual(all, one);
   assert.ok(all.includes('L1'));
   assert.ok(!all.includes('A1'));
-  assert.deepEqual(figureTypesFor('04-sensor-list-size', timed, timed, { crossLang: true }), ['C1']);
-  assert.deepEqual(figureTypesFor('09-compression-size', timed, timed, { crossLang: true }), ['S2']);
-  assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('C2'));
-  assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('L1'));
+  assert.deepEqual(figureTypesFor('01-sensor-list-size', timed, timed, { crossLang: true }), ['C1']);
+  assert.deepEqual(figureTypesFor('02-compression-size', timed, timed, { crossLang: true }), ['S2']);
 });
 
 test('show keeps the fastest or slowest rows and write/read toggles pick the sort', () => {
@@ -376,12 +374,9 @@ test('figureTypesFor picks a story-specific hero', () => {
     { library: 'a', write_median_ns: 1, read_median_ns: 2, total_median_ns: 3, size_bytes: 10, in_comparison: true },
     { library: 'b', write_median_ns: 2, read_median_ns: 4, total_median_ns: 6, size_bytes: 20, in_comparison: true },
   ];
-  assert.deepEqual(figureTypesFor('07-write-once-read-many', timed), ['W1', 'S1']);
-  assert.deepEqual(figureTypesFor('04-sensor-list-size', timed), ['C1']);
-  assert.deepEqual(figureTypesFor('09-compression-size', timed), ['S2']);
-  assert.ok(figureTypesFor('10-one-vs-hundred', timed).includes('C2'));
-  assert.ok(figureTypesFor('13-ranking-accident', timed).includes('R1'));
-  const def = figureTypesFor('02-flat-record-formats', timed);
+  assert.deepEqual(figureTypesFor('01-sensor-list-size', timed), ['C1']);
+  assert.deepEqual(figureTypesFor('02-compression-size', timed), ['S2']);
+  const def = figureTypesFor('03-memory-vs-stream', timed);
   assert.ok(def.includes('L1'));
   assert.ok(def.includes('W1'));
   assert.ok(def.includes('S1'));

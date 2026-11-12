@@ -167,7 +167,7 @@ The Dashboard Experiments tab shows a language only when that experiment’s `re
 
 For **each** `experiments/*/experiment.yaml` where this language can answer the question:
 
-1. Add a `languages:` block. Map libraries the way Java or the nearest existing language does (JSON bakeoff → JSON libs; one-language store → native + portable; and so on). Use registry names from `config/benchmark_config.yaml`.
+1. Add a `languages:` block. Map libraries the way the nearest existing language in that experiment does. Use registry names from `config/benchmark_config.yaml`. The four experiments are `01-sensor-list-size`, `02-compression-size`, `03-memory-vs-stream`, and `04-fortran-ffi-tax`.
 2. Add `experiments/<id>/<lang>/run.sh` that execs `../run.sh <lang>`.
 3. Add the language to that experiment’s parent `run.sh` `RUNNER` map (and to `experiment_config.py` `RUNNERS` / the schema enum — once).
 4. **Time it:** `./experiments/<id>/run.sh <lang>`. Then `python3 dashboard/scripts/sync-experiments.py`.

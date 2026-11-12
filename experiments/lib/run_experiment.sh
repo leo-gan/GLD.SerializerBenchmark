@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared experiment runner for experiments 01–14.
+# Shared experiment runner. Called by experiments/<id>/run.sh.
 # Called by experiments/<id>/run.sh with EXPERIMENT_DIR set (or inferred from caller).
 set -euo pipefail
 

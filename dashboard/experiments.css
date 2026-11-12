@@ -35,11 +35,35 @@ body.dash-view-experiments #compliance {
   margin-bottom: 1rem;
 }
 
+.exp-inline {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.exp-inline summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exp-inline p,
+.exp-inline ul {
+  margin: 0.35rem 0 0;
+}
+
+.exp-inline ul {
+  padding-left: 1.1rem;
+}
+
 .exp-howto,
-.exp-story,
-.exp-sample {
+.exp-story {
   margin: 0 0 0.85rem;
   padding: 0.75rem 1rem;
+}
+
+.exp-story .exp-sample {
+  margin: 0.35rem 0 0.15rem;
+  padding: 0;
 }
 
 .exp-howto summary,
@@ -60,8 +84,36 @@ body.dash-view-experiments #compliance {
   margin: 0.5rem 0 0;
 }
 
-.exp-story p {
+.exp-story p,
+.exp-story .exp-tradeoff {
   margin: 0.35rem 0;
+}
+
+.exp-tradeoff p {
+  margin: 0;
+}
+
+.exp-tradeoff .exp-read-fold {
+  margin: 0.2rem 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  font-size: inherit;
+}
+
+.exp-tradeoff .exp-read-fold summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: inherit;
+}
+
+.exp-story .exp-read {
+  margin: 0.25rem 0 0.35rem 1.1rem;
+}
+
+.exp-story .exp-read li {
+  margin: 0.2rem 0;
 }
 
 .exp-sample-pre {
@@ -74,16 +126,21 @@ body.dash-view-experiments #compliance {
   max-height: 16rem;
 }
 
-.exp-kicker {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0.6rem 0 0.2rem;
+.exp-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.65rem;
 }
 
-.exp-back {
-  font-size: 0.8rem;
+.exp-switch .filter-label {
+  margin: 0;
+}
+
+#experiment-select {
+  font: inherit;
+  font-size: 0.85rem;
+  max-width: 28rem;
 }
 
 .exp-list {

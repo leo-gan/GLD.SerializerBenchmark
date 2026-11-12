@@ -64,19 +64,19 @@ test('experiments hash: list, detail, and language', () => {
     id: null,
     lang: '',
   });
-  assert.deepEqual(parseExperimentsHash('#experiments/01-json-library-bakeoff'), {
+  assert.deepEqual(parseExperimentsHash('#experiments/01-sensor-list-size'), {
     view: 'detail',
-    id: '01-json-library-bakeoff',
+    id: '01-sensor-list-size',
     lang: '',
   });
-  assert.deepEqual(parseExperimentsHash('#experiments/01-json-library-bakeoff/python'), {
+  assert.deepEqual(parseExperimentsHash('#experiments/01-sensor-list-size/python'), {
     view: 'detail',
-    id: '01-json-library-bakeoff',
+    id: '01-sensor-list-size',
     lang: 'python',
   });
   assert.equal(
-    formatExperimentsHash({ id: '01-json-library-bakeoff', lang: 'python' }),
-    '#experiments/01-json-library-bakeoff/python',
+    formatExperimentsHash({ id: '01-sensor-list-size', lang: 'python' }),
+    '#experiments/01-sensor-list-size/python',
   );
   assert.equal(parseExperimentsHash('#dashboard').view, 'suite');
 });
@@ -91,6 +91,6 @@ test('dashboard view hash maps the four tabs', () => {
   assert.equal(dashboardRunPanelOpen('#overview'), false);
   assert.equal(dashboardViewFromHash('#compare'), 'compare');
   assert.equal(dashboardViewFromHash('#experiments'), 'experiments');
-  assert.equal(dashboardViewFromHash('#experiments/01-json-library-bakeoff/python'), 'experiments');
+  assert.equal(dashboardViewFromHash('#experiments/01-sensor-list-size/python'), 'experiments');
   assert.equal(dashboardViewFromHash('#compliance/python/orjson/json'), 'compliance');
 });
