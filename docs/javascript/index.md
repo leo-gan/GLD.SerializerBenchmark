@@ -68,6 +68,8 @@ The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prep
 | [bebop](https://github.com/6over3/bebop) | Schema | `bebop` | `BebopView` JSON-model primitives |
 | [bser](https://github.com/facebook/watchman) | Binary | `bser` | `dumpToBuffer` / `loadFromBuffer` |
 | [bson](https://github.com/mongodb/js-bson) | Binary | `bson` | `BSON.serialize` / `deserialize` |
+| [amf-codec](https://github.com/csimi/amf-codec) | Binary | `amf-codec` | `toAMF` / `fromAMF` |
+| [biorate-amf](https://www.npmjs.com/package/@biorate/amf) | Binary | `@biorate/amf` | `encode` / `decode` |
 | [cbor](https://github.com/hildjj/node-cbor) | Binary | `cbor` | `encode` / `decodeFirstSync` |
 | [cbor-x](https://github.com/kriszyp/cbor-x) | Binary | `cbor-x` | reused `Encoder` / `Decoder` |
 | [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated TS (`dagr build`) | arena (built in `prepare()`) → `<Graph>_serde.writeInto` a reused `Builder` / lazy `<Type>Accessor.lazyRoot` → domain |
@@ -124,6 +126,14 @@ BSON (Binary JSON) was created for MongoDB so documents could be stored and trav
 #### [cbor](https://github.com/hildjj/node-cbor)
 
 node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC.
+
+#### [amf-codec](https://www.npmjs.com/package/amf-codec)
+
+amf-codec is a small AMF0 encoder and decoder for Node. AMF0 is the command encoding inside RTMP. The timed path is `toAMF` and `fromAMF` on one plain object. It does not write AMF3.
+
+#### [biorate-amf](https://www.npmjs.com/package/@biorate/amf)
+
+@biorate/amf is an AMF3 encoder and decoder. The timed path is `encode` and `decode` on one plain object. The first byte of an object is the AMF3 object marker. The package does not write Function, XML, or Date. It is a separate row from `amf-codec` because that library writes AMF0.
 
 #### [cbor-x](https://github.com/kriszyp/cbor-x)
 

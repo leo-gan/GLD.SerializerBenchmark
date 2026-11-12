@@ -18,11 +18,13 @@
   },
   "dependencies": {
     "@apache-fory/core": "^1.7.7",
+    "@biorate/amf": "^3.1.0",
     "@bufbuild/protobuf": "^2.12.1",
     "@bufbuild/protoc-gen-es": "^2.12.1",
     "@jsonjoy.com/json-pack": "^18.28.0",
     "@msgpack/msgpack": "^3.0.0",
     "@timeleap/sia": "^2.3.0",
+    "amf-codec": "^1.4.1",
     "apache-arrow": "^21.2.0",
     "avsc": "^5.7.0",
     "bebop": "^3.2.3",

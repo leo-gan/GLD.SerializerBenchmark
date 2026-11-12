@@ -5,6 +5,8 @@ import cbor from 'cbor';
 import { BSON } from 'bson';
 import bser from 'bser';
 import { dumpBinary, load, IonTypes } from 'ion-js';
+import { toAMF, fromAMF } from 'amf-codec';
+import { encode as biorateEncode, decode as biorateDecode } from '@biorate/amf';
 import { pkgVersion, baseSupports, asBuffer } from './common.js';
 
 // Reuse encoder instances (msgpackr docs: Packr/Unpackr are stateful and reusable).
@@ -162,6 +164,37 @@ export const ionJsSer = {
   },
 };
 
+export const amfCodecSer = {
+  name: 'amf-codec',
+  version: pkgVersion('amf-codec'),
+  category: 'binary',
+  supports: baseSupports,
+  prepare() {},
+  // toAMF / fromAMF encode one AMF0 value. https://www.npmjs.com/package/amf-codec
+  serialize(value) {
+    return toAMF(value);
+  },
+  deserialize(buf) {
+    return fromAMF(asBuffer(buf));
+  },
+};
+
+export const biorateAmfSer = {
+  name: 'biorate-amf',
+  version: pkgVersion('@biorate/amf'),
+  category: 'binary',
+  supports: baseSupports,
+  prepare() {},
+  // encode/decode write one AMF3 value. Function, XML, and Date are not in this package.
+  // https://www.npmjs.com/package/@biorate/amf
+  serialize(value) {
+    return biorateEncode(value);
+  },
+  deserialize(buf) {
+    return biorateDecode(asBuffer(buf));
+  },
+};
+
 export function binarySerializers() {
-  return [msgpackrSer, msgpackOffSer, cborxSer, cborSer, bsonSer, bserSer, ionJsSer];
+  return [msgpackrSer, msgpackOffSer, cborxSer, cborSer, bsonSer, bserSer, ionJsSer, amfCodecSer, biorateAmfSer];
 }

@@ -110,6 +110,12 @@
       "cbor2": [
         "cbor"
       ],
+      "py3amf-amf0": [
+        "amf0"
+      ],
+      "py3amf-amf3": [
+        "amf3"
+      ],
       "msgpack": [
         "msgpack"
       ],
@@ -170,14 +176,14 @@
       "orc-uncompressed": [
         "orc"
       ],
-      "dagr-packed": [],
-      "dagr-regular": [],
-      "dagr-frozen": [],
-      "dagr-frozen-packed": [],
       "fory": [],
       "gld-kiln": [
         "kiln"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -250,14 +256,20 @@
       "h5wasm": [
         "hdf5"
       ],
+      "fory": [],
+      "amf-codec": [
+        "amf0"
+      ],
+      "biorate-amf": [
+        "amf3"
+      ],
+      "gld-kiln": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": [],
-      "fory": [],
-      "gld-kiln": [
-        "kiln"
-      ]
+      "dagr-frozen-packed": []
     },
     "go": {
       "encoding/json": [
@@ -334,14 +346,20 @@
       "sbe": [
         "sbe"
       ],
+      "fory": [],
+      "go-amf0": [
+        "amf0"
+      ],
+      "gamf-amf0": [
+        "amf0"
+      ],
+      "gld-kiln": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
-      "dagr-frozen-packed": [],
-      "fory": [],
-      "gld-kiln": [
-        "kiln"
-      ]
+      "dagr-frozen-packed": []
     },
     "java": {
       "jackson": [
@@ -486,6 +504,9 @@
       "thrift": [
         "thrift"
       ],
+      "gld-ion": [
+        "ion"
+      ],
       "kotlinx-properties": [],
       "kryo": [],
       "fory": [],
@@ -507,9 +528,6 @@
       ],
       "sbe": [
         "sbe"
-      ],
-      "gld-ion": [
-        "ion"
       ]
     },
     "csharp": {
@@ -629,7 +647,6 @@
       "PureHDF": [
         "hdf5"
       ],
-      "Jil": [],
       "fory": [],
       "gld-kiln": [
         "kiln"
@@ -650,6 +667,9 @@
       ],
       "ciborium": [
         "cbor"
+      ],
+      "scuffle-amf0": [
+        "amf0"
       ],
       "minicbor": [
         "cbor"
@@ -693,14 +713,14 @@
       "hdf5-metno": [
         "hdf5"
       ],
-      "dagr-packed": [],
-      "dagr-regular": [],
-      "dagr-frozen": [],
-      "dagr-frozen-packed": [],
       "fory": [],
       "gld-kiln": [
         "kiln"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -800,14 +820,14 @@
       "highfive": [
         "hdf5"
       ],
-      "dagr-packed": [],
-      "dagr-regular": [],
-      "dagr-frozen": [],
-      "dagr-frozen-packed": [],
       "fory": [],
       "gld-kiln": [
         "kiln"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -837,6 +857,12 @@
       "SwiftAvroCore": [
         "avro"
       ],
+      "gld-avro": [
+        "avro"
+      ],
+      "gld-ion": [
+        "ion"
+      ],
       "SwiftBSON": [
         "bson"
       ],
@@ -851,20 +877,14 @@
       ],
       "XMLCoder": [],
       "BinaryCodable": [],
-      "dagr-packed": [],
-      "dagr-regular": [],
-      "dagr-frozen": [],
-      "dagr-frozen-packed": [],
-      "gld-avro": [
-        "avro"
-      ],
-      "gld-ion": [
-        "ion"
-      ],
       "fory": [],
       "gld-kiln": [
         "kiln"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "php": {
       "json": [
@@ -1039,10 +1059,6 @@
       "parquet-uncompressed": [
         "parquet"
       ],
-      "dagr-packed": [],
-      "dagr-regular": [],
-      "dagr-frozen": [],
-      "dagr-frozen-packed": [],
       "gld-hdf5": [
         "hdf5"
       ],
@@ -1051,7 +1067,11 @@
       ],
       "gld-adios2": [
         "adios2"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "fortran": {
       "json-fortran": [

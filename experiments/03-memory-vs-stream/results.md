@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-10-11
+**Date:** 2026-11-12
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -32,10 +32,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| goccy/go-json | 4.70 | 448 | JSON | fastest |
-| protobuf | 5.30 | 155 | Protocol Buffers | similar |
-| vmihailenco/msgpack | 7.72 | 405 | MessagePack | slower |
-| encoding/json | 12.2 | 448 | JSON — stdlib | slower |
+| goccy/go-json | 4.49 | 448 | JSON | fastest |
+| protobuf | 4.68 | 155 | Protocol Buffers | similar |
+| vmihailenco/msgpack | 7.09 | 405 | MessagePack | slower |
+| encoding/json | 9.01 | 448 | JSON — stdlib | slower |
 
 ### java
 

@@ -1,9 +1,9 @@
 # JavaScript (Node.js) Serializer Benchmark
 
-## Serializers (31 with optional simdjson, 30 without)
+## Serializers (33 with optional simdjson, 32 without)
 
 JSON: `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional)  
-Binary: `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`, `ion-js`, `fory`, `gld-kiln`  
+Binary: `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `amf-codec`, `biorate-amf`, `bson`, `bser`, `sia`, `ion-js`, `fory`, `gld-kiln`  
 Schema: `avsc`, `protobufjs`, `protobuf-es`, `google-protobuf`, `flatbuffers`, `flexbuffers`, `bebop`, `dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`  
 Native: `v8-serializer`, `devalue`  
 YAML: `js-yaml`  

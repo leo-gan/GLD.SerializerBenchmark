@@ -97,49 +97,49 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.56 | 107 | fastest |
-| postcard | 0.67 | 91 | slower |
-| prost | 0.78 | 94 | slower |
-| rmp-serde | 1.21 | 135 | slower |
-| sonic-rs | 1.90 | 234 | slower |
-| serde_json | 2.02 | 234 | slower |
-| ciborium | 2.12 | 135 | slower |
+| gld-kiln | 0.47 | 107 | fastest |
+| postcard | 0.56 | 91 | slower |
+| prost | 0.67 | 94 | slower |
+| rmp-serde | 1.02 | 135 | slower |
+| sonic-rs | 1.72 | 234 | slower |
+| serde_json | 1.74 | 234 | slower |
+| ciborium | 1.80 | 135 | slower |
 
 **32 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.57 | 302 | fastest |
-| postcard | 0.75 | 286 | slower |
-| prost | 0.97 | 290 | slower |
-| rmp-serde | 1.42 | 356 | slower |
-| ciborium | 2.69 | 355 | slower |
-| serde_json | 3.23 | 672 | slower |
-| sonic-rs | 3.33 | 672 | slower |
+| gld-kiln | 0.48 | 302 | fastest |
+| postcard | 0.63 | 286 | slower |
+| prost | 0.90 | 290 | slower |
+| rmp-serde | 1.20 | 356 | slower |
+| ciborium | 2.23 | 355 | slower |
+| serde_json | 2.89 | 672 | slower |
+| sonic-rs | 3.00 | 672 | slower |
 
 **128 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.65 | 1066 | fastest |
-| postcard | 1.03 | 1051 | slower |
-| prost | 1.61 | 1054 | slower |
-| rmp-serde | 1.96 | 1216 | slower |
-| ciborium | 4.52 | 1215 | slower |
-| serde_json | 7.34 | 2420 | slower |
-| sonic-rs | 8.64 | 2420 | slower |
+| gld-kiln | 0.55 | 1066 | fastest |
+| postcard | 0.90 | 1051 | slower |
+| prost | 1.29 | 1054 | slower |
+| rmp-serde | 1.67 | 1216 | slower |
+| ciborium | 3.95 | 1215 | slower |
+| serde_json | 6.55 | 2420 | slower |
+| sonic-rs | 7.55 | 2420 | slower |
 
 **512 numbers** — not clearly slower: `gld-kiln`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.90 | 4143 | fastest |
-| postcard | 1.89 | 4128 | slower |
-| prost | 2.82 | 4131 | slower |
-| rmp-serde | 3.91 | 4677 | slower |
-| ciborium | 12.4 | 4677 | slower |
-| serde_json | 23.6 | 9415 | slower |
-| sonic-rs | 28.8 | 9415 | slower |
+| gld-kiln | 1.08 | 4143 | fastest |
+| postcard | 2.09 | 4128 | slower |
+| prost | 2.84 | 4131 | slower |
+| rmp-serde | 3.88 | 4677 | slower |
+| ciborium | 11.6 | 4677 | slower |
+| serde_json | 22.9 | 9415 | slower |
+| sonic-rs | 27.5 | 9415 | slower |
 
 ### c
 

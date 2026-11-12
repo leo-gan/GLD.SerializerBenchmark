@@ -24,6 +24,7 @@ csharp	ShapeShift.MsgPack
 csharp	ZeroFormatter
 go	encoding/json
 go	fxamacker/cbor
+go	go-amf0
 go	goccy/go-json
 go	hamba/avro
 go	jsoniter

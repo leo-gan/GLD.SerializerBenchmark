@@ -74,6 +74,7 @@ fn write_dep_versions(manifest: &std::path::Path) -> Result<(), Box<dyn std::err
         "sonic-rs",
         "rmp-serde",
         "ciborium",
+        "scuffle-amf0",
         "bincode",
         "postcard",
         "bitcode",

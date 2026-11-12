@@ -61,6 +61,8 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | [encoding/json/v2](https://github.com/golang/go/tree/master/src/encoding/json/v2) | JSON | stdlib | struct tags | native | v2 defaults. `MarshalWrite` / `UnmarshalRead` |
 | [fory](https://github.com/apache/fory) | Binary | fory/go/fory | registered structs | **adapted** | Native mode; registration outside timing |
 | [fxamacker/cbor](https://github.com/fxamacker/cbor) | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
+| [gamf-amf0](https://github.com/gnolizuh/gamf) | AMF0 | gamf | `Marshal` | adapted | AMF0, API shaped like `encoding/json` |
+| [go-amf0](https://github.com/yutopp/go-amf0) | AMF0 | go-amf0 | reflection Encode/Decode | native | AMF0 objects and strict arrays |
 | [goccy/go-json](https://github.com/goccy/go-json) | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
 | [hamba/avro](https://github.com/hamba/avro) | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
@@ -124,6 +126,14 @@ Apache Fory (formerly Fury) was created for high-performance, cross-language ser
 #### [fxamacker/cbor](https://github.com/fxamacker/cbor)
 
 fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values.
+
+#### [go-amf0](https://github.com/yutopp/go-amf0)
+
+go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an `Encoder` and calls `Encode` on the suite struct. Decode fills a new struct of the same type. The library does not implement AMF0 references, so a graph with a shared node is skipped.
+
+#### [gamf-amf0](https://github.com/gnolizuh/gamf)
+
+gamf is a second Go AMF codec. The AMF0 path is `Marshal`, shaped like `encoding/json`. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row. AMF0 and AMF3 stay separate standards so a later AMF3 library is not ranked with these AMF0 rows.
 
 #### [goccy/go-json](https://github.com/goccy/go-json)
 

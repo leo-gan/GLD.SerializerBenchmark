@@ -18,6 +18,8 @@ func All() []BenchSerializer {
 		newShamatonMsgpackArray(),
 		newUgorjiMsgpack(),
 		newFxamackerCBOR(),
+		newYutoppAmf0(),
+		newGamfAmf0(),
 		newUgorjiCBOR(),
 		newKelindarBinary(),
 		newEncodingGob(),

@@ -50,6 +50,7 @@ mod yaml;
 use avro_ser::AvroFastSer;
 use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
+    ScuffleAmf0,
 };
 use columnar::{ArrowIpc, ParquetSer};
 use dagr_ser::{DagrFrozenPackedSer, DagrFrozenSer, DagrRegularSer, DagrSer};
@@ -218,6 +219,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         // Schemaless binary
         Box::new(RmpSerde::default()),
         Box::new(CiboriumSer::default()),
+        Box::new(ScuffleAmf0::default()),
         Box::new(BincodeSer::default()),
         Box::new(PostcardSer::default()),
         Box::new(BitcodeSer::default()),
@@ -303,7 +305,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 29);
+        assert_eq!(all.len(), 30);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -311,8 +313,8 @@ mod tests {
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        // Columnar rows do not support message. Fory, serde_yaml, gld-kiln, and the four Dagr rows do.
-        assert_eq!(ok, 24);
+        // Columnar rows and HDF5 do not support message. scuffle-amf0 does.
+        assert_eq!(ok, 25);
     }
 
     #[test]

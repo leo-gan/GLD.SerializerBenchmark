@@ -1,6 +1,6 @@
 # Multi-Language Serializer Benchmark
 
-[Serialization](https://leo-gan.github.io/serialization/) is the hub for the theory, the history, and the benchmarks.
+>[Serialization](https://leo-gan.github.io/serialization/) - a hub for the theory, the history, etc.
 
 [![Site](https://img.shields.io/badge/site-documentation-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
 [![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
@@ -8,25 +8,13 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Languages](https://img.shields.io/badge/languages-14-informational?style=flat-square)](#supported-languages)
 
-Compare 300+ serialization libraries across **14 languages**.
-
-Your favorite one is probably fast. The one it beat may have been writing different bytes, in a different language, about a different object. That is a parade. A race is one language, one standard, and one shape of data.
-
-| Start here | |
-|------------|--|
-| **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
-| **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
-| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/) |
-| **Compliance** | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/) |
-| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) |
-| **Benchmarks** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
+Compare 400+ serialization libraries across **14 languages**.
 
 <p align="center">
   <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/">
     <img src="docs/assets/dashboard-overview.jpg" alt="Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking" width="780" />
   </a>
   <br />
-  <sub>The live <strong>Dashboard</strong>: pick a language, a standard, and a data type, then read speed vs size and the ranking.</sub>
 </p>
 
 ---
@@ -48,24 +36,22 @@ Your favorite one is probably fast. The one it beat may have been writing differ
 - [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 52
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 40
 - [Fortran](https://leo-gan.github.io/GLD.SerializerBenchmark/fortran/) — 9
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 31
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 34
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 27
-- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 30
+- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 32
 - [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 32
 - [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 21
 - [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
-- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 31
-- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 28
+- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 34
+- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 30
 - [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 21
 - [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 17
-
-[Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/) · [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/).
 
 ---
 
 ## Try it: two quality questions
 
-Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/). No Docker.
+Requires a recent `Python` and [uv](https://docs.astral.sh/uv/). No Docker.
 
 ```bash
 git clone https://github.com/leo-gan/GLD.SerializerBenchmark.git
@@ -83,13 +69,10 @@ cd python && ./scripts/run-benchmarks.sh smoke
 # → logs/compliance/YYYY-MM-DD-HHMMSS.json
 ```
 
-Then open the [Python Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/?lang=python)
-for timings, or [Dashboard · Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/#compliance/python)
-(add `/{serializer}` to open one library, e.g. `#compliance/python/orjson`)
-for spec misses. Catalog notes (not live numbers) live under
-[Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/).
+Then open the [Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/?lang=python)
+for timings, or [Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/#compliance/python) for the standard compliance.
 
-Prefer Rust benches? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
+Prefer `Rust` benches? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ---
 
@@ -126,19 +109,15 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 ## Test data
 
-Every language serializes the same samples. A **data set** is the group measured in one run. A **data type** is one shape inside that group. The Suite is the default set, and each set is scored on its own.
+Every language serializes the same samples. A **data set** is the group measured in one run. A **data type** is one shape inside that group. 
 
 | Data set | Data types |
 |----------|------------|
-| **Suite** | Five everyday records: a flat message, a nested document, numeric telemetry, a block of strings, and an event |
+| **Suite** (default) | Five everyday records: a flat message, a nested document, numeric telemetry, a block of strings, and an event |
 | **Columnar** | Wide tables: a full row, a single-column read, a nested table, and an aligned record |
 | **Graph** | One network of shared objects, including a cycle |
 | **Array** | One dense grid of numbers, and a window read from that grid |
 | **Tensor** | Machine-learning payloads: a float matrix, a borrowed read of that matrix, a prompt, a weight shard, and a request |
-
-A library is measured on the sets it can carry.
-
-[Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/) has the catalog and the run matrices.
 
 ---
 

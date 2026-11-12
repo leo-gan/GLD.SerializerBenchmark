@@ -1,4 +1,4 @@
-//! Serde-backed binary formats: MessagePack, CBOR, bincode, postcard, bitcode, flexbuffers, bson.
+//! Serde-backed binary formats: MessagePack, CBOR, AMF0, bincode, postcard, bitcode, flexbuffers, bson.
 
 use crate::data::Fixture;
 use anyhow::Result;
@@ -61,6 +61,40 @@ impl BenchSerializer for CiboriumSer {
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
         Ok(ciborium::from_reader(r)?)
+    }
+}
+
+#[derive(Default)]
+pub struct ScuffleAmf0;
+
+impl BenchSerializer for ScuffleAmf0 {
+    fn name(&self) -> &'static str {
+        "scuffle-amf0"
+    }
+    fn version(&self) -> &'static str {
+        ver("scuffle-amf0")
+    }
+    fn stream_mode(&self) -> StreamMode {
+        StreamMode::Native
+    }
+    fn prepare(&mut self, _: &Fixture) -> Result<()> {
+        Ok(())
+    }
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        out.extend(scuffle_amf0::to_bytes(fixture)?);
+        Ok(())
+    }
+    fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
+        Ok(scuffle_amf0::from_slice(data)?)
+    }
+    fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
+        counted_write(w, |out| {
+            scuffle_amf0::to_writer(out, fixture)?;
+            Ok(())
+        })
+    }
+    fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
+        Ok(scuffle_amf0::from_reader(r)?)
     }
 }
 

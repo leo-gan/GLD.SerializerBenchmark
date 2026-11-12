@@ -14,6 +14,7 @@ from .json_pydantic import PydanticSerializer
 from .json_mashumaro import MashumaroSerializer
 from .json_serpyco import SerpycoSerializer
 from .binary_msgpack import MsgpackSerializer
+from .binary_amf import PyAmf0Serializer, PyAmf3Serializer
 from .binary_cbor2 import Cbor2Serializer
 from .binary_ion import AmazonIonSerializer
 from .binary_kiln import KilnSerializer
@@ -40,6 +41,8 @@ __all__ = [
     "SerpycoSerializer",
     "MsgpackSerializer",
     "Cbor2Serializer",
+    "PyAmf0Serializer",
+    "PyAmf3Serializer",
     "AmazonIonSerializer",
     "KilnSerializer",
     "ProtobufSerializer",

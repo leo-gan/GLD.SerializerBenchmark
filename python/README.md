@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Host benchmark runner evaluating **31 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **34 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
