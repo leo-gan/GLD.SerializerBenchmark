@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Toon.Format;
 using Amazon.IonDotnet;
 using Amazon.IonDotnet.Builders;
 using Newtonsoft.Json;
@@ -258,6 +260,9 @@ namespace GLD.SerializerBenchmark
                 new("MS DataContract Json", "json", SerializerVersionRegistry.Resolve("MS DataContract Json"), DecodeDataContractJson),
                 new("MS Bond Json", "json", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
+                new("Toon.Format", "toon", SerializerVersionRegistry.Resolve("Toon.Format"), DecodeToon),
+                new("ToonNet", "toon", SerializerVersionRegistry.Resolve("ToonNet"), DecodeToonNet),
+                new("Corvus.Toon", "toon", SerializerVersionRegistry.Resolve("Corvus.Toon"), DecodeCorvusToon),
                 new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
                 new("Amazon.IonDotnet", "ion", SerializerVersionRegistry.Resolve("Amazon.IonDotnet"), DecodeIon),
@@ -460,6 +465,37 @@ namespace GLD.SerializerBenchmark
             using var ms = new MemoryStream(data);
             var ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(object));
             return ser.ReadObject(ms);
+        }
+
+        private static object DecodeToon(byte[] data, string schema)
+        {
+            JsonNode node = ToonDecoder.Decode(data);
+            // A root null is a JSON null, not a missing value. Newtonsoft
+            // stores the catalog null as a JValue, so the compare needs one too.
+            if (node is null) return JValue.CreateNull();
+            return JsonConvert.DeserializeObject(node.ToJsonString()) ?? JValue.CreateNull();
+        }
+
+        private static object JsonOrNull(string json)
+        {
+            return JsonConvert.DeserializeObject(json) ?? JValue.CreateNull();
+        }
+
+        private static object DecodeToonNet(byte[] data, string schema)
+        {
+            var text = Encoding.UTF8.GetString(data);
+            var value = ToonNet.Core.Serialization.ToonSerializer.Deserialize(
+                text, typeof(System.Text.Json.JsonElement), null);
+            if (value is System.Text.Json.JsonElement element)
+                return JsonOrNull(element.GetRawText());
+            if (value is null) return JValue.CreateNull();
+            return JToken.FromObject(value);
+        }
+
+        private static object DecodeCorvusToon(byte[] data, string schema)
+        {
+            var json = Corvus.Toon.ToonDocument.ConvertToJsonString(Encoding.UTF8.GetString(data));
+            return JsonOrNull(json);
         }
 
         private static object DecodeSharpYaml(byte[] data, string schema)

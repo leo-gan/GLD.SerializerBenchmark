@@ -50,6 +50,7 @@ export const FORMAT_LABELS = {
   json: 'JSON',
   yaml: 'YAML',
   toml: 'TOML',
+  toon: 'TOON',
   cbor: 'CBOR',
   msgpack: 'MessagePack',
   protobuf: 'Protocol Buffers',

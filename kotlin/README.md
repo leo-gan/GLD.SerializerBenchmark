@@ -2,9 +2,9 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (33)
+## Serializers (34)
 
-The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompressed), ORC (ZSTD default and uncompressed), SBE, and gld-ion.
+The registry has 34 serializers.
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -14,6 +14,7 @@ The registry is the previous 26 rows plus Arrow IPC, Parquet (Snappy and uncompr
 | kotlinx-properties | Text | kotlinx-serialization-properties | `encodeToStringMap` + `java.util.Properties` store/load |
 | kotlinx-hocon | Text | kotlinx-serialization-hocon | `Hocon.encodeToConfig` / `decodeFromConfig` |
 | kaml | YAML | com.charleskorn.kaml | Same `@Serializable` core |
+| ktoon | Text | com.lukelast.ktoon | `encodeToString` / `decodeFromString`. Size is UTF-8 bytes |
 | jackson | JSON | jackson-module-kotlin | Reuse `ObjectMapper` + typed writer/reader |
 | moshi-codegen | JSON | moshi-kotlin-codegen | KSP `@JsonClass` adapters; Okio Buffer |
 | moshi-reflect | JSON | moshi-kotlin | `KotlinJsonAdapterFactory` first (reflection) |

@@ -56,7 +56,7 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
-32 serializers are registered when the optional `simdjson` addon loads, and 31 otherwise. That is the previous registry plus `fory` and `gld-kiln`.
+34 serializers are registered when the optional `simdjson` addon loads, and 33 otherwise. That includes `fory`, `gld-kiln`, and `toon`.
 
 The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prepare()` is outside the clock. Every row, including the columnar ones, is **bytes only**: there is no distinct stream loop and no compliance decoder. `arrow-ipc` times the Arrow IPC stream (`tableToIPC(..., 'stream')`), not the Arrow file format. Parquet is registered because one `nested_table` value (struct + list of structs, int32 not widened) round-tripped with `hyparquet-writer` 0.16.10 and `hyparquet` 1.31.2. `parquet` keeps the writer default, Snappy. `parquet-uncompressed` sets `codec: 'UNCOMPRESSED'`, which changes the bytes and the column codec metadata. That is a second call path of the same writer, not a second library. `parquet-wasm` is not registered. Schema objects are selected in `prepare()`. Building the columnar batch from rows is inside timed `serialize`. `table_project` deserialize returns `f_float_0` only, an array of length N, including N=1.
 
@@ -94,6 +94,7 @@ The clock wraps `serialize` and `deserialize` of an in-memory byte buffer. `prep
 | [sia](https://github.com/TimeleapLabs/sia) | Binary | `@timeleap/sia` | typed-tag JSON-model over Sia primitives |
 | [simdjson-parse+JSON.stringify](https://github.com/simdjson/simdjson) | JSON | `simdjson` (optional) | ser: `JSON.stringify`; deser: `simdjson.parse` |
 | [v8-serializer](https://github.com/nodejs/node) | Native | `node:v8` | `v8.serialize` / `v8.deserialize` |
+| [toon](https://github.com/toon-format/toon) | Text | `@toon-format/toon` | `encode` / `decode`. Size is UTF-8 bytes |
 
 ### Specifics
 
@@ -123,17 +124,17 @@ BSER is Facebook Watchman's binary protocol: a compact encoding for the watchman
 
 BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
 
-#### [cbor](https://github.com/hildjj/node-cbor)
-
-node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC.
-
-#### [amf-codec](https://www.npmjs.com/package/amf-codec)
+#### [amf-codec](https://github.com/csimi/amf-codec)
 
 amf-codec is a small AMF0 encoder and decoder for Node. AMF0 is the command encoding inside RTMP. The timed path is `toAMF` and `fromAMF` on one plain object. It does not write AMF3.
 
 #### [biorate-amf](https://www.npmjs.com/package/@biorate/amf)
 
 @biorate/amf is an AMF3 encoder and decoder. The timed path is `encode` and `decode` on one plain object. The first byte of an object is the AMF3 object marker. The package does not write Function, XML, or Date. It is a separate row from `amf-codec` because that library writes AMF0.
+
+#### [cbor](https://github.com/hildjj/node-cbor)
+
+node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC.
 
 #### [cbor-x](https://github.com/kriszyp/cbor-x)
 
@@ -226,6 +227,10 @@ simdjson was created to parse JSON at memory-bandwidth speeds using SIMD. The pr
 #### [v8-serializer](https://github.com/nodejs/node)
 
 Node's `v8.serialize` / `v8.deserialize` snapshot V8 values. They exist so the engine can persist structured clones, not as a portable wire format. This row times that Node-only API.
+
+#### [toon](https://github.com/toon-format/toon)
+
+@toon-format/toon is the official TypeScript codec and the reference for TOON specification 4.4. The timed path is encode and decode of UTF-8 text. The Size column is that byte length. A token count is not part of the measurement.
 
 
 ### Stream I/O

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -88,6 +87,11 @@ private fun adapters(): List<Adapter> {
         },
         Adapter("kaml", "yaml", Versions.of("com.charleskorn.kaml.Yaml")) { b, _ ->
             Yaml.default.parseToYamlNode(b.decodeToString())
+        },
+        Adapter("ktoon", "toon", Versions.of("com.lukelast.ktoon.Ktoon")) { b, _ ->
+            // JsonElement's own serializer expects JSON. decodeToonToJson is the
+            // library tree decode, so a TOON document is accepted on its own.
+            com.lukelast.ktoon.Ktoon.Default.decodeToonToJson(b.decodeToString())
         },
         Adapter("jackson-cbor", "cbor", Versions.of(CBORFactory::class.java)) { b, _ ->
             cbor.readValue(b, Any::class.java)

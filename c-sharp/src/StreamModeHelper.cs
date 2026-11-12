@@ -24,6 +24,9 @@ namespace GLD.SerializerBenchmark
                     return "adapted";
                 case "Json.Net":
                 case "Json.Net (Helper)":
+                case "Toon.Format":
+                case "ToonNet":
+                case "Corvus.Toon":
                 case "YamlDotNet":
                 case "SharpYaml":
                 case "System.Text.Json":

@@ -20,9 +20,9 @@ rust/src/serializers/
   sbe_ser.rs       # sbe-tool 1.40.2 flyweights (vendored rust/gen/sbe)
 ```
 
-## Serializers (30)
+## Serializers (33)
 
-`all_serializers()` registers 30 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
+`all_serializers()` registers 33 rows, Fory and the four Dagr layout rows included. The four columnar rows are `arrow-ipc`, `parquet`, `parquet-uncompressed`, and `sbe`.
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -51,6 +51,9 @@ rust/src/serializers/
 | nanoserde | Binary | `SerBin` / `DeBin` |
 | speedy | Binary | `Writable` / `Readable` |
 | serde_yaml | YAML | serde YAML (registered; omitted from the old 17-row heading) |
+| toon-format | TOON | `encode_default` / `decode_default`; adapted stream. Size is UTF-8 bytes |
+| ctoon | TOON | C99 core. `dumps` / `loads`. Adapted stream. Size is UTF-8 bytes |
+| tru | TOON | `encode` / `try_decode`. Adapted stream. Size is UTF-8 bytes |
 | arrow-ipc | Columnar | arrow 60.0.0 IPC **stream** in the bytes API (not the Arrow file). Schema in `prepare`. `RecordBatch` built inside `serialize_into`. `table_project` reads field 0 via `StreamReader::try_new(_, Some(vec![0]))`. Adapted stream. No compliance decoder. |
 | parquet | Columnar | parquet 60.0.0. Writer properties in `prepare`. `RecordBatch` inside serialize. Page codec is Snappy (`set_compression(SNAPPY)`); arrow-rs 60's own `DEFAULT_COMPRESSION` is UNCOMPRESSED. Encodings are not overridden. `table_project` uses `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
 | parquet-uncompressed | Columnar | Same writer with `Compression::UNCOMPRESSED` only. Encodings stay at the builder default. |

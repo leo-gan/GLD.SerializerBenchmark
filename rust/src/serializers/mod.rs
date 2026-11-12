@@ -45,6 +45,9 @@ mod kiln_ser;
 mod kinded;
 mod prost_ser;
 mod sbe_ser;
+mod ctoon;
+mod toon;
+mod tru_toon;
 mod yaml;
 
 use avro_ser::AvroFastSer;
@@ -60,6 +63,9 @@ use json::{SerdeJson, SimdJson, SonicRs};
 use kiln_ser::KilnSer;
 use prost_ser::ProstSer;
 use sbe_ser::SbeSer;
+use ctoon::Ctoon;
+use toon::ToonFormat;
+use tru_toon::TruToon;
 use yaml::SerdeYaml;
 
 #[inline]
@@ -239,6 +245,9 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
         Box::new(SerdeYaml::default()),
+        Box::new(ToonFormat::default()),
+        Box::new(Ctoon::default()),
+        Box::new(TruToon::default()),
         // Columnar. arrow-rs IPC stream / Parquet, and sbe-tool 1.40.2 flyweights.
         Box::new(ArrowIpc::default()),
         Box::new(ParquetSer::default()),
@@ -305,7 +314,7 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 30);
+        assert_eq!(all.len(), 33);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -313,8 +322,8 @@ mod tests {
             roundtrip(ser.as_mut(), &fx);
             ok += 1;
         }
-        // Columnar rows and HDF5 do not support message. scuffle-amf0 does.
-        assert_eq!(ok, 25);
+        // Columnar rows and HDF5 do not support message. scuffle-amf0 and the TOON rows do.
+        assert_eq!(ok, 28);
     }
 
     #[test]

@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **53 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **56 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **53 serializers** registered in `Program.cs` (was 52, plus gld-kiln). Also Json.NET, protobuf-net, LightProto, Bond, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Amazon.IonDotnet, Nerdbank.MessagePack, ShapeShift, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more. **Not** included: Wire; Jil (incompatible with .NET 10); Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs); **sbe** (no NuGet `Org.SbeTool.Sbe.Dll` on the 1.40.2 line); ORC; ParquetSharp.
+- **56 serializers** registered in `Program.cs` (includes gld-kiln, Toon.Format, ToonNet, and Corvus.Toon). Also Json.NET, protobuf-net, LightProto, Bond, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Amazon.IonDotnet, Nerdbank.MessagePack, ShapeShift, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more. **Not** included: Wire; Jil (incompatible with .NET 10); Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs); **sbe** (no NuGet `Org.SbeTool.Sbe.Dll` on the 1.40.2 line); ORC; ParquetSharp.
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event`, plus columnar `table`, `table_project`, `nested_table`, `signal` — domain POCOs in `TestData/V2/Models.cs`. The new Arrow/Parquet rows support only those four ids. Older rows still default `Supports` to true, so a columnar config must pass a comma-separated exact-name allow-list.
 - **Dual mode**: **bytes** and **stream**, the same labels as the other languages. Stream is **native** when the library writes the stream, or **adapted** when the benchmark copies a finished buffer. See [bytes and stream](../docs/c-sharp/index.md#bytes-mode-and-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.

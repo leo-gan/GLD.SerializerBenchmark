@@ -278,6 +278,7 @@ func TestStreamModeLabels(t *testing.T) {
 		"ion-go":                   StreamNative,
 		"gld-kiln":                 StreamAdapted,
 		"goccy/go-yaml":            StreamNative,
+		"toon-go":                  StreamAdapted,
 		"pelletier/go-toml":        StreamNative,
 		"hamba/avro":               StreamNative,
 		// Byte-slice-only libraries (OCF would change wire format vs bytes):

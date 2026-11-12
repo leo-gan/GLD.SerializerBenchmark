@@ -13,6 +13,7 @@ object Registry {
             Entry("kotlinx-properties", ::KotlinxPropertiesSer),
             Entry("kotlinx-hocon", ::KotlinxHoconSer),
             Entry("kaml", ::KamlSer),
+            Entry("ktoon", ::KtoonSer),
             Entry("jackson", ::JacksonKotlinSer),
             Entry("moshi-codegen", ::MoshiCodegenSer),
             Entry("moshi-reflect", ::MoshiReflectSer),

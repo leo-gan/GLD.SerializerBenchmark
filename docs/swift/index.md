@@ -76,6 +76,7 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 | [TOML](https://github.com/mattt/swift-toml) | Text | mattt/swift-toml | adapted | Map-root wrap for N>1 |
 | [XMLCoder](https://github.com/CoreOffice/XMLCoder) | Text | XMLCoder | adapted | Root `payload` |
 | [Yams](https://github.com/jpsim/Yams) | Text | Yams | adapted | YAML |
+| [ToonFormat](https://github.com/toon-format/toon-swift) | Text | toon-swift | adapted | Official Swift TOON, specification 4.1. Size is UTF-8 bytes |
 
 ### Specifics
 
@@ -168,6 +169,10 @@ XMLCoder is a Codable XML encoder/decoder for Swift. The problem was that Swift 
 #### [Yams](https://github.com/jpsim/Yams)
 
 Yams is a Swift wrapper around libyaml. YAML exists as a human-friendly config language. Yams is the usual Swift YAML library.
+
+#### [ToonFormat](https://github.com/toon-format/toon-swift)
+
+ToonFormat is the official Swift codec. Release 0.5 targets TOON specification 4.1. The timed path is TOONEncoder and TOONDecoder on the suite Codable value. The Size column is the UTF-8 byte length.
 
 
 ### Call-path contract

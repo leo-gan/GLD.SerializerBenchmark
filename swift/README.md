@@ -7,7 +7,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 - **Codable wrappers** under `Serializers/` only see the type-erased `Fixture` API.
 - **Schema codecs** (Protobuf, FlatBuffers, Avro, Cap’n Proto, Dagr) use a domain↔native bridge in prepare / post-decode (same idea as Go protobuf / Rust prost). Conversion is not the “optimal hot path”; timed work is the library encode/decode.
 
-## Serializers (22)
+## Serializers (23)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -20,6 +20,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | SwiftCbor | Binary | swift-cbor | CBOR |
 | SwiftBSON | Binary | swift-bson | BSON document root wrap for N>1 |
 | Yams | Text | Yams | YAML |
+| ToonFormat | Text | toon-format/toon-swift | Official TOON 4.1. Size is UTF-8 bytes |
 | XMLCoder | Text | XMLCoder | Root key `payload` |
 | **TOML** | Text | mattt/swift-toml | Table root; ItemsWrap for N>1 |
 | **SwiftProtobuf** | Schema | apple/swift-protobuf | Generated from `schemas/v2/protobuf/` |

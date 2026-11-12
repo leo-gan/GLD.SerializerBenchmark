@@ -21,6 +21,7 @@
   -->
   <ItemGroup>
     <PackageReference Include="Apache.Fory" Version="1.7.7" />
+    <PackageReference Include="Corvus.Toon.SystemTextJson" Version="5.7.7" />
     <!-- https://github.com/leo-gan/gld-kiln-csharp tag 0.2.0, package id Gld.Kiln -->
     <PackageReference Include="Gld.Kiln" Version="0.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
@@ -59,6 +60,8 @@
     <PackageReference Include="NetSerializer" Version="4.*" />
     <PackageReference Include="SharpYaml" Version="3.*" />
     <PackageReference Include="SpanJson" Version="4.*" />
+    <PackageReference Include="Toon.Format" Version="1.0.0" />
+    <PackageReference Include="ToonNet.Core" Version="4.0.1" />
     <PackageReference Include="Utf8Json" Version="1.*" />
     <PackageReference Include="YamlDotNet" Version="17.*" />
     <PackageReference Include="YAXLib" Version="4.*" />

@@ -5,7 +5,7 @@ title: "Kotlin"
 Kotlin
 ======
 
-Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt); **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift, SBE); and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **32** serializers (26 plus these 6).
+Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt, ktoon); **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift, SBE); and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **34** serializers.
 
 ## Runtime
 
@@ -67,6 +67,7 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 | [jackson](https://github.com/FasterXML/jackson-module-kotlin) | JSON | jackson-module-kotlin | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
 | [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR + Kotlin module |
 | [kaml](https://github.com/charleskorn/kaml) | YAML | kaml | encodeToString | adapted | Same `@Serializable` core |
+| [ktoon](https://github.com/lukelast/ktoon) | Text | ktoon | encodeToString | adapted | Community TOON for kotlinx.serialization. Size is UTF-8 bytes |
 | [kbson](https://github.com/jershell/kbson) | BSON | kbson | dump/load | adapted | kotlinx BSON |
 | [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization) | CBOR | kotlinx-serialization-cbor | encodeToByteArray | adapted | Official Kotlin CBOR |
 | [kotlinx-hocon](https://github.com/lightbend/config) | HOCON | kotlinx-serialization-hocon | encodeToConfig | adapted | List wrap `{ items = [...] }` for N>1 |
@@ -134,6 +135,10 @@ Jackson was created as the standard data-binding toolkit for Java JSON (and late
 #### [kaml](https://github.com/charleskorn/kaml)
 
 kaml is YAML for kotlinx.serialization. YAML exists as a human-friendly config language. kaml solves Kotlin YAML by implementing a format on the same `@Serializable` types.
+
+#### [ktoon](https://github.com/lukelast/ktoon)
+
+ktoon is a community Kotlin Multiplatform TOON codec on kotlinx.serialization. There is no official Kotlin port. The timed path is encodeToString and decodeFromString. The Size column is the UTF-8 byte length.
 
 #### [kbson](https://github.com/jershell/kbson)
 

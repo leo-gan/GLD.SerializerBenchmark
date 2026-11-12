@@ -14,7 +14,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |----------|---------|--------|----------|---------|---------|------------|------------|
 | python | — | msgspec-msgpack | msgspec-msgpack | — | msgspec-msgpack | no | [python/results.md](python/results.md) |
 | go | — | gld-kiln | gld-kiln | — | gld-kiln | no | [go/results.md](go/results.md) |
-| java | — | gld-kiln | gld-kiln | — | jsoniter | no | [java/results.md](java/results.md) |
+| java | — | jsoniter | gld-kiln | — | jsoniter | no | [java/results.md](java/results.md) |
 | kotlin | — | protobuf | protobuf | — | moshi-codegen | no | [kotlin/results.md](kotlin/results.md) |
 | php | — | json | rybakit-msgpack | — | json | no | [php/results.md](php/results.md) |
 | javascript | — | JSON.stringify | msgpackr | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
@@ -37,7 +37,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | B (flat) | gld-kiln | — | no |
 | go | C (sensor) | gld-kiln | — | no |
 | go | E (words) | gld-kiln | — | no |
-| java | B (flat) | gld-kiln | — | no |
+| java | B (flat) | jsoniter | — | no |
 | java | C (sensor) | gld-kiln | — | no |
 | java | E (words) | jsoniter | — | no |
 | kotlin | B (flat) | protobuf | — | no |
@@ -101,31 +101,31 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgspec-msgpack | 2.69 | 52 | fastest |
-| orjson | 3.68 | 168 | slower |
-| protobuf | 5.32 | 50 | slower |
-| json | 16.4 | 168 | slower |
-| gld-kiln | 16.8 | 57 | slower |
+| msgspec-msgpack | 2.66 | 52 | fastest |
+| orjson | 4.26 | 168 | slower |
+| protobuf | 5.92 | 50 | slower |
+| json | 17.8 | 168 | slower |
+| gld-kiln | 18.0 | 57 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgspec-msgpack | 4.32 | 339 | fastest |
-| orjson | 4.87 | 410 | similar |
-| protobuf | 7.29 | 367 | slower |
-| json | 19.8 | 410 | slower |
-| gld-kiln | 44.7 | 435 | slower |
+| msgspec-msgpack | 5.08 | 339 | fastest |
+| orjson | 5.51 | 410 | similar |
+| protobuf | 9.84 | 367 | slower |
+| json | 22.6 | 410 | slower |
+| gld-kiln | 49.8 | 435 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgspec-msgpack | 8.92 | 1190 | fastest |
-| orjson | 11.3 | 2407 | slower |
-| protobuf | 12.3 | 1061 | slower |
-| gld-kiln | 31.7 | 1073 | slower |
-| json | 85.6 | 2407 | slower |
+| msgspec-msgpack | 9.62 | 1190 | fastest |
+| orjson | 12.5 | 2407 | slower |
+| protobuf | 15.0 | 1061 | slower |
+| gld-kiln | 34.2 | 1073 | slower |
+| json | 93.5 | 2407 | slower |
 
 ### go
 
@@ -133,31 +133,31 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 1.22 | 57 | fastest |
-| protobuf | 1.90 | 50 | slower |
-| goccy/go-json | 2.46 | 168 | slower |
-| vmihailenco/msgpack | 2.93 | 128 | slower |
-| encoding/json | 3.50 | 168 | slower |
+| gld-kiln | 1.56 | 57 | fastest |
+| protobuf | 2.16 | 50 | slower |
+| goccy/go-json | 2.81 | 168 | slower |
+| vmihailenco/msgpack | 3.51 | 128 | slower |
+| encoding/json | 4.32 | 168 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 2.63 | 436 | fastest |
-| goccy/go-json | 3.07 | 411 | slower |
-| vmihailenco/msgpack | 3.47 | 346 | slower |
-| protobuf | 3.54 | 368 | slower |
-| encoding/json | 5.20 | 411 | slower |
+| gld-kiln | 2.98 | 436 | fastest |
+| goccy/go-json | 3.73 | 411 | slower |
+| vmihailenco/msgpack | 4.01 | 346 | slower |
+| protobuf | 4.03 | 368 | slower |
+| encoding/json | 6.14 | 411 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 2.25 | 1073 | fastest |
-| protobuf | 2.86 | 1061 | slower |
-| vmihailenco/msgpack | 9.78 | 1212 | slower |
-| goccy/go-json | 20.5 | 2407 | slower |
-| encoding/json | 25.6 | 2407 | slower |
+| gld-kiln | 2.44 | 1073 | fastest |
+| protobuf | 3.10 | 1061 | slower |
+| vmihailenco/msgpack | 10.6 | 1212 | slower |
+| goccy/go-json | 21.3 | 2407 | slower |
+| encoding/json | 26.4 | 2407 | slower |
 
 ### java
 
@@ -165,31 +165,31 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 27.8 | 57 | fastest |
-| jsoniter | 28.1 | 150 | similar |
-| protobuf | 35.9 | 50 | close |
-| msgpack | 53.1 | 114 | slower |
-| jackson | 54.7 | 158 | slower |
+| jsoniter | 23.5 | 150 | fastest |
+| gld-kiln | 25.8 | 57 | close |
+| protobuf | 30.2 | 50 | slower |
+| msgpack | 52.2 | 114 | slower |
+| jackson | 52.9 | 158 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| jsoniter | 39.9 | 411 | fastest |
-| gld-kiln | 52.9 | 436 | slower |
-| jackson | 67.4 | 411 | slower |
-| msgpack | 84.3 | 346 | slower |
-| protobuf | 89.9 | 368 | slower |
+| jsoniter | 31.2 | 411 | fastest |
+| gld-kiln | 44.4 | 436 | slower |
+| jackson | 58.3 | 411 | slower |
+| protobuf | 58.5 | 368 | slower |
+| msgpack | 73.8 | 346 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 46.5 | 1073 | fastest |
-| jsoniter | 65.9 | 1328 | slower |
-| protobuf | 98.9 | 1061 | slower |
-| msgpack | 106 | 1212 | slower |
-| jackson | 172 | 2407 | slower |
+| gld-kiln | 50.0 | 1073 | fastest |
+| jsoniter | 68.5 | 1328 | slower |
+| protobuf | 105 | 1061 | slower |
+| msgpack | 116 | 1212 | slower |
+| jackson | 176 | 2407 | slower |
 
 ### kotlin
 
@@ -197,28 +197,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 23.3 | 50 | fastest |
-| moshi-codegen | 23.3 | 158 | close |
-| jackson | 81.8 | 158 | slower |
-| msgpack | 85.9 | 114 | slower |
+| protobuf | 19.9 | 50 | fastest |
+| moshi-codegen | 22.9 | 158 | close |
+| msgpack | 80.5 | 114 | slower |
+| jackson | 83.6 | 158 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
 | moshi-codegen | 41.4 | 411 | fastest |
-| protobuf | 46.8 | 368 | close |
-| jackson | 108 | 411 | slower |
-| msgpack | 129 | 346 | slower |
+| protobuf | 46.1 | 368 | similar |
+| jackson | 111 | 411 | slower |
+| msgpack | 128 | 346 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf | 75.4 | 1061 | fastest |
-| moshi-codegen | 109 | 2407 | slower |
-| msgpack | 166 | 1212 | slower |
-| jackson | 242 | 2407 | slower |
+| protobuf | 73.5 | 1061 | fastest |
+| moshi-codegen | 96.9 | 2407 | slower |
+| msgpack | 135 | 1212 | slower |
+| jackson | 204 | 2407 | slower |
 
 ### php
 
@@ -226,25 +226,25 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.40 | 168 | fastest |
-| rybakit-msgpack | 9.24 | 126 | slower |
-| protobuf | 51.2 | 54 | slower |
+| json | 3.44 | 168 | fastest |
+| rybakit-msgpack | 9.60 | 126 | slower |
+| protobuf | 53.6 | 54 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| json | 3.61 | 326 | fastest |
-| rybakit-msgpack | 12.8 | 261 | slower |
-| protobuf | 117 | 283 | slower |
+| json | 3.87 | 326 | fastest |
+| rybakit-msgpack | 14.0 | 261 | slower |
+| protobuf | 126 | 283 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| rybakit-msgpack | 49.3 | 1203 | fastest |
-| json | 82.8 | 2406 | slower |
-| protobuf | 272 | 1052 | slower |
+| rybakit-msgpack | 54.9 | 1203 | fastest |
+| json | 89.2 | 2406 | slower |
+| protobuf | 299 | 1052 | slower |
 
 ### javascript
 
@@ -252,28 +252,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 5.33 | 168 | fastest |
-| msgpackr | 13.8 | 126 | slower |
-| gld-kiln | 14.0 | 57 | slower |
-| protobuf-es | 16.7 | 50 | slower |
+| JSON.stringify | 5.53 | 168 | fastest |
+| msgpackr | 14.3 | 126 | slower |
+| gld-kiln | 15.2 | 57 | slower |
+| protobuf-es | 17.2 | 50 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 7.45 | 411 | fastest |
+| JSON.stringify | 7.48 | 411 | fastest |
 | msgpackr | 14.4 | 348 | slower |
-| protobuf-es | 24.2 | 368 | slower |
-| gld-kiln | 30.2 | 436 | slower |
+| protobuf-es | 23.4 | 368 | slower |
+| gld-kiln | 32.5 | 436 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgpackr | 18.0 | 1214 | fastest |
-| gld-kiln | 21.9 | 1073 | close |
-| JSON.stringify | 23.6 | 2407 | slower |
-| protobuf-es | 33.8 | 1061 | slower |
+| msgpackr | 18.2 | 1214 | fastest |
+| gld-kiln | 21.1 | 1073 | close |
+| JSON.stringify | 24.2 | 2407 | slower |
+| protobuf-es | 32.0 | 1061 | slower |
 
 ### rust
 
@@ -281,31 +281,31 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.24 | 60 | fastest |
-| prost | 0.47 | 55 | slower |
-| rmp-serde | 1.05 | 136 | slower |
-| sonic-rs | 1.28 | 182 | slower |
-| serde_json | 1.51 | 182 | slower |
+| gld-kiln | 0.36 | 60 | fastest |
+| prost | 0.65 | 55 | slower |
+| rmp-serde | 1.66 | 136 | slower |
+| sonic-rs | 1.93 | 182 | slower |
+| serde_json | 2.21 | 182 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 1.05 | 403 | fastest |
-| rmp-serde | 2.25 | 322 | slower |
-| sonic-rs | 2.42 | 390 | slower |
-| prost | 2.45 | 335 | slower |
-| serde_json | 3.16 | 390 | slower |
+| gld-kiln | 1.24 | 403 | fastest |
+| rmp-serde | 2.75 | 322 | slower |
+| prost | 2.77 | 335 | slower |
+| sonic-rs | 2.87 | 390 | slower |
+| serde_json | 3.68 | 390 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 0.56 | 1066 | fastest |
-| prost | 1.35 | 1054 | slower |
-| rmp-serde | 1.67 | 1216 | slower |
-| serde_json | 6.72 | 2420 | slower |
-| sonic-rs | 7.65 | 2420 | slower |
+| gld-kiln | 0.71 | 1066 | fastest |
+| prost | 1.58 | 1054 | slower |
+| rmp-serde | 2.19 | 1216 | slower |
+| serde_json | 8.89 | 2420 | slower |
+| sonic-rs | 8.98 | 2420 | slower |
 
 ### c
 
@@ -377,28 +377,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 9.50 | 57 | fastest |
-| Google.Protobuf | 12.5 | 50 | slower |
-| SpanJson | 12.8 | 157 | slower |
-| System.Text.Json | 35.3 | 157 | slower |
+| gld-kiln | 9.39 | 57 | fastest |
+| SpanJson | 12.7 | 157 | slower |
+| Google.Protobuf | 15.1 | 50 | slower |
+| System.Text.Json | 28.0 | 157 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 15.6 | 435 | fastest |
-| Google.Protobuf | 19.2 | 367 | slower |
-| SpanJson | 24.3 | 410 | slower |
-| System.Text.Json | 55.7 | 410 | slower |
+| gld-kiln | 12.9 | 435 | fastest |
+| Google.Protobuf | 15.6 | 367 | slower |
+| SpanJson | 21.4 | 410 | slower |
+| System.Text.Json | 35.1 | 410 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| gld-kiln | 11.4 | 1073 | fastest |
-| Google.Protobuf | 18.6 | 1061 | slower |
-| SpanJson | 101 | 2407 | slower |
-| System.Text.Json | 115 | 2407 | slower |
+| gld-kiln | 13.3 | 1073 | fastest |
+| Google.Protobuf | 19.1 | 1061 | slower |
+| SpanJson | 105 | 2407 | slower |
+| System.Text.Json | 117 | 2407 | slower |
 
 ### swift
 
@@ -406,31 +406,31 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 4.56 | 50 | fastest |
-| gld-kiln | 7.13 | 57 | slower |
-| IkigaJSON | 20.9 | 168 | slower |
-| Foundation.JSONEncoder | 22.1 | 168 | slower |
-| SwiftMsgpack | 28.1 | 124 | slower |
+| SwiftProtobuf | 4.64 | 50 | fastest |
+| gld-kiln | 7.08 | 57 | slower |
+| IkigaJSON | 21.5 | 168 | slower |
+| Foundation.JSONEncoder | 22.8 | 168 | slower |
+| SwiftMsgpack | 28.3 | 124 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 5.85 | 368 | fastest |
-| gld-kiln | 9.51 | 436 | slower |
-| IkigaJSON | 32.8 | 411 | slower |
-| Foundation.JSONEncoder | 37.4 | 411 | slower |
-| SwiftMsgpack | 55.8 | 346 | slower |
+| SwiftProtobuf | 5.94 | 368 | fastest |
+| gld-kiln | 9.86 | 436 | slower |
+| IkigaJSON | 33.6 | 411 | slower |
+| Foundation.JSONEncoder | 38.1 | 411 | slower |
+| SwiftMsgpack | 57.0 | 346 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SwiftProtobuf | 10.8 | 1061 | fastest |
-| gld-kiln | 13.1 | 1073 | close |
-| IkigaJSON | 136 | 2407 | slower |
-| Foundation.JSONEncoder | 149 | 2407 | slower |
-| SwiftMsgpack | 187 | 1212 | slower |
+| SwiftProtobuf | 11.7 | 1061 | fastest |
+| gld-kiln | 12.2 | 1073 | close |
+| IkigaJSON | 141 | 2407 | slower |
+| Foundation.JSONEncoder | 155 | 2407 | slower |
+| SwiftMsgpack | 189 | 1212 | slower |
 
 ### zig
 

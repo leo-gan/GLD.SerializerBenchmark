@@ -41,6 +41,7 @@ val tomlkt = "0.5.0"
 val ionJava = "1.12.1"
 val thrift = "0.21.0"
 val kaml = "0.72.0"
+val ktoon = "6.0.0"
 val msgpack = "0.9.12"
 val flatbuffers = "24.3.25"
 val capnproto = "0.1.16"
@@ -97,6 +98,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:$kotlinxSerialization")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-hocon:$kotlinxSerialization")
     implementation("com.charleskorn.kaml:kaml:$kaml")
+    implementation("com.lukelast.ktoon:ktoon:$ktoon")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:$jackson")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson")
@@ -290,6 +292,7 @@ tasks.processResources {
                 "ionJava" to ionJava,
                 "thrift" to thrift,
                 "kaml" to kaml,
+                "ktoon" to ktoon,
                 "msgpack" to msgpack,
                 "flatbuffers" to flatbuffers,
                 "capnproto" to capnproto,

@@ -12,6 +12,7 @@ import { schemaSerializers } from './schema.js';
 import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
 import { yamlSerializers } from './yaml.js';
+import { toonSerializers } from './toon.js';
 import { dagrSerializers } from './dagr.js';
 import { columnarSerializers } from './columnar.js';
 import { hdf5Serializers } from './hdf5.js';
@@ -26,6 +27,7 @@ export const ALL_SERIALIZERS = [
   ...nativeSerializers(),
   ...modernSerializers(),
   ...yamlSerializers(),
+  ...toonSerializers(),
   ...dagrSerializers(),
   ...columnarSerializers(),
   ...hdf5Serializers(),

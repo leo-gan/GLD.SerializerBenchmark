@@ -56,7 +56,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
-- **53 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, `fory`, and `gld-kiln`.
+- **56 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, `fory`, `gld-kiln`, `Toon.Format`, `ToonNet`, and `Corvus.Toon`.
 - **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar fixtures](#columnar-fixtures)); ORC; ParquetSharp
 
 ## Serializers
@@ -113,6 +113,9 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (built into .NET 10) |
 | [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
 | [YamlDotNet](https://github.com/aaubry/YamlDotNet) | YAML | YamlDotNet |
+| [Toon.Format](https://github.com/toon-format/toon-dotnet) | Text | Official TOON. `EncodeToBytes` / `Decode<T>`. Stream is the library text writer. Size is UTF-8 bytes |
+| [ToonNet](https://github.com/selcukgural/ToonNet) | Text | `Serialize` / `Deserialize` of a type, bound once. Size is UTF-8 bytes |
+| [Corvus.Toon](https://github.com/corvus-dotnet/Corvus.JsonSchema) | Text | JSON text and TOON text. Size is UTF-8 bytes |
 | [YAXLib](https://github.com/sinairv/YAXLib) | XML | YAXLib |
 | [ZeroFormatter](https://github.com/neuecc/ZeroFormatter) | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
@@ -319,6 +322,18 @@ Utf8Json was written by Yoshifumi Kawai (neuecc) as a fast UTF-8 JSON serializer
 #### [YamlDotNet](https://github.com/aaubry/YamlDotNet)
 
 YamlDotNet is the usual YAML library for .NET. YAML exists as a human-friendly config language. YamlDotNet implements YAML 1.1/1.2 serialize/deserialize.
+
+#### [Toon.Format](https://github.com/toon-format/toon-dotnet)
+
+Toon.Format is the official .NET codec for TOON specification 4.4. EncodeToBytes and Decode of a type are bound once. EncodeToStream and Decode from a stream are the library text stream API. The Size column is the UTF-8 byte length.
+
+#### [ToonNet](https://github.com/selcukgural/ToonNet)
+
+ToonNet.Core serializes a .NET type to TOON text. Serialize and Deserialize of that type are bound once. The stream path writes the UTF-8 buffer. The Size column is the byte length.
+
+#### [Corvus.Toon](https://github.com/corvus-dotnet/Corvus.JsonSchema)
+
+Corvus.Toon.SystemTextJson converts JSON text and TOON text. The timed path includes that System.Text.Json pass. The Size column is the UTF-8 byte length.
 
 #### [YAXLib](https://github.com/sinairv/YAXLib)
 

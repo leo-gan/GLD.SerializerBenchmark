@@ -69,6 +69,7 @@ PECL rows register only when the extension is loaded. This host’s static PHP C
 | [avro](https://github.com/flix-tech/avro-php) | Schema | flix-tech/avro-php | adapted | Binary Avro (no object container) |
 | [cbor](https://github.com/Spomky-Labs/cbor-php) | Binary | spomky-labs/cbor-php | adapted | RFC 8949 |
 | [yaml](https://github.com/symfony/yaml) | Text | symfony/yaml | text_on_stream | Pure PHP YAML |
+| [toon](https://github.com/HelgeSverre/toon-php) | Text | helgesverre/toon | adapted | Specification 4.4. The package default is 3.3. Size is UTF-8 bytes |
 | [yaml-pecl](https://github.com/php/pecl-file_formats-yaml) | Text | ext-yaml | text_on_stream | LibYAML; skip if missing |
 | [gld-arrow](https://github.com/leo-gan/gld-arrow-php) | Schema | leo-gan/gld-arrow-php 0.2.0 | adapted | Arrow IPC stream for the five suite types |
 | [gld-ion](https://github.com/leo-gan/gld-ion-php) | Binary | leo-gan/gld-ion-php 0.2.0 | adapted | Ion 1.0 binary encode / decode |
@@ -132,6 +133,10 @@ spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JS
 #### [yaml](https://github.com/symfony/yaml)
 
 The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
+
+#### [toon](https://github.com/HelgeSverre/toon-php)
+
+helgesverre/toon encodes and decodes TOON in PHP. The package default wire version is 3.3. This row selects specification 4.4. The timed path is Toon::encode and Toon::decode. The Size column is the UTF-8 byte length.
 
 #### [yaml-pecl](https://github.com/php/pecl-file_formats-yaml)
 

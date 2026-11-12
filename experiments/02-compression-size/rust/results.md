@@ -1,7 +1,7 @@
 # Experiment 9 results — rust
 
 **Date:** 2026-11-12
-**Raw file:** `experiments/02-compression-size/rust/logs/rust/2026-11-12-122319.csv`
+**Raw file:** `experiments/02-compression-size/rust/logs/rust/2026-11-12-163746.csv`
 **Language:** rust
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,11 +12,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| gld-kiln | 0.2.0 | 0.08 | 0.15 | 0.24 | 60 | 78 | positional binary — no field names | fastest | yes | 78 |
-| prost | 0.13.5 | 0.13 | 0.35 | 0.47 | 55 | 76 | Protocol Buffers | slower | yes | 79 |
-| rmp-serde | 1.3.1 | 0.21 | 0.85 | 1.05 | 136 | 139 | MessagePack | slower | yes | 84 |
-| sonic-rs | 0.3.17 | 0.31 | 0.98 | 1.28 | 182 | 148 | JSON — fast writer fast named JSON | slower | yes | 82 |
-| serde_json | 1.0.154 | 0.38 | 1.13 | 1.51 | 182 | 148 | JSON — usual Rust library | slower | yes | 84 |
+| gld-kiln | 0.2.0 | 0.12 | 0.24 | 0.36 | 60 | 78 | positional binary — no field names | fastest | yes | 84 |
+| prost | 0.13.5 | 0.18 | 0.46 | 0.65 | 55 | 76 | Protocol Buffers | slower | yes | 83 |
+| rmp-serde | 1.3.1 | 0.30 | 1.31 | 1.66 | 136 | 139 | MessagePack | slower | yes | 83 |
+| sonic-rs | 0.3.17 | 0.46 | 1.48 | 1.93 | 182 | 148 | JSON — fast writer fast named JSON | slower | yes | 80 |
+| serde_json | 1.0.154 | 0.50 | 1.71 | 2.21 | 182 | 148 | JSON — usual Rust library | slower | yes | 83 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -24,11 +24,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| gld-kiln | 0.2.0 | 0.27 | 0.76 | 1.05 | 403 | 278 | positional binary — no field names | fastest | yes | 86 |
-| rmp-serde | 1.3.1 | 0.32 | 1.94 | 2.25 | 322 | 259 | MessagePack | slower | yes | 85 |
-| sonic-rs | 0.3.17 | 0.30 | 2.12 | 2.42 | 390 | 274 | JSON — fast writer fast named JSON | slower | yes | 86 |
-| prost | 0.13.5 | 0.44 | 2.01 | 2.45 | 335 | 253 | Protocol Buffers | slower | yes | 85 |
-| serde_json | 1.0.154 | 0.49 | 2.65 | 3.16 | 390 | 274 | JSON — usual Rust library | slower | yes | 88 |
+| gld-kiln | 0.2.0 | 0.32 | 0.94 | 1.24 | 403 | 278 | positional binary — no field names | fastest | yes | 82 |
+| rmp-serde | 1.3.1 | 0.42 | 2.31 | 2.75 | 322 | 259 | MessagePack | slower | yes | 88 |
+| prost | 0.13.5 | 0.59 | 2.19 | 2.77 | 335 | 253 | Protocol Buffers | slower | yes | 85 |
+| sonic-rs | 0.3.17 | 0.36 | 2.49 | 2.87 | 390 | 274 | JSON — fast writer fast named JSON | slower | yes | 85 |
+| serde_json | 1.0.154 | 0.63 | 3.01 | 3.68 | 390 | 274 | JSON — usual Rust library | slower | yes | 87 |
 
 ## In memory — sample C (sensor), 1 record(s) per write
 
@@ -36,11 +36,11 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| gld-kiln | 0.2.0 | 0.15 | 0.39 | 0.56 | 1066 | 1079 | positional binary — no field names | fastest | yes | 82 |
-| prost | 0.13.5 | 0.31 | 1.03 | 1.35 | 1054 | 1067 | Protocol Buffers | slower | yes | 81 |
-| rmp-serde | 1.3.1 | 0.47 | 1.21 | 1.67 | 1216 | 1173 | MessagePack | slower | yes | 77 |
-| serde_json | 1.0.154 | 2.19 | 4.50 | 6.72 | 2420 | 1241 | JSON — usual Rust library | slower | yes | 79 |
-| sonic-rs | 0.3.17 | 3.35 | 4.30 | 7.65 | 2420 | 1241 | JSON — fast writer fast named JSON | slower | yes | 88 |
+| gld-kiln | 0.2.0 | 0.23 | 0.48 | 0.71 | 1066 | 1079 | positional binary — no field names | fastest | yes | 83 |
+| prost | 0.13.5 | 0.39 | 1.17 | 1.58 | 1054 | 1067 | Protocol Buffers | slower | yes | 82 |
+| rmp-serde | 1.3.1 | 0.57 | 1.64 | 2.19 | 1216 | 1173 | MessagePack | slower | yes | 82 |
+| serde_json | 1.0.154 | 2.47 | 6.31 | 8.89 | 2420 | 1241 | JSON — usual Rust library | slower | yes | 83 |
+| sonic-rs | 0.3.17 | 3.82 | 5.18 | 8.98 | 2420 | 1241 | JSON — fast writer fast named JSON | slower | yes | 83 |
 
 ## Libraries that belong in the conversation
 
