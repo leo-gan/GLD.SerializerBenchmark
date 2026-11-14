@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 using System.Text.Json;
 using ShapeShift;
+using ShapeShift.MsgPack;
 
 namespace GLD.SerializerBenchmark
 {
@@ -52,7 +54,15 @@ namespace GLD.SerializerBenchmark
         {
             using var reader = new StringReader(Encoding.UTF8.GetString(data));
             var decoder = new ShapeShift.Yaml.YamlDecoder(reader);
+            // An empty or comment-only stream is a valid YAML document with no
+            // value. The decoder reports EndDocument instead of throwing.
+            if (decoder.NextTokenType == TokenType.EndDocument)
+                return null;
             var value = ReadYaml(ref decoder);
+            // YamlSerializer has no multi-document reader (unlike JSON and
+            // MessagePack). Leftover tokens are a document this decoder did not
+            // consume, not a second document it parsed. Do not stitch those
+            // tokens into a list: `---` is ordinary text here.
             if (decoder.NextTokenType != TokenType.EndDocument)
                 throw new InvalidDataException("trailing data after the document");
             return value;
@@ -102,7 +112,7 @@ namespace GLD.SerializerBenchmark
                 case TokenType.String:
                     return d.ReadString();
                 case TokenType.Number:
-                    return d.ReadDynamicNumber();
+                    return Primitive(d.ReadDynamicNumber());
                 case TokenType.Binary:
                     return d.ReadByteArray();
                 case TokenType.StartVector:
@@ -143,9 +153,9 @@ namespace GLD.SerializerBenchmark
                 case TokenType.String:
                     return d.ReadString();
                 case TokenType.Number:
-                    return d.ReadDynamicNumber();
+                    return Primitive(d.ReadDynamicNumber());
                 case TokenType.Binary:
-                    return d.ReadByteArray();
+                    return ReadMsgPackBinary(ref d);
                 case TokenType.StartVector:
                     d.ReadStartVector();
                     var list = new List<object>();
@@ -184,7 +194,7 @@ namespace GLD.SerializerBenchmark
                 case TokenType.String:
                     return d.ReadString();
                 case TokenType.Number:
-                    return d.ReadDynamicNumber();
+                    return Primitive(d.ReadDynamicNumber());
                 case TokenType.Binary:
                     return d.ReadByteArray();
                 case TokenType.StartVector:
@@ -225,7 +235,7 @@ namespace GLD.SerializerBenchmark
                 case TokenType.String:
                     return d.ReadString();
                 case TokenType.Number:
-                    return d.ReadDynamicNumber();
+                    return Primitive(d.ReadDynamicNumber());
                 case TokenType.Binary:
                     return d.ReadByteArray();
                 case TokenType.StartVector:
@@ -252,6 +262,53 @@ namespace GLD.SerializerBenchmark
                 default:
                     throw new InvalidDataException("unsupported token " + d.NextTokenType);
             }
+        }
+
+        /// <summary>
+        /// MessagePack surfaces every non-numeric extension as <see cref="TokenType.Binary"/>.
+        /// <see cref="MsgPackDecoder.ReadByteArray"/> only reads the bin family, so timestamp
+        /// (type −1) and other extensions have to go through the extension API.
+        /// </summary>
+        private static object ReadMsgPackBinary(ref MsgPackDecoder d)
+        {
+            if (!d.TryPeekExtensionHeader(out MsgPackExtensionHeader header))
+                return d.ReadByteArray();
+            if (header.TypeCode == MsgPackExtensionCodes.Timestamp)
+                return d.ReadDateTime();
+            return d.ReadExtension(header.TypeCode);
+        }
+
+        /// <summary>
+        /// <see cref="ShapeShiftNumber"/> is ShapeShift's dynamic number. Compliance compares
+        /// ordinary CLR numbers, the same way a caller uses <c>Value</c> after
+        /// <c>ReadDynamicNumber</c>. Whole decimals become integers so <c>3</c> stays <c>3</c>.
+        /// </summary>
+        private static object Primitive(ShapeShiftNumber number)
+        {
+            switch (number)
+            {
+                case ShapeShiftInteger integer:
+                    return integer.Value;
+                case ShapeShiftUnsignedInteger unsigned:
+                    return unsigned.Value <= (ulong)long.MaxValue ? (long)unsigned.Value : unsigned.Value;
+                case ShapeShiftFloat floating:
+                    return floating.Value;
+                case ShapeShiftDecimal dec:
+                    return WholeDecimal(dec.Value);
+                case ShapeShiftBigInteger big:
+                    return big.Value >= long.MinValue && big.Value <= long.MaxValue
+                        ? (long)big.Value
+                        : big.Value;
+                default:
+                    return number;
+            }
+        }
+
+        private static object WholeDecimal(decimal value)
+        {
+            if (value == decimal.Truncate(value) && value >= long.MinValue && value <= long.MaxValue)
+                return (long)value;
+            return (double)value;
         }
     }
 }

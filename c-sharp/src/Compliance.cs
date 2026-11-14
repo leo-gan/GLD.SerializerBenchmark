@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -656,21 +659,142 @@ namespace GLD.SerializerBenchmark
             }
             if (expected is JToken jt)
             {
+                // DeepEquals covers a serializer that already returned tokens, and the
+                // usual CLR tree (List/Dictionary of primitives) after FromObject.
+                // It treats 1 and 1.0 as different JSON types, so a numeric or
+                // structural mismatch falls through to the same value comparison
+                // the Python runner uses.
                 try
                 {
                     var got = observed as JToken ?? JToken.FromObject(observed);
-                    return JToken.DeepEquals(jt, got);
+                    if (JToken.DeepEquals(jt, got)) return true;
                 }
                 catch
                 {
-                    return false;
+                    // A library-specific number type may not convert to a token.
                 }
+                return TokenEquals(jt, observed);
             }
             if (expected is bool || observed is bool) return Equals(expected, observed);
-            if (expected is long or int or double or float && observed is IConvertible)
-                return Convert.ToDouble(expected) == Convert.ToDouble(observed);
+            if (IsNumber(expected) && IsNumber(observed)) return NumbersEqual(expected, observed);
             if (expected is string es) return es.Equals(observed as string);
             return Equals(expected, observed);
+        }
+
+        /// <summary>
+        /// Compare a catalog JSON token to an ordinary CLR value. Lists and
+        /// dictionaries match element-wise. Numbers match by numeric value, so a
+        /// whole decimal and a JSON integer are the same result.
+        /// </summary>
+        private static bool TokenEquals(JToken expected, object observed)
+        {
+            if (expected == null || expected.Type == JTokenType.Null)
+                return observed == null;
+            if (expected is JArray array)
+            {
+                if (observed is string || observed is byte[]) return false;
+                if (observed is not IList list || list.Count != array.Count) return false;
+                for (var i = 0; i < array.Count; i++)
+                {
+                    if (!TokenEquals(array[i], list[i])) return false;
+                }
+                return true;
+            }
+            if (expected is JObject obj)
+            {
+                if (observed is not IDictionary dict || dict.Count != obj.Count) return false;
+                foreach (var prop in obj.Properties())
+                {
+                    if (!dict.Contains(prop.Name)) return false;
+                    if (!TokenEquals(prop.Value, dict[prop.Name])) return false;
+                }
+                return true;
+            }
+            if (expected is JValue value)
+            {
+                if (value.Type == JTokenType.Boolean)
+                    return observed is bool flag && flag == value.Value<bool>();
+                if (value.Type == JTokenType.String)
+                    return observed is string text && text == value.Value<string>();
+                if (value.Type == JTokenType.Null)
+                    return observed == null;
+                if (value.Type is JTokenType.Integer or JTokenType.Float)
+                    return IsNumber(observed) && NumbersEqual(value.Value, observed);
+            }
+            return false;
+        }
+
+        private static bool IsNumber(object value) =>
+            value is byte or sbyte or short or ushort or int or uint or long or ulong
+                or float or double or decimal or BigInteger or Half;
+
+        private static bool NumbersEqual(object left, object right)
+        {
+            if (TryToDecimal(left, out var leftDecimal) && TryToDecimal(right, out var rightDecimal))
+                return leftDecimal == rightDecimal;
+            if (!TryToDouble(left, out var leftDouble) || !TryToDouble(right, out var rightDouble))
+                return false;
+            if (double.IsNaN(leftDouble) && double.IsNaN(rightDouble)) return true;
+            return leftDouble == rightDouble;
+        }
+
+        private static bool TryToDecimal(object value, out decimal result)
+        {
+            result = 0;
+            switch (value)
+            {
+                case byte or sbyte or short or ushort or int or uint or long:
+                    result = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                    return true;
+                case ulong unsigned:
+                    result = unsigned;
+                    return true;
+                case decimal number:
+                    result = number;
+                    return true;
+                case double floating:
+                    if (double.IsNaN(floating) || double.IsInfinity(floating)) return false;
+                    try
+                    {
+                        result = new decimal(floating);
+                        return true;
+                    }
+                    catch (OverflowException)
+                    {
+                        return false;
+                    }
+                case float floating:
+                    if (float.IsNaN(floating) || float.IsInfinity(floating)) return false;
+                    try
+                    {
+                        result = new decimal(floating);
+                        return true;
+                    }
+                    catch (OverflowException)
+                    {
+                        return false;
+                    }
+                case BigInteger integer when integer <= (BigInteger)decimal.MaxValue && integer >= (BigInteger)decimal.MinValue:
+                    result = (decimal)integer;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryToDouble(object value, out double result)
+        {
+            result = 0;
+            if (!IsNumber(value)) return false;
+            try
+            {
+                result = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
         }
 
         private static string Preview(object v)
