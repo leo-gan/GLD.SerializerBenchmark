@@ -380,6 +380,9 @@
       "jackson": [
         "json"
       ],
+      "fory-json": [
+        "json"
+      ],
       "jackson-yaml": [
         "yaml"
       ],
