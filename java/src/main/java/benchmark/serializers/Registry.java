@@ -20,6 +20,7 @@ public final class Registry {
           new Entry("dsl-json", DslJsonSer::new),
           new Entry("moshi", MoshiSer::new),
           new Entry("jsoniter", JsoniterSer::new),
+          new Entry("fory-json", ForyJsonSer::new),
           // Binary / native
           new Entry("kryo", KryoSer::new),
           new Entry("fory", ForySer::new),

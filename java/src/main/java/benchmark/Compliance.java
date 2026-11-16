@@ -180,6 +180,8 @@ public final class Compliance {
     Gson gson = new Gson();
     List<Adapter> out = new ArrayList<>();
     out.add(new Adapter("jackson", "json", Versions.of(ObjectMapper.class), (b, s) -> JSON.readValue(b, Object.class)));
+    org.apache.fory.json.ForyJson foryJson = org.apache.fory.json.ForyJson.builder().build();
+    out.add(new Adapter("fory-json", "json", Versions.of(org.apache.fory.json.ForyJson.class), (b, s) -> foryJson.fromJson(b, Object.class)));
     out.add(new Adapter("gson", "json", Versions.of(Gson.class), (b, s) -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
     out.add(new Adapter("fastjson2", "json", Versions.of(com.alibaba.fastjson2.JSON.class), (b, s) -> com.alibaba.fastjson2.JSON.parse(b)));
     out.add(new Adapter("dsl-json", "json", Versions.of(com.dslplatform.json.DslJson.class), (b, s) -> {
