@@ -26,16 +26,6 @@
 #include <unistd.h>
 #endif
 #include "Signal.h"
-static bool too_deep(const std::vector<uint8_t>& raw) {
-  if (raw.size() > 200000) return true;
-  int n = 0;
-  for (auto c : raw) {
-    if (c == '[' || c == '{') {
-      if (++n > 4000) return true;
-    }
-  }
-  return false;
-}
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -343,44 +333,25 @@ int main(int argc, char** argv) {
       struct Ad {
         std::string name;
         std::function<json(const std::vector<uint8_t>&, const std::string&)> dec;
-        std::string version = "3.11.3";
+        std::string version =
+            std::to_string(NLOHMANN_JSON_VERSION_MAJOR) + "." +
+            std::to_string(NLOHMANN_JSON_VERSION_MINOR) + "." +
+            std::to_string(NLOHMANN_JSON_VERSION_PATCH);
       };
       std::vector<Ad> ads;
       if (fmt == "json") {
         ads.push_back({"nlohmann_json", [](const auto& raw, const auto&) {
           return json::parse(raw.begin(), raw.end());
         }});
-#if __has_include(<rapidjson/document.h>)
-        ads.push_back({"rapidjson", [](const auto& raw, const auto&) {
-          rapidjson::Document d;
-          d.Parse(reinterpret_cast<const char*>(raw.data()), raw.size());
-          if (d.HasParseError()) throw std::runtime_error("rapidjson parse error");
-          return json::parse(raw.begin(), raw.end());
-        }});
-#endif
-        ads.push_back({"glaze", [](const auto& raw, const auto&) {
-          if (too_deep(raw)) throw std::runtime_error("too nested");
-          return json::parse(raw.begin(), raw.end());
-        }});
-        ads.push_back({"arduinojson", [](const auto& raw, const auto&) {
-          if (too_deep(raw)) throw std::runtime_error("too nested");
-          return json::parse(raw.begin(), raw.end());
-        }});
-        ads.push_back({"yyjson", [](const auto& raw, const auto&) {
-          if (too_deep(raw)) throw std::runtime_error("too nested");
-          return json::parse(raw.begin(), raw.end());
-        }});
-        ads.push_back({"simdjson", [](const auto& raw, const auto&) {
-          if (too_deep(raw)) throw std::runtime_error("too nested");
-          return json::parse(raw.begin(), raw.end());
-        }});
+        // glaze, ArduinoJson, yyjson, simdjson, and RapidJSON are not registered
+        // here. Earlier adapters called nlohmann::json::parse and copied its
+        // score onto those names (issue #288).
       } else if (fmt == "cbor") {
         // The binary decoders are called with the default allow_exceptions=true:
         // with allow_exceptions=false, malformed input is reported by returning a
         // discarded value instead of throwing, which the catch block below would
         // miss and score as "accepted".
         ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
-        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
       } else if (fmt == "msgpack") {
         ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
 #if __has_include(<msgpack.hpp>)
@@ -402,12 +373,11 @@ int main(int argc, char** argv) {
           return json(mp_type_name(oh.get().type));
         }});
 #endif
-        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
+
       } else if (fmt == "ubjson") {
         ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw); }});
       } else if (fmt == "bson") {
         ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
-        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
       } else if (fmt == "protobuf") {
         ads.push_back({"protobuf-wire", decode_protobuf});
         ads.push_back({"protobuf", decode_protobuf});
@@ -495,7 +465,6 @@ int main(int argc, char** argv) {
             auto s = c.value("input", "");
             raw.assign(s.begin(), s.end());
           }
-          if (too_deep(raw)) throw std::runtime_error("input too nested for this runner");
           std::string schema;
           if (c.contains("schema") && c["schema"].is_string()) schema = c["schema"].get<std::string>();
           auto got = ad.dec(raw, schema);
