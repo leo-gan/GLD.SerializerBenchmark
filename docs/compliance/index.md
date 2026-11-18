@@ -61,7 +61,7 @@ XML is out of scope. Language-native and private binaries (pickle, gob, Kryo, an
 Every case is a JSON object with:
 
 - a stable `id`
-- `expect`: `accept` or `reject`
+- `expect`: `accept`, `reject`, or `any` (both outcomes conform; the paragraph says why)
 - `requirement`: `MUST` / `MUST NOT` / `SHOULD` / …
 - `section_url` pointing at the published paragraph
 - `paragraph`: the rule in one or two sentences

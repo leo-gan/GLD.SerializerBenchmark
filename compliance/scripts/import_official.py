@@ -71,6 +71,262 @@ _DUP_PARAGRAPH = (
     "the behavior is unpredictable across implementations."
 )
 
+# JSONTestSuite i_ means "parsers disagree". The RFC still decides the score.
+# Stems are the test_parsing filename without ".json".
+_UTF16_STEMS = frozenset(
+    {
+        "i_string_UTF-16LE_with_BOM",
+        "i_string_utf16BE_no_BOM",
+        "i_string_utf16LE_no_BOM",
+    }
+)
+_ILL_FORMED_UTF8_STEMS = frozenset(
+    {
+        "i_string_UTF-8_invalid_sequence",
+        "i_string_UTF8_surrogate_U+D800",
+        "i_string_invalid_utf-8",
+        "i_string_iso_latin_1",
+        "i_string_lone_utf8_continuation_byte",
+        "i_string_not_in_unicode_range",
+        "i_string_overlong_sequence_2_bytes",
+        "i_string_overlong_sequence_6_bytes",
+        "i_string_overlong_sequence_6_bytes_null",
+        "i_string_truncated-utf-8",
+    }
+)
+_UNPAIRED_SURROGATE_STEMS = frozenset(
+    {
+        "i_object_key_lone_2nd_surrogate",
+        "i_string_1st_surrogate_but_2nd_missing",
+        "i_string_1st_valid_surrogate_2nd_invalid",
+        "i_string_incomplete_surrogate_and_escape_valid",
+        "i_string_incomplete_surrogate_pair",
+        "i_string_incomplete_surrogates_escape_valid",
+        "i_string_invalid_lonely_surrogate",
+        "i_string_invalid_surrogate",
+        "i_string_inverted_surrogates_U+1D11E",
+        "i_string_lone_second_surrogate",
+    }
+)
+_NESTING_STEM = "i_structure_500_nested_arrays"
+_UTF8_BOM_STEM = "i_structure_UTF-8_BOM_empty_object"
+
+_JSON_FILE_NOTES = {
+    "8259": (
+        "Official JSONTestSuite parse files (y_/n_/i_) plus original section-linked extras. "
+        "An i_ file is scored from RFC 8259, not kept as expect any by default. "
+        "expect any means both outcomes conform; the paragraph names the latitude, "
+        "and neither outcome is preferred."
+    ),
+    "7159": (
+        "Same parse corpus as RFC 8259; original extras cover UTF-16 (still allowed in 7159). "
+        "UTF-16 JSONTestSuite files are accept. "
+        "expect any means both outcomes conform; the paragraph names the latitude, "
+        "and neither outcome is preferred."
+    ),
+    "4627": (
+        "JSONTestSuite y_ cases that are not a top-level object/array are reject under RFC 4627. "
+        "Ill-formed UTF-8 and a leading UTF-8 BOM are reject. UTF-16 text is accept. "
+        "expect any means both outcomes conform; the paragraph names the latitude, "
+        "and neither outcome is preferred."
+    ),
+}
+
+
+def i_case_kind(stem: str) -> str:
+    """Why an i_ file is not left as a generic MAY, or \"\" if this stem is not one."""
+    if stem in _UTF16_STEMS:
+        return "utf16"
+    if stem in _ILL_FORMED_UTF8_STEMS:
+        return "ill-formed-utf8"
+    if stem in _UNPAIRED_SURROGATE_STEMS:
+        return "unpaired-surrogate"
+    if stem.startswith("i_number_"):
+        return "number-limit"
+    if stem == _NESTING_STEM:
+        return "nesting-limit"
+    if stem == _UTF8_BOM_STEM:
+        return "utf8-bom"
+    return ""
+
+
+def _encoding_head(rfc: str) -> tuple[str, str, str]:
+    if rfc == "4627":
+        return "3", "Encoding", "https://www.rfc-editor.org/rfc/rfc4627#section-3"
+    return "8.1", "Character Encoding", f"https://www.rfc-editor.org/rfc/rfc{rfc}#section-8.1"
+
+
+def _parsers_head(rfc: str) -> tuple[str, str, str]:
+    if rfc == "4627":
+        return "4", "Parsers", "https://www.rfc-editor.org/rfc/rfc4627#section-4"
+    return "9", "Parsers", f"https://www.rfc-editor.org/rfc/rfc{rfc}#section-9"
+
+
+def _apply_i_policy(stem: str, rfc: str, fields: dict[str, str]) -> None:
+    """Replace a generic i_ → MAY mapping with the cited RFC's rule."""
+    kind = i_case_kind(stem)
+    if not kind:
+        return
+    vendored = fields["notes"]
+    if kind == "utf16":
+        sec, title, url = _encoding_head(rfc)
+        fields["section"] = sec
+        fields["section_title"] = title
+        fields["section_url"] = url
+        if rfc == "8259":
+            fields["paragraph"] = (
+                "JSON text exchanged between systems that are not part of a closed "
+                "ecosystem MUST be encoded using UTF-8."
+            )
+            fields["requirement"] = "MUST"
+            fields["expect"] = "reject"
+            fields["notes"] = (
+                vendored
+                + " JSONTestSuite marks this file i_. RFC 8259 interchange text is "
+                "UTF-8 only, so this catalog rejects it."
+            )
+        elif rfc == "7159":
+            fields["paragraph"] = (
+                "JSON text SHALL be encoded in Unicode. The default encoding is UTF-8. "
+                "UTF-16 and UTF-32 are also permitted."
+            )
+            fields["requirement"] = "MUST"
+            fields["expect"] = "accept"
+            fields["notes"] = (
+                vendored
+                + " JSONTestSuite marks this file i_. RFC 7159 permits UTF-16 and "
+                "UTF-32, so a parser that rejects this text fails the case."
+            )
+        else:
+            fields["paragraph"] = (
+                "JSON text SHALL be encoded in Unicode. The first octets select "
+                "UTF-8, UTF-16, or UTF-32."
+            )
+            fields["requirement"] = "MUST"
+            fields["expect"] = "accept"
+            fields["notes"] = (
+                vendored
+                + " JSONTestSuite marks this file i_. RFC 4627 requires the parser "
+                "to detect this encoding."
+            )
+        return
+    if kind == "ill-formed-utf8":
+        sec, title, url = _encoding_head(rfc)
+        fields["section"] = sec
+        fields["section_title"] = title
+        fields["section_url"] = url
+        fields["requirement"] = "MUST NOT"
+        fields["expect"] = "reject"
+        if rfc == "8259":
+            fields["paragraph"] = (
+                "JSON text exchanged between systems that are not part of a closed "
+                "ecosystem MUST be encoded using UTF-8. This sequence is not UTF-8."
+            )
+        elif rfc == "7159":
+            fields["paragraph"] = (
+                "JSON text SHALL be encoded in UTF-8, UTF-16, or UTF-32. "
+                "This sequence is none of those encodings."
+            )
+        else:
+            fields["paragraph"] = (
+                "JSON text SHALL be encoded in Unicode. "
+                "This sequence is not a Unicode encoding form."
+            )
+        fields["notes"] = (
+            vendored
+            + " JSONTestSuite marks this file i_. The bytes are not a legal encoding "
+            "for this RFC, so this catalog rejects them."
+        )
+        return
+    if kind == "unpaired-surrogate":
+        if rfc == "4627":
+            sec, title, url, _para = _json_cite("4627", "string")
+            fields["paragraph"] = (
+                "The string grammar includes \\u and four hex digits, and a string is "
+                "a sequence of Unicode characters. Receivers disagree on an unpaired "
+                "surrogate. Accept and reject are recorded and not scored."
+            )
+        else:
+            sec, title, url = (
+                "8.2",
+                "Unicode Characters",
+                f"https://www.rfc-editor.org/rfc/rfc{rfc}#section-8.2",
+            )
+            fields["paragraph"] = (
+                "The grammar allows an unpaired surrogate, for example \\uDEAD. "
+                "The behavior of software that receives such a text is unpredictable. "
+                "Accepting it and rejecting it both conform."
+            )
+        fields["section"] = sec
+        fields["section_title"] = title
+        fields["section_url"] = url
+        fields["requirement"] = "MAY"
+        fields["expect"] = "any"
+        fields["notes"] = (
+            vendored
+            + " I-JSON (RFC 7493) is the profile that forbids unpaired surrogates. "
+            "Neither outcome is preferred here."
+        )
+        return
+    if kind == "number-limit":
+        if rfc == "4627":
+            fields["paragraph"] = (
+                "RFC 4627 gives the number grammar and does not set a maximum magnitude. "
+                "Implementations differ when the value does not fit the host number type. "
+                "Accept and reject are recorded and not scored."
+            )
+        else:
+            fields["paragraph"] = (
+                "This specification allows implementations to set limits on the range "
+                "and precision of numbers accepted. A parser that accepts this number "
+                "and a parser that rejects it both conform."
+            )
+        fields["notes"] = vendored + " Neither outcome is preferred."
+        return
+    if kind == "nesting-limit":
+        sec, title, url = _parsers_head(rfc)
+        fields["section"] = sec
+        fields["section_title"] = title
+        fields["section_url"] = url
+        if rfc == "4627":
+            fields["paragraph"] = (
+                "RFC 4627 requires a parser to accept texts that conform to the grammar "
+                "and does not name a nesting limit. Deep arrays exhaust real parsers. "
+                "Accept and reject are recorded and not scored."
+            )
+        else:
+            fields["paragraph"] = (
+                "An implementation may set limits on the maximum depth of nesting. "
+                "Rejecting this text at that limit and accepting it both conform."
+            )
+        fields["notes"] = vendored + " Neither outcome is preferred."
+        return
+    sec, title, url = _encoding_head(rfc)
+    fields["section"] = sec
+    fields["section_title"] = title
+    fields["section_url"] = url
+    if rfc == "4627":
+        fields["paragraph"] = (
+            "RFC 4627 does not allow a leading U+FEFF. A JSON text is an object or "
+            "an array, and U+FEFF is not whitespace."
+        )
+        fields["requirement"] = "MUST NOT"
+        fields["expect"] = "reject"
+        fields["notes"] = (
+            vendored
+            + " JSONTestSuite marks this file i_. RFC 4627 has no permission to skip "
+            "a UTF-8 BOM, so this catalog rejects it."
+        )
+        return
+    fields["paragraph"] = (
+        "Generators MUST NOT add a byte order mark. A parser MAY ignore a leading "
+        "U+FEFF instead of reporting an error. Accepting the text and rejecting it "
+        "both conform."
+    )
+    fields["requirement"] = "MAY"
+    fields["expect"] = "any"
+    fields["notes"] = vendored + " Neither outcome is preferred."
+
 
 def _json_topic(name: str) -> str:
     n = name.lower()
@@ -217,7 +473,7 @@ def jts_case_fields(name: str, raw: bytes, rfc: str) -> dict[str, str]:
             "implementation-defined: the RFC says member names SHOULD be unique and "
             "behavior is unpredictable when they are not."
         )
-    return {
+    fields = {
         "section": sec,
         "section_title": title,
         "section_url": url,
@@ -226,6 +482,9 @@ def jts_case_fields(name: str, raw: bytes, rfc: str) -> dict[str, str]:
         "expect": expect,
         "notes": notes,
     }
+    if filename.startswith("i_"):
+        _apply_i_policy(stem, rfc, fields)
+    return fields
 
 
 def import_json() -> None:
@@ -273,7 +532,7 @@ def import_json() -> None:
             "version": "8259",
             "standard_url": "https://www.rfc-editor.org/rfc/rfc8259",
             "provenance": "nst/JSONTestSuite+original-work",
-            "notes": "Official JSONTestSuite parse files (y_/n_/i_) plus original section-linked extras.",
+            "notes": _JSON_FILE_NOTES["8259"],
             "cases": _merge(rfc8259, extras_8259),
         },
     )
@@ -285,7 +544,7 @@ def import_json() -> None:
             "version": "7159",
             "standard_url": "https://www.rfc-editor.org/rfc/rfc7159",
             "provenance": "nst/JSONTestSuite+original-work",
-            "notes": "Same parse corpus as RFC 8259; original extras cover UTF-16 (still allowed in 7159).",
+            "notes": _JSON_FILE_NOTES["7159"],
             "cases": _merge(rfc7159, extras_7159),
         },
     )
@@ -297,7 +556,7 @@ def import_json() -> None:
             "version": "4627",
             "standard_url": "https://www.rfc-editor.org/rfc/rfc4627",
             "provenance": "nst/JSONTestSuite+original-work",
-            "notes": "JSONTestSuite y_ cases that are not a top-level object/array are reject under RFC 4627.",
+            "notes": _JSON_FILE_NOTES["4627"],
             "cases": _merge(rfc4627, extras_4627),
         },
     )

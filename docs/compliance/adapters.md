@@ -11,10 +11,12 @@ For each case:
 1. Decode `input` (UTF-8 text, or hex → bytes when
    `input_encoding` is `hex`).
 2. If `expect` is `reject`, the decode must fail.
-3. If `expect` is `accept` and `decoded` is present, the host value
+3. If `expect` is `any`, a successful decode and a refusal both pass.
+   Record which one happened. `requirement` does not name a preferred side.
+4. If `expect` is `accept` and `decoded` is present, the host value
    must match (JSON-like equality: numbers may be int or float;
    `{"$hex":"00ff"}` means a byte string).
-4. On mismatch, print the block in
+5. On mismatch, print the block in
    [Reading failures](reading-results.md), including `section_url`.
 
 Do **not** download suites at run time. Do **not** add a submodule.

@@ -24,13 +24,38 @@ ship a 7158 file.
 - Escapes (`\n`, `\u00e9`, surrogate pairs)
 - Rejects: trailing commas, comments, single quotes, unquoted keys,
   leading zeros, unescaped controls, empty input, `True`, extra values
+- **`\u` escapes:** four ASCII hex digits. A non-ASCII digit, a code point
+  whose low byte looks like a hex digit, and a short `\u` are reject
 - **4627 vs 7159/8259:** top-level string / number / `true`
-- **7159 vs 8259:** UTF-16LE BOM + `{}`
+- **7159 vs 8259:** UTF-16 text, including the JSONTestSuite `i_` files
 - **I-JSON:** no lone surrogate, unique keys, no NaN
+
+## When accept and reject both conform
+
+`expect` is `any` when the cited sentence allows both outcomes. The score
+does not prefer one. `requirement` is that sentence's keyword
+(`SHOULD` for unique names, `MAY` for a limit or a BOM). It is not a
+hint to reject.
+
+The `paragraph` names the latitude:
+
+- **Limits.** A huge number, or a 500-deep array. The parser may refuse it.
+- **Unpredictable receivers.** Duplicate member names, and an unpaired
+  `\u` surrogate. RFC 8259 says receivers do not agree. I-JSON still
+  rejects both, on its own cases.
+- **Optional BOM.** RFC 7159 and RFC 8259 allow a parser to ignore a
+  leading U+FEFF. RFC 4627 does not, so that case is `reject` there.
+
+A harness that wants a house rule (always reject duplicate names, always
+accept a big integer) keeps that rule outside this corpus. These cases
+exist so a report can show what the library did.
+
+Ill-formed UTF-8 is `reject` on every JSON RFC. UTF-16 text is `accept`
+for RFC 4627 and RFC 7159, and `reject` for RFC 8259.
 
 Catalog: `compliance/data/json/`. Official parse corpus is
 [JSONTestSuite](https://github.com/nst/JSONTestSuite) (318 `y_`/`n_`/`i_`
-files, MIT) plus original extras (~347 cases on RFC 8259).
+files, MIT) plus original extras. RFC 8259 has 352 cases.
 
 ## Python adapters
 
@@ -47,7 +72,7 @@ Typical catalog pattern (report-only):
 ## Official suite
 
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) is MIT and
-is vendored (`jts-*` ids). Each file name is mapped onto an RFC 8259
-section URL so a FAIL still names a paragraph. Original extras
-(`harbor` / `kelp`) sit beside those files. Details:
-[legal provenance](legal.md).
+is vendored (`jts-*` ids). Each file is mapped onto the section of the
+RFC under test, so a failure still names a paragraph. An `i_` file is
+not automatically unscored. Original extras (`harbor` / `kelp`) sit
+beside those files. Details: [legal provenance](legal.md).
