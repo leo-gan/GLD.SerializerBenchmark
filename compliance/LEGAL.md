@@ -69,9 +69,14 @@ Sources:
 - Comprehensive RFC 8259 parse suite. **MIT** (Copyright 2016 Nicolas Seriot).
 - Copying would have been legal (keep the MIT notice).
 - **Now vendored** into `compliance/data/json/rfc{4627,7159,8259}.json`
-  (`jts-*` ids). `y_` → accept, `n_` → reject, `i_` → `expect: any`
-  (implementation-defined, recorded, not scored). Section URLs are
-  mapped from the file name onto RFC 8259 §2 / §4 / §5 / §6 / §7.
+  (`jts-*` ids). `y_` → accept, `n_` → reject. An `i_` file is scored
+  from that RFC, not kept as `expect: any` by default. Ill-formed UTF-8
+  is reject on every version. UTF-16 text is accept on RFC 4627 and
+  RFC 7159, and reject on RFC 8259. Where the RFC allows both outcomes
+  (numeric limits, nesting limits, duplicate names, unpaired surrogates,
+  a leading BOM on 7159/8259), `expect` stays `any` and the paragraph
+  names that latitude. Section URLs cite the matching section of the
+  RFC under test.
   License: `compliance/vendor/JSONTestSuite.MIT.txt`.
 
 ### YAML

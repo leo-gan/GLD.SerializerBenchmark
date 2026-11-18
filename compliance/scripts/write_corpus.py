@@ -73,6 +73,15 @@ JSON_INVALID_NAN = "Numeric values are produced from the number grammar; NaN is 
 JSON_INVALID_LEAD0 = "A number MUST NOT have a leading zero unless the value is zero."
 JSON_INVALID_UNQUOTED = "An object member name is a string, which is quoted."
 JSON_CTRL = "Unescaped control characters (U+0000 through U+001F) MUST NOT appear in a string."
+JSON_U_HEX = (
+    "A \\u escape is \\u followed by four HEXDIG characters. "
+    "HEXDIG is U+0030 through U+0039, A-F, or a-f. "
+    "Any other code point is not a hex digit, and fewer than four hex digits is not an escape."
+)
+_U_ESCAPE_ARRAY_NOTE = (
+    " Wrapped in a one-element array so RFC 4627, which only allows a top-level "
+    "object or array, still tests the escape."
+)
 
 
 def _json_loc(url_base: str, topic: str) -> tuple[str, str, str]:
@@ -277,6 +286,96 @@ def json_common_accept(prefix: str, url_base: str, *, top_level_any: bool) -> li
     return cases
 
 
+def json_u_escape_cases(prefix: str, url_base: str) -> list[dict]:
+    """\\u escapes that are not four ASCII hex digits. Same grammar in every JSON RFC."""
+    loc = _json_loc(url_base, "string")
+    fullwidth = "\uff12"  # ２ U+FF12, a Unicode digit
+    asterism = "\u2042"  # ⁂ low byte is ASCII B
+    arabic = "\u0661"  # ١ a Unicode digit whose low byte is ASCII a
+    return [
+        C(
+            f"{prefix}-u-escape-fullwidth-digit",
+            "A non-ASCII digit is not a hex digit in \\u",
+            *loc,
+            JSON_U_HEX,
+            "MUST NOT",
+            "reject",
+            '["\\u1' + fullwidth + '34"]',
+            notes="U+FF12 FULLWIDTH DIGIT TWO is a Unicode digit. HEXDIG does not include it."
+            + _U_ESCAPE_ARRAY_NOTE,
+        ),
+        C(
+            f"{prefix}-u-escape-low-byte-hex",
+            "A non-ASCII code point is not a hex digit when its low byte is",
+            *loc,
+            JSON_U_HEX,
+            "MUST NOT",
+            "reject",
+            '["\\u1' + asterism + '34"]',
+            notes=(
+                "U+2042 ASTERISM is not HEXDIG. Its low eight bits are U+0042, "
+                "which is the hex digit B."
+            )
+            + _U_ESCAPE_ARRAY_NOTE,
+        ),
+        C(
+            f"{prefix}-u-escape-unicode-digit-low-byte",
+            "A non-ASCII digit whose low byte is a hex letter is not HEXDIG",
+            *loc,
+            JSON_U_HEX,
+            "MUST NOT",
+            "reject",
+            '["\\u1' + arabic + '34"]',
+            notes=(
+                "U+0661 ARABIC-INDIC DIGIT ONE is a Unicode digit, and its low eight "
+                "bits are U+0061 (a). Neither fact makes it HEXDIG."
+            )
+            + _U_ESCAPE_ARRAY_NOTE,
+        ),
+        C(
+            f"{prefix}-u-escape-short",
+            "A \\u escape with fewer than four digits is invalid",
+            *loc,
+            JSON_U_HEX,
+            "MUST NOT",
+            "reject",
+            '"\\u123',
+            notes="The text is a quotation mark, \\u, and three digits. The string never closes, and the escape is short.",
+        ),
+        C(
+            f"{prefix}-u-escape-short-before-quote",
+            "A closing quote does not complete a short \\u escape",
+            *loc,
+            JSON_U_HEX,
+            "MUST NOT",
+            "reject",
+            '["\\u123"]',
+            notes="Three hex digits and then a quotation mark. The mark ends the string. It is not a fourth HEXDIG."
+            + _U_ESCAPE_ARRAY_NOTE,
+        ),
+    ]
+
+
+def json_8259_lone_surrogate(url_base: str) -> dict:
+    return C(
+        "json-8259-lone-surrogate",
+        "An unpaired surrogate is not scored",
+        "8.2",
+        "Unicode Characters",
+        f"{url_base}#section-8.2",
+        "The grammar allows an unpaired surrogate, for example \\uDEAD. "
+        "The behavior of software that receives such a text is unpredictable. "
+        "Accepting it and rejecting it both conform.",
+        "MAY",
+        "any",
+        r'"\uD800"',
+        notes=(
+            "RFC 8259 does not forbid this escape. I-JSON does, on ijson-no-lone-surrogate. "
+            "Neither outcome is preferred here."
+        ),
+    )
+
+
 def json_common_reject(prefix: str, url_base: str) -> list[dict]:
     return [
         C(
@@ -387,6 +486,7 @@ def json_common_reject(prefix: str, url_base: str) -> list[dict]:
             "reject",
             "True",
         ),
+        *json_u_escape_cases(prefix, url_base),
     ]
 
 
@@ -501,18 +601,7 @@ def write_json_suites() -> None:
                     r'"\uD83D\uDE00"',
                     decoded="😀",
                 ),
-                C(
-                    "json-8259-lone-surrogate",
-                    "Unpaired surrogates are not Unicode scalar values",
-                    "8.2",
-                    "Unicode Characters",
-                    f"{r8259}#section-8.2",
-                    "The hex escape form may represent unpaired surrogates; software that interprets JSON as Unicode text may reject them. I-JSON forbids them.",
-                    "SHOULD NOT",
-                    "reject",
-                    r'"\uD800"',
-                    notes="RFC 8259 does not forbid unpaired surrogates in the grammar; I-JSON does. Recorded as SHOULD NOT for interchange.",
-                ),
+                json_8259_lone_surrogate(r8259),
             ],
         },
     )

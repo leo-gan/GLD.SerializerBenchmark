@@ -70,6 +70,11 @@ stay reserved for the benchmark sample shapes.
 
 `input_encoding` is `utf-8` (default), `hex` (binary formats), or `latin-1`.
 
+`expect` may be `any`. Accept and reject both pass, and the run records
+which one happened. The paragraph names the spec latitude. `requirement`
+is the spec keyword, not a preferred outcome. JSON details are on the
+[JSON compliance page](../docs/compliance/json.md).
+
 Regenerate original extras:
 
 ```bash
