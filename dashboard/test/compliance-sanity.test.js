@@ -685,6 +685,26 @@ test('compliance publishes failures beside the matrix and keeps pass counts ther
   assert.equal(outcomes.error || 0, errors);
 });
 
+test('blank runner sources are filled from the JSON catalog fixture', () => {
+  // Issue 298: NetJSON and json-fortran showed Source "" for these fixtures.
+  // The page quotes the first row's input with JSON.stringify.
+  const failures = loadJsonGz('compliance-failures.json.gz');
+  const want = {
+    'jts-8259-n_array_colon_instead_of_comma': '["": 1]',
+    'jts-8259-n_number_minus_space_1': '[- 1]',
+  };
+  for (const [id, input] of Object.entries(want)) {
+    const rows = failures.filter((row) => row.id === id && row.standard === 'RFC 8259');
+    assert.ok(rows.length >= 2, id);
+    assert.equal(rows[0].input, input, id);
+    assert.equal(rows[0].outcome, 'fail', id);
+    assert.ok(rows.some((row) => row.language === 'csharp' && row.serializer === 'NetJSON'), id);
+    for (const row of rows) {
+      if (row.input != null) assert.equal(row.input, input, `${id} ${row.serializer}`);
+    }
+  }
+});
+
 test('bench-versions.json is the stats roster without the stats bodies', () => {
   const published = loadJsonGz('bench-versions.json');
   for (const [lang, versions] of Object.entries(published)) {
