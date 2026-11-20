@@ -1,0 +1,11 @@
+# Minimal pins for Serialization 101–401 lab notebooks on Colab / local Jupyter.
+# Stdlib-only notebooks work without these. Install what a given notebook needs.
+
+# 401 official-parser oracle + some 201 demos
+protobuf>=4.25,<7
+
+# 201 dynamic binary demos
+msgpack>=1.0,<2
+
+# 101 / 301 data / columnar demos (optional; large wheels)
+# pyarrow>=14  # uncomment for Parquet/Arrow labs if needed
