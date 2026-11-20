@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Copy the latest full compliance report into the dashboard payload.
 
-Reads ``logs/compliance/latest.json`` when present (written by an unfiltered
-``./scripts/run-compliance.sh``). Otherwise uses the newest timestamped file.
+Reads ``logs/compliance/latest-<lang>.json`` (written by an unfiltered
+``./scripts/run-compliance.sh``). Otherwise uses ``latest.json`` or the
+newest timestamped file.
 
 Writes ``dashboard/public/data/compliance.json.gz`` (matrix and counts) and
 ``compliance-failures.json.gz`` (the cases the page opens). Pass rows are not
@@ -226,9 +227,88 @@ _CASE_METADATA_KEYS = (
     "expect",
 )
 
+# Several runners store input as "" (C, C#, Swift, and Zig always; Mojo when
+# the field does not decode). The page shows Source from the first failure
+# row only, so that blank hides the fixture for every later serializer.
+_SOURCE_KEYS = ("input", "input_encoding")
+
+
+def load_catalog_cases(data_root: Path) -> dict[tuple[str, str, str], dict]:
+    """Index compliance/data suites by (format, standard, case id)."""
+    index: dict[tuple[str, str, str], dict] = {}
+    if not data_root.is_dir():
+        return index
+    for path in sorted(data_root.rglob("*.json")):
+        if path.name.startswith("_"):
+            continue
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(doc, dict) or not isinstance(doc.get("cases"), list):
+            continue
+        fmt = str(doc.get("format") or "")
+        standard = str(doc.get("standard") or "")
+        for case in doc["cases"]:
+            if not isinstance(case, dict):
+                continue
+            case_id = str(case.get("id") or "")
+            if not case_id or (fmt, standard, case_id) in index:
+                continue
+            index[(fmt, standard, case_id)] = case
+    return index
+
+
+def restore_case_sources(rows: list[dict], catalog: dict[tuple[str, str, str], dict]) -> int:
+    """Copy a blank Source from the catalog onto the first row of each case.
+
+    A recorded non-empty input is kept. Returns how many case groups changed.
+    Does not change outcome, observed text, or pass/fail counts.
+    """
+    changed = 0
+    seen: set[tuple[str, str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict) or row.get("outcome") == "skip":
+            continue
+        key = (
+            str(row.get("format") or ""),
+            str(row.get("standard") or ""),
+            str(row.get("id") or ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        case = catalog.get(key)
+        if not case:
+            continue
+        # An empty catalog fixture is a real source. Do not invent text, and
+        # do not attach an encoding the page does not need for that row.
+        if row.get("input") not in (None, ""):
+            continue
+        raw = case.get("input")
+        if not isinstance(raw, str) or raw == "":
+            continue
+        row["input"] = raw
+        if row.get("input_encoding") in (None, ""):
+            enc = case.get("input_encoding")
+            if isinstance(enc, str) and enc != "":
+                row["input_encoding"] = enc
+        changed += 1
+    return changed
+
 
 def slim_failure_rows(rows: list[dict]) -> list[dict]:
-    """Deduplicate repeated case metadata and strip unused skip fields in compliance-failures.json.gz."""
+    """Deduplicate repeated case metadata and strip unused skip fields in compliance-failures.json.gz.
+
+    Source text is kept from the first row that actually has it. A runner that
+    stored input:"" must not erase the fixture a later row recorded.
+    """
+    sources: dict[tuple, dict] = {}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("outcome") == "skip":
+            continue
+        ckey = (row.get("format"), row.get("standard"), row.get("id"))
+        held = sources.setdefault(ckey, {})
+        for field in _SOURCE_KEYS:
+            if field not in held and row.get(field) not in (None, ""):
+                held[field] = row[field]
     seen_cases: set[tuple] = set()
     slim: list[dict] = []
     for r in rows:
@@ -249,6 +329,11 @@ def slim_failure_rows(rows: list[dict]) -> list[dict]:
             if not first_time and k in _CASE_METADATA_KEYS:
                 continue
             out[k] = v
+        if first_time:
+            held = sources.get(ckey) or {}
+            for field in _SOURCE_KEYS:
+                if field not in out and field in held:
+                    out[field] = held[field]
         slim.append(out)
     return slim
 
@@ -317,6 +402,7 @@ def main() -> int:
         reports.append(raw)
     merged = _sanitize(merge_reports(reports))
     payload = build_payload(merged, "+".join(s.name for s in srcs))
+    filled = restore_case_sources(payload["results"], load_catalog_cases(_repo / "compliance" / "data"))
     import gzip
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -335,7 +421,7 @@ def main() -> int:
     print(
         f"Wrote {gz_path.relative_to(_repo)} and {fail_path.name} "
         f"from {'+'.join(s.name for s in srcs)} ({payload['passed']} pass / {payload['failed']} fail / "
-        f"{len(failures)} stored rows, summary {gz_path.stat().st_size} gzip, "
+        f"{len(failures)} stored rows, {filled} sources restored, summary {gz_path.stat().st_size} gzip, "
         f"failures {fail_path.stat().st_size} gzip)"
     )
     return 0
