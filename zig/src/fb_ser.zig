@@ -92,9 +92,9 @@ pub fn serialize(ctx: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
         },
         else => return error.Unsupported,
     }
-    var aw: std.Io.Writer.Allocating = .init(aa);
-    try builder.write(&aw.writer);
-    try out.appendSlice(aw.written());
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
+    try builder.write(&writer.writer);
 }
 
 pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {

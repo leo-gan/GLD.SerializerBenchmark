@@ -138,10 +138,9 @@ pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
 }
 
 fn encodeMsg(allocator: std.mem.Allocator, msg: anytype, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(allocator);
-    defer aw.deinit();
-    try msg.encode(&aw.writer, allocator);
-    try out.appendSlice(aw.written());
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
+    try msg.encode(&writer.writer, allocator);
 }
 
 fn messageToPb(m: data.Message) pb.Message {

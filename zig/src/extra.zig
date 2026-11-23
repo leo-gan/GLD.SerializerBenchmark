@@ -14,14 +14,13 @@ fn withZ(allocator: std.mem.Allocator, bytes: []const u8) ![:0]u8 {
 }
 
 pub fn encodeStdZon(fx: data.Fixture, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     switch (fx) {
         inline else => |payload| {
-            try std.zon.stringify.serialize(payload, .{ .whitespace = false }, &aw.writer);
+            try std.zon.stringify.serialize(payload, .{ .whitespace = false }, &writer.writer);
         },
     }
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeStdZon(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
@@ -49,13 +48,12 @@ fn decodeZonSlice(allocator: std.mem.Allocator, type_id: []const u8, z: [:0]cons
 }
 
 pub fn encodeZbor(fx: data.Fixture, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     const opts = zbor.Options{ .slice_serialization_type = .TextString };
     switch (fx) {
-        inline else => |payload| try zbor.stringify(payload, opts, &aw.writer),
+        inline else => |payload| try zbor.stringify(payload, opts, &writer.writer),
     }
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeZbor(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
@@ -80,12 +78,11 @@ pub fn decodeZbor(allocator: std.mem.Allocator, type_id: []const u8, bytes: []co
 }
 
 pub fn encodeLalinsky(fx: data.Fixture, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     switch (fx) {
-        inline else => |payload| try msgpack_l.encode(payload, &aw.writer),
+        inline else => |payload| try msgpack_l.encode(payload, &writer.writer),
     }
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
@@ -108,12 +105,11 @@ pub fn decodeLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: 
 }
 
 pub fn encodeJsonLalinsky(fx: data.Fixture, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     switch (fx) {
-        inline else => |payload| try json_l.encode(payload, &aw.writer),
+        inline else => |payload| try json_l.encode(payload, &writer.writer),
     }
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeJsonLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
@@ -136,12 +132,11 @@ pub fn decodeJsonLalinsky(allocator: std.mem.Allocator, type_id: []const u8, byt
 }
 
 pub fn encodeS2s(fx: data.Fixture, out: *buf_mod.Buf) !void {
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     switch (fx) {
-        inline else => |payload| try s2s.serialize(&aw.writer, @TypeOf(payload), payload),
+        inline else => |payload| try s2s.serialize(&writer.writer, @TypeOf(payload), payload),
     }
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeS2s(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
@@ -247,13 +242,12 @@ pub fn encodeZigMsgpack(fx: data.Fixture, out: *buf_mod.Buf) !void {
     const payload = switch (fx) {
         inline else => |v| try toPayload(arena.allocator(), v),
     };
-    var aw: std.Io.Writer.Allocating = .init(out.allocator);
-    defer aw.deinit();
+    var writer = out.takeWriter();
+    defer out.restoreWriter(&writer);
     var dummy: [1]u8 = undefined;
     var reader = std.Io.Reader.fixed(dummy[0..0]);
-    var packer = zig_msgpack.PackerIO.init(&reader, &aw.writer);
+    var packer = zig_msgpack.PackerIO.init(&reader, &writer.writer);
     try packer.write(payload);
-    try out.appendSlice(aw.written());
 }
 
 pub fn decodeZigMsgpack(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
