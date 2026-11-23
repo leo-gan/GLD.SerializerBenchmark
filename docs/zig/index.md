@@ -70,8 +70,8 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | [serde.zon](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, Zig Object Notation |
 | [serde.xml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, XML |
 | [zig-msgpack](https://github.com/zigcc/zig-msgpack) | Binary | zigcc/zig-msgpack 0.0.18 | adapted | Official MessagePack Payload API |
-| [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.10.0 | native | Typed `encode` / `decodeFromSlice` |
-| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.2.0 | native | Typed `encode` / `decodeFromSliceLeaky` into the cell arena |
+| [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.10.0 | native | Typed `encode` into the reused buffer / `decodeFromSlice` |
+| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.2.0 | native | Typed `encode` into the reused buffer / `decodeFromSliceLeaky` into the cell arena |
 | [jsonz](https://github.com/KercyDing/jsonz) | JSON | KercyDing/jsonz 0.9.2 | text_on_stream | `typed.toWriter` into the reused buffer / owning `typed.parse`; strings are copied |
 | [zbor](https://codeberg.org/r4gus/zbor) | Binary | r4gus/zbor 0.21.3 | adapted | Native Zig CBOR (`stringify` / `parse`) |
 | [s2s](https://github.com/ziglibs/s2s) | Binary | ziglibs/s2s | native | Native binary “struct to stream” |
