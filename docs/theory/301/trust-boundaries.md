@@ -1,170 +1,97 @@
-# Trust boundaries: portable vs native
+# Trust Boundaries: Portable vs. Language-Native Formats
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/trust_boundaries.ipynb)
 
-## Problem
+## Problem Statement
 
-Imagine you finish a class project in Python. You have a complex object in memory. It may hold nested dictionaries, custom classes, and timestamps. You want to save it for later. A language-native serializer can dump the whole object graph in one call. Python’s `pickle` is one example. Java serialization and many .NET binary formatters are others. That convenience is real. Such tools often look strong on microbenchmarks for complex graphs. They also preserve type details that portable formats handle awkwardly.
+Language-native serializers—such as Python `pickle`, Java `ObjectInputStream`, and legacy .NET `BinaryFormatter`[^4]—serialize arbitrary in-memory object graphs with minimal boilerplate, preserving class identities, shared references, and cycles. Because they avoid intermediate data-transfer models, they frequently appear competitive on single-runtime benchmarks.
 
-Teams then take those same bytes and place them on a **queue**. A queue is a store that hands messages to other processes. Teams also put the bytes in a **cache shared across services**. They put them in a **file that other teams can open**. Or they put them on a **network API**. At that moment the problem changes. The security and portability failures are not subtle. You can get **gadget chains**. Those are unexpected object graphs that trigger dangerous code during deserialize. You can get **remote code execution**. That means an attacker runs code on your machine by sending crafted bytes. You can also get version skew that only appears at runtime. And you can get permanent lock-in to one programming language.
-
-The design question is not “is the native format fast?” The design question is **which trust and interoperability boundary the bytes cross**.
-
-In this section we treat **trust** as first-class. Performance stays secondary until the trust test passes.
+When bytes produced by a native serializer leave the originating process and enter a shared cache, message queue, durable object store, or network API, the engineering problem changes fundamentally. Deserializing untrusted or cross-team native payloads introduces remote code execution via gadget chains, brittle runtime coupling across class upgrades, and permanent lock-in to a single language ecosystem. Format selection across system hops must therefore evaluate **trust and interoperability boundaries** before comparing throughput.
 
 ---
 
-## Short answer
+## Trust Domains and Format Classes
 
-A colleague can be trustworthy. The laptop that forwarded the file might not be. Do not unpickle a gift. Treat **language-native** formats as **unsafe by default**. Use them only inside one process that you fully control. You may also use them on a tightly controlled same-stack path with authenticated peers and no untrusted input. Prefer **portable** formats whenever data is stored long-term. Prefer them when data is shared across languages. Prefer them when data is accepted from clients. Prefer them when data is exposed to multi-tenant input. Portable formats may be text or binary. They may be self-describing or schema-driven.
-
-A **portable** format is one that many languages and tools can read using documented rules. Examples include JSON, MessagePack, and Protocol Buffers. A **language-native** format is built for one runtime’s object model. It is not a general interchange language.
-
-Native formats remain useful for **trusted, same-runtime** checkpoints and caches. That is only true when the written security assumptions explicitly allow them (who is allowed to send data). Operators must also accept the lock-in.
-
-This page assumes the 201 article on [self-describing vs schema](../201/self-describing-vs-schema-dependent.md). That article explains where field identity lives. Here we own **trust and portability policy**.
-
----
-
-## Constraints that matter
-
-| Constraint | Portable (JSON, MessagePack, Protobuf, and similar) | Language-native (pickle, Java serialization, and similar) |
-|------------|-----------------------------------------------------|-----------------------------------------------------------|
-| **Who may produce the bytes?** | Often untrusted clients or other teams | Must be fully trusted writers only |
-| **Who may consume the bytes?** | Any language with a suitable library | Typically one runtime family |
-| **Lifetime** | Can live for years on disk or in a log | Often breaks when class or layout definitions change |
-| **Security** | You still need size limits and validation | Deserialization can become **code execution** |
-| **Operations** | Debuggable with open tools (especially text formats) | Opaque without the exact type graph from the original deployment |
-| **Performance** | Implementation-dependent (see the suite) | Sometimes excellent on graphs, and **irrelevant if the path is unsafe** |
-
-In other words, portable formats buy you a wider world of readers and writers. Native formats buy convenience inside one runtime. The table above is not a speed ranking. It is a policy map.
-
----
-
-## Decision frame
-
-Ask one primary question first: **do these bytes leave this process or trust domain?**
-
-A **trust domain** is a region where you control both who writes the data and who reads it. Both sides share the same security assumptions. Crossing a trust domain means a different process, team, language, or tenant may touch the bytes. The public internet may also touch them.
+!!! note "Definition: Trust Domain and Trust Boundary"
+    A **trust domain** is an execution boundary within which a single operator controls both the code producing serialized bytes and the code consuming them, under shared security and deployment assumptions. A **trust boundary** is crossed whenever bytes are produced or consumed by another process, team, tenant, programming language, or external network.
 
 ![Trust boundaries: process, set of services the organization runs, public untrusted](../assets/diagrams/301-trust-boundaries.svg#only-light)
 ![Trust boundaries: process, set of services the organization runs, public untrusted](../assets/diagrams/301-trust-boundaries-dark.svg#only-dark)
 
-If the answer is yes, a portable format is required. If the answer is no, a native format may still be acceptable. That is only true when every peer is trusted and the lock-in is documented.
+Building on [Self-describing vs. schema-dependent](../201/self-describing-vs-schema-dependent.md), the choice between **portable** and **language-native** encodings is primarily a security and lifecycle policy:
 
-| Situation | Prefer | Avoid |
-|-----------|--------|-------|
-| Public or partner HTTP or RPC body | Portable format (often JSON plus validation, or an IDL-based binary format) | Language-native encodings |
-| Multi-language microservices | Portable schema-driven or schemaless binary | Language-native encodings |
-| Object store, data lake, or long-lived files | Portable (often columnar or Avro/Parquet-class for analytics data) | Native blobs as the system of record |
-| Redis or memcache value used by **the same service binary only**, on a private network, with no user input | Native is *possible* if the written security assumptions are documented | Native if any other service or language may read the value |
-| Machine-learning checkpoint used only by one training stack | Native is *common*; migrate to portable when sharing with other systems | Native as the only interchange with production services |
-| “Faster than JSON on one language Dashboard slice” | Use that as **same-language** cost evidence only | Mandating native formats on the network |
+| Dimension | Portable (JSON, MessagePack, CBOR, Protocol Buffers, Avro, Parquet) | Language-Native (`pickle`, Java serialization, legacy `.NET BinaryFormatter`) |
+|---|---|---|
+| **Permitted producers** | Public clients, partners, multi-tenant or cross-team services | Strictly authenticated, same-trust-domain writers only |
+| **Permitted consumers** | Any language with a compliant library | Single runtime family (often same library/class versions) |
+| **Security model** | Pure data decoding; requires bounds and schema validation | Decoding executes runtime construction logic or opcodes (**RCE risk**)[^1][^2] |
+| **Retention horizon** | Suitable for multi-year storage and logs with schema evolution | Fragile across class refactors and runtime upgrades |
+| **Observability** | Inspectable with standard or schema-aware tooling | Opaque without the exact originating type graph |
 
-This matters because a chart that shows native as “fast” never answers “is native safe as a public contract?”
+### Policy Matrix by Deployment Context
 
----
-
-## Failure modes
-
-| Failure | What happens |
-|---------|----------------|
-| **Gadget chains and remote code execution (RCE)** | Hostile or merely unexpected bytes trigger class loading or dangerous code paths during deserialize |
-| **Silent version skew** | Writer and reader disagree on class shape; errors show up at runtime and can be intermittent |
-| **Multi-language (polyglot) surprise** | A second language team cannot consume the cache without rewriting the format |
-| **Backup and forensics gap** | Incident response cannot inspect payloads without the original deployment’s type graph |
-| **False safety** | “Internal network” is treated as trusted while multi-tenant jobs still share the bus |
-
-For example, calling a network “internal” does not make every message trustworthy. Multi-tenant systems share infrastructure. A bug in one tenant can become input for another.
+| Context | Recommended Class | Rationale |
+|---|---|---|
+| Public or partner HTTP/RPC API | Portable (typically JSON + schema, or IDL binary) | Untrusted writers and heterogeneous clients require safe, documented wire semantics |
+| Internal multi-language services | Portable schema-driven or schemaless binary | Prevents runtime lock-in and decouples release cycles |
+| Durable storage, event logs, data lakes | Portable (Avro, Parquet, Protocol Buffers, or validated JSON) | Data outlives individual application binaries and class layouts |
+| Shared cache (Redis / Memcached) read by multiple services | Portable | Even internal caches cross service and language boundaries over time |
+| Ephemeral, single-binary private cache or single-stack ML checkpoint | Native *permissible* only if trust assumptions and lock-in are documented | Acceptable only when no untrusted input can influence the stored payload; migrate to portable weight formats (e.g., Safetensors, ONNX) before sharing |
 
 ---
 
-## Real-world sketch
+## Failure Modes
 
-A Python service caches session graphs with `pickle` in Redis for speed. Latency improves in a language Dashboard-style comparison of native versus JSON. Six months later a second service written in Go needs the same session data. The options become unpleasant. The team can keep dual writers. They can reverse-engineer a fragile parser. Or they can migrate to MessagePack or JSON with an explicit schema.
-
-Separately, an SSRF-style bug appears. **Server-side request forgery** means tricking a server into fetching a URL chosen by an attacker. That bug lets an attacker influence a cache key path. If anything ever deserializes attacker-influenced pickle, the incident class changes. It is no longer a “data issue.” It becomes “remote code execution.” The original speed win did not price that risk.
-
----
-
-## In this suite
-
-| Resource | Role |
-|----------|------|
-| [Families](../../analysis/families.md) | Labels the **language-native** family versus portable families |
-| Language **Overview** | Shows which native codecs are registered (if any) and their caveats |
-| [Dashboard](../../dashboard/index.html) | Speed and size **inside one comparison cell**—never a reason by itself to put native bytes on the wire |
-| [Using this suite](using-this-suite.md) | How not to misread those numbers |
-| [Engineering perspective](../101/engineer_perspective.md) | Product framing of native versus portable choices |
-
-When native and portable entries both appear for a language, compare them only to answer one question. That question is “what do we pay for portability **in this runtime**?” Do not treat the comparison as “is native a good public contract?”
+1. **Arbitrary code execution via gadget chains:** Native deserializers instantiate arbitrary classes or execute embedded opcodes during decode. Even when application code never imports dangerous types directly, classes already present on the classpath or module path can be chained into remote code execution.[^1][^3]
+2. **False "internal network" assumptions:** Treating any private VPC or internal message bus as trusted ignores lateral movement and multi-tenant isolation bugs. A server-side request forgery (SSRF) or cache-poisoning defect that lets an external caller influence a cached `pickle` or Java serialized blob immediately escalates a data-integrity bug into code execution.
+3. **Silent version skew:** Renaming a class, altering a field type, or upgrading a runtime can break deserialization of stored native blobs without an explicit compatibility check.
+4. **Ecosystem lock-in and forensic opacity:** When a second service written in another language needs access to a Redis cache or archive populated with native blobs, teams face dual-write migrations or brittle reverse-engineering. Incident responders likewise cannot inspect payloads without reproducing the original runtime environment.
+5. **Conflating portability with parser safety:** Switching to a portable format eliminates *object-instantiation* code execution, but does not remove all parser risks. Untrusted portable payloads still require size caps, nesting-depth limits, and schema or buffer verification ([Untrusted input](untrusted-input.md)).
 
 ---
 
-## Experiments
+## Boundary Audit Protocol and Benchmark Limits
 
-**Question:** May these bytes use a **language-native** codec, or must they be **portable**?
+Before using performance measurements to select a codec, audit each hop in the data path:
 
-### Setup
+1. **Map every hop:** Trace the byte stream from producer through intermediate stores, queues, caches, and logs to every consumer (including backup and analytics readers).
+2. **Classify trust and runtime diversity:** For each hop, determine whether *(a)* an untrusted or multi-tenant principal can influence the bytes, *(b)* more than one language runtime may read the bytes now or later, or *(c)* retention exceeds a single deployment lifecycle.
+3. **Apply the disqualification gate:** If any condition in step 2 holds, **disqualify language-native serializers** regardless of throughput.
+4. **Select among permitted codecs:** Only after the candidate set is restricted to policy-compliant portable standards, use the [Dashboard](../../dashboard/index.html) (fixing language, standard, data set, and data type) to evaluate implementation cost.
 
-1. Draw the data path. Show the producer process, then the store or queue or API, then the consumers.
-2. Mark each hop. Note same process, same trust domain, multi-tenant, public, or multi-language.
-3. List candidate native and portable codecs for the language. Suite categories help label them.
+Where native and portable codecs both appear for a language on the Dashboard (labeled in [Families](../../analysis/families.md) and each language Overview), treat the gap solely as a measure of the **runtime cost of portability**, never as clearance to place native bytes on a network or shared store.
 
-### Procedure
+### What This Benchmark Suite Cannot Answer
 
-1. For each hop, answer this question: *Can an untrusted principal or another language supply or read these bytes?*
-2. If **yes** on any long-lived or cross-service hop, a portable format is required. Native is disqualified for that hop.
-3. If **no**, the path is trusted same-runtime only. Native is allowed *if* the written security assumptions and operations team accept the lock-in.
-4. Document the policy in the service boundary checklist.
-5. Optional suite check: compare native versus portable **only** for performance *after* policy allows native. Never use speed to override a failed trust test.
-
-### Decision rule
-
-- If trust or portability fails, choose portable. Do this regardless of suite speed.
-- Suite timings may choose which portable standard or library, inside one language, data set, and data type. A family is only a teaching cut. They do not decide whether native is safe.
+- Whether a specific runtime classpath or Python environment contains exploitable deserialization gadget chains.
+- The effective isolation of your network, IAM policies, cache keyspace, or multi-tenant job scheduler.
+- Regulatory or organizational compliance mandates restricting executable or opaque artifact formats at rest.
+- Operational migration cost when a previously single-language store later acquires consumers in a second language.
 
 ---
 
-## Metrics
+## Exercises
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Trust-domain crossing** (yes or no per hop) | **Primary** decision variable |
-| **Consumer language set** | Forces portable if more than one runtime family is involved |
-| **Attack surface** (untrusted producer?) | Forces portable formats plus [untrusted input](untrusted-input.md) controls |
-| **Retention and durability** | Long-lived native data means long-lived version-skew risk |
-| Suite `total_median_ns` and size | Secondary, only among **policy-allowed** codecs |
-| `mean_fidelity` | Fixture round trip among allowed candidates. Not specification compliance. |
+1. **Cache boundary evaluation:** A Python web service stores user session objects in a Redis instance using `pickle` and observes a 2× decode speedup over `orjson`. Six months later, an internal Go authentication proxy must read session metadata from the same Redis cluster, and a security review notes that an adjacent microservice shares the Redis namespace. Evaluate whether `pickle` remains permissible and specify an alternative.
 
-**Conclusion style:** “The queue hop is multi-tenant, so only portable formats are allowed; native pickle is rejected despite its speed.”
+??? note "Solution"
+    `pickle` fails **two** independent boundary conditions: *(1)* multi-language consumption (Go cannot safely or portably decode Python `pickle` opcodes) and *(2)* shared-namespace trust risk (any compromise or key collision in the adjacent service can inject malicious `pickle` payloads into the Python service). Replace `pickle` with a portable encoding—such as JSON (with `orjson` or `msgspec`) or MessagePack/Protocol Buffers—enforcing explicit schema validation and keyspace isolation.
 
-**Not decision metrics:** native microbenchmark wins on unsafe boundaries.
+2. **Model checkpoint promotion:** A research team saves intermediate training checkpoints with `pickle`-backed framework files on a private cluster, then plans to publish the final model weights for inference services written in C++ and Rust. At what boundary must the serialization format change, and why?
 
----
+??? note "Solution"
+    The format must change at the **training-to-serving / publication boundary**. While ephemeral checkpoints inside a single trusted training stack may tolerate native formats, publishing artifacts for cross-language inference crosses both a language boundary and a trust/audit boundary. Export weights into a non-executable, portable tensor representation (e.g., Safetensors, ONNX, or an explicit binary layout) before promotion.
 
-## What this suite cannot tell you
+3. **Portable format security check:** Does replacing Java `ObjectInputStream` with JSON or FlatBuffers eliminate the need for input validation on a public API? Explain briefly.
 
-- Whether a specific native stack has a known gadget chain in *your* dependency set.
-- Your network trust model, identity and access (IAM) boundaries, or multi-tenant isolation story.
-- Compliance rules that forbid certain encodings at rest.
-- Cross-language feasibility of a native blob. By definition, that feasibility is poor.
+??? note "Solution"
+    No. Portable formats eliminate runtime object-instantiation RCE, but hostile callers can still trigger denial-of-service or logic errors via deeply nested JSON, oversized payloads, type confusion, or—in zero-copy formats like FlatBuffers—corrupted relative offsets if the buffer verifier is skipped ([Untrusted input](untrusted-input.md)).
 
 ---
 
-## Common mistakes
+## References
 
-- Equating “internal” with “trusted for deserialize.”
-- Using native speed on the Dashboard to justify a **public** or **multi-language** API.
-- Storing native blobs as the system of record “until we rewrite.”
-- Assuming schema-driven portable formats are “secure” without resource limits. Portable formats reduce *portability* risk. They do not remove all parser risk.
-
----
-
-## Key takeaways
-
-- The **trust boundary** decides portable versus native more than peak operations per second.
-- Native formats are same-runtime convenience. The default answer for interchange is **no**.
-- Portable formats are the default once bytes leave the process or meet other languages.
-- The Dashboard may show native formats as fast. That is a **cost of portability** data point. It is not a security clearance.
-- Document the written security assumptions (who is allowed to send data) if you still choose native for a private cache.
+[^1]: OWASP Foundation. *Deserialization Cheat Sheet*. <https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html>
+[^2]: Python Software Foundation. *`pickle` — Python object serialization (Security Warning)*. Python 3 Documentation. <https://docs.python.org/3/library/pickle.html>
+[^3]: Bloch, J. (2018). *Effective Java* (3rd ed.), Item 85: "Prefer alternatives to Java serialization." Addison-Wesley.
+[^4]: Microsoft. *BinaryFormatter security guide*. .NET Documentation. <https://learn.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-security-guide>

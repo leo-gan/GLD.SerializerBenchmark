@@ -1,156 +1,145 @@
-# Serialization 101
+# Serialization 101: Foundations
 
-Serialization is the attempt to make computers agree on what bytes mean.
+Programs manipulate structured data in memory—records, arrays, strings, and pointer-linked graphs—whose physical representation is tied to a specific process, compiler, and runtime. Storage devices and networks, however, transfer only linear sequences of octets. Serialization bridges that gap by defining a portable contract between writers and readers.
 
-Your program has objects, arrays, strings, and pointers. Your network card has no interest in any of that. It speaks bytes. Your disk speaks bytes. Another programming language speaks bytes, with a slightly different accent. Getting them to agree is surprisingly expensive.
+!!! note "Definition: Serialization and Deserialization"
+    **Serialization** (also called *marshalling* or *encoding*) is the transformation of an in-memory data structure into a linear sequence of bytes according to a specified format contract. **Deserialization** (*unmarshalling* or *decoding*) reconstructs a semantically equivalent in-memory representation from that byte sequence, potentially in another process, machine, or programming language.
 
-You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
-
-| Jump | |
-|------|--|
-| **This track** | The model below · then a lens · then [201 mechanisms](../201/index.md) |
-| **See numbers** | [Dashboard](../../dashboard/index.html) · language **Overview** for the roster |
-| **How we measure** | [Benchmarks](../../analysis/index.md) |
-
-By the end of this track you should be able to:
-
-1. Name the standard a library implements, tell that name apart from its family, and say which comparison you are making.
-2. Explain what serialization is and why programs need it.
-3. Read the history of formats as answers to real problems, not as a list of product names.
-4. Choose a standard for a workload, then an implementation. Keep performance separate from conformance.
-5. Connect these pages to measured libraries in this benchmark suite.
-
-Check real numbers on the [Dashboard](../../dashboard/index.html). Language **Overview** pages list the roster and caveats. For how the numbers are produced, see [Benchmarks](../../analysis/index.md).
-
----
-
-## What is serialization?
-
-**Serialization** is the process of turning an in-memory data structure into a **linear sequence of bytes**. Those bytes can be stored on disk, held in a cache, or sent across a network. **Deserialization** rebuilds a usable structure from those bytes. The rebuilt structure may live in another process, on another machine, or in another programming language.
-
-Inside a running program, data is often a web of pointers and types. A record may point to an array, that array to strings, and those strings to characters. Networks and disks only store and transmit bytes in order. A pointer is a promise that the rest of the object is still nearby. A byte on a disk has no nearby. Every serialization format is a **contract** between a writer and a reader. The contract says how meaning is flattened into bytes, and how those bytes are rebuilt. Deserialization is the moment you find out whether the two sides still recognize each other.
+Inside a running process, composite values routinely rely on memory addresses: a record holds a pointer to an array, whose elements reference heap-allocated strings. Those addresses have meaning only within the originating address space. Flattening a structure onto a disk or network therefore requires replacing process-local pointers, compiler padding, and host byte order with explicit representation rules.
 
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract.svg#only-light)
 ![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract-dark.svg#only-dark)
 
 ---
 
-## The serialization model
+## The Serialization Model {#the-serialization-model}
 
-| Layer | Question | In this suite |
-|-------|----------|----------------|
-| **Workload** | What is serialized, and how is it used? | A data set and a data type. Shapes are on the [test data](../../analysis/test_data_configuration.md) page. |
-| **Standard** | What do the bytes mean? | The Dashboard **Standard** control. Names are defined in the [compliance catalog](../../compliance/). |
-| **Implementation** | How does one library realize that contract? | One library on one language runner. |
-| **Evaluation** | How fast is it, and does it follow the contract? | Dashboard timings and fidelity. [Compliance](../../dashboard/index.html#compliance) for the specification. |
+Evaluating serialization choices requires keeping four layers distinct. Conflating them—for example, attributing a slow library implementation to a wire format, or applying a microbenchmark to the wrong access pattern—is the most common source of flawed architectural conclusions.
 
-A serialization standard defines what the bytes mean. An implementation determines how efficiently and correctly those rules are realized. A workload determines whether the standard is appropriate.
+| Layer | Core Question | Role in This Suite |
+|---|---|---|
+| **Workload** | What data shape is exchanged, and how is it accessed? | A **data set** and **data type** ([Data sets](../../analysis/test_data_configuration.md)) |
+| **Standard** | What rules govern the byte representation? | The Dashboard **Standard** filter; specifications are cataloged in [Compliance](../../compliance/index.md) |
+| **Implementation** | How does a specific library realize that standard? | One registered serializer in one language benchmark runner |
+| **Evaluation** | What are the speed, size, fidelity, and conformance properties? | Timings and round-trip fidelity on the [Dashboard](../../dashboard/index.html); specification tests in [Dashboard · Compliance](../../dashboard/index.html#compliance) |
 
-The standard bounds the wire. The library is how close that language gets to reading and writing it. A library that writes the wrong contract in 2 nanoseconds is not a performance breakthrough. It is a very fast bug.
+A **standard** bounds what the wire representation can express and how compact it can be; an **implementation** determines how closely a given runtime approaches those bounds in latency, memory allocation, and strictness. In Python, `orjson` and the standard-library `json` module both implement RFC 8259 JSON; the performance difference between them is an implementation property, not a format property.
 
-A **family** is a teaching group: text, schemaless binary, schema-driven, language-native, or columnar. [Families](../../analysis/families.md) is that map. A family is not a Dashboard filter. YAML is its own standard. **SBE** (Simple Binary Encoding) is schema-driven, its data set is columnar, and its standard is SBE. It is not a columnar file format like Parquet.
+Two additional classifications appear throughout this documentation:
 
-A **library** is one implementation of a standard in one language. `orjson` and Python’s `json` module are both the JSON standard. The speed gap between them is the library.
+- **Family:** A coarse pedagogical grouping—text, schemaless binary, schema-driven, language-native, or columnar ([Families](../../analysis/families.md)). Families orient format selection, whereas benchmark rankings filter by the exact **standard** (YAML and JSON belong to the text family yet are distinct standards; Simple Binary Encoding belongs to the schema-driven family, runs on the `columnar` data set, and implements the `sbe` standard).
+- **No public spec:** Serializers without an external wire specification—such as Python `pickle`, Rust `bincode`, and in-tree baselines—are grouped under **No public spec** on the Dashboard. They are timed normally, while specification conformance scoring does not apply.
 
-Libraries with no public spec, such as `pickle`, `bincode`, and the in-tree custom binaries, use the Dashboard standard **No public spec**. They stay on the speed table. Compliance does not score them. The conformance question does not apply. That is not a verdict that the library is inferior.
+---
 
-## How standards differ
+## Design Axes of Serialization Standards {#how-standards-differ}
 
-These axes are properties of the standard. Once you choose a standard, they are fixed. The perspective documents fill in the details.
+Five largely orthogonal properties characterize a serialization standard. Once a standard is selected, these properties are fixed regardless of which library implements it.
 
-### Text versus binary
+### Text vs. Binary
 
-| | Text (JSON, XML, YAML, and similar) | Binary (MessagePack, Protocol Buffers, Parquet, and similar) |
-|--|---------------------------|-----------------------------------------------|
-| **Strength** | Humans can read it. Easier to debug and log. | Compact. Often much faster to encode and decode. |
-| **Cost** | Larger payloads. Parsing character by character is slower. | Opaque without tools. Harder to inspect by hand. |
+| Property | Text (JSON, XML, YAML, TOML) | Binary (MessagePack, Protocol Buffers, Parquet) |
+|---|---|---|
+| **Advantages** | Human-inspectable in logs, debugging tools, and version control | Compact payloads; avoids character scanning and decimal–binary numeric conversion |
+| **Costs** | Larger wire size; higher CPU cost for tokenization, escaping, and number parsing | Opaque without schema or inspection tooling |
 
-### Schema versus schemaless
+### Schemaless vs. Schema-Driven
 
-A **schema** is a written description of the shape of the data: which fields exist, what types they have, and how they may change.
+A **schema** is an explicit, out-of-band specification of record fields, data types, and compatibility rules.
 
-| | Schemaless (JSON, MessagePack, and similar) | Schema-driven (Protocol Buffers, Avro, FlatBuffers, and similar) |
-|--|-----------------------------------|--------------------------------------------------|
-| **Strength** | Ship data without an interface-description step. | Compact on the wire. Code generation. Clearer evolution rules when you invest in process. |
-| **Cost** | Validation and compatibility are *your* job. | Up-front schema design and tooling. |
+| Property | Schemaless (JSON, MessagePack, CBOR) | Schema-Driven (Protocol Buffers, Avro, FlatBuffers, SBE) |
+|---|---|---|
+| **Advantages** | No separate interface-definition or code-generation build step | Smaller wire size (field names omitted); static typing and code generation; structured evolution rules |
+| **Costs** | Validation, documentation, and backward compatibility remain application responsibilities | Up-front schema authoring, tooling, and governance overhead |
 
-### Row-oriented versus columnar
+### Row-Oriented vs. Columnar
 
-| | Row (JSON objects, Protocol Buffers messages, Avro records) | Columnar (Parquet, ORC, Arrow tables) |
-|--|-----------------------------------------------------|----------------------------------------|
-| **Strength** | Whole records. Fits APIs, RPC, and online transaction-style access. | Scan a few columns over huge tables with far less input/output. |
-| **Cost** | Poor for wide analytical queries. | Wrong default when you mostly fetch one document by id. |
+A **row-oriented** standard stores all fields of one record contiguously before starting the next record (JSON objects, Protocol Buffers messages, Avro records). A **columnar** standard groups all values of a single column contiguously across many records (Apache Parquet, Apache ORC, Apache Arrow).
 
-A row-oriented format stores one complete record after another. A columnar format stores all values of one column together, then the next column. Analytics that touch only a few columns benefit from the columnar layout.
+| Property | Row-Oriented | Columnar |
+|---|---|---|
+| **Advantages** | Efficient single-record reads, writes, and point lookups in APIs and RPC | Projects a subset of columns over wide tables with minimal I/O and higher compression ratios |
+| **Costs** | Scans every field of every record during wide analytical queries | File headers, stripes, and alignment overhead penalize single-record traffic |
 
-### Self-describing versus schema-dependent
+### Self-Describing vs. Schema-Dependent
 
-- **Self-describing:** Field names or type tags travel with the data. JSON, MessagePack, and CBOR are examples. Easier to inspect. More metadata on the wire.
-- **Schema-dependent:** The bytes are nearly meaningless without a shared schema. Classic Protocol Buffers and raw Avro work this way. Smaller and faster when both ends already agree.
+- **Self-describing** encodings embed field names or type tags inside each payload (JSON, MessagePack, CBOR, Amazon Ion). Any compliant parser can decode the structure without external metadata, at the expense of repeated wire overhead.
+- **Schema-dependent** encodings omit names and most structural metadata from the byte stream (Protocol Buffers binary, raw Avro). Bytes are compact but cannot be interpreted reliably without the writer's schema.
 
-### Portable versus language-native
+### Portable vs. Language-Native
 
-- **Portable:** Built for multi-language interchange. JSON, Protocol Buffers, and MessagePack fit here.
-- **Language-native:** Tied to one runtime. `pickle` and Java serialization are convenient inside a tight trust boundary. They are unsafe on untrusted input, and other languages cannot read them.
+- **Portable** standards define language-neutral wire semantics intended for multi-language interchange (JSON, CBOR, Protocol Buffers, Avro, Parquet).
+- **Language-native** serializers mirror a single runtime's object model (Python `pickle`, Java `ObjectInputStream`). They handle arbitrary object graphs and cycles conveniently inside one runtime, but lock data to that runtime and pose severe code-execution risks on untrusted input.
 
-A **trust boundary** is any place where data leaves a fully controlled environment and may be influenced by someone else. A public network request is one example.
+!!! note "Definition: Trust Boundary"
+    A **trust boundary** is any interface across which serialized bytes enter or leave a single administrative and security domain—such as a public network endpoint, a multi-tenant message queue, or a shared object store. Language-native formats are unsuitable across trust boundaries.
 
-## How this suite evaluates
+---
 
-| Question | What it measures | Where |
-|----------|------------------|--------|
-| **Performance** | Encode time, decode time, and size | [Dashboard](../../dashboard/index.html) |
-| **Fidelity** | Whether the fixture still means the same thing after a round trip | The speed run. This is not a match to a specification. |
-| **Conformance** | Whether the library follows the specification it claims | [Dashboard · Compliance](../../dashboard/index.html#compliance). **No public spec** has no score. |
+## Evaluation and Fair Comparison {#how-to-compare}
 
-A fast library that fails conformance cases still has a performance result. That result is about the library, not about the standard.
+This benchmark suite separates three distinct empirical questions:
 
-## How to compare
+| Dimension | What Is Measured | Location |
+|---|---|---|
+| **Performance** | Encode latency, decode latency, throughput, and encoded byte size | [Dashboard](../../dashboard/index.html) |
+| **Fidelity** | Whether a benchmark sample preserves its logical value across a round trip | Recorded alongside speed runs (`mean_fidelity`); does not test specification compliance |
+| **Conformance** | Whether a library accepts and rejects edge cases per cited specification sections | [Dashboard · Compliance](../../dashboard/index.html#compliance) |
 
-| Comparison | Question | What stays fixed |
-|------------|----------|------------------|
-| **Implementation** | Which library is more efficient? | Language, standard, data set, and data type |
-| **Standard** | Which contract fits this workload? | Language, data set, and data type. The standard changes. |
-| **Cross-language** | What does this contract cost on another runtime? | Standard, data set, and data type. Directional. Runtimes differ. |
-| **Conformance** | Does this implementation follow the standard? | The normative cases for that standard. Independent of the speed rank. |
+Fair interpretation requires holding all variables outside the question under test fixed:
 
-An across-standard speed chart answers which contract is cheaper on that workload. It does not answer which library is better.
+| Comparison Type | Question Answered | Variables Held Fixed |
+|---|---|---|
+| **Implementation** | Which library realizes this contract more efficiently? | Language, standard, data set, data type, batch size |
+| **Standard** | What is the cost trade-off between two contracts on this workload? | Language, data set, data type, batch size |
+| **Cross-language** | Roughly how does this contract behave on another runtime? | Standard, data set, data type (directional only; runtimes differ) |
+| **Conformance** | Does this library adhere to the normative specification? | Specification test corpus for that standard (independent of speed rank) |
 
-- Two Protocol Buffers libraries in Rust are an implementation comparison.
-- Protocol Buffers and Avro on the same workload are a standard comparison.
-- The same standard across languages mixes runtime cost into the result.
-- Kiln can be timed and checked against the Kiln wire.
-- `pickle` can be timed. It has no conformance score.
+For example, comparing two Protocol Buffers libraries in Rust is an *implementation* comparison; comparing Protocol Buffers and Avro on the same Python data type is a *standard* comparison. A fast library that fails specification edge cases still has a valid timing measurement—that result characterizes the implementation, not the standard.
 
-## Three lenses
+---
 
-Each lens reads the same model for a different job.
+## Chapters and Companion Labs in Part I
 
-| Lens | Primary question | Best if you care about… |
-|------|------------------|-------------------------|
-| **[Historical](historical_perspective.md)** | *Why did this contract appear?* | Eras, people, constraints, and shifts in thinking |
-| **[Data science](data_science_perspective.md)** | *Which contract fits this data workload?* | Lakes, pipelines, notebooks, models, columnar input/output |
-| **[Engineering](engineer_perspective.md)** | *Which contract should we ship, and then which library?* | APIs, RPC, performance, security, and long-term change |
+The remaining three chapters of Part I apply this four-layer model from distinct vantage points:
 
-| Next | |
-|------|--|
-| **A lens** | [Historical](historical_perspective.md) · [Data science](data_science_perspective.md) · [Engineering](engineer_perspective.md) |
-| **Mechanisms** | [Serialization 201](../201/index.md) |
-| **Production judgment** | [Serialization 301](../301/index.md) |
-| **Family map** | [Families](../../analysis/families.md) |
-| **Numbers** | [Dashboard](../../dashboard/index.html) — set **Language**, **Standard**, **Data set**, and **Data type** |
+| Chapter | Primary Question | Companion Lab |
+|---|---|---|
+| [1.1 Historical perspective](historical_perspective.md) | Why did each major class of format emerge, and what engineering pressure did it address? | — |
+| [1.2 Data science perspective](data_science_perspective.md) | Which contracts fit analytical tables, event logs, feature pipelines, and model artifacts? | [Data science lab](../notebooks/101/data_science_perspective.ipynb) |
+| [1.3 Engineering perspective](engineer_perspective.md) | Which contracts and libraries fit online APIs, internal RPC, security boundaries, and long-lived services? | [Engineering lab](../notebooks/101/engineering_perspective.ipynb) |
 
-## Lab notebooks (Python / Colab)
+See [Lab notebooks](../notebooks/README.md) for local and Google Colab setup. After Part I, continue to [Part II: Mechanisms (201)](../201/index.md).
 
-| Notebook | Article |
-|----------|---------|
-| [Data science lab](../notebooks/101/data_science_perspective.ipynb) | [Data science perspective](data_science_perspective.md) |
-| [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb) | [Engineering perspective](engineer_perspective.md) |
+---
 
-Install notes live in the [notebooks README](../notebooks/README.md).
+## Exercises
 
-## Scope and honesty
+1. **Separating layers:** A colleague benchmarks Python's standard-library `json` module against Rust's `prost` (Protocol Buffers) on a nested order record and concludes that *"Protocol Buffers is 80× faster than JSON."* Identify every variable confounded in that comparison and restate two fair experiments that isolate *(a)* implementation cost and *(b)* standard cost.
 
-- This track is a **map**, not an encyclopedia of every library.
-- Performance claims in prose are **illustrative**. Prefer the [Dashboard](../../dashboard/index.html) for numbers on *this* runner and hardware.
-- “Best format” means **best under your constraints**: team skills, trust boundaries, retention, latency, and multi-language requirements.
+??? note "Solution"
+    The claim confounds **three** variables simultaneously: programming language/runtime (CPython vs. compiled Rust), serialization standard (text JSON vs. schema-driven binary Protocol Buffers), and library implementation quality.
+    - *(a) Implementation comparison:* Hold language, standard, data set, and data type fixed—e.g., compare Python `json` vs. `orjson` on `suite/document` at $N=1$.
+    - *(b) Standard comparison:* Hold language, data set, and data type fixed while varying the standard—e.g., compare `msgspec` (JSON) vs. `protobuf` (Protocol Buffers) in Python on `suite/document` at $N=1$.
+
+2. **Axis classification:** Classify **Apache Parquet**, **CBOR**, and **Python `pickle`** along all five design axes (text/binary, schema/schemaless, row/columnar, self-describing/schema-dependent, portable/language-native).
+
+??? note "Solution"
+    - **Parquet:** binary, schema-driven (footer schema), columnar, self-describing at the file level (schema embedded in file footer), portable.
+    - **CBOR (RFC 8949):** binary, schemaless, row/document-oriented, self-describing (major-type tags and map keys), portable.
+    - **`pickle`:** binary (VM opcode stream), schemaless (runtime class metadata), object-graph/row-oriented, self-describing within Python only, language-native.
+
+3. **Fidelity vs. conformance:** Suppose a JSON library passes `mean_fidelity = 1.0` on all benchmark data types in this suite yet accepts bare `NaN` tokens on decode. Does that invalidate its speed ranking, its RFC 8259 conformance, or both?
+
+??? note "Solution"
+    It does **not** invalidate the speed measurement on valid benchmark samples, because the library round-tripped those inputs faithfully. It **does** represent a strict RFC 8259 conformance failure (Section 6 forbids `NaN` as a JSON number token). Performance and specification conformance are separate evaluation dimensions.
+
+---
+
+## References
+
+1. Bray, T. (Ed.). (2017). *The JavaScript Object Notation (JSON) Data Interchange Format*. IETF RFC 8259. <https://www.rfc-editor.org/rfc/rfc8259>
+2. Bormann, C., & Hoffman, P. (2020). *Concise Binary Object Representation (CBOR)*. IETF RFC 8949. <https://www.rfc-editor.org/rfc/rfc8949>
+3. ITU-T. *Information technology — ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)*. Recommendation X.690.
+4. Melnik, S., et al. (2010). "Dremel: Interactive Analysis of Web-Scale Datasets." *Proceedings of the VLDB Endowment*, 3(1–2), 330–339.
+5. Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 4: "Encoding and Evolution." O'Reilly Media.
