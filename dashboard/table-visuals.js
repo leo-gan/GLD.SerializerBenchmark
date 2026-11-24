@@ -381,19 +381,19 @@ export function renderSpreadCellHtml(
 export function spreadLegendHtml() {
   return (
     `<span class="spread-legend-item">` +
-      `<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 13 L3.5 7.5 A3.8 3.8 0 1 1 10.5 7.5 Z" fill="#e37400"/></svg>` +
+      `<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 13 L3.5 7.5 A3.8 3.8 0 1 1 10.5 7.5 Z" fill="var(--spread-mid-skew)"/></svg>` +
       `<strong>Mean</strong> pin <span class="spread-legend-muted">(amber/red when outliers pull &gt;12%)</span>` +
     `</span>` +
     `<span class="spread-legend-item">` +
-      `<svg width="8" height="12" viewBox="0 0 10 14" aria-hidden="true"><line x1="5" y1="2" x2="5" y2="12" stroke="#174ea6" stroke-width="2.4" stroke-linecap="round"/></svg>` +
+      `<svg width="8" height="12" viewBox="0 0 10 14" aria-hidden="true"><line x1="5" y1="2" x2="5" y2="12" stroke="var(--spread-p50)" stroke-width="2.4" stroke-linecap="round"/></svg>` +
       `<strong>p50</strong>` +
     `</span>` +
     `<span class="spread-legend-item">` +
-      `<svg width="20" height="10" viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="2" width="22" height="8" rx="3" fill="#1a73e8" opacity="0.22"/></svg>` +
+      `<svg width="20" height="10" viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="2" width="22" height="8" rx="3" fill="var(--color-blue)" opacity="0.22"/></svg>` +
       `<strong>±1 std</strong>` +
     `</span>` +
     `<span class="spread-legend-item">` +
-      `<svg width="24" height="10" viewBox="0 0 28 12" aria-hidden="true"><line x1="1" y1="6" x2="18" y2="6" stroke="#1a73e8" stroke-width="3.2" stroke-linecap="round"/><line x1="18" y1="6" x2="26" y2="6" stroke="#60a5fa" stroke-width="2.2"/><circle cx="26" cy="6" r="2.2" fill="#60a5fa"/></svg>` +
+      `<svg width="24" height="10" viewBox="0 0 28 12" aria-hidden="true"><line x1="1" y1="6" x2="18" y2="6" stroke="var(--color-blue)" stroke-width="3.2" stroke-linecap="round"/><line x1="18" y1="6" x2="26" y2="6" stroke="var(--spread-tail)" stroke-width="2.2"/><circle cx="26" cy="6" r="2.2" fill="var(--spread-p99-dot)"/></svg>` +
       `<strong>p50 → p95 → p99</strong> <span class="spread-legend-muted">(local p5–p99 · hover for exact stats)</span>` +
     `</span>`
   );

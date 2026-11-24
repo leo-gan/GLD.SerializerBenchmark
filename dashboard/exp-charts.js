@@ -4,6 +4,7 @@
  */
 import { formatSig, formatIntGrouped, formatRelativeCell, LATENCY_US } from './format.js';
 import { escapeHtml } from './page.js';
+import { exportChartPngWithBg, isDarkTheme } from './theme.js';
 import {
   compareLabel,
   competingRows,
@@ -36,7 +37,7 @@ const KIND_AXIS = {
   strings: 'list of words',
 };
 
-const SERIES_PALETTE = [
+const SERIES_PALETTE_LIGHT = [
   { fill: '#7eb6ff', ink: '#1565c0', bg: '#e3f2fd' },
   { fill: '#5d4037', ink: '#3e2723', bg: '#efebe9' },
   { fill: '#00838f', ink: '#006064', bg: '#e0f7fa' },
@@ -49,8 +50,22 @@ const SERIES_PALETTE = [
   { fill: '#00acc1', ink: '#006064', bg: '#e0f7fa' },
 ];
 
+const SERIES_PALETTE_DARK = [
+  { fill: '#7eb6ff', ink: '#a8cbff', bg: '#273549' },
+  { fill: '#d7a88a', ink: '#e7c4ae', bg: '#372d29' },
+  { fill: '#4dd0e1', ink: '#80deea', bg: '#22363c' },
+  { fill: '#fdd663', ink: '#fde293', bg: '#383223' },
+  { fill: '#90a4ae', ink: '#cfd8dc', bg: '#2c333b' },
+  { fill: '#bcaaa4', ink: '#d7ccc8', bg: '#342e2d' },
+  { fill: '#4fc3f7', ink: '#81d4fa', bg: '#213544' },
+  { fill: '#c8a28b', ink: '#e0c2b0', bg: '#362c28' },
+  { fill: '#b0bec5', ink: '#dce4e8', bg: '#2e343c' },
+  { fill: '#26c6da', ink: '#80deea', bg: '#21353b' },
+];
+
 function paletteAt(i) {
-  return SERIES_PALETTE[i % SERIES_PALETTE.length];
+  const list = isDarkTheme() ? SERIES_PALETTE_DARK : SERIES_PALETTE_LIGHT;
+  return list[i % list.length];
 }
 
 function libraryChips(names) {
@@ -64,24 +79,107 @@ const fontStyle = {
   family: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   size: 11,
 };
-const gridColor = 'rgba(0, 0, 0, 0.06)';
-const tickColor = '#5f6368';
-/** Write vs read series — not green/red (those mean faster/slower). */
-const SERIES_WRITE = '#7eb6ff';
-const SERIES_READ = '#4a148c';
-/** One series against another. The write/read pair is a different chart. */
-const SERIES_N1 = '#7eb6ff';
-const SERIES_N100 = '#5d4037';
-const tooltipChrome = {
-  backgroundColor: 'rgba(32, 33, 36, 0.95)',
-  titleColor: '#ffffff',
-  bodyColor: '#ffffff',
-  borderColor: '#dadce0',
-  borderWidth: 1,
-  padding: 10,
-  bodyFont: fontStyle,
-  titleFont: { ...fontStyle, weight: 'bold' },
-};
+
+function expTheme() {
+  if (isDarkTheme()) {
+    return {
+      dark: true,
+      gridColor: 'rgba(255, 255, 255, 0.08)',
+      tickColor: '#a8b0be',
+      valueLabelColor: '#e8eaed',
+      skipLabelColor: '#9aa0a6',
+      surfaceRgb: [33, 37, 47],
+      whiskerInk: 'rgba(232, 234, 237, 0.85)',
+      whiskerOnBright: '#181b22',
+      whiskerOnDark: '#ffffff',
+      hatchBg: '#383223',
+      hatchStroke: '#fdd663',
+      tierFill: {
+        fastest: 'rgba(102, 187, 106, 0.88)',
+        similar: 'rgba(102, 187, 106, 0.52)',
+        closeFallback: 'rgba(253, 214, 99, 0.85)',
+        slower: 'rgba(242, 139, 130, 0.82)',
+        other: 'rgba(168, 176, 190, 0.35)',
+      },
+      tierStroke: {
+        skip: 'rgba(168, 176, 190, 0.55)',
+        fastest: '#81c995',
+        close: '#fdd663',
+        slower: '#f28b82',
+        other: '#9aa0a6',
+      },
+      write: { fill: '#7eb6ff', border: '#90caf9', ink: '#a8cbff', bg: '#273549' },
+      read: { fill: '#b388ff', ink: '#d1b3ff', bg: '#332847' },
+      n1: { fill: '#7eb6ff', ink: '#a8cbff', bg: '#273549' },
+      n100: { fill: '#d7a88a', ink: '#e7c4ae', bg: '#372d29' },
+      compress: {
+        raw: { fill: '#9aa0a6', ink: '#cfd4dc', bg: '#2d323d' },
+        gzip: { fill: '#64b5f6', ink: '#90caf9', bg: '#253549' },
+        zstd: { fill: '#ce93d8', ink: '#e1bee7', bg: '#352941' },
+      },
+      chipDefaultBg: '#2a2f3c',
+      tooltip: {
+        backgroundColor: 'rgba(16, 18, 24, 0.97)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#4b5368',
+        borderWidth: 1,
+        padding: 10,
+        bodyFont: fontStyle,
+        titleFont: { ...fontStyle, weight: 'bold' },
+      },
+    };
+  }
+  return {
+    dark: false,
+    gridColor: 'rgba(0, 0, 0, 0.06)',
+    tickColor: '#5f6368',
+    valueLabelColor: '#202124',
+    skipLabelColor: '#80868b',
+    surfaceRgb: [255, 255, 255],
+    whiskerInk: 'rgba(32, 33, 36, 0.72)',
+    whiskerOnBright: 'rgba(32, 33, 36, 0.72)',
+    whiskerOnDark: '#ffffff',
+    hatchBg: '#fef7e0',
+    hatchStroke: '#b06000',
+    tierFill: {
+      fastest: 'rgba(30, 142, 62, 0.90)',
+      similar: 'rgba(30, 142, 62, 0.55)',
+      closeFallback: 'rgba(249, 171, 0, 0.85)',
+      slower: 'rgba(217, 48, 37, 0.78)',
+      other: 'rgba(95, 99, 104, 0.35)',
+    },
+    tierStroke: {
+      skip: 'rgba(128, 134, 139, 0.55)',
+      fastest: '#1e8e3e',
+      close: '#b06000',
+      slower: '#d93025',
+      other: '#5f6368',
+    },
+    /** Write vs read series — not green/red (those mean faster/slower). */
+    write: { fill: '#7eb6ff', border: '#1565c0', ink: '#1565c0', bg: '#e3f2fd' },
+    read: { fill: '#4a148c', ink: '#4a148c', bg: '#f3e5f5' },
+    /** One series against another. The write/read pair is a different chart. */
+    n1: { fill: '#7eb6ff', ink: '#1565c0', bg: '#e3f2fd' },
+    n100: { fill: '#5d4037', ink: '#3e2723', bg: '#efebe9' },
+    compress: {
+      raw: { fill: '#5f6368', ink: '#3c4043', bg: '#eceff1' },
+      gzip: { fill: '#1565c0', ink: '#1565c0', bg: '#e3f2fd' },
+      zstd: { fill: '#6a1b9a', ink: '#4a148c', bg: '#f3e5f5' },
+    },
+    chipDefaultBg: '#f1f3f4',
+    tooltip: {
+      backgroundColor: 'rgba(32, 33, 36, 0.95)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: '#dadce0',
+      borderWidth: 1,
+      padding: 10,
+      bodyFont: fontStyle,
+      titleFont: { ...fontStyle, weight: 'bold' },
+    },
+  };
+}
 
 const L1_CAPTION =
   'The bar is the <strong>middle</strong> time (median). The whisker is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the <strong>mean</strong> (the same reconstruction the table’s Spread column uses). It is not yet the sample standard deviation of the trials. A short whisker means a stable number. Two bars whose whiskers heavily overlap are usually “about the same.”';
@@ -93,7 +191,7 @@ const chartsByKey = {};
 const experimentBag = { list: chartInstances, keys: chartsByKey };
 const compareBag = { list: [], keys: {} };
 let activeBag = experimentBag;
-let hatchPattern = null;
+const hatchPatterns = { light: null, dark: null };
 
 /** User-facing title of the grouped write/read chart. */
 export const SPLIT_CHART_TITLE = 'Write and Read';
@@ -115,9 +213,7 @@ export function destroyExperimentFigures() {
 }
 
 export function figuresToPng(which) {
-  const chart = chartsByKey[which];
-  if (!chart) return null;
-  return chart.toBase64Image('image/png', 1);
+  return exportChartPngWithBg(chartsByKey[which]);
 }
 
 function hasFiniteSeries(rows, key) {
@@ -297,14 +393,14 @@ function rowTitle(row) {
   return row.version ? `${name}  ${row.version}` : name;
 }
 
-function createHatch(color = '#b06000') {
+function createHatch(bg, stroke) {
   const c = document.createElement('canvas');
   c.width = 8;
   c.height = 8;
   const g = c.getContext('2d');
-  g.fillStyle = '#fef7e0';
+  g.fillStyle = bg;
   g.fillRect(0, 0, 8, 8);
-  g.strokeStyle = color;
+  g.strokeStyle = stroke;
   g.lineWidth = 1;
   g.beginPath();
   g.moveTo(0, 8);
@@ -313,30 +409,33 @@ function createHatch(color = '#b06000') {
   return g.createPattern(c, 'repeat');
 }
 
-function getHatch() {
-  if (!hatchPattern && typeof document !== 'undefined') {
-    hatchPattern = createHatch('#b06000');
+function getHatch(t) {
+  const key = t.dark ? 'dark' : 'light';
+  if (!hatchPatterns[key] && typeof document !== 'undefined') {
+    hatchPatterns[key] = createHatch(t.hatchBg, t.hatchStroke);
   }
-  return hatchPattern;
+  return hatchPatterns[key];
 }
 
 function l1Fill(row, rows) {
+  const t = expTheme();
   const tier = displayTier(row, rows);
   if (tier === 'skip') return 'transparent';
-  if (tier === 'fastest') return 'rgba(30, 142, 62, 0.90)';
-  if (tier === 'similar') return 'rgba(30, 142, 62, 0.55)';
-  if (tier === 'close') return getHatch() || 'rgba(249, 171, 0, 0.85)';
-  if (tier === 'slower') return 'rgba(217, 48, 37, 0.78)';
-  return 'rgba(95, 99, 104, 0.35)';
+  if (tier === 'fastest') return t.tierFill.fastest;
+  if (tier === 'similar') return t.tierFill.similar;
+  if (tier === 'close') return getHatch(t) || t.tierFill.closeFallback;
+  if (tier === 'slower') return t.tierFill.slower;
+  return t.tierFill.other;
 }
 
 function l1Stroke(row, rows) {
+  const t = expTheme();
   const tier = displayTier(row, rows);
-  if (tier === 'skip') return 'rgba(128, 134, 139, 0.55)';
-  if (tier === 'fastest' || tier === 'similar') return '#1e8e3e';
-  if (tier === 'close') return '#b06000';
-  if (tier === 'slower') return '#d93025';
-  return '#5f6368';
+  if (tier === 'skip') return t.tierStroke.skip;
+  if (tier === 'fastest' || tier === 'similar') return t.tierStroke.fastest;
+  if (tier === 'close') return t.tierStroke.close;
+  if (tier === 'slower') return t.tierStroke.slower;
+  return t.tierStroke.other;
 }
 
 function l1BorderDash(row) {
@@ -351,11 +450,7 @@ function parsedX(el) {
   return null;
 }
 
-const WHISKER_INK = 'rgba(32, 33, 36, 0.72)';
-/** Light stroke used where a dark bar would hide the usual gray whisker. */
-const WHISKER_ON_DARK = '#ffffff';
-
-function colorLuminance(color) {
+function colorLuminance(color, bgRgb = [255, 255, 255]) {
   const s = String(color || '').trim();
   const hex = s.match(/^#([0-9a-f]{6})$/i);
   const rgb = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
@@ -374,11 +469,11 @@ function colorLuminance(color) {
     b = Number(rgb[3]);
     if (rgb[4] != null) a = Number(rgb[4]);
   } else {
-    return 1;
+    return bgRgb[0] < 128 ? 0.1 : 1;
   }
-  r = r * a + 255 * (1 - a);
-  g = g * a + 255 * (1 - a);
-  b = b * a + 255 * (1 - a);
+  r = r * a + bgRgb[0] * (1 - a);
+  g = g * a + bgRgb[1] * (1 - a);
+  b = b * a + bgRgb[2] * (1 - a);
   const lin = (c) => {
     const x = c / 255;
     return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
@@ -412,6 +507,7 @@ function strokeErrorBars(chart, stds, datasetIndex) {
   const dataset = chart.data.datasets[datasetIndex];
   const values = dataset?.data || [];
   const area = chart.chartArea;
+  const t = expTheme();
   ctx.save();
   ctx.lineCap = 'butt';
   meta.data.forEach((el, i) => {
@@ -430,15 +526,15 @@ function strokeErrorBars(chart, stds, datasetIndex) {
     }
     const cap = 3.5;
     const y = el.y;
-    const dark = colorLuminance(barFillColor(dataset, i)) < 0.12;
-    if (!dark || !area || !Number.isFinite(el.x)) {
-      ctx.strokeStyle = WHISKER_INK;
+    const lum = colorLuminance(barFillColor(dataset, i), t.surfaceRgb);
+    const needsOnBarContrast = t.dark ? lum > 0.35 : lum < 0.12;
+    if (!needsOnBarContrast || !area || !Number.isFinite(el.x)) {
+      ctx.strokeStyle = t.whiskerInk;
       ctx.lineWidth = 1.5;
       strokeWhiskerPath(ctx, x0, x1, y, cap);
       return;
     }
-    // On a dark bar the gray whisker disappears. Paint the on-bar half light
-    // and keep the tail on the white plot in the same gray as Write + read.
+    // Paint the on-bar half in contrasting ink and keep the tail on the plot surface.
     const tip = el.x;
     const bandTop = y - cap - 3;
     const bandHeight = cap * 2 + 6;
@@ -446,7 +542,7 @@ function strokeErrorBars(chart, stds, datasetIndex) {
     ctx.beginPath();
     ctx.rect(area.left, bandTop, Math.max(0, tip - area.left), bandHeight);
     ctx.clip();
-    ctx.strokeStyle = WHISKER_ON_DARK;
+    ctx.strokeStyle = t.dark ? t.whiskerOnBright : t.whiskerOnDark;
     ctx.lineWidth = 2.25;
     strokeWhiskerPath(ctx, x0, x1, y, cap);
     ctx.restore();
@@ -454,7 +550,7 @@ function strokeErrorBars(chart, stds, datasetIndex) {
     ctx.beginPath();
     ctx.rect(tip, bandTop, Math.max(0, area.right - tip), bandHeight);
     ctx.clip();
-    ctx.strokeStyle = WHISKER_INK;
+    ctx.strokeStyle = t.whiskerInk;
     ctx.lineWidth = 1.5;
     strokeWhiskerPath(ctx, x0, x1, y, cap);
     ctx.restore();
@@ -484,10 +580,11 @@ function makeValueLabelsPlugin({ rows = [], stds = [], format = formatSig, datas
       const xScale = chart.scales.x;
       const area = chart.chartArea;
       if (!xScale || !area) return;
+      const t = expTheme();
       ctx.save();
       ctx.font = "11px 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#202124';
+      ctx.fillStyle = t.valueLabelColor;
       meta.data.forEach((el, i) => {
         const row = rows[i];
         const median = parsedX(el);
@@ -495,12 +592,12 @@ function makeValueLabelsPlugin({ rows = [], stds = [], format = formatSig, datas
         if (row && isShapeSkip(row)) {
           const text = skipReason(row)?.short || 'left out of ranking';
           let x = Math.max(el.x, xScale.getPixelForValue(median)) + 16;
-          ctx.fillStyle = '#80868b';
+          ctx.fillStyle = t.skipLabelColor;
           if (x + ctx.measureText(text).width > area.right) {
             x = area.right - ctx.measureText(text).width;
           }
           ctx.fillText(text, x, el.y);
-          ctx.fillStyle = '#202124';
+          ctx.fillStyle = t.valueLabelColor;
           return;
         }
         let right = el.x;
@@ -552,18 +649,19 @@ function legendHtml(rows) {
 }
 
 function commonScaleX(title, tickFmt) {
+  const t = expTheme();
   return {
     min: 0,
     stacked: false,
     title: {
       display: true,
       text: title,
-      color: tickColor,
+      color: t.tickColor,
       font: { ...fontStyle, weight: 'bold' },
     },
-    grid: { color: gridColor },
+    grid: { color: t.gridColor },
     ticks: {
-      color: tickColor,
+      color: t.tickColor,
       font: fontStyle,
       callback: (value) => tickFmt(value),
     },
@@ -571,6 +669,7 @@ function commonScaleX(title, tickFmt) {
 }
 
 function commonScaleY(rows) {
+  const t = expTheme();
   const wide = mixedLanguages(rows) || (rows || []).some((r) => r.label);
   return {
     stacked: false,
@@ -579,7 +678,7 @@ function commonScaleY(rows) {
       scale.width = Math.max(scale.width, wide ? 188 : 148);
     },
     ticks: {
-      color: tickColor,
+      color: t.tickColor,
       font: fontStyle,
       autoSkip: false,
       callback(_value, index) {
@@ -700,7 +799,7 @@ function mountRelative(canvas, rows) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            ...tooltipChrome,
+            ...expTheme().tooltip,
             callbacks: {
               title: (items) => rowTitle(rows[items[0]?.dataIndex]),
               label: (item) => l1TooltipLines(rows[item.dataIndex], null, rows),
@@ -755,7 +854,7 @@ function mountLatency(canvas, rows, lang) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          ...tooltipChrome,
+          ...expTheme().tooltip,
           callbacks: {
             title: (items) => rowTitle(rows[items[0]?.dataIndex]),
             label: (item) => l1TooltipLines(rows[item.dataIndex], null, rows),
@@ -806,16 +905,17 @@ function mountSplit(canvas, rows, { write = true, read = true } = {}) {
       scaleStds.push(stds[i]);
     });
   };
+  const t = expTheme();
   if (write) {
     pushSeries('Write', 'write_median_ns', 'write', {
-      backgroundColor: SERIES_WRITE,
-      borderColor: '#1565c0',
+      backgroundColor: t.write.fill,
+      borderColor: t.write.border,
       borderWidth: 1,
     });
   }
   if (read) {
     pushSeries('Read', 'read_median_ns', 'read', {
-      backgroundColor: SERIES_READ,
+      backgroundColor: t.read.fill,
     });
   }
   if (!datasets.length) return null;
@@ -841,7 +941,7 @@ function mountSplit(canvas, rows, { write = true, read = true } = {}) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          ...tooltipChrome,
+          ...t.tooltip,
           callbacks: {
             title: (items) => rowTitle(rows[items[0]?.dataIndex]),
             label: (item) => {
@@ -910,7 +1010,7 @@ function mountSize(canvas, rows) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          ...tooltipChrome,
+          ...expTheme().tooltip,
           callbacks: {
             title: (items) => rowTitle(sorted[items[0]?.dataIndex]),
             label: (item) => {
@@ -933,18 +1033,19 @@ function mountSize(canvas, rows) {
 
 function seriesChip(label, fill, ink, bg) {
   const text = ink || fill;
-  const back = bg || '#f1f3f4';
+  const back = bg || expTheme().chipDefaultBg;
   return `<span class="exp-chip exp-series-key" style="color:${text};background:${back}"><span class="exp-swatch" style="background:${fill};width:0.85rem;height:0.85rem" aria-hidden="true"></span>${escapeHtml(label)}</span>`;
 }
 
 function mountCompress(canvas, rows) {
+  const t = expTheme();
   const sorted = sortRowsBySize(rows);
   const showZstd = sorted.some((r) => r.size_zstd_bytes != null);
   const datasets = [
     {
       label: 'Raw',
       data: sorted.map((r) => Number(r.size_bytes)),
-      backgroundColor: '#5f6368',
+      backgroundColor: t.compress.raw.fill,
       borderRadius: 3,
       barPercentage: 0.9,
       categoryPercentage: 0.7,
@@ -952,7 +1053,7 @@ function mountCompress(canvas, rows) {
     {
       label: 'gzip',
       data: sorted.map((r) => Number(r.size_gzip_bytes)),
-      backgroundColor: '#1565c0',
+      backgroundColor: t.compress.gzip.fill,
       borderRadius: 3,
       barPercentage: 0.9,
       categoryPercentage: 0.7,
@@ -962,7 +1063,7 @@ function mountCompress(canvas, rows) {
     datasets.push({
       label: 'zstd',
       data: sorted.map((r) => Number(r.size_zstd_bytes)),
-      backgroundColor: '#6a1b9a',
+      backgroundColor: t.compress.zstd.fill,
       borderRadius: 3,
       barPercentage: 0.9,
       categoryPercentage: 0.7,
@@ -982,7 +1083,7 @@ function mountCompress(canvas, rows) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            ...tooltipChrome,
+            ...t.tooltip,
             callbacks: {
               title: (items) => rowTitle(sorted[items[0]?.dataIndex]),
               label: (item) => {
@@ -1003,6 +1104,7 @@ function mountCompress(canvas, rows) {
 }
 
 function mountSizeVsPoints(canvas, rows, { byLanguage = false } = {}) {
+  const t = expTheme();
   const points = uniqueValues(rows, 'points')
     .map(Number)
     .filter(Number.isFinite)
@@ -1040,7 +1142,7 @@ function mountSizeVsPoints(canvas, rows, { byLanguage = false } = {}) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            ...tooltipChrome,
+            ...t.tooltip,
             callbacks: {
               label: (item) => {
                 const v = item.parsed.y;
@@ -1051,15 +1153,15 @@ function mountSizeVsPoints(canvas, rows, { byLanguage = false } = {}) {
         },
         scales: {
           x: {
-            title: { display: true, text: 'sensor readings', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
-            grid: { color: gridColor },
-            ticks: { color: tickColor, font: fontStyle },
+            title: { display: true, text: 'sensor readings', color: t.tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: t.gridColor },
+            ticks: { color: t.tickColor, font: fontStyle },
           },
           y: {
             min: 0,
-            title: { display: true, text: 'bytes', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
-            grid: { color: gridColor },
-            ticks: { color: tickColor, font: fontStyle, callback: (v) => formatIntGrouped(v) },
+            title: { display: true, text: 'bytes', color: t.tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: t.gridColor },
+            ticks: { color: t.tickColor, font: fontStyle, callback: (v) => formatIntGrouped(v) },
           },
         },
       },
@@ -1069,6 +1171,7 @@ function mountSizeVsPoints(canvas, rows, { byLanguage = false } = {}) {
 }
 
 function mountLatencyVsN(canvas, rows) {
+  const t = expTheme();
   const keys = [];
   const byKey = new Map();
   for (const row of rows) {
@@ -1089,8 +1192,8 @@ function mountLatencyVsN(canvas, rows) {
     return { ...row, label: seriesLabel(row) };
   });
   const series = [
-    { n: '1', label: '1 record', color: SERIES_N1 },
-    { n: '100', label: '100 records', color: SERIES_N100 },
+    { n: '1', label: '1 record', color: t.n1.fill },
+    { n: '100', label: '100 records', color: t.n100.fill },
   ];
   const datasets = series.map((s) => ({
     label: s.label,
@@ -1117,7 +1220,7 @@ function mountLatencyVsN(canvas, rows) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            ...tooltipChrome,
+            ...t.tooltip,
             callbacks: {
               title: (items) => rowTitle(proxy[items[0]?.dataIndex]),
               label: (item) => {
@@ -1138,6 +1241,7 @@ function mountLatencyVsN(canvas, rows) {
 }
 
 function mountRankSlope(canvas, rows) {
+  const t = expTheme();
   const kinds = uniqueValues(rows, 'kind');
   const series = uniqueSeriesKeys(rows);
   const byLang = mixedLanguages(rows);
@@ -1177,7 +1281,7 @@ function mountRankSlope(canvas, rows) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            ...tooltipChrome,
+            ...t.tooltip,
             callbacks: {
               label: (item) => {
                 const v = item.parsed.y;
@@ -1188,16 +1292,16 @@ function mountRankSlope(canvas, rows) {
         },
         scales: {
           x: {
-            title: { display: true, text: 'record shape', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
-            grid: { color: gridColor },
-            ticks: { color: tickColor, font: fontStyle },
+            title: { display: true, text: 'record shape', color: t.tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: t.gridColor },
+            ticks: { color: t.tickColor, font: fontStyle },
           },
           y: {
             reverse: true,
             min: 1,
-            title: { display: true, text: 'rank (1 = fastest)', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
-            grid: { color: gridColor },
-            ticks: { color: tickColor, font: fontStyle, stepSize: 1 },
+            title: { display: true, text: 'rank (1 = fastest)', color: t.tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: t.gridColor },
+            ticks: { color: t.tickColor, font: fontStyle, stepSize: 1 },
           },
         },
       },
@@ -1230,9 +1334,10 @@ function seriesToggleHtml(prefix, writeOn, readOn) {
 }
 
 function splitHelp(writeOn, readOn) {
+  const t = expTheme();
   const chips = [];
-  if (writeOn) chips.push(seriesChip('Write', SERIES_WRITE, '#1565c0', '#e3f2fd'));
-  if (readOn) chips.push(seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5'));
+  if (writeOn) chips.push(seriesChip('Write', t.write.fill, t.write.ink, t.write.bg));
+  if (readOn) chips.push(seriesChip('Read', t.read.fill, t.read.ink, t.read.bg));
   const sort =
     writeOn && readOn ? 'Sorted by write + read.' : writeOn ? 'Sorted by write.' : 'Sorted by read.';
   return `${chips.join(' ')} ${sort} The whisker is the spread of that bar, drawn the same way as on Write + read.`;
@@ -1398,10 +1503,11 @@ export function mountExperimentFigures(mount, ctx) {
         builders.push((canvas) => mountSize(canvas, sizeRows));
       }
     } else if (type === 'S2') {
+      const c = expTheme().compress;
       parts.push(
         figureHtml({
           title: 'Size raw and after compression (bytes)',
-          helpHtml: `${seriesChip('Raw', '#5f6368', '#3c4043', '#eceff1')} ${seriesChip('gzip', '#1565c0', '#1565c0', '#e3f2fd')} ${seriesChip('zstd', '#6a1b9a', '#4a148c', '#f3e5f5')}`,
+          helpHtml: `${seriesChip('Raw', c.raw.fill, c.raw.ink, c.raw.bg)} ${seriesChip('gzip', c.gzip.fill, c.gzip.ink, c.gzip.bg)} ${seriesChip('zstd', c.zstd.fill, c.zstd.ink, c.zstd.bg)}`,
           pngId: 'exp-png-compress',
           height: h,
           canvasLabel: `Grouped bar chart of raw, gzip, and zstd size in bytes for ${lang}`,
@@ -1427,12 +1533,13 @@ export function mountExperimentFigures(mount, ctx) {
       );
       builders.push((canvas) => mountSizeVsPoints(canvas, curveRows, { byLanguage }));
     } else if (type === 'C2') {
+      const t = expTheme();
       const pairRows = rowsMatching(allRows, match, { n: true });
       const nSeries = uniqueSeriesKeys(pairRows).length;
       parts.push(
         figureHtml({
           title: 'One record vs one hundred (µs)',
-          helpHtml: `${seriesChip('1 record', SERIES_N1, '#1565c0', '#e3f2fd')} ${seriesChip('100 records', SERIES_N100, '#3e2723', '#efebe9')}${crossLang ? ' Every language shares this microsecond axis.' : ''}`,
+          helpHtml: `${seriesChip('1 record', t.n1.fill, t.n1.ink, t.n1.bg)} ${seriesChip('100 records', t.n100.fill, t.n100.ink, t.n100.bg)}${crossLang ? ' Every language shares this microsecond axis.' : ''}`,
           pngId: 'exp-png-vsn',
           height: plotHeight(nSeries, crossLang),
           canvasLabel: `Grouped bar chart of write-plus-read time at n=1 and n=100 for ${lang}`,
@@ -1506,9 +1613,7 @@ export function resizeCompareFigures() {
 }
 
 export function compareFigurePng(which) {
-  const chart = compareBag.keys[which];
-  if (!chart) return null;
-  return chart.toBase64Image('image/png', 1);
+  return exportChartPngWithBg(compareBag.keys[which]);
 }
 
 /**

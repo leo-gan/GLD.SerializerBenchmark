@@ -6,6 +6,20 @@
   <meta name="description" content="Interactive dashboard presenting performance analytics, trade-offs, and comparisons for serialization libraries.">
   <title>Dashboard · Multi-Language Serializer Benchmark</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      try {
+        var p = location.pathname.replace(/\/index\.html$/i, '/');
+        var m = p.match(/^(.*)\/dashboard\/?$/);
+        var root = m ? m[1] + '/' : (p.endsWith('/') ? p : p.slice(0, p.lastIndexOf('/') + 1));
+        var raw = localStorage.getItem((root || '/') + '.__palette');
+        var pal = raw && JSON.parse(raw);
+        if (pal && (pal.color ? pal.color.scheme === 'slate' : pal.index === 1)) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link rel="stylesheet" href="./index.css">
   <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -37,6 +51,24 @@
         <li><a href="./" class="current-section" id="nav-site-dashboard" aria-current="page">Dashboard</a></li>
         <li><a href="../experiments/" id="nav-site-experiments">Experiments</a></li>
         <li><a href="../compliance/" id="nav-site-compliance">Compliance</a></li>
+        <li>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="site-link-icon theme-toggle-btn"
+            aria-label="Switch to dark mode"
+            aria-pressed="false"
+            title="Switch to dark mode"
+          >
+            <svg class="theme-icon theme-icon-light" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/>
+            </svg>
+            <svg class="theme-icon theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/>
+            </svg>
+            <span class="theme-toggle-label">Dark mode</span>
+          </button>
+        </li>
         <li>
           <a
             href="https://github.com/leo-gan/GLD.SerializerBenchmark"

@@ -6,6 +6,7 @@ import {
   chooseLatencyUnit,
 } from './format.js';
 import { serializerSourceUrl } from './serializer-sources.js';
+import { exportChartPngWithBg, isDarkTheme } from './theme.js';
 
 function openSerializerSource(language, name) {
   const url = serializerSourceUrl(language, name);
@@ -28,8 +29,52 @@ const fontStyle = {
   size: 11,
 };
 
-const gridColor = 'rgba(0, 0, 0, 0.06)';
-const tickColor = '#5f6368';
+function chartPalette() {
+  if (isDarkTheme()) {
+    return {
+      gridColor: 'rgba(255, 255, 255, 0.08)',
+      zeroGridColor: 'rgba(232, 234, 237, 0.35)',
+      tickColor: '#a8b0be',
+      frontierLine: 'rgba(138, 180, 248, 0.55)',
+      paretoFill: '#8ab4f8',
+      paretoPointBorder: '#21252f',
+      paretoLabel: '#8ab4f8',
+      dominatedFill: 'rgba(168, 176, 190, 0.42)',
+      dominatedBorder: 'rgba(255, 255, 255, 0.14)',
+      speedPareto: 'rgba(138, 180, 248, 0.9)',
+      speedDom: 'rgba(138, 180, 248, 0.3)',
+      speedParetoBorder: '#8ab4f8',
+      speedDomBorder: 'rgba(138, 180, 248, 0.5)',
+      sizePareto: 'rgba(129, 201, 149, 0.88)',
+      sizeDom: 'rgba(129, 201, 149, 0.28)',
+      sizeParetoBorder: '#81c995',
+      sizeDomBorder: 'rgba(129, 201, 149, 0.48)',
+      tooltipBg: 'rgba(16, 18, 24, 0.97)',
+      tooltipBorder: '#4b5368',
+    };
+  }
+  return {
+    gridColor: 'rgba(0, 0, 0, 0.06)',
+    zeroGridColor: 'rgba(32, 33, 36, 0.35)',
+    tickColor: '#5f6368',
+    frontierLine: 'rgba(26, 115, 232, 0.5)',
+    paretoFill: '#1a73e8',
+    paretoPointBorder: '#ffffff',
+    paretoLabel: '#1a73e8',
+    dominatedFill: 'rgba(95, 99, 104, 0.35)',
+    dominatedBorder: 'rgba(0, 0, 0, 0.08)',
+    speedPareto: 'rgba(26, 115, 232, 0.9)',
+    speedDom: 'rgba(26, 115, 232, 0.28)',
+    speedParetoBorder: '#1a73e8',
+    speedDomBorder: 'rgba(26, 115, 232, 0.45)',
+    sizePareto: 'rgba(30, 142, 62, 0.9)',
+    sizeDom: 'rgba(30, 142, 62, 0.28)',
+    sizeParetoBorder: '#1e8e3e',
+    sizeDomBorder: 'rgba(30, 142, 62, 0.45)',
+    tooltipBg: 'rgba(32, 33, 36, 0.95)',
+    tooltipBorder: '#dadce0',
+  };
+}
 
 /** @type {{ logScale: boolean, rankSort: 'speed' | 'size' }} */
 let chartOptions = { logScale: false, rankSort: 'speed' };
@@ -101,14 +146,12 @@ export function resizeCharts() {
 }
 
 export function exportScatterPng() {
-  if (!scatterChartInstance) return null;
-  return scatterChartInstance.toBase64Image('image/png', 1);
+  return exportChartPngWithBg(scatterChartInstance);
 }
 
 /** Prefer primary ranking chart for PNG export. */
 export function exportBarPng() {
-  if (!barChartInstance) return null;
-  return barChartInstance.toBase64Image('image/png', 1);
+  return exportChartPngWithBg(barChartInstance);
 }
 
 function updateScatterChart(groups, paretoNames, metric) {
@@ -164,6 +207,7 @@ function updateScatterChart(groups, paretoNames, metric) {
   }
 
   const xType = chartOptions.logScale ? 'logarithmic' : 'linear';
+  const pal = chartPalette();
 
   scatterChartInstance = new Chart(ctx, {
     type: 'scatter',
@@ -174,7 +218,7 @@ function updateScatterChart(groups, paretoNames, metric) {
           data: frontierLineData,
           type: 'line',
           showLine: true,
-          borderColor: 'rgba(26, 115, 232, 0.5)',
+          borderColor: pal.frontierLine,
           borderWidth: 1.5,
           borderDash: [5, 5],
           pointRadius: 0,
@@ -185,8 +229,8 @@ function updateScatterChart(groups, paretoNames, metric) {
         {
           label: 'Pareto Optimal',
           data: paretoPoints,
-          backgroundColor: '#1a73e8',
-          borderColor: '#ffffff',
+          backgroundColor: pal.paretoFill,
+          borderColor: pal.paretoPointBorder,
           borderWidth: 1.5,
           pointRadius: 7,
           pointHoverRadius: 9,
@@ -196,8 +240,8 @@ function updateScatterChart(groups, paretoNames, metric) {
         {
           label: 'Dominated',
           data: standardPoints,
-          backgroundColor: 'rgba(95, 99, 104, 0.35)',
-          borderColor: 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: pal.dominatedFill,
+          borderColor: pal.dominatedBorder,
           borderWidth: 1,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -217,16 +261,16 @@ function updateScatterChart(groups, paretoNames, metric) {
       plugins: {
         legend: {
           labels: {
-            color: tickColor,
+            color: pal.tickColor,
             font: fontStyle,
             filter: (item) => item.text !== 'Frontier Line',
           },
         },
         tooltip: {
-          backgroundColor: 'rgba(32, 33, 36, 0.95)',
+          backgroundColor: pal.tooltipBg,
           titleColor: '#ffffff',
           bodyColor: '#ffffff',
-          borderColor: '#dadce0',
+          borderColor: pal.tooltipBorder,
           borderWidth: 1,
           padding: 8,
           bodyFont: fontStyle,
@@ -258,12 +302,12 @@ function updateScatterChart(groups, paretoNames, metric) {
           title: {
             display: true,
             text: xAxisTitle,
-            color: tickColor,
+            color: pal.tickColor,
             font: { ...fontStyle, weight: 'bold' },
           },
-          grid: { color: gridColor },
+          grid: { color: pal.gridColor },
           ticks: {
-            color: tickColor,
+            color: pal.tickColor,
             font: fontStyle,
             callback: (value) => formatXTick(value),
           },
@@ -272,12 +316,12 @@ function updateScatterChart(groups, paretoNames, metric) {
           title: {
             display: true,
             text: 'Serialized size (bytes)',
-            color: tickColor,
+            color: pal.tickColor,
             font: { ...fontStyle, weight: 'bold' },
           },
-          grid: { color: gridColor },
+          grid: { color: pal.gridColor },
           ticks: {
-            color: tickColor,
+            color: pal.tickColor,
             font: fontStyle,
             callback: (v) => formatIntGrouped(v),
           },
@@ -296,7 +340,7 @@ function updateScatterChart(groups, paretoNames, metric) {
             const isPareto = datasetIndex === 1;
             if (!isPareto) return;
             c.font = 'bold 10px "Roboto", -apple-system, sans-serif';
-            c.fillStyle = '#1a73e8';
+            c.fillStyle = pal.paretoLabel;
             const meta = chart.getDatasetMeta(datasetIndex);
             meta.data.forEach((element, index) => {
               const dataPoint = dataset.data[index];
@@ -361,11 +405,13 @@ function updateBarChart(groups, paretoNames, metric) {
     Number.isFinite(v) && maxSize > 0 ? -(v / maxSize) * 100 : 0
   );
 
+  const pal = chartPalette();
+
   const speedColors = sortedGroups.map((g) =>
-    paretoNames.includes(rowKey(g)) ? 'rgba(26, 115, 232, 0.9)' : 'rgba(26, 115, 232, 0.28)'
+    paretoNames.includes(rowKey(g)) ? pal.speedPareto : pal.speedDom
   );
   const sizeColors = sortedGroups.map((g) =>
-    paretoNames.includes(rowKey(g)) ? 'rgba(30, 142, 62, 0.9)' : 'rgba(30, 142, 62, 0.28)'
+    paretoNames.includes(rowKey(g)) ? pal.sizePareto : pal.sizeDom
   );
 
   barChartInstance = new Chart(canvas.getContext('2d'), {
@@ -379,7 +425,7 @@ function updateBarChart(groups, paretoNames, metric) {
           data: sizeNorm,
           backgroundColor: sizeColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(rowKey(g)) ? '#1e8e3e' : 'rgba(30, 142, 62, 0.45)'
+            paretoNames.includes(rowKey(g)) ? pal.sizeParetoBorder : pal.sizeDomBorder
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -391,7 +437,7 @@ function updateBarChart(groups, paretoNames, metric) {
           data: speedNorm,
           backgroundColor: speedColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(rowKey(g)) ? '#1a73e8' : 'rgba(26, 115, 232, 0.45)'
+            paretoNames.includes(rowKey(g)) ? pal.speedParetoBorder : pal.speedDomBorder
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -416,7 +462,7 @@ function updateBarChart(groups, paretoNames, metric) {
           position: 'top',
           align: 'end',
           labels: {
-            color: tickColor,
+            color: pal.tickColor,
             font: fontStyle,
             boxWidth: 12,
             usePointStyle: true,
@@ -424,10 +470,10 @@ function updateBarChart(groups, paretoNames, metric) {
           },
         },
         tooltip: {
-          backgroundColor: 'rgba(32, 33, 36, 0.95)',
+          backgroundColor: pal.tooltipBg,
           titleColor: '#ffffff',
           bodyColor: '#ffffff',
-          borderColor: '#dadce0',
+          borderColor: pal.tooltipBorder,
           borderWidth: 1,
           padding: 10,
           bodyFont: fontStyle,
@@ -469,7 +515,7 @@ function updateBarChart(groups, paretoNames, metric) {
           max: 100,
           grid: {
             color: (ctx) =>
-              ctx.tick.value === 0 ? 'rgba(32, 33, 36, 0.35)' : gridColor,
+              ctx.tick.value === 0 ? pal.zeroGridColor : pal.gridColor,
             lineWidth: (ctx) => (ctx.tick.value === 0 ? 1.5 : 1),
           },
           title: {
@@ -477,11 +523,11 @@ function updateBarChart(groups, paretoNames, metric) {
             text: isOps
               ? '◀ larger size          normalized % of chart max          higher ops/s ▶'
               : '◀ larger size          normalized % of chart max          higher latency ▶',
-            color: tickColor,
+            color: pal.tickColor,
             font: { ...fontStyle, size: 10 },
           },
           ticks: {
-            color: tickColor,
+            color: pal.tickColor,
             font: fontStyle,
             stepSize: 25,
             callback: (value) => {
@@ -496,7 +542,7 @@ function updateBarChart(groups, paretoNames, metric) {
           stacked: false,
           grid: { display: false },
           ticks: {
-            color: tickColor,
+            color: pal.tickColor,
             font: { ...fontStyle, weight: 'bold' },
             autoSkip: false,
           },
