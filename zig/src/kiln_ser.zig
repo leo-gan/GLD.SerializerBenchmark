@@ -177,8 +177,15 @@ pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     self.ensure();
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
     const view = std.mem.eql(u8, type_id, "tensor_view");
+    // Suite records are positional. Read them with the cursor instead of a
+    // FieldValue node per field. Tensors still use the value decoder.
+    if (!view and directSuite(tag)) {
+        var reader = kiln.Reader.init(bytes, .{});
+        const fx = try readDirect(&reader, allocator, tag);
+        try reader.finish();
+        return fx;
+    }
     const schema = try schemaFor(self, tag, false);
-    // tensor_view must alias the caller's bytes. ListReuse would copy them.
     const opts: kiln.Options = if (view) .{} else .{ .reuse = &self.reuse };
     var value = try kiln.decode(self.gpa, schema, bytes, opts);
     defer value.deinit(self.gpa);
@@ -190,10 +197,15 @@ pub fn decodeBatch(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     const self: *State = @ptrCast(@alignCast(ctx));
     self.ensure();
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
+    if (directSuite(tag)) {
+        var reader = kiln.Reader.init(bytes, .{});
+        const n: usize = @intCast(try reader.listHeader(1));
+        const out = try allocator.alloc(data.Fixture, n);
+        for (out) |*slot| slot.* = try readDirect(&reader, allocator, tag);
+        try reader.finish();
+        return out;
+    }
     const schema = try schemaFor(self, tag, true);
-    // Same pool as single-value decode. Numeric slices alias it until the next
-    // decode, which is after the fidelity check. Without the pool, deinit frees
-    // those slices before the check and telemetry N=100 faults.
     var value = try kiln.decode(self.gpa, schema, bytes, .{ .reuse = &self.reuse });
     defer value.deinit(self.gpa);
     const items = switch (value) {
@@ -203,6 +215,104 @@ pub fn decodeBatch(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     const out = try allocator.alloc(data.Fixture, items.len);
     for (items, out) |item, *slot| slot.* = try fixtureFrom(allocator, tag, item);
     return out;
+}
+
+fn directSuite(tag: Tag) bool {
+    return switch (tag) {
+        .message, .document, .telemetry, .strings, .event => true,
+        else => false,
+    };
+}
+
+fn readOwned(r: *kiln.Reader, allocator: std.mem.Allocator) ![]u8 {
+    return dupe(allocator, try r.str());
+}
+
+fn readDirect(r: *kiln.Reader, allocator: std.mem.Allocator, tag: Tag) !data.Fixture {
+    return switch (tag) {
+        .message => .{ .message = try readMessage(r, allocator) },
+        .document => .{ .document = try readDocument(r, allocator) },
+        .telemetry => .{ .telemetry = try readTelemetry(r, allocator) },
+        .strings => .{ .strings = try readStrings(r, allocator) },
+        .event => .{ .event = try readEvent(r, allocator) },
+        else => error.KilnType,
+    };
+}
+
+fn readMessage(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Message {
+    return .{
+        .f_bool = try r.boolean(),
+        .f_int32 = try r.int(i32),
+        .f_int64 = try r.int(i64),
+        .f_float64 = try r.float64(),
+        .f_string = try readOwned(r, allocator),
+        .f_bool_2 = try r.boolean(),
+        .f_int32_2 = try r.int(i32),
+        .f_string_2 = try readOwned(r, allocator),
+    };
+}
+
+fn readDocument(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Document {
+    const id = try readOwned(r, allocator);
+    const status = try r.int(i32);
+    const region = try readOwned(r, allocator);
+    const meta_version = try r.int(i32);
+    const n: usize = @intCast(try r.listHeader(1));
+    const items = try allocator.alloc(data.DocumentItem, n);
+    for (items) |*it| {
+        it.* = .{
+            .sku = try readOwned(r, allocator),
+            .qty = try r.int(i32),
+            .price_minor = try r.int(i64),
+        };
+    }
+    return .{
+        .id = id,
+        .status = status,
+        .meta = .{ .region = region, .version = meta_version },
+        .items = items,
+    };
+}
+
+fn readTelemetry(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Telemetry {
+    const source = try readOwned(r, allocator);
+    const ts = try r.int(i64);
+    const nt: usize = @intCast(try r.listHeader(1));
+    const tags = try allocator.alloc([]const u8, nt);
+    for (tags) |*s| s.* = try readOwned(r, allocator);
+    const nv: usize = @intCast(try r.listHeader(8));
+    const values = try allocator.alloc(f64, nv);
+    try r.pod(f64, values);
+    return .{ .source = source, .ts = ts, .tags = tags, .values = values };
+}
+
+fn readStrings(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Strings {
+    const n: usize = @intCast(try r.listHeader(1));
+    const items = try allocator.alloc([]const u8, n);
+    for (items) |*s| s.* = try readOwned(r, allocator);
+    return .{ .items = items };
+}
+
+fn readEvent(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Event {
+    const event_id = try readOwned(r, allocator);
+    const event_type = try readOwned(r, allocator);
+    const occurred_at = try r.int(i64);
+    const producer = try readOwned(r, allocator);
+    const n: usize = @intCast(try r.listHeader(1));
+    const attrs = try allocator.alloc(data.EventAttr, n);
+    for (attrs) |*a| {
+        a.* = .{
+            .key = try readOwned(r, allocator),
+            .value = try readOwned(r, allocator),
+        };
+    }
+    return .{
+        .event_id = event_id,
+        .event_type = event_type,
+        .occurred_at = occurred_at,
+        .producer = producer,
+        .attrs = attrs,
+    };
 }
 
 fn schemaFor(self: *State, tag: Tag, batch: bool) !*const kiln.Schema {
