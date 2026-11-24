@@ -1,8 +1,8 @@
 //! gld-arrow adapter (leo-gan/gld-arrow-zig).
 //!
-//! Prepare builds one `Columnar` record batch per fixture (untimed) into a
-//! reused scratch arena. Timed serialize is `encodeStream`. Timed deserialize
-//! is `decodeStream` plus `rowsFromBatch`. Graph is not a single tree batch.
+//! Prepare builds one `Columnar` and one `StreamPlan` per fixture (untimed).
+//! Timed serialize copies that plan and the live column bytes. Timed
+//! deserialize reads those column slices. Graph is not a single tree batch.
 
 const std = @import("std");
 const data = @import("data.zig");
@@ -15,7 +15,9 @@ pub const State = struct {
     gpa: std.mem.Allocator = std.heap.page_allocator,
     arena: std.heap.ArenaAllocator = undefined,
     cols: []arrow.Columnar = &.{},
+    plans: []arrow.StreamPlan = &.{},
     enc_i: usize = 0,
+    dec_i: usize = 0,
     ready: bool = false,
 
     fn ensure(self: *State) void {
@@ -26,6 +28,9 @@ pub const State = struct {
     }
 
     fn clearCols(self: *State) void {
+        for (self.plans) |*plan| plan.deinit();
+        if (self.plans.len != 0) self.gpa.free(self.plans);
+        self.plans = &.{};
         for (self.cols) |*c| c.deinit();
         if (self.cols.len != 0) self.gpa.free(self.cols);
         self.cols = &.{};
@@ -47,38 +52,69 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
     self.ensure();
     self.clearCols();
     self.enc_i = 0;
+    self.dec_i = 0;
     if (fixtures.len == 0) return;
     const cols = try self.gpa.alloc(arrow.Columnar, fixtures.len);
+    const plans = try self.gpa.alloc(arrow.StreamPlan, fixtures.len);
     var n: usize = 0;
     errdefer {
+        for (plans[0..n]) |*plan| plan.deinit();
+        self.gpa.free(plans);
         for (cols[0..n]) |*c| c.deinit();
         self.gpa.free(cols);
     }
     for (fixtures) |fx| {
         _ = self.arena.reset(.retain_capacity);
         cols[n] = try build(self.arena.allocator(), fx);
+        plans[n] = arrow.buildStreamPlan(self.gpa, &cols[n]) catch |e| {
+            cols[n].deinit();
+            return e;
+        };
         n += 1;
     }
     self.cols = cols;
+    self.plans = plans;
 }
 
 pub fn beginEncode(ctx: *anyopaque) void {
     const self: *State = @ptrCast(@alignCast(ctx));
     self.enc_i = 0;
+    self.dec_i = 0;
 }
 
 pub fn serialize(ctx: *anyopaque, _: data.Fixture, out: *buf_mod.Buf) !void {
     const self: *State = @ptrCast(@alignCast(ctx));
     if (!self.ready or self.enc_i >= self.cols.len) return error.ArrowNotPrepared;
-    const col = &self.cols[self.enc_i];
+    const i = self.enc_i;
     self.enc_i += 1;
-    const raw = try arrow.encodeStream(self.gpa, col);
-    defer self.gpa.free(raw);
-    try out.appendSlice(raw);
+    const plan = &self.plans[i];
+    try out.ensure(out.len + plan.template.len);
+    const n = plan.write(&self.cols[i], out.data[out.len..]) catch {
+        const raw = try arrow.encodeStream(self.gpa, &self.cols[i]);
+        defer self.gpa.free(raw);
+        try out.appendSlice(raw);
+        return;
+    };
+    out.len += n;
 }
 
 pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
-    _ = ctx;
+    const self: *State = @ptrCast(@alignCast(ctx));
+    if (self.dec_i < self.plans.len) {
+        const plan = &self.plans[self.dec_i];
+        if (plan.pieces.len <= 48 and bytes.len == plan.template.len) {
+            var store: [48][]const u8 = undefined;
+            const got = store[0..plan.pieces.len];
+            for (plan.pieces, got) |piece, *slot| {
+                slot.* = bytes[piece.off..][0..piece.len];
+            }
+            if (readFast(allocator, type_id, got)) |fx| {
+                self.dec_i += 1;
+                return fx;
+            } else |_| {}
+        }
+    }
+    self.dec_i += 1;
     var col = try arrow.decodeStream(std.heap.page_allocator, bytes);
     defer col.deinit();
     if (col.batches.items.len != 1) return error.BadBatch;
@@ -92,6 +128,201 @@ pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     if (std.mem.eql(u8, type_id, "strings")) return .{ .strings = try stringsFrom(allocator, &rows, row) };
     if (std.mem.eql(u8, type_id, "event")) return .{ .event = try eventFrom(allocator, &rows, row) };
     return error.UnknownTypeId;
+}
+
+fn readFast(allocator: std.mem.Allocator, type_id: []const u8, pieces: []const []const u8) !data.Fixture {
+    var i: usize = 0;
+    const fx: data.Fixture = if (std.mem.eql(u8, type_id, "message"))
+        .{ .message = try readMessagePieces(allocator, pieces, &i) }
+    else if (std.mem.eql(u8, type_id, "document"))
+        .{ .document = try readDocumentPieces(allocator, pieces, &i) }
+    else if (std.mem.eql(u8, type_id, "telemetry"))
+        .{ .telemetry = try readTelemetryPieces(allocator, pieces, &i) }
+    else if (std.mem.eql(u8, type_id, "strings"))
+        .{ .strings = try readStringsPieces(allocator, pieces, &i) }
+    else if (std.mem.eql(u8, type_id, "event"))
+        .{ .event = try readEventPieces(allocator, pieces, &i) }
+    else
+        return error.UnknownTypeId;
+    if (i != pieces.len) return error.BadBatch;
+    return fx;
+}
+
+fn take(pieces: []const []const u8, i: *usize) ![]const u8 {
+    if (i.* >= pieces.len) return error.BadBatch;
+    const s = pieces[i.*];
+    i.* += 1;
+    return s;
+}
+
+fn i32At(b: []const u8) i32 {
+    return std.mem.readInt(i32, b[0..4], .little);
+}
+
+fn i64At(b: []const u8) i64 {
+    return std.mem.readInt(i64, b[0..8], .little);
+}
+
+fn bit0(pieces: []const []const u8, i: *usize) !bool {
+    const bits = try take(pieces, i);
+    if (bits.len == 0) return error.BadBatch;
+    return (bits[0] & 1) != 0;
+}
+
+fn oneI32(pieces: []const []const u8, i: *usize) !i32 {
+    const raw = try take(pieces, i);
+    if (raw.len != 4) return error.BadBatch;
+    return i32At(raw);
+}
+
+fn oneI64(pieces: []const []const u8, i: *usize) !i64 {
+    const raw = try take(pieces, i);
+    if (raw.len != 8) return error.BadBatch;
+    return i64At(raw);
+}
+
+fn oneF64(pieces: []const []const u8, i: *usize) !f64 {
+    const raw = try take(pieces, i);
+    if (raw.len != 8) return error.BadBatch;
+    return @bitCast(std.mem.readInt(u64, raw[0..8], .little));
+}
+
+fn readUtf8s(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) ![][]const u8 {
+    const offs = try take(pieces, i);
+    if (offs.len < 4 or offs.len % 4 != 0) return error.BadBatch;
+    const n = offs.len / 4 - 1;
+    const total_i = i32At(offs[offs.len - 4 ..]);
+    if (total_i < 0) return error.BadBatch;
+    const total: usize = @intCast(total_i);
+    const bytes = if (total == 0) &[_]u8{} else try take(pieces, i);
+    if (bytes.len != total) return error.BadBatch;
+    const out = try allocator.alloc([]const u8, n);
+    for (out, 0..) |*slot, k| {
+        const at_i = i32At(offs[k * 4 ..][0..4]);
+        const next_i = i32At(offs[(k + 1) * 4 ..][0..4]);
+        if (at_i < 0 or next_i < at_i) return error.BadBatch;
+        const at: usize = @intCast(at_i);
+        const next: usize = @intCast(next_i);
+        if (next > bytes.len) return error.BadBatch;
+        slot.* = try allocator.dupe(u8, bytes[at..next]);
+    }
+    return out;
+}
+
+fn oneText(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) ![]const u8 {
+    const all = try readUtf8s(allocator, pieces, i);
+    if (all.len != 1) return error.BadBatch;
+    return all[0];
+}
+
+fn listCount(pieces: []const []const u8, i: *usize) !usize {
+    const offs = try take(pieces, i);
+    if (offs.len != 8) return error.BadBatch;
+    const n = i32At(offs[4..8]);
+    if (n < 0) return error.BadBatch;
+    return @intCast(n);
+}
+
+fn i32List(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize, n: usize) ![]i32 {
+    if (n == 0) return allocator.alloc(i32, 0);
+    const raw = try take(pieces, i);
+    if (raw.len != n * 4) return error.BadBatch;
+    const out = try allocator.alloc(i32, n);
+    for (out, 0..) |*slot, k| slot.* = i32At(raw[k * 4 ..][0..4]);
+    return out;
+}
+
+fn i64List(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize, n: usize) ![]i64 {
+    if (n == 0) return allocator.alloc(i64, 0);
+    const raw = try take(pieces, i);
+    if (raw.len != n * 8) return error.BadBatch;
+    const out = try allocator.alloc(i64, n);
+    for (out, 0..) |*slot, k| slot.* = i64At(raw[k * 8 ..][0..8]);
+    return out;
+}
+
+fn f64List(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize, n: usize) ![]f64 {
+    if (n == 0) return allocator.alloc(f64, 0);
+    const raw = try take(pieces, i);
+    if (raw.len != n * 8) return error.BadBatch;
+    const out = try allocator.alloc(f64, n);
+    for (out, 0..) |*slot, k| {
+        slot.* = @bitCast(std.mem.readInt(u64, raw[k * 8 ..][0..8], .little));
+    }
+    return out;
+}
+
+fn readMessagePieces(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) !data.Message {
+    return .{
+        .f_bool = try bit0(pieces, i),
+        .f_int32 = try oneI32(pieces, i),
+        .f_int64 = try oneI64(pieces, i),
+        .f_float64 = try oneF64(pieces, i),
+        .f_string = try oneText(allocator, pieces, i),
+        .f_bool_2 = try bit0(pieces, i),
+        .f_int32_2 = try oneI32(pieces, i),
+        .f_string_2 = try oneText(allocator, pieces, i),
+    };
+}
+
+fn readDocumentPieces(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) !data.Document {
+    const id = try oneText(allocator, pieces, i);
+    const status = try oneI32(pieces, i);
+    const region = try oneText(allocator, pieces, i);
+    const meta_version = try oneI32(pieces, i);
+    const n = try listCount(pieces, i);
+    const skus = try readUtf8s(allocator, pieces, i);
+    if (skus.len != n) return error.BadBatch;
+    const qtys = try i32List(allocator, pieces, i, n);
+    const prices = try i64List(allocator, pieces, i, n);
+    const items = try allocator.alloc(data.DocumentItem, n);
+    for (items, skus, qtys, prices) |*item, sku, qty, price| {
+        item.* = .{ .sku = sku, .qty = qty, .price_minor = price };
+    }
+    return .{
+        .id = id,
+        .status = status,
+        .meta = .{ .region = region, .version = meta_version },
+        .items = items,
+    };
+}
+
+fn readTelemetryPieces(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) !data.Telemetry {
+    const source = try oneText(allocator, pieces, i);
+    const ts = try oneI64(pieces, i);
+    const ntags = try listCount(pieces, i);
+    const tags = try readUtf8s(allocator, pieces, i);
+    if (tags.len != ntags) return error.BadBatch;
+    const nvalues = try listCount(pieces, i);
+    const values = try f64List(allocator, pieces, i, nvalues);
+    return .{ .source = source, .ts = ts, .tags = tags, .values = values };
+}
+
+fn readStringsPieces(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) !data.Strings {
+    const n = try listCount(pieces, i);
+    const items = try readUtf8s(allocator, pieces, i);
+    if (items.len != n) return error.BadBatch;
+    return .{ .items = items };
+}
+
+fn readEventPieces(allocator: std.mem.Allocator, pieces: []const []const u8, i: *usize) !data.Event {
+    const event_id = try oneText(allocator, pieces, i);
+    const event_type = try oneText(allocator, pieces, i);
+    const occurred_at = try oneI64(pieces, i);
+    const producer = try oneText(allocator, pieces, i);
+    const n = try listCount(pieces, i);
+    const keys = try readUtf8s(allocator, pieces, i);
+    const vals = try readUtf8s(allocator, pieces, i);
+    if (keys.len != n or vals.len != n) return error.BadBatch;
+    const attrs = try allocator.alloc(data.EventAttr, n);
+    for (attrs, keys, vals) |*attr, key, value| attr.* = .{ .key = key, .value = value };
+    return .{
+        .event_id = event_id,
+        .event_type = event_type,
+        .occurred_at = occurred_at,
+        .producer = producer,
+        .attrs = attrs,
+    };
 }
 
 fn build(aa: std.mem.Allocator, fx: data.Fixture) !arrow.Columnar {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a0cc68b6c6cd55265f3d21c7e4aabd5",
+    "content-hash": "f041990e3ae00dd29836583e1c383935",
     "packages": [
         {
             "name": "brick/math",
@@ -532,21 +532,22 @@
         },
         {
             "name": "leo-gan/gld-arrow-php",
-            "version": "0.2.0",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/leo-gan/gld-arrow-php.git",
-                "reference": "fc907b94c696844099f607eb5a55bee7e8808940"
+                "reference": "463bbddfb35a140d6561e1b56386fd5ee2b283e7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/leo-gan/gld-arrow-php/zipball/fc907b94c696844099f607eb5a55bee7e8808940",
-                "reference": "fc907b94c696844099f607eb5a55bee7e8808940",
+                "url": "https://api.github.com/repos/leo-gan/gld-arrow-php/zipball/463bbddfb35a140d6561e1b56386fd5ee2b283e7",
+                "reference": "463bbddfb35a140d6561e1b56386fd5ee2b283e7",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.3"
             },
+            "default-branch": true,
             "bin": [
                 "bin/gld-arrowgen-php"
             ],
@@ -569,30 +570,43 @@
             "license": [
                 "MIT"
             ],
+            "authors": [
+                {
+                    "name": "Leonid Ganeline",
+                    "email": "leo.gan.57@gmail.com"
+                }
+            ],
             "description": "From-scratch Apache Arrow IPC, tensor, and Flight messages for PHP.",
+            "homepage": "https://leo-gan.github.io/gld-arrow-php/",
+            "keywords": [
+                "arrow",
+                "ipc",
+                "serialization"
+            ],
             "support": {
-                "source": "https://github.com/leo-gan/gld-arrow-php/tree/0.2.0",
+                "source": "https://github.com/leo-gan/gld-arrow-php/tree/main",
                 "issues": "https://github.com/leo-gan/gld-arrow-php/issues"
             },
-            "time": "2026-10-11T20:08:42+00:00"
+            "time": "2026-11-24T23:23:15+00:00"
         },
         {
             "name": "leo-gan/gld-ion-php",
-            "version": "0.2.0",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/leo-gan/gld-ion-php.git",
-                "reference": "1b4dd083f9b428d35bc99ae5fe869c74ab34e5fd"
+                "reference": "e199c708b093335e83b11c8ed183c333b7245bb5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/leo-gan/gld-ion-php/zipball/1b4dd083f9b428d35bc99ae5fe869c74ab34e5fd",
-                "reference": "1b4dd083f9b428d35bc99ae5fe869c74ab34e5fd",
+                "url": "https://api.github.com/repos/leo-gan/gld-ion-php/zipball/e199c708b093335e83b11c8ed183c333b7245bb5",
+                "reference": "e199c708b093335e83b11c8ed183c333b7245bb5",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.3"
             },
+            "default-branch": true,
             "bin": [
                 "bin/gld-iongen-php"
             ],
@@ -615,11 +629,16 @@
                 }
             ],
             "description": "From-scratch Amazon Ion 1.0 and 1.1 serializer for PHP",
+            "homepage": "https://leo-gan.github.io/gld-ion-php/",
+            "keywords": [
+                "ion",
+                "serialization"
+            ],
             "support": {
-                "source": "https://github.com/leo-gan/gld-ion-php/tree/0.2.0",
+                "source": "https://github.com/leo-gan/gld-ion-php/tree/main",
                 "issues": "https://github.com/leo-gan/gld-ion-php/issues"
             },
-            "time": "2026-10-11T20:02:44+00:00"
+            "time": "2026-11-24T23:23:09+00:00"
         },
         {
             "name": "phpstan/phpdoc-parser",
@@ -1948,9 +1967,25 @@
         }
     ],
     "packages-dev": [],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "leo-gan/gld-arrow-php",
+            "version": "dev-main",
+            "alias": "0.2.0",
+            "alias_normalized": "0.2.0.0"
+        },
+        {
+            "package": "leo-gan/gld-ion-php",
+            "version": "dev-main",
+            "alias": "0.2.0",
+            "alias_normalized": "0.2.0.0"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "leo-gan/gld-arrow-php": 20,
+        "leo-gan/gld-ion-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

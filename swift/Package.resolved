@@ -1,5 +1,5 @@
 {
-  "originHash" : "9b24e268dabe760c6864ccbb27823882bca410bb77ec4158f3febe8bda2584a3",
+  "originHash" : "a94665f3272eeda629d741077491ce07f55414044c1d169e3203357eaf299c89",
   "pins" : [
     {
       "identity" : "binarycodable",
@@ -42,8 +42,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/leo-gan/gld-ion-swift.git",
       "state" : {
-        "revision" : "09ba5ca35faf130aacb7559d5ea2790b4f420c0c",
-        "version" : "0.2.0"
+        "revision" : "15d245a0859ed0221a30bf6bdc17452a9e8198a9"
       }
     },
     {
