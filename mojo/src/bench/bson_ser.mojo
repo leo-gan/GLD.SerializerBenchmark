@@ -182,7 +182,7 @@ def _read_document[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Docum
             doc.items = List[DocumentItem]()
             while r.pos < aend - 1:
                 var at = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 if at == TY_DOCUMENT:
                     var item = _read_item(r)
                     doc.items.append(item^)
@@ -210,7 +210,7 @@ def _read_telemetry[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Tele
             t.tags = List[String]()
             while r.pos < aend - 1:
                 var at = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 if at == TY_STRING:
                     t.tags.append(r.read_bson_string())
                 else:
@@ -221,7 +221,7 @@ def _read_telemetry[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Tele
             t.values = List[Float64]()
             while r.pos < aend - 1:
                 var at = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 if at == TY_DOUBLE:
                     t.values.append(r.read_f64())
                 else:
@@ -244,7 +244,7 @@ def _read_strings[origin: ImmOrigin](mut r: WireReader[origin]) raises -> String
             s.items = List[String]()
             while r.pos < aend - 1:
                 var at = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 if at == TY_STRING:
                     s.items.append(r.read_bson_string())
                 else:
@@ -291,7 +291,7 @@ def _read_event[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Event:
             ev.attrs = List[EventAttr]()
             while r.pos < aend - 1:
                 var at = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 if at == TY_DOCUMENT:
                     var attr = _read_attr(r)
                     ev.attrs.append(attr^)
@@ -393,11 +393,11 @@ struct BsonSer:
             else:
                 _ = r.enter_document()
                 _ = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 var aend = r.enter_document()
                 while r.pos < aend - 1:
                     _ = r.read_u8()
-                    _ = r.read_cstring()
+                    r.skip_cstring()
                     var m = _read_message(r)
                     out.messages.append(m^)
                 r.finish_document(aend)
@@ -409,11 +409,11 @@ struct BsonSer:
             else:
                 _ = r.enter_document()
                 _ = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 var aend = r.enter_document()
                 while r.pos < aend - 1:
                     _ = r.read_u8()
-                    _ = r.read_cstring()
+                    r.skip_cstring()
                     var d = _read_document(r)
                     out.documents.append(d^)
                 r.finish_document(aend)
@@ -425,11 +425,11 @@ struct BsonSer:
             else:
                 _ = r.enter_document()
                 _ = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 var aend = r.enter_document()
                 while r.pos < aend - 1:
                     _ = r.read_u8()
-                    _ = r.read_cstring()
+                    r.skip_cstring()
                     var t = _read_telemetry(r)
                     out.telemetries.append(t^)
                 r.finish_document(aend)
@@ -441,11 +441,11 @@ struct BsonSer:
             else:
                 _ = r.enter_document()
                 _ = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 var aend = r.enter_document()
                 while r.pos < aend - 1:
                     _ = r.read_u8()
-                    _ = r.read_cstring()
+                    r.skip_cstring()
                     var s = _read_strings(r)
                     out.strings.append(s^)
                 r.finish_document(aend)
@@ -457,11 +457,11 @@ struct BsonSer:
             else:
                 _ = r.enter_document()
                 _ = r.read_u8()
-                _ = r.read_cstring()
+                r.skip_cstring()
                 var aend = r.enter_document()
                 while r.pos < aend - 1:
                     _ = r.read_u8()
-                    _ = r.read_cstring()
+                    r.skip_cstring()
                     var ev = _read_event(r)
                     out.events.append(ev^)
                 r.finish_document(aend)
