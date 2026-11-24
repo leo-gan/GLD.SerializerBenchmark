@@ -245,7 +245,7 @@
           <h2 class="chart-title">Detailed Analytics</h2>
           <p class="section-help" id="detailed-analytics-help">
             Roster with Median / Std / P95 / P99 for speed or latency, plus median size.
-            Pareto-optimal rows are highlighted. Cells: <code>value (ratio×)</code> vs baseline.
+            Pareto-optimal rows are highlighted. Blue ◆ marks each serializer on a <code>1×</code>-centered bar vs baseline.
           </p>
         </div>
         <div class="table-header-actions">
@@ -292,7 +292,7 @@
     <section class="glass-panel comparison-section" id="compare">
       <div id="compare-figures" class="compare-figures" aria-label="Write and read charts"></div>
 
-      <!-- Table-only: which serializers are columns, and which metrics. -->
+      <!-- Table-only: which serializers are rows, and which metrics are columns. -->
       <div class="compare-controls-compact">
         <div class="compare-ctrl-row compare-ctrl-row-main">
           <h2 class="chart-title compare-h2">Compare</h2>
@@ -337,10 +337,11 @@
         </div>
       </div>
 
+      <div id="compare-spread-legend" class="spread-legend" hidden></div>
       <div class="table-container xl-table-wrap compare-table-wrap">
         <table id="serializer-metrics-table" class="data-table compare-matrix-table">
           <thead id="serializer-metrics-head">
-            <tr><th class="str">Metric</th></tr>
+            <tr><th class="str">Serializer</th></tr>
           </thead>
           <tbody id="serializer-metrics-body"></tbody>
         </table>
@@ -397,6 +398,8 @@
     </section>
 
   </main>
+
+  <div id="spread-tooltip" class="spread-tooltip" role="tooltip" hidden></div>
 
   <footer>
     <p>&copy; 2026 Serializer Benchmark Dashboard.</p>
