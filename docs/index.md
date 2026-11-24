@@ -27,7 +27,7 @@ standard, one data set, and one data type**, not to crown a single global winner
 | Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/index.html)** |
 | One-question tests (why we do not only use the big table) | **[Experiments](experiments/index.md)** |
 | Does this library match the RFC / spec section? | **[Dashboard · Compliance](dashboard/index.html#compliance)** (`#compliance/{lang}/{serializer}`) · [catalog notes](compliance/index.md) |
-| Course on formats and trade-offs (101–401) | **[Learn](theory/101/index.md)** |
+| Course syllabus, formats, and trade-offs (101–401) | **[Learn](theory/index.md)** |
 | Per-language runtime primer, library lists, and caveats | **[Languages](c/index.md)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Benchmarks](analysis/index.md)** |
 | The five data sets (suite, columnar, graph, array, tensor) | **[Data sets](analysis/test_data_configuration.md)** |
