@@ -91,6 +91,7 @@ import {
   spreadLatencyValues,
   spreadLegendHtml,
 } from './table-visuals.js';
+import { initTheme, onThemeChange } from './theme.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -367,6 +368,15 @@ function syncFixtureModeSelects() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+  onThemeChange(() => {
+    if (state.filteredGroups.length) {
+      updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
+    }
+    if (document.body.classList.contains('dash-view-compare') || document.querySelector('#compare-figures canvas')) {
+      renderCompareFigures();
+    }
+  });
   renderLanguageTabs();
   applySavedSettings(loadSettings());
   applyUrlParams();

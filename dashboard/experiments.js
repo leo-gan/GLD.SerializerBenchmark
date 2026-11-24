@@ -35,6 +35,7 @@ import {
   mountExperimentFigures,
   usesExperimentGraphs,
 } from './exp-charts.js';
+import { onThemeChange } from './theme.js';
 
 const CATALOG_URL = 'data/experiments/index.json';
 const LANG_LABELS = {
@@ -838,6 +839,9 @@ function bindNav() {
     });
   });
   window.addEventListener('hashchange', render);
+  onThemeChange(() => {
+    if (parseHash().view !== 'suite') render();
+  });
 }
 
 export function initExperiments() {
