@@ -196,13 +196,15 @@ def telemetry_to_writer(
     if len(t.tags) == 0:
         w.write_ascii(" []")
     _key(w, "values", options, depth, False, inline_first, True)
+    # Flow `[a,b,c]` is still YAML. One line, no per-element indent.
+    w.write_ascii(" [")
     i = 0
     while i < len(t.values):
-        _seq_dash(w, options, depth)
+        if i > 0:
+            w.write_ascii(",")
         w.write_float(t.values[i])
         i += 1
-    if len(t.values) == 0:
-        w.write_ascii(" []")
+    w.write_ascii("]")
 
 
 def telemetry_from_reader[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Telemetry:
