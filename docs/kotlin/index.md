@@ -2,9 +2,7 @@
 title: "Kotlin"
 ---
 
-Kotlin
-======
-
+# Kotlin
 Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt, ktoon); **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift, SBE); and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **34** serializers.
 
 ## Runtime
@@ -270,7 +268,7 @@ Also: [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/bl
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=kotlin&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=kotlin&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 

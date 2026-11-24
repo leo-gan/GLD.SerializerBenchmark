@@ -2,9 +2,7 @@
 title: "Go"
 ---
 
-Go
-===
-
+# Go
 Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/json/v2`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML, TOON), **schema/IDL** stacks (protobuf, Avro, Dagr), and **columnar / fixed-wire** rows (Arrow IPC, Parquet, SBE). The Go tree registers **35** serializers. `encoding/json` is the v1 API. `encoding/json/v2` is the Go 1.27 package with stricter defaults.
 
 ## Runtime
@@ -258,7 +256,7 @@ Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/m
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=go&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=go&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 

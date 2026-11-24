@@ -6,6 +6,7 @@ repo_name: leo-gan/GLD.SerializerBenchmark
 
 exclude_docs: |
   dashboard/logs/**
+  internal/**
 
 
 theme:
@@ -17,11 +18,16 @@ theme:
     - navigation.tabs.sticky
     # Left sidebar: sections under the active tab (Learn, Languages, Benchmarks)
     - navigation.sections
+    - navigation.indexes
+    - navigation.path
+    - navigation.footer
     - navigation.tracking
     - navigation.instant
     - navigation.top
     # Right sidebar: in-page headings (requires toc.integrate OFF)
     - toc.follow
+    # Code blocks: one-click copy
+    - content.code.copy
   palette:
     - scheme: default
       primary: indigo
@@ -74,15 +80,19 @@ plugins:
         'analysis/BENCHMARK_SUMMARY.md': 'analysis/CLAIMS_AND_REPLICATION.md'
         'analysis/serialization_categories.md': 'analysis/families.md'
         'analysis/array_bindings.md': 'analysis/array.md'
+        'analysis/data_model_v2.md': 'analysis/test_data_configuration.md'
 
 markdown_extensions:
   - attr_list
   - admonition
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.details
-  # use_pygments: false — avoids a Pygments/html.escape(None) crash with current
-  # pymdownx+Pygments that silently breaks all ``` fenced blocks site-wide.
   - pymdownx.highlight:
-      use_pygments: false
+      anchor_linenums: false
   - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.tabbed:
@@ -92,21 +102,25 @@ markdown_extensions:
 extra_css:
   - stylesheets/languages-nav.css
   - stylesheets/sidebar-nav.css
-  - stylesheets/site-home.css
+  - stylesheets/academic.css
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css
 extra_javascript:
   - javascripts/languages-nav.js
+  - javascripts/katex.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js
 
 # Top tabs: Learn | Languages | Benchmarks | Dashboard | Experiments | Compliance
 # Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
   - Learn:
       - 101:
-          - Overview: theory/101/index.md
+          - theory/101/index.md
           - Historical: theory/101/historical_perspective.md
           - Data Science: theory/101/data_science_perspective.md
           - Engineering: theory/101/engineer_perspective.md
       - 201:
-          - Overview: theory/201/index.md
+          - theory/201/index.md
           - Memory layout: theory/201/memory-layout.md
           - Bit width is not bus width: theory/201/bit-width-and-bus-width.md
           - Encode/decode cost: theory/201/encode-decode-cost.md
@@ -116,7 +130,7 @@ nav:
           - Zero-copy: theory/201/zero-copy.md
           - Compression vs format: theory/201/compression-is-not-a-format.md
       - 301:
-          - Overview: theory/301/index.md
+          - theory/301/index.md
           - Trust:
               - Trust boundaries: theory/301/trust-boundaries.md
               - Untrusted input: theory/301/untrusted-input.md
@@ -145,7 +159,7 @@ nav:
               - "Case: polyglot boundary": theory/301/case-polyglot-boundary.md
               - "Case: faster postmortem": theory/301/case-faster-postmortem.md
       - 401:
-          - Overview: theory/401/index.md
+          - theory/401/index.md
           - Protocol Buffers:
               - Protobuf wire format: theory/401/protobuf-wire-format.md
               - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
@@ -215,10 +229,10 @@ nav:
           - Overview: zig/index.md
   - Benchmarks:
       # Reading order: words, then what is measured, then how a number is produced.
-      - Overview: analysis/index.md
+      - analysis/index.md
       - Terminology: analysis/terminology.md
       - Data sets:
-          - Overview: analysis/test_data_configuration.md
+          - analysis/test_data_configuration.md
           - Suite: analysis/suite.md
           - Columnar: analysis/columnar.md
           - Graph: analysis/graph.md
@@ -233,10 +247,10 @@ nav:
       - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
       - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
-  - Dashboard: dashboard/
+  - Dashboard: dashboard/index.html
   - Experiments: experiments/index.md
   - Compliance:
-      - Overview: compliance/index.md
+      - compliance/index.md
       - ADIOS2: compliance/adios2.md
       - Amazon Ion: compliance/ion.md
       - AMF0: compliance/amf0.md

@@ -2,9 +2,7 @@
 title: "JavaScript"
 ---
 
-JavaScript
-==========
-
+# JavaScript
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 ## Runtime
@@ -254,6 +252,6 @@ Also: [`javascript/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmar
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=javascript&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=javascript&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

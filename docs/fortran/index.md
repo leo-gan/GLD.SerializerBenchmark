@@ -2,12 +2,10 @@
 title: "Fortran"
 ---
 
-Fortran
-===
-
+# Fortran
 Six rows are pure Fortran: three JSON libraries (json-fortran, jonquil, rojff), TOML (toml-f), MessagePack (fortran-messagepack), and an in-tree little-endian baseline (custom-binary). Those rows are **bytes** on the five suite types. `hdf5-fortran`, `netcdf-fortran`, and `adios2` time the array data set (`grid` and `grid_window`) from `config/library/array.yaml`. They do not emit suite rows, so they stay out of `all@`. `hdf5-fortran` is the official HDF5 Fortran API on the core virtual file driver, so it is bytes. `netcdf-fortran` and `adios2` have no bytes API. Their CSV rows are `stream` / `native`, and they are published through `config/file-only.txt`.
 
-Numbers for this language appear on the [Dashboard](../dashboard/?lang=fortran) after a publication run. These times cannot be ranked against another language.
+Numbers for this language appear on the [Dashboard](../dashboard/index.html?lang=fortran) after a publication run. These times cannot be ranked against another language.
 
 ## Runtime
 

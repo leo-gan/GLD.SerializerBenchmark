@@ -2,7 +2,7 @@
 
 Hands-on companions to the [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) theory track.
 
-> **Honesty:** timings and sizes here are **illustrative**. Suite language **Results** own benchmark-runner truth.
+> **Honesty:** timings and sizes here are **illustrative**. The **Dashboard** owns benchmark-runner truth.
 
 ## How to run
 

@@ -8,7 +8,7 @@ This lens is written for people who move **tables, events, features, and models*
 
 - Analysts and analytics engineers who move data between warehouses, lakes, and notebooks  
 - Machine-learning engineers who checkpoint models, features, and batch scores  
-- Data platform engineers who choose formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, or Polars  
+- Data platform engineers who choose formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform") topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service") layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine"), [DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database"), or Polars  
 - Scientists who currently “just pickle everything” and want a safer mental model  
 
 Even if you are a first-year student, this page is useful. It shows how the same idea of serialization looks when the unit of work is a table or a stream of events, not a single HTTP response.
@@ -17,13 +17,13 @@ Even if you are a first-year student, this page is useful. It shows how the same
 
 ## How data work differs from service work
 
-In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> often means **one message in, one message out**. In data work it usually means one or more of the following:
+In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back") often means **one message in, one message out**. In data work it usually means one or more of the following:
 
 | Workload | Typical unit | What you usually optimize for |
 |----------|--------------|-------------------------------|
 | **Batch tables** | Partitions of rows or columns on object storage | Scan cost, compression, schema evolution over years |
 | **Streaming events** | Records on a log (Kafka and similar) | Compatibility between old and new producers and consumers |
-| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_%28software%29 "pandas — tabular data library commonly used via DataFrames")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, dictionaries, artifacts | Friction versus portability and safety |
+| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_%28software%29 "pandas — tabular data library commonly used via DataFrames"), dictionaries, artifacts | Friction versus portability and safety |
 | **Model artifacts** | Weights plus preprocessing graph | Load speed, versioning, who is allowed to load the file |
 | **Feature interchange** | Training and serving feature payloads | Stable types, low training/serving skew, predictable nulls |
 
@@ -35,13 +35,13 @@ Different workloads want different points on [how standards differ](index.md#how
 
 The formats that data teams use did not appear all at once. They layered on top of earlier practice:
 
-1. **Fixed-width layouts and [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — still everywhere for exports and simple tables. Typing is weak. Nesting is awkward.  
-2. **Language-native blobs (`pickle`, joblib, many machine-learning checkpoints)** — maximum Python convenience. Poor multi-language story. **Unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> under language-native formats.  
+1. **Fixed-width layouts and [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")** — still everywhere for exports and simple tables. Typing is weak. Nesting is awkward.  
+2. **Language-native blobs (`pickle`, joblib, many machine-learning checkpoints)** — maximum Python convenience. Poor multi-language story. **Unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization") under language-native formats.  
 3. **JSON documents and JSON Lines** — universal glue. Fine for small or medium configs and APIs. Painful as a primary lake format at huge scale.  
-4. **[Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> (plus schema registry patterns)** — row-oriented binary with a serious **evolution** story for event streams.  
-5. **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> / [ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — **columnar** on-disk formats for analytic scans.  
-6. **[Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — shared **in-memory** columnar layout so engines exchange tables without endless convert-and-copy cycles.  
-7. **Validators ([JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, Pydantic, msgspec, and similar)** — structure and types when the wire format stays JSON or [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />.
+4. **[Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas") (plus schema registry patterns)** — row-oriented binary with a serious **evolution** story for event streams.  
+5. **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format") / [ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")** — **columnar** on-disk formats for analytic scans.  
+6. **[Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")** — shared **in-memory** columnar layout so engines exchange tables without endless convert-and-copy cycles.  
+7. **Validators ([JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON"), Pydantic, msgspec, and similar)** — structure and types when the wire format stays JSON or [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values").
 
 ---
 
@@ -76,7 +76,7 @@ A **trust boundary** is any place where data may come from outside your fully co
 | Approach | Strength | Risk |
 |----------|----------|------|
 | `pickle` / `cloudpickle` | Almost any Python object graph | Code execution on load; Python-only |
-| `joblib` | Convenient for [scikit-learn](https://en.wikipedia.org/wiki/Scikit-learn "scikit-learn — Python ML library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style arrays and pipelines | Same trust issues when backed by pickle-like protocols |
+| `joblib` | Convenient for [scikit-learn](https://en.wikipedia.org/wiki/Scikit-learn "scikit-learn — Python ML library")-style arrays and pipelines | Same trust issues when backed by pickle-like protocols |
 | Framework checkpoints (often pickle-based) | One-command save and load inside that stack | Environment coupling; supply-chain and tampering risk |
 
 **Practical rule:** use native formats for **ephemeral, trusted, same-environment** artifacts. For sharing, audit, or multi-year storage, prefer safer options. Use **explicit weight formats** with framework-specific safe loaders. Use **Arrow or Parquet tables**. Use **versioned model registries**. Do not leave a raw pickle file in an open bucket.
@@ -101,13 +101,13 @@ A **trust boundary** is any place where data may come from outside your fully co
 - Better compression, because similar values sit next to each other  
 - Predicate pushdown and page skipping in mature engines (skipping data that cannot match a filter)  
 
-**Prefer these when** you run data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style scans, wide tables, or read-heavy analytics.
+**Prefer these when** you run data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")-style scans, wide tables, or read-heavy analytics.
 
 **Avoid them when** you mostly fetch one nested document by key at low latency. That is still a **row or document** problem, or a specialized store. It is not Parquet’s sweet spot. A columnar layout pays off when the row count is large. At one row, file headers and alignment padding dominate both size and time.
 
 ### Arrow
 
-**Arrow** standardizes **in-memory** columnar buffers. Types, null bitmaps, and nested layouts are part of the design. The project was co-founded with **[Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Apache Arrow")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** and others. When two tools speak Arrow, transfer can be a pointer handoff or a cheap [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stream. That is better than “write CSV, then parse again.”
+**Arrow** standardizes **in-memory** columnar buffers. Types, null bitmaps, and nested layouts are part of the design. The project was co-founded with **[Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Apache Arrow")** and others. When two tools speak Arrow, transfer can be a pointer handoff or a cheap [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication") stream. That is better than “write CSV, then parse again.”
 
 **Prefer Arrow when:**
 
@@ -124,8 +124,8 @@ These are **schemaless binary** encodings of JSON-like values:
 | Format | Note for data work |
 |--------|--------------------|
 | **MessagePack** | Compact caches, internal service payloads, some feature buses |
-| **BSON** | Document database heritage ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />); extra types such as datetime and binary |
-| **CBOR** | Standards-track; strong story for constrained devices and some security/[IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stacks |
+| **BSON** | Document database heritage ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")); extra types such as datetime and binary |
+| **CBOR** | Standards-track; strong story for constrained devices and some security/[IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things") stacks |
 
 They help when JSON is too slow or large but you still want a **dynamic** model. You do not need a fixed schema file first. They do **not** replace Parquet for lake analytics.
 
@@ -164,7 +164,7 @@ Schema-driven remote-procedure-call formats show up when machine-learning **serv
 | Need | Prefer |
 |------|--------|
 | Same machine, trusted, rapid iteration | Framework-native checkpoint (understand its trust model) |
-| Portable inference across languages | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, framework export formats, or dedicated model servers |
+| Portable inference across languages | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange"), framework export formats, or dedicated model servers |
 | Bundle preprocessing and model for one Python service | Still better with a versioned registry and immutable artifact IDs than ad-hoc pickles in chat threads |
 | Audit and compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
 | Quantized weights shared across runtimes | A file that records how many bits each number uses, how the numbers are grouped, and the multiplier that turns those bits back into approximate real values. Loading the file must not run code. The order on disk and the order a matrix calculation expects can differ ([Bit width is not bus width](../201/bit-width-and-bus-width.md)). |
@@ -179,7 +179,7 @@ Experiment trackers often accept pickles and arbitrary blobs. **Production promo
 
 Data platforms still emit JSON for APIs, webhooks, and configuration. Pair text or schemaless payloads with an explicit contract:
 
-- **JSON Schema** or **[OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** for cross-team [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> boundaries  
+- **JSON Schema** or **[OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")** for cross-team [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol") boundaries  
 - **Pydantic, msgspec, or similar** for Python services that ingest JSON or MessagePack  
 - Table-level quality checks (orthogonal to wire format, but part of the same reliability story)
 

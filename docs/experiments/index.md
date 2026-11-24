@@ -4,10 +4,10 @@ title: Experiments
 
 # Experiments
 
-[Dashboard → Experiments](../dashboard/#experiments){ .md-button .md-button--primary }
+[Dashboard → Experiments](../dashboard/index.html#experiments){ .md-button .md-button--primary }
 
 A single experiment and language: `#experiments/{id}/{lang}` (example:
-[Sensor list · Rust](../dashboard/#experiments/01-sensor-list-size/rust)).
+[Sensor list · Rust](../dashboard/index.html#experiments/01-sensor-list-size/rust)).
 
 Each experiment answers **one question** that Overview, Compare, and Compliance do not already hold. Overview and Compare have one standard, one data type, one record or one hundred, write time, read time, and raw size. Compliance is spec pass and fail.
 
@@ -27,9 +27,9 @@ A radio packet has a size limit. JSON writes extra text around every number.
 
 **Sample:** a sensor record. The list grows through 8, 32, 128, and 512 numbers.
 
-[Dashboard](../dashboard/#experiments/01-sensor-list-size)
+[Dashboard](../dashboard/index.html#experiments/01-sensor-list-size)
 
-### 2. Does squeezing the bytes make JSON small enough?
+## 2. Does squeezing the bytes make JSON small enough?
 
 Teams often turn compression on for everything. Tiny messages can get slower, because the processor work exceeds the bytes you save.
 
@@ -39,9 +39,9 @@ Teams often turn compression on for everything. Tiny messages can get slower, be
 
 **Sample:** a list of words, a sensor list of 128 numbers, and a tiny flat record.
 
-[Dashboard](../dashboard/#experiments/02-compression-size)
+[Dashboard](../dashboard/index.html#experiments/02-compression-size)
 
-### 3. Does writing to a file change the ranking?
+## 3. Does writing to a file change the ranking?
 
 A cache uses a block of bytes in memory. A file or socket writes as you go. Some “stream” numbers are a full result that is then copied.
 
@@ -51,9 +51,9 @@ A cache uses a block of bytes in memory. A file or socket writes as you go. Some
 
 **Sample:** one order, in memory and as if to a file.
 
-[Dashboard](../dashboard/#experiments/03-memory-vs-stream)
+[Dashboard](../dashboard/index.html#experiments/03-memory-vs-stream)
 
-### 4. What does a Fortran call add?
+## 4. What does a Fortran call add?
 
 The Fortran leaderboard times pure Fortran libraries. This experiment times the same C library from the C runner and from Fortran, including the copy into the C structure.
 
@@ -63,7 +63,7 @@ The Fortran leaderboard times pure Fortran libraries. This experiment times the 
 
 **Sample:** one shop order.
 
-[Dashboard](../dashboard/#experiments/04-fortran-ffi-tax)
+[Dashboard](../dashboard/index.html#experiments/04-fortran-ffi-tax)
 
 ---
 

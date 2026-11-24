@@ -1,0 +1,166 @@
+/**
+ * Academic visual layer for MkDocs Material.
+ *
+ * Keeps mkdocs.yml palette keys (default/slate + indigo/deep-purple) intact
+ * so the Dashboard's localStorage theme sync (dashboard/theme.js) stays
+ * compatible, while overriding visual tokens for a restrained, textbook-like
+ * reading experience.
+ */
+
+/* --- Light palette: neutral ink on white, calm slate-navy header --- */
+[data-md-color-scheme="default"][data-md-color-primary="indigo"] {
+  --md-primary-fg-color: #1e293b;
+  --md-primary-fg-color--light: #334155;
+  --md-primary-fg-color--dark: #0f172a;
+  --md-primary-bg-color: #f8fafc;
+  --md-primary-bg-color--light: rgba(248, 250, 252, 0.72);
+  --md-default-fg-color: #1a202c;
+  --md-default-fg-color--light: #4a5568;
+  --md-default-fg-color--lighter: #94a3b8;
+  --md-default-fg-color--lightest: rgba(15, 23, 42, 0.1);
+  --md-code-bg-color: #f6f8fa;
+}
+
+[data-md-color-scheme="default"][data-md-color-accent="deep-purple"] {
+  --md-accent-fg-color: #2c4a7c;
+  --md-accent-fg-color--transparent: rgba(44, 74, 124, 0.1);
+  --md-typeset-a-color: #1e4b8f;
+}
+
+/* --- Dark palette: aligned with Dashboard dark slate (#181b22 / #21252f) --- */
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
+  --md-primary-fg-color: #131720;
+  --md-primary-fg-color--light: #1e2433;
+  --md-primary-fg-color--dark: #0d1017;
+  --md-default-bg-color: #181b22;
+  --md-default-fg-color: #e6e9ef;
+  --md-default-fg-color--light: #a8b0be;
+  --md-default-fg-color--lighter: #6b7485;
+  --md-default-fg-color--lightest: rgba(255, 255, 255, 0.1);
+  --md-code-bg-color: #21252f;
+}
+
+[data-md-color-scheme="slate"][data-md-color-accent="deep-purple"] {
+  --md-accent-fg-color: #8ab4f8;
+  --md-accent-fg-color--transparent: rgba(138, 180, 248, 0.12);
+  --md-typeset-a-color: #8ab4f8;
+}
+
+/* --- Subtle header & tabs chrome --- */
+.md-header {
+  box-shadow: 0 1px 0 var(--md-default-fg-color--lightest);
+}
+
+.md-tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* --- Reading measure & typographic rhythm --- */
+.md-typeset {
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.md-typeset p,
+.md-typeset li,
+.md-typeset blockquote {
+  max-width: 72ch;
+}
+
+.md-typeset h1 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--md-default-fg-color);
+  margin-bottom: 1rem;
+}
+
+.md-typeset h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 2rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset h3 {
+  font-weight: 600;
+  margin-top: 1.4rem;
+}
+
+/* Home page: slightly tighter vertical rhythm under hero buttons */
+.md-content[data-md-component="content"] .md-typeset > h2 {
+  margin-top: 1.65rem;
+}
+
+/* Subtle section permalinks */
+.md-typeset .headerlink {
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.md-typeset :is(h1, h2, h3, h4):hover .headerlink,
+.md-typeset .headerlink:focus {
+  opacity: 0.65;
+}
+
+/* --- Booktabs-inspired tables with tabular numerals --- */
+.md-typeset table:not([class]) {
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  border: 0;
+  border-top: 1.5px solid var(--md-default-fg-color--lighter);
+  border-bottom: 1.5px solid var(--md-default-fg-color--lighter);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.md-typeset table:not([class]) th {
+  font-weight: 600;
+  border-bottom: 1px solid var(--md-default-fg-color--lighter);
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 3%, transparent);
+}
+
+.md-typeset table:not([class]) td {
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* --- Restrained academic callouts (Definition / Remark / Solution) --- */
+.md-typeset .admonition,
+.md-typeset details {
+  border-width: 0 0 0 3px;
+  border-radius: 0.2rem;
+  box-shadow: none;
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 3%, var(--md-default-bg-color));
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  font-weight: 600;
+  background-color: transparent;
+}
+
+/* --- Blockquotes, figures, and footnotes --- */
+.md-typeset blockquote {
+  border-left-width: 3px;
+  border-left-color: var(--md-default-fg-color--lighter);
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset img[src*="/diagrams/"] {
+  display: block;
+  margin: 1.25rem auto;
+  max-width: 100%;
+}
+
+.md-typeset .footnote {
+  font-size: 0.74rem;
+  color: var(--md-default-fg-color--light);
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  padding-top: 0.75rem;
+}
+
+/* --- KaTeX display math spacing --- */
+.md-typeset .arithmatex {
+  overflow-x: auto;
+  overflow-y: hidden;
+}

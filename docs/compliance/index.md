@@ -8,10 +8,10 @@ Serializer quality has two public questions:
 | Does it match the cited spec section? | `./scripts/run-compliance.sh` |
 
 This tab explains the catalog. Live pass/fail numbers are on the
-[Dashboard → Compliance](../dashboard/#compliance) view, the same place as
+[Dashboard → Compliance](../dashboard/index.html#compliance) view, the same place as
 the timings. A language and serializer deep-link is
 `#compliance/{lang}/{serializer}` (example:
-[Python orjson](../dashboard/#compliance/python/orjson)).
+[Python orjson](../dashboard/index.html#compliance/python/orjson)).
 
 ## What is in scope
 
@@ -91,7 +91,7 @@ From the repository root (Python 3.12+ and [uv](https://docs.astral.sh/uv/)):
 
 The report lands in `logs/compliance/YYYY-MM-DD-HHMMSS.json`. A full
 (unfiltered) run also updates `dashboard/public/data/compliance.json`
-for the [Dashboard Compliance](../dashboard/#compliance) view.
+for the [Dashboard Compliance](../dashboard/index.html#compliance) view.
 
 `./scripts/run-compliance.sh` also runs every other language toolchain
 it finds. Each writes `logs/compliance/latest-<lang>.json`. The
