@@ -20,9 +20,13 @@
     margin-bottom: 0.15rem;
   }
 
-  /* Parent row: a menu label, not a second tab title. */
+  /* Parent row: a menu label, not a second tab title.
+     Covers both collapsible labels (.md-nav__link[for]) and indexed section
+     headers (.md-nav__container > a.md-nav__link) from navigation.indexes. */
   .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav__link[for],
-  .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav__link[for] {
+  .md-sidebar--primary .md-nav__item--section .md-nav__item--section > .md-nav__container > a.md-nav__link,
+  .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav__link[for],
+  .md-sidebar--primary .md-nav__item--nested .md-nav__item--nested:not(.md-nav__item--section) > .md-nav__container > a.md-nav__link {
     color: var(--md-default-fg-color);
     font-weight: 600;
   }

@@ -2,9 +2,7 @@
 title: "Python"
 ---
 
-Python
-======
-
+# Python
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
 ## Runtime
@@ -65,9 +63,9 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | IPC stream in the bytes API. `table_project` reads `f_float_0` only |
 | [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Pure-Python reflective runtime (eager `to_bytes` / `restore`); ~35–390× slower than protobuf (upb), size ≈ protobuf. See [caveat](#why-dagr-opss-look-low) |
-| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Same runtime and call path as `dagr-packed`; regular (vtable) nodes — evolvable, larger than `packed`. See [layouts](#dagr-node-layouts) |
-| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen` (positional) nodes — no schema evolution. See [layouts](#dagr-node-layouts) |
-| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen`+`packed` (positional, self-sizing) — smallest Dagr row, no schema evolution. See [layouts](#dagr-node-layouts) |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Same runtime and call path as `dagr-packed`; regular (vtable) nodes — evolvable, larger than `packed`. See [layouts](#why-dagr-opss-look-low) |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen` (positional) nodes — no schema evolution. See [layouts](#why-dagr-opss-look-low) |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen`+`packed` (positional, self-sizing) — smallest Dagr row, no schema evolution. See [layouts](#why-dagr-opss-look-low) |
 | [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF0. Every number is a double |
 | [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF3. Small integers stay integers |
@@ -280,6 +278,6 @@ Benchmark runner: [`python/README.md`](https://github.com/leo-gan/GLD.Serializer
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=python&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=python&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

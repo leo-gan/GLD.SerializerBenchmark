@@ -2,9 +2,7 @@
 title: "Java"
 ---
 
-Java
-====
-
+# Java
 Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON, Kiln), **schema/IDL** stacks (Protocol Buffers, Avro, FlatBuffers, Cap’n Proto, SBE), and **columnar** files (Arrow IPC, Parquet, ORC). The registry has **30** serializers.
 
 ## Runtime
@@ -248,7 +246,7 @@ Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=java&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=java&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 

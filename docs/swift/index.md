@@ -2,9 +2,7 @@
 title: "Swift"
 ---
 
-Swift
-=====
-
+# Swift
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto, Dagr).
 
 ## Runtime
@@ -199,6 +197,6 @@ Also: [`swift/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blo
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=swift&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=swift&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

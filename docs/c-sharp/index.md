@@ -2,9 +2,7 @@
 title: "C#"
 ---
 
-C#
-===
-
+# C#
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
 ## Runtime
@@ -422,6 +420,6 @@ Benchmark runner: [`c-sharp/README.md`](https://github.com/leo-gan/GLD.Serialize
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=csharp&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=csharp&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

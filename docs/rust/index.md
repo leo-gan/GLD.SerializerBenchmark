@@ -2,9 +2,7 @@
 title: "Rust"
 ---
 
-Rust
-====
-
+# Rust
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
 ## Runtime
@@ -256,7 +254,7 @@ The table is a family map of this roster. It is not the ranking key.
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=rust&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=rust&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 

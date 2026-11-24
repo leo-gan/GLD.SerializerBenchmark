@@ -2,9 +2,7 @@
 title: "C++"
 ---
 
-C++
-===
-
+# C++
 C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers, SBE, Dagr), and **columnar** Arrow IPC, Parquet, and ORC.
 
 ## Runtime
@@ -356,7 +354,7 @@ Also: [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=cpp&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=cpp&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 

@@ -101,36 +101,34 @@ Contributor checklists come after that path: **[Adding a serializer](ADDING_A_SE
 | **[Claims and replication](CLAIMS_AND_REPLICATION.md)** | L1 / L2 / L3: what you may claim from one run vs many | Honest generalization language |
 | **[Adding a serializer](ADDING_A_SERIALIZER.md)** | Drop-in checklist for one library | Author path |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language benchmark runner | Extending the suite |
-| **[Dashboard](../dashboard/)** | Live measured numbers (Overview, Details, Compare) | The published L1 artifact |
+| **[Dashboard](../dashboard/index.html)** | Live measured numbers (Overview, Details, Compare) | The published L1 artifact |
 
-Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md). Live charts: [Dashboard](../dashboard/).
+Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md). Live charts: [Dashboard](../dashboard/index.html).
 
 ---
 
 ## Languages in this suite
 
-Each language has a hand-written **Overview** (roster, caveats, how to read this runner). Measured numbers live on the **Dashboard**.
+Each language has an **Overview** page listing its registered serializers, build prerequisites, and measurement caveats. Measured numbers live on the **Dashboard**.
 
-| Language | Serializers (registered) | Overview | Dashboard |
-|----------|--------------------------|----------|-----------|
-| C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
-| C# | **56** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
-| C++ | **40** ‡ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
-| Fortran | **9** | [Overview](../fortran/index.md) | [Dashboard](../dashboard/?lang=fortran) |
-| Go | **35** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
-| Java | **30** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
-| JavaScript | **34** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
-| Kotlin | **34** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
-| Mojo | **21** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
-| PHP | **18** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
-| Python | **37** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
-| Rust | **33** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
-| Swift | **23** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
-| Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
+| Language | Overview | Dashboard |
+|----------|----------|-----------|
+| C | [Overview](../c/index.md) | [Dashboard](../dashboard/index.html?lang=c) |
+| C# | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/index.html?lang=csharp) |
+| C++ | [Overview](../cpp/index.md) | [Dashboard](../dashboard/index.html?lang=cpp) |
+| Fortran | [Overview](../fortran/index.md) | [Dashboard](../dashboard/index.html?lang=fortran) |
+| Go | [Overview](../go/index.md) | [Dashboard](../dashboard/index.html?lang=go) |
+| Java | [Overview](../java/index.md) | [Dashboard](../dashboard/index.html?lang=java) |
+| JavaScript | [Overview](../javascript/index.md) | [Dashboard](../dashboard/index.html?lang=javascript) |
+| Kotlin | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/index.html?lang=kotlin) |
+| Mojo | [Overview](../mojo/index.md) | [Dashboard](../dashboard/index.html?lang=mojo) |
+| PHP | [Overview](../php/index.md) | [Dashboard](../dashboard/index.html?lang=php) |
+| Python | [Overview](../python/index.md) | [Dashboard](../dashboard/index.html?lang=python) |
+| Rust | [Overview](../rust/index.md) | [Dashboard](../dashboard/index.html?lang=rust) |
+| Swift | [Overview](../swift/index.md) | [Dashboard](../dashboard/index.html?lang=swift) |
+| Zig | [Overview](../zig/index.md) | [Dashboard](../dashboard/index.html?lang=zig) |
 
-† In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.
-
-‡ C++ registers **40** on this machine when `ARROW_ROOT` points at Arrow 25.0.1. Without that prefix the five Arrow rows are skipped and `sbe` still registers (**35** here; Boost.Serialization is not installed). Fory is included in both counts.
+Optional native dependencies (such as `ARROW_ROOT` in C++ or the native `simdjson` addon in JavaScript) are documented on each language’s Overview page.
 
 **Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`, and `fortran`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
 
@@ -144,4 +142,4 @@ Prefer:
 
 > **Same language + same standard + same data set + same data type**
 
-A chart that mixes standards is a number wearing a lab coat. It has not earned a ranking. Absolute times across languages (for example “Python vs C++”) mix runtimes, garbage collectors, and allocators. Those numbers can still be informative as a rough direction, but they are not a precise ranking. Details live under [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).
+Comparing libraries across different standards conflates wire-format semantics with implementation efficiency; treat cross-standard tables as trade-off comparisons rather than implementation rankings. Absolute times across languages (for example “Python vs C++”) mix runtimes, garbage collectors, and allocators. Those numbers can still be informative as a rough direction, but they are not a precise ranking. Details live under [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

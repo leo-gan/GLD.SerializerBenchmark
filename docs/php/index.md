@@ -2,9 +2,7 @@
 title: "PHP"
 ---
 
-PHP
-===
-
+# PHP
 PHP’s suite rows cover **stdlib JSON**, **native `serialize`**, optional **PECL** binaries (igbinary, MessagePack, LibYAML, SIMDJSON, MongoDB BSON), **official google/protobuf**, **Symfony** and **JMS** JSON (plus Symfony XML), **Avro**, **CBOR**, and **pure-PHP MessagePack / YAML** as userland baselines.
 
 ## Runtime
@@ -168,4 +166,4 @@ These candidates from the intake lists are **not** rows:
 | FlatBuffers / Thrift PHP | No generated PHP tables in-tree yet (can be added like protobuf) |
 | PDO / custom hydrators | Object mapping, not encode/decode of bytes |
 
-[Dashboard](../dashboard/?lang=php&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=php&data=document@n=1&mode=bytes)

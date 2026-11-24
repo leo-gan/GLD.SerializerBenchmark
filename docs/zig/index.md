@@ -2,9 +2,7 @@
 title: "Zig"
 ---
 
-Zig
-===
-
+# Zig
 Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, against typed third-party codecs that specialize the whole encoder into the destination type (**json.zig**, **jsonz**, **msgpack.zig**), and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
 ## Runtime
@@ -53,17 +51,17 @@ The steps to install the toolchain and run the benchmark are in [`zig/README.md`
 
 The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The harness owns a reusable output buffer per serializer, and every text codec writes into it through `std.Io.Writer`, so no row pays for a throwaway slice the runner then copies and frees. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
 
-## Serializers (wired)
+## Serializers
 
 | Name | Category | Package | Stream | Notes |
 |------|----------|---------|--------|-------|
 | [std.json](https://github.com/ziglang/zig) | JSON | std | text_on_stream | `Stringify.value` + `parseFromSlice` into the suite struct |
-| [std.json.borrowed](https://ziglang.org/documentation/master/std/#std.json) | JSON | std | text_on_stream | Same stringify; decode is `parseFromSliceLeaky` with `alloc_if_needed` |
+| [std.json.borrowed](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `parseFromSliceLeaky` with `alloc_if_needed` |
 | [std.json.scanner](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `Scanner` + `parseFromTokenSource` |
 | [std.zon](https://github.com/ziglang/zig) | ZON | std | text_on_stream | Official `std.zon.stringify` + `std.zon.parse.fromSliceAlloc` |
 | [comptime-bin](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md) | Binary | in-tree | adapted | Comptime field walk; LE ints; `u32` length + bytes for strings |
 | [serde.json](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | One comptime API, JSON path |
-| [serde.json.borrowed](https://github.com/getty-zig/getty) | JSON | serde.zig 1.2.2 | text_on_stream | Same encode; decode is `fromSliceBorrowed` |
+| [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | Same encode; decode is `fromSliceBorrowed` |
 | [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) | Binary | serde.zig 1.2.2 | text_on_stream | Same API, MessagePack |
 | [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, YAML. **no document / event** |
 | [serde.toml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, TOML |
@@ -90,9 +88,9 @@ Why each library exists, what problem it was written to solve, and how. Names li
 
 Zig's `std.json` is the standard-library JSON codec. It exists so Zig programs can speak JSON without a package. This suite times typed `parseFromSlice` and, separately, the Scanner path.
 
-#### [std.json.borrowed](https://ziglang.org/documentation/master/std/#std.json)
+#### [std.json.borrowed](https://github.com/ziglang/zig)
 
-std.json.borrowed is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
+Zig's standard-library `std.json` codec using `parseFromSliceLeaky` with `.allocate = .alloc_if_needed` so unescaped strings are decoded as borrowed slices into the input buffer rather than copied. Encode uses the same `Stringify.value` path as `std.json`.
 
 #### [std.json.scanner](https://github.com/ziglang/zig)
 
@@ -110,9 +108,9 @@ comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk th
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the JSON backend of serde.zig.
 
-#### [serde.json.borrowed](https://github.com/getty-zig/getty)
+#### [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig)
 
-serde.json.borrowed is a registered serializer in the zig suite. This page links its upstream source; the language inventory table describes the timed call path.
+The JSON backend of serde.zig using borrowed string views (`fromSliceBorrowed`) on decode instead of allocating copies of unescaped strings. Encode uses the same comptime `toWriter` path as `serde.json`.
 
 #### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig)
 
@@ -201,4 +199,4 @@ Prepare copies each suite fixture into the library’s native form (untimed). Th
 
 `capnproto` uses the official C++ library (like Swift) because the Zig Cap’n Proto plugin requires Zig 0.17-dev. The host needs `libcapnp` / `libkj` under `~/.local` (`./scripts/install-host-requirements.sh zig`).
 
-[Dashboard](../dashboard/?lang=zig&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=zig&data=document@n=1&mode=bytes)

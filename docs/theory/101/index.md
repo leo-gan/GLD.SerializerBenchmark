@@ -9,7 +9,7 @@ You do not need prior experience with distributed systems, data lakes, or binary
 | Jump | |
 |------|--|
 | **This track** | The model below · then a lens · then [201 mechanisms](../201/index.md) |
-| **See numbers** | [Dashboard](../../dashboard/) · language **Overview** for the roster |
+| **See numbers** | [Dashboard](../../dashboard/index.html) · language **Overview** for the roster |
 | **How we measure** | [Benchmarks](../../analysis/index.md) |
 
 By the end of this track you should be able to:
@@ -20,7 +20,7 @@ By the end of this track you should be able to:
 4. Choose a standard for a workload, then an implementation. Keep performance separate from conformance.
 5. Connect these pages to measured libraries in this benchmark suite.
 
-Check real numbers on the [Dashboard](../../dashboard/). Language **Overview** pages list the roster and caveats. For how the numbers are produced, see [Benchmarks](../../analysis/index.md).
+Check real numbers on the [Dashboard](../../dashboard/index.html). Language **Overview** pages list the roster and caveats. For how the numbers are produced, see [Benchmarks](../../analysis/index.md).
 
 ---
 
@@ -42,7 +42,7 @@ Inside a running program, data is often a web of pointers and types. A record ma
 | **Workload** | What is serialized, and how is it used? | A data set and a data type. Shapes are on the [test data](../../analysis/test_data_configuration.md) page. |
 | **Standard** | What do the bytes mean? | The Dashboard **Standard** control. Names are defined in the [compliance catalog](../../compliance/). |
 | **Implementation** | How does one library realize that contract? | One library on one language runner. |
-| **Evaluation** | How fast is it, and does it follow the contract? | Dashboard timings and fidelity. [Compliance](../../dashboard/#compliance) for the specification. |
+| **Evaluation** | How fast is it, and does it follow the contract? | Dashboard timings and fidelity. [Compliance](../../dashboard/index.html#compliance) for the specification. |
 
 A serialization standard defines what the bytes mean. An implementation determines how efficiently and correctly those rules are realized. A workload determines whether the standard is appropriate.
 
@@ -99,9 +99,9 @@ A **trust boundary** is any place where data leaves a fully controlled environme
 
 | Question | What it measures | Where |
 |----------|------------------|--------|
-| **Performance** | Encode time, decode time, and size | [Dashboard](../../dashboard/) |
+| **Performance** | Encode time, decode time, and size | [Dashboard](../../dashboard/index.html) |
 | **Fidelity** | Whether the fixture still means the same thing after a round trip | The speed run. This is not a match to a specification. |
-| **Conformance** | Whether the library follows the specification it claims | [Dashboard · Compliance](../../dashboard/#compliance). **No public spec** has no score. |
+| **Conformance** | Whether the library follows the specification it claims | [Dashboard · Compliance](../../dashboard/index.html#compliance). **No public spec** has no score. |
 
 A fast library that fails conformance cases still has a performance result. That result is about the library, not about the standard.
 
@@ -138,7 +138,7 @@ Each lens reads the same model for a different job.
 | **Mechanisms** | [Serialization 201](../201/index.md) |
 | **Production judgment** | [Serialization 301](../301/index.md) |
 | **Family map** | [Families](../../analysis/families.md) |
-| **Numbers** | [Dashboard](../../dashboard/) — set **Language**, **Standard**, **Data set**, and **Data type** |
+| **Numbers** | [Dashboard](../../dashboard/index.html) — set **Language**, **Standard**, **Data set**, and **Data type** |
 
 ## Lab notebooks (Python / Colab)
 
@@ -152,5 +152,5 @@ Install notes live in the [notebooks README](../notebooks/README.md).
 ## Scope and honesty
 
 - This track is a **map**, not an encyclopedia of every library.
-- Performance claims in prose are **illustrative**. Prefer the [Dashboard](../../dashboard/) for numbers on *this* runner and hardware.
+- Performance claims in prose are **illustrative**. Prefer the [Dashboard](../../dashboard/index.html) for numbers on *this* runner and hardware.
 - “Best format” means **best under your constraints**: team skills, trust boundaries, retention, latency, and multi-language requirements.

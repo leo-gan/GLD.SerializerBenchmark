@@ -104,9 +104,9 @@ Configured warmup length: `reproducibility.warmup_repetitions` = **1**.
 
 ### Outlier filtering
 
-Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> [interquartile range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range "Interquartile range — spread of the middle 50% of values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** fences (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
+Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences") [interquartile range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range "Interquartile range — spread of the middle 50% of values")** fences (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
 
-**Idea in plain language:** look at the middle half of the data (from the 25th to the 75th [percentile](https://en.wikipedia.org/wiki/Percentile "Percentile — value below which a given percentage of observations fall")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). Anything far outside fences built from that middle half is treated as an [outlier](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If *any* of the three times is an outlier, the **whole repetition** is dropped so the three series stay paired.
+**Idea in plain language:** look at the middle half of the data (from the 25th to the 75th [percentile](https://en.wikipedia.org/wiki/Percentile "Percentile — value below which a given percentage of observations fall")). Anything far outside fences built from that middle half is treated as an [outlier](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data"). If *any* of the three times is an outlier, the **whole repetition** is dropped so the three series stay paired.
 
 | Rule | Default behavior |
 |------|------------------|
@@ -116,9 +116,9 @@ Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tu
 | IQR = 0 for a metric | That metric does not remove anyone |
 | Would drop the entire group | Keep the original series |
 | Method `none` | Skip filtering |
-| Method `winsorize` | [Winsorize](https://en.wikipedia.org/wiki/Winsorizing "Winsorizing — replace extreme values with less extreme ones")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />: clip each series at the 5th and 95th percentiles; never drop rows |
+| Method `winsorize` | [Winsorize](https://en.wikipedia.org/wiki/Winsorizing "Winsorizing — replace extreme values with less extreme ones"): clip each series at the 5th and 95th percentiles; never drop rows |
 
-Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and [confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> too.
+Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and [confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter") too.
 
 ### Dashboard filter policies (multi-aggregation export)
 
@@ -141,7 +141,7 @@ Export fields (compact):
 
 Published dashboard path: `dashboard/public/data/stats_<lang>_latest.json.gz` (gzip of the same JSON).
 
-Markdown language pages still use the configured single `statistics.outlier_method` path (default IQR 1.5). The multi-policy pack is for the interactive dashboard **Samples** control.
+Single-policy CLI markdown reports (`reports/`) use the configured `statistics.outlier_method` path (default IQR 1.5). The multi-policy pack feeds the interactive Dashboard **Samples** control.
 
 ### Descriptive statistics (per group)
 
@@ -157,7 +157,7 @@ Published numbers live on the [Dashboard](../dashboard/index.html).
 
 ### Bootstrap confidence interval on the mean
 
-When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics) — resampling to estimate uncertainty")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, seed 42) and reports:
+When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics) — resampling to estimate uncertainty")** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter"), seed 42) and reports:
 
 - `total_ci_low_ns`
 - `total_ci_high_ns`
@@ -168,13 +168,13 @@ Produced only when the post-filter sample size is at least `min_samples_for_infe
 
 ### Effect sizes versus the fastest in the group
 
-When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The standard is not part of that peer set. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> story of the suite.
+When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant") are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The standard is not part of that peer set. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions") story of the suite.
 
 | Method | Role in plain language |
 |--------|------------------------|
-| **[Cliff’s δ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | How often this library is slower or faster than the reference, without assuming a normal distribution |
-| **[Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | Standardized mean difference with a small-sample correction |
-| **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> + [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | Optional [p-values](https://en.wikipedia.org/wiki/P-value "P-value — probability of data as extreme as observed under the null") vs the reference; Holm adjusts for **many serializers in that one group only** |
+| **[Cliff’s δ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")** | How often this library is slower or faster than the reference, without assuming a normal distribution |
+| **[Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")** | Standardized mean difference with a small-sample correction |
+| **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test") + [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")** | Optional [p-values](https://en.wikipedia.org/wiki/P-value "P-value — probability of data as extreme as observed under the null") vs the reference; Holm adjusts for **many serializers in that one group only** |
 
 Use these for **within-language** interpretation. Do not treat them as cross-runtime rankings. Multi-way tables treat ranks as **exploratory** — see [Exploratory ranks](#exploratory-ranks).
 
@@ -184,7 +184,7 @@ This section is written for a **first-year university student**.
 
 #### What problem are we solving?
 
-A Dashboard slice often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
+A Dashboard slice often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives"). If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
 
 #### What we do
 
@@ -259,7 +259,7 @@ You can restore the old noisier behavior with `regression.combine: or` or `--reg
 
 ### Cliff’s δ (optional, when we saved samples)
 
-If the baseline file stores a sample of old timings, we also compute **[Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — nonparametric effect size")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
+If the baseline file stores a sample of old timings, we also compute **[Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — nonparametric effect size")** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
 
 ### Baseline file (what we store)
 

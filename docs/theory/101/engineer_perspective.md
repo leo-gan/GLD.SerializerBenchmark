@@ -6,7 +6,7 @@
 
 This lens is written for people who ship services and systems. You may be:
 
-- A backend or platform engineer choosing API and [remote procedure call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> payloads  
+- A backend or platform engineer choosing API and [remote procedure call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call") payloads  
 - A performance-minded developer who cares about processor time, allocations, and latency tails  
 - Anyone who must deserialize **untrusted** input  
 - An engineer aligning local choices with a multi-language set of systems the organization runs  
@@ -24,10 +24,10 @@ The essays below are grouped by family. A family is a teaching cut, not a Dashbo
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
-| **Text** | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; sometimes [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> or [YAML](https://en.wikipedia.org/wiki/YAML "YAML — human-friendly data serialization language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> at edges | Optional or external | Yes | Public APIs, configuration, debug-friendly logs |
-| **Schemaless binary** | [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, many “binary JSON” codecs | Type tags or field names often present | No | Internal services, caches, queues |
-| **Schema-driven** | [Protocol Buffers](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, Bond, many [interface description language (IDL)](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> tools | Numbers or layout from a schema | No | Stable contracts, high-throughput RPC and streams |
-| **Language-native** | [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Java serialization](https://en.wikipedia.org/wiki/Java_serialization "Java object serialization — JVM native object encoding")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, legacy .NET binary formatters | Runtime type metadata | No | Same-stack caches and graphs (**trust carefully**) |
+| **Text** | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation"); sometimes [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language") or [YAML](https://en.wikipedia.org/wiki/YAML "YAML — human-friendly data serialization language") at edges | Optional or external | Yes | Public APIs, configuration, debug-friendly logs |
+| **Schemaless binary** | [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values"), [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation"), [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)"), many “binary JSON” codecs | Type tags or field names often present | No | Internal services, caches, queues |
+| **Schema-driven** | [Protocol Buffers](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format"), [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas"), [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library"), Bond, many [interface description language (IDL)](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language") tools | Numbers or layout from a schema | No | Stable contracts, high-throughput RPC and streams |
+| **Language-native** | [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization"), [Java serialization](https://en.wikipedia.org/wiki/Java_serialization "Java object serialization — JVM native object encoding"), legacy .NET binary formatters | Runtime type metadata | No | Same-stack caches and graphs (**trust carefully**) |
 
 An **IDL** (interface description language) is a small language used to describe data structures and service methods once. Tools can then generate code in many programming languages.
 
@@ -51,17 +51,17 @@ Work through these questions in order:
 
 ## Text-based interchange
 
-**JSON** is the default public contract. It has universal parsers and easy logging. Density and parse cost are mediocre. Gaps for dates, binary data, and integer versus floating-point numbers are managed by **convention** or by a validation layer. [JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, and typed request models are common tools.
+**JSON** is the default public contract. It has universal parsers and easy logging. Density and parse cost are mediocre. Gaps for dates, binary data, and integer versus floating-point numbers are managed by **convention** or by a validation layer. [JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON"), [OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions"), and typed request models are common tools.
 
 **XML** remains in enterprise and document systems. Prefer it when the ecosystem already demands it. Do not pick it as a greenfield API default.
 
-**YAML** and **[TOML](https://en.wikipedia.org/wiki/TOML "TOML — Tom’s Obvious Minimal Language (config format)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** are configuration formats more than wire formats. YAML’s complexity has a long security history with “load untrusted YAML” mistakes. Prefer safe loaders and locked-down schemas for untrusted input. In YAML 1.1, unquoted `NO` is the boolean false. Quote the country. Norway would appreciate it. The longer version is in [JSON and the web](historical_perspective.md#json-and-the-web).
+**YAML** and **[TOML](https://en.wikipedia.org/wiki/TOML "TOML — Tom’s Obvious Minimal Language (config format)")** are configuration formats more than wire formats. YAML’s complexity has a long security history with “load untrusted YAML” mistakes. Prefer safe loaders and locked-down schemas for untrusted input. In YAML 1.1, unquoted `NO` is the boolean false. Quote the country. Norway would appreciate it. The longer version is in [JSON and the web](historical_perspective.md#json-and-the-web).
 
 ## Schemaless binary
 
 **MessagePack**, **CBOR**, and **BSON** keep a dynamic data model while dropping text parsing. Field names or type tags usually still appear. They are typically larger than a tight Protocol Buffers encoding. They are smaller and often faster than JSON.
 
-**Typical engineering uses:** internal [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> or RPC bodies, [Redis](https://en.wikipedia.org/wiki/Redis "Redis — in-memory data structure store")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style values, multi-language payloads without an IDL mandate.
+**Typical engineering uses:** internal [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol") or RPC bodies, [Redis](https://en.wikipedia.org/wiki/Redis "Redis — in-memory data structure store")-style values, multi-language payloads without an IDL mandate.
 
 **You still own** validation, compatibility, and documentation. Schemaless does not mean “no rules.” It means the format does not force a shared schema file before you send data.
 
@@ -69,11 +69,11 @@ Work through these questions in order:
 
 **Protocol Buffers** use field numbers, code generation, a strong multi-language story, and explicit evolution discipline. Do not reuse field numbers. Reserve deleted identifiers.
 
-**[Apache Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** pairs an IDL with pluggable protocols and transports. Historically it appears in RPC-centric multi-language (*polyglot*) stacks. Polyglot means systems written in several languages.
+**[Apache Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")** pairs an IDL with pluggable protocols and transports. Historically it appears in RPC-centric multi-language (*polyglot*) stacks. Polyglot means systems written in several languages.
 
 **Apache Avro** is often chosen when **matching a writer’s schema to a reader’s schema by rules** (*schema resolution*) and data-platform interoperability matter. That story is also covered under the [data science perspective](data_science_perspective.md). Avro appears in event pipelines as much as in classical RPC.
 
-**FlatBuffers** and **[Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** aim for **low-parse or zero-copy** access. Read paths can be excellent. Mutation and day-to-day ease of use for developers differ from classic “build a struct, then serialize” Protocol Buffers style.
+**FlatBuffers** and **[Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC")** aim for **low-parse or zero-copy** access. Read paths can be excellent. Mutation and day-to-day ease of use for developers differ from classic “build a struct, then serialize” Protocol Buffers style.
 
 ## Language-native formats
 
@@ -91,7 +91,7 @@ Modern processors are fast. **Random memory access** is not. Serializers that sc
 
 When you benchmark, payload **shape** matters as much as codec brand. Deep pointer graphs punish every language. Dense structures favor contiguous layouts.
 
-### Allocations and [garbage collection](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />
+### Allocations and [garbage collection](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")
 
 In managed runtimes such as C#, Java, Python, JavaScript, and Go, **allocation rate** drives garbage-collector work and latency spikes. The garbage collector reclaims memory that is no longer used. If you allocate many short-lived objects, the collector runs more often.
 
@@ -127,7 +127,7 @@ Untrusted bytes are **hostile input**. Assume that someone may craft data design
 | Risk | Where it shows up | Mitigation |
 |------|-------------------|------------|
 | **Remote code execution via native deserialize** | Java serialization, pickle, some legacy binary formatters, careless YAML `load` | Never deserialize untrusted native formats; prefer pure data formats plus explicit allowlists |
-| **[Billion laughs](https://en.wikipedia.org/wiki/Billion_laughs_attack "Billion laughs — XML entity expansion DoS")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> / entity expansion** | XML | Disable external entities; use safe parser settings |
+| **[Billion laughs](https://en.wikipedia.org/wiki/Billion_laughs_attack "Billion laughs — XML entity expansion DoS") / entity expansion** | XML | Disable external entities; use safe parser settings |
 | **Resource exhaustion** | Huge nested JSON, deeply nested CBOR or MessagePack, unbounded collections | Limits on depth, size, and allocations |
 | **Logic bugs from type confusion** | Schemaless JSON (“number or string?”) | Validate with a schema or typed model at the trust boundary |
 | **Skipping verification in zero-copy paths** | FlatBuffers-style buffers used without a verifier | Always verify untrusted buffers before use |
@@ -156,7 +156,7 @@ Document whether fields are required, defaulted, or nullable. A **wire format ca
 Beyond pure speed, real systems care about day-to-day operations:
 
 - **Debuggability:** JSON in logs is easy. Binary needs decoders and schema versions in observability tooling.  
-- **Gateways and service meshes:** some exotic RPC framings interact poorly with ordinary [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2 "HTTP/2 — major revision of HTTP")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> load balancers and serverless edges.  
+- **Gateways and service meshes:** some exotic RPC framings interact poorly with ordinary [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2 "HTTP/2 — major revision of HTTP") load balancers and serverless edges.  
 - **Code generation in continuous integration:** schema-driven stacks need stable `protoc` or IDL pipelines and versioned generated artifacts.  
 - **Multi-language (polyglot) drift:** “we use Protocol Buffers” is incomplete without a shared style guide. Cover well-known types, the error model, and timestamp policy. *Polyglot* means many languages in one organization.  
 
@@ -173,13 +173,13 @@ Beyond pure speed, real systems care about day-to-day operations:
 | Hot cache of dynamic documents | MessagePack, CBOR, or JSON depending on clients | Schemaless binary if all consumers agree |
 | Same-process or same-runtime trusted cache | Language-native **only if** the written security assumptions allow it (who may send data) | Otherwise portable binary |
 | Ultra-low-latency read of large immutable messages | FlatBuffers / Cap’n Proto-class design | In-place access |
-| Analytics export from a service | Write **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** (or ship to a pipeline that does)—see [data science](data_science_perspective.md) | Do not force online message formats to be your lake |
+| Analytics export from a service | Write **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")** (or ship to a pipeline that does)—see [data science](data_science_perspective.md) | Do not force online message formats to be your lake |
 
 ---
 
 ## Illustrative snippets
 
-These snippets are for orientation only. They are not library endorsements. Site-wide fenced code uses plain highlighting; see `mkdocs.yml`.
+These snippets are for orientation only. They are not library endorsements.
 
 ### JSON (public API style)
 

@@ -2,9 +2,7 @@
 title: "Mojo"
 ---
 
-Mojo
-====
-
+# Mojo
 Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, DataBooth/mojo-toml and leo-gan/gld-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, Smile, Arrow IPC, and Parquet, and Dagr (generated Mojo from the suite's Dagr schema). The gld libraries target Mojo 1.1. `mojo-toml` and `gld-toml` are different libraries; the gld package is vendored as `gldtoml` so it does not share DataBooth’s `toml` module name.
 
 ## Runtime
@@ -209,6 +207,6 @@ Also: [`mojo/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob
 ## Numbers
 
 Measured numbers for this language live on the
-[Dashboard](../dashboard/?lang=mojo&data=document@n=1&mode=bytes)
+[Dashboard](../dashboard/index.html?lang=mojo&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
