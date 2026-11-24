@@ -69,6 +69,10 @@ foreach ([new ArrowSer(), new IonSer()] as $ser) {
 
     $msg = DataV2::makeOne('message', [], 42, 0);
     $ser->prepare($msg);
+    if ($ser instanceof ArrowSer) {
+        $template = (new ReflectionProperty(ArrowSer::class, 'template'))->getValue($ser);
+        check('gld-arrow uses the stream template', $template !== null && $template->fast());
+    }
     $bytes = $ser->serializeBytes($msg);
     $back = $ser->deserializeBytes($bytes);
     check($ser->name() . ' message round-trip', sameValue($msg, $back), $ser->name());

@@ -2,11 +2,8 @@ import Foundation
 import Ion
 
 // MARK: - gld-ion (leo-gan/gld-ion-swift)
-// prepare binds the document shape (monomorphic writer, Ion 1.0 binary options).
-// Timed encode builds an IonDoc and calls encode(_:options:cat:).
-// Timed decode is decodeBinary — the binary arm of decodeAny — then field reads.
-// Catalog, EncodeOptions, and the byte buffers are reused. IonDoc has no public
-// reset, so each encode allocates its own arena.
+// prepare binds the record shape. Timed encode and decode use encodeTree and
+// decodeTree, which write Ion 1.0 binary without an IonDoc.
 // https://github.com/leo-gan/gld-ion-swift
 
 public final class GldIonSerializer: BenchSerializer {
@@ -15,9 +12,6 @@ public final class GldIonSerializer: BenchSerializer {
     public let streamMode: StreamMode = .adapted
     public let nativeKind: NativeKind = .message
 
-    /// Ion 1.0 binary. version 10 is the 1.0 marker (E0 01 00 EA), not Ion 1.1.
-    private let options = EncodeOptions(binary: true, pretty: false, version: 10)
-    private let catalog = Catalog()
     private let buffers = ReusedByteScratch()
     /// Bound in prepare — timed path has no multi-way fixture switch (issue #59).
     private var encodeFn: ((Fixture) throws -> Data)?
@@ -30,49 +24,32 @@ public final class GldIonSerializer: BenchSerializer {
     public func prepare(_ fixture: Fixture) throws {
         let batch = fixture.instanceCount > 1
         let buffers = self.buffers
-        let options = self.options
-        let catalog = self.catalog
         switch fixture.name {
         case "message":
             encodeFn = GldIonBridge.bindEncode(
-                typeName: fixture.name, batch: batch, buffers: buffers,
-                options: options, catalog: catalog, write: GldIonBridge.writeMessage
+                typeName: fixture.name, batch: batch, buffers: buffers, tree: GldIonBridge.messageTree
             )
-            decodeFn = GldIonBridge.bindDecode(
-                batch: batch, buffers: buffers, catalog: catalog, read: GldIonBridge.readMessage
-            )
+            decodeFn = GldIonBridge.bindDecode(batch: batch, buffers: buffers, read: GldIonBridge.readMessage)
         case "document":
             encodeFn = GldIonBridge.bindEncode(
-                typeName: fixture.name, batch: batch, buffers: buffers,
-                options: options, catalog: catalog, write: GldIonBridge.writeDocument
+                typeName: fixture.name, batch: batch, buffers: buffers, tree: GldIonBridge.documentTree
             )
-            decodeFn = GldIonBridge.bindDecode(
-                batch: batch, buffers: buffers, catalog: catalog, read: GldIonBridge.readDocument
-            )
+            decodeFn = GldIonBridge.bindDecode(batch: batch, buffers: buffers, read: GldIonBridge.readDocument)
         case "telemetry":
             encodeFn = GldIonBridge.bindEncode(
-                typeName: fixture.name, batch: batch, buffers: buffers,
-                options: options, catalog: catalog, write: GldIonBridge.writeTelemetry
+                typeName: fixture.name, batch: batch, buffers: buffers, tree: GldIonBridge.telemetryTree
             )
-            decodeFn = GldIonBridge.bindDecode(
-                batch: batch, buffers: buffers, catalog: catalog, read: GldIonBridge.readTelemetry
-            )
+            decodeFn = GldIonBridge.bindDecode(batch: batch, buffers: buffers, read: GldIonBridge.readTelemetry)
         case "strings":
             encodeFn = GldIonBridge.bindEncode(
-                typeName: fixture.name, batch: batch, buffers: buffers,
-                options: options, catalog: catalog, write: GldIonBridge.writeStrings
+                typeName: fixture.name, batch: batch, buffers: buffers, tree: GldIonBridge.stringsTree
             )
-            decodeFn = GldIonBridge.bindDecode(
-                batch: batch, buffers: buffers, catalog: catalog, read: GldIonBridge.readStrings
-            )
+            decodeFn = GldIonBridge.bindDecode(batch: batch, buffers: buffers, read: GldIonBridge.readStrings)
         case "event":
             encodeFn = GldIonBridge.bindEncode(
-                typeName: fixture.name, batch: batch, buffers: buffers,
-                options: options, catalog: catalog, write: GldIonBridge.writeEvent
+                typeName: fixture.name, batch: batch, buffers: buffers, tree: GldIonBridge.eventTree
             )
-            decodeFn = GldIonBridge.bindDecode(
-                batch: batch, buffers: buffers, catalog: catalog, read: GldIonBridge.readEvent
-            )
+            decodeFn = GldIonBridge.bindDecode(batch: batch, buffers: buffers, read: GldIonBridge.readEvent)
         default:
             throw BenchError.unknownType(fixture.name)
         }
@@ -95,287 +72,190 @@ enum GldIonBridge {
         typeName: String,
         batch: Bool,
         buffers: ReusedByteScratch,
-        options: EncodeOptions,
-        catalog: Catalog,
-        write: @escaping (IonDoc, T) -> Int
+        tree: @escaping (T) -> IonTree
     ) -> (Fixture) throws -> Data {
         if batch {
             return { fx in
                 guard let rows = fx.value as? [T] else {
                     throw BenchError.unsupported("gld-ion batch \(typeName)")
                 }
-                let doc = IonDoc()
-                doc.reserve(max(32, rows.count * 8))
-                let list = doc.startContainer(kList)
-                for row in rows {
-                    doc.addChild(list, write(doc, row), -1)
-                }
-                doc.addTop(list)
-                return buffers.store(try encode(doc, options, catalog))
+                return buffers.store(encodeTree(.list(rows.map(tree))))
             }
         }
         return { fx in
             guard let row = fx.value as? T else {
                 throw BenchError.unsupported("gld-ion \(typeName)")
             }
-            let doc = IonDoc()
-            doc.reserve(48)
-            doc.addTop(write(doc, row))
-            return buffers.store(try encode(doc, options, catalog))
+            return buffers.store(encodeTree(tree(row)))
         }
     }
 
     static func bindDecode<T>(
         batch: Bool,
         buffers: ReusedByteScratch,
-        catalog: Catalog,
-        read: @escaping (IonDoc, Int) throws -> T
+        read: @escaping (IonTree) throws -> T
     ) -> (Data) throws -> Any {
         if batch {
             return { data in
-                let doc = try decodeBinary(buffers.copyIn(data), catalog)
-                let ids = try elements(doc, try top(doc))
-                var rows: [T] = []
-                rows.reserveCapacity(ids.count)
-                for id in ids {
-                    rows.append(try read(doc, id))
+                guard case .list(let items) = try decodeTree(buffers.copyIn(data)) else {
+                    throw BenchError.unsupported("gld-ion batch")
                 }
-                return rows
+                return try items.map(read)
             }
         }
         return { data in
-            let doc = try decodeBinary(buffers.copyIn(data), catalog)
-            return try read(doc, try top(doc))
+            try read(decodeTree(buffers.copyIn(data)))
         }
     }
 
-    static func writeMessage(_ doc: IonDoc, _ m: Message) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "f_bool", doc.addBool(m.f_bool))
-        put(doc, obj, "f_int32", doc.addI64(Int64(m.f_int32)))
-        put(doc, obj, "f_int64", doc.addI64(m.f_int64))
-        put(doc, obj, "f_float64", doc.addFloat(8, m.f_float64.bitPattern))
-        put(doc, obj, "f_string", doc.addString(m.f_string))
-        put(doc, obj, "f_bool_2", doc.addBool(m.f_bool_2))
-        put(doc, obj, "f_int32_2", doc.addI64(Int64(m.f_int32_2)))
-        put(doc, obj, "f_string_2", doc.addString(m.f_string_2))
-        return obj
+    static func messageTree(_ m: Message) -> IonTree {
+        .fields([
+            ("f_bool", .bool(m.f_bool)),
+            ("f_int32", .int(Int64(m.f_int32))),
+            ("f_int64", .int(m.f_int64)),
+            ("f_float64", .float(m.f_float64)),
+            ("f_string", .string(m.f_string)),
+            ("f_bool_2", .bool(m.f_bool_2)),
+            ("f_int32_2", .int(Int64(m.f_int32_2))),
+            ("f_string_2", .string(m.f_string_2)),
+        ])
     }
 
-    static func readMessage(_ doc: IonDoc, _ id: Int) throws -> Message {
+    static func readMessage(_ tree: IonTree) throws -> Message {
         Message(
-            f_bool: try asBool(doc, try field(doc, id, "f_bool")),
-            f_int32: try i32(doc, try field(doc, id, "f_int32")),
-            f_int64: try asI64(doc, try field(doc, id, "f_int64")),
-            f_float64: try asF64(doc, try field(doc, id, "f_float64")),
-            f_string: try asString(doc, try field(doc, id, "f_string")),
-            f_bool_2: try asBool(doc, try field(doc, id, "f_bool_2")),
-            f_int32_2: try i32(doc, try field(doc, id, "f_int32_2")),
-            f_string_2: try asString(doc, try field(doc, id, "f_string_2"))
+            f_bool: try bool(tree, "f_bool"),
+            f_int32: try i32(tree, "f_int32"),
+            f_int64: try i64(tree, "f_int64"),
+            f_float64: try f64(tree, "f_float64"),
+            f_string: try str(tree, "f_string"),
+            f_bool_2: try bool(tree, "f_bool_2"),
+            f_int32_2: try i32(tree, "f_int32_2"),
+            f_string_2: try str(tree, "f_string_2")
         )
     }
 
-    static func writeDocument(_ doc: IonDoc, _ d: Document) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "id", doc.addString(d.id))
-        put(doc, obj, "status", doc.addI64(Int64(d.status)))
-        let meta = doc.startContainer(kStruct)
-        put(doc, meta, "region", doc.addString(d.meta.region))
-        put(doc, meta, "version", doc.addI64(Int64(d.meta.version)))
-        put(doc, obj, "meta", meta)
-        let items = doc.startContainer(kList)
-        for item in d.items {
-            doc.addChild(items, writeItem(doc, item), -1)
-        }
-        put(doc, obj, "items", items)
-        return obj
+    static func documentTree(_ d: Document) -> IonTree {
+        .fields([
+            ("id", .string(d.id)),
+            ("status", .int(Int64(d.status))),
+            ("meta", .fields([
+                ("region", .string(d.meta.region)),
+                ("version", .int(Int64(d.meta.version))),
+            ])),
+            ("items", .list(d.items.map { item in
+                .fields([
+                    ("sku", .string(item.sku)),
+                    ("qty", .int(Int64(item.qty))),
+                    ("price_minor", .int(item.price_minor)),
+                ])
+            })),
+        ])
     }
 
-    static func readDocument(_ doc: IonDoc, _ id: Int) throws -> Document {
-        let meta = try field(doc, id, "meta")
-        let itemIds = try elements(doc, try field(doc, id, "items"))
-        var items: [DocumentItem] = []
-        items.reserveCapacity(itemIds.count)
-        for item in itemIds {
-            items.append(try readItem(doc, item))
-        }
+    static func readDocument(_ tree: IonTree) throws -> Document {
+        let meta = try field(tree, "meta")
         return Document(
-            id: try asString(doc, try field(doc, id, "id")),
-            status: try i32(doc, try field(doc, id, "status")),
-            meta: DocumentMeta(
-                region: try asString(doc, try field(doc, meta, "region")),
-                version: try i32(doc, try field(doc, meta, "version"))
-            ),
-            items: items
-        )
-    }
-
-    static func writeTelemetry(_ doc: IonDoc, _ t: Telemetry) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "source", doc.addString(t.source))
-        put(doc, obj, "ts", doc.addI64(t.ts))
-        let tags = doc.startContainer(kList)
-        for tag in t.tags {
-            doc.addChild(tags, doc.addString(tag), -1)
-        }
-        put(doc, obj, "tags", tags)
-        let values = doc.startContainer(kList)
-        for value in t.values {
-            doc.addChild(values, doc.addFloat(8, value.bitPattern), -1)
-        }
-        put(doc, obj, "values", values)
-        return obj
-    }
-
-    static func readTelemetry(_ doc: IonDoc, _ id: Int) throws -> Telemetry {
-        let tagIds = try elements(doc, try field(doc, id, "tags"))
-        var tags: [String] = []
-        tags.reserveCapacity(tagIds.count)
-        for tag in tagIds {
-            tags.append(try asString(doc, tag))
-        }
-        let valueIds = try elements(doc, try field(doc, id, "values"))
-        var values: [Double] = []
-        values.reserveCapacity(valueIds.count)
-        for value in valueIds {
-            values.append(try asF64(doc, value))
-        }
-        return Telemetry(
-            source: try asString(doc, try field(doc, id, "source")),
-            ts: try asI64(doc, try field(doc, id, "ts")),
-            tags: tags,
-            values: values
-        )
-    }
-
-    static func writeStrings(_ doc: IonDoc, _ s: Strings) -> Int {
-        let obj = doc.startContainer(kStruct)
-        let items = doc.startContainer(kList)
-        for item in s.items {
-            doc.addChild(items, doc.addString(item), -1)
-        }
-        put(doc, obj, "items", items)
-        return obj
-    }
-
-    static func readStrings(_ doc: IonDoc, _ id: Int) throws -> Strings {
-        let ids = try elements(doc, try field(doc, id, "items"))
-        var items: [String] = []
-        items.reserveCapacity(ids.count)
-        for item in ids {
-            items.append(try asString(doc, item))
-        }
-        return Strings(items: items)
-    }
-
-    static func writeEvent(_ doc: IonDoc, _ event: Event) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "event_id", doc.addString(event.event_id))
-        put(doc, obj, "event_type", doc.addString(event.event_type))
-        put(doc, obj, "occurred_at", doc.addI64(event.occurred_at))
-        put(doc, obj, "producer", doc.addString(event.producer))
-        let attrs = doc.startContainer(kList)
-        for attr in event.attrs {
-            doc.addChild(attrs, writeAttr(doc, attr), -1)
-        }
-        put(doc, obj, "attrs", attrs)
-        return obj
-    }
-
-    static func readEvent(_ doc: IonDoc, _ id: Int) throws -> Event {
-        let attrIds = try elements(doc, try field(doc, id, "attrs"))
-        var attrs: [EventAttr] = []
-        attrs.reserveCapacity(attrIds.count)
-        for attr in attrIds {
-            attrs.append(EventAttr(
-                key: try asString(doc, try field(doc, attr, "key")),
-                value: try asString(doc, try field(doc, attr, "value"))
-            ))
-        }
-        return Event(
-            event_id: try asString(doc, try field(doc, id, "event_id")),
-            event_type: try asString(doc, try field(doc, id, "event_type")),
-            occurred_at: try asI64(doc, try field(doc, id, "occurred_at")),
-            producer: try asString(doc, try field(doc, id, "producer")),
-            attrs: attrs
-        )
-    }
-
-    private static func writeItem(_ doc: IonDoc, _ item: DocumentItem) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "sku", doc.addString(item.sku))
-        put(doc, obj, "qty", doc.addI64(Int64(item.qty)))
-        put(doc, obj, "price_minor", doc.addI64(item.price_minor))
-        return obj
-    }
-
-    private static func readItem(_ doc: IonDoc, _ id: Int) throws -> DocumentItem {
-        DocumentItem(
-            sku: try asString(doc, try field(doc, id, "sku")),
-            qty: try i32(doc, try field(doc, id, "qty")),
-            price_minor: try asI64(doc, try field(doc, id, "price_minor"))
-        )
-    }
-
-    private static func writeAttr(_ doc: IonDoc, _ attr: EventAttr) -> Int {
-        let obj = doc.startContainer(kStruct)
-        put(doc, obj, "key", doc.addString(attr.key))
-        put(doc, obj, "value", doc.addString(attr.value))
-        return obj
-    }
-
-    private static func put(_ doc: IonDoc, _ parent: Int, _ name: String, _ child: Int) {
-        let sym = doc.addSymbolText(name)
-        doc.addChild(parent, child, doc.nodes[sym].a)
-    }
-
-    private static func top(_ doc: IonDoc) throws -> Int {
-        guard let id = doc.top.first else {
-            throw BenchError.unsupported("gld-ion empty")
-        }
-        return id
-    }
-
-    private static func field(_ doc: IonDoc, _ parent: Int, _ name: String) throws -> Int {
-        let node = doc.nodes[parent]
-        if node.kind != kStruct {
-            throw BenchError.unsupported("gld-ion struct")
-        }
-        var edge = node.child
-        var i = 0
-        while i < node.nchild {
-            let sym = doc.edges[edge].field
-            if sym >= 0 && doc.symText(sym) == name {
-                return doc.edges[edge].child
+            id: try str(tree, "id"),
+            status: try i32(tree, "status"),
+            meta: DocumentMeta(region: try str(meta, "region"), version: try i32(meta, "version")),
+            items: try list(tree, "items").map { item in
+                DocumentItem(sku: try str(item, "sku"), qty: try i32(item, "qty"), price_minor: try i64(item, "price_minor"))
             }
-            edge = doc.edges[edge].next
-            i += 1
-        }
+        )
+    }
+
+    static func telemetryTree(_ t: Telemetry) -> IonTree {
+        .fields([
+            ("source", .string(t.source)),
+            ("ts", .int(t.ts)),
+            ("tags", .list(t.tags.map { .string($0) })),
+            ("values", .list(t.values.map { .float($0) })),
+        ])
+    }
+
+    static func readTelemetry(_ tree: IonTree) throws -> Telemetry {
+        Telemetry(
+            source: try str(tree, "source"),
+            ts: try i64(tree, "ts"),
+            tags: try list(tree, "tags").map { try text($0) },
+            values: try list(tree, "values").map { try number($0) }
+        )
+    }
+
+    static func stringsTree(_ s: Strings) -> IonTree {
+        .fields([("items", .list(s.items.map { .string($0) }))])
+    }
+
+    static func readStrings(_ tree: IonTree) throws -> Strings {
+        Strings(items: try list(tree, "items").map { try text($0) })
+    }
+
+    static func eventTree(_ event: Event) -> IonTree {
+        .fields([
+            ("event_id", .string(event.event_id)),
+            ("event_type", .string(event.event_type)),
+            ("occurred_at", .int(event.occurred_at)),
+            ("producer", .string(event.producer)),
+            ("attrs", .list(event.attrs.map { attr in
+                .fields([("key", .string(attr.key)), ("value", .string(attr.value))])
+            })),
+        ])
+    }
+
+    static func readEvent(_ tree: IonTree) throws -> Event {
+        Event(
+            event_id: try str(tree, "event_id"),
+            event_type: try str(tree, "event_type"),
+            occurred_at: try i64(tree, "occurred_at"),
+            producer: try str(tree, "producer"),
+            attrs: try list(tree, "attrs").map { attr in
+                EventAttr(key: try str(attr, "key"), value: try str(attr, "value"))
+            }
+        )
+    }
+
+    private static func field(_ tree: IonTree, _ name: String) throws -> IonTree {
+        guard case .fields(let pairs) = tree else { throw BenchError.unsupported("gld-ion struct") }
+        for pair in pairs where pair.0 == name { return pair.1 }
         throw BenchError.unsupported("gld-ion field \(name)")
     }
 
-    private static func elements(_ doc: IonDoc, _ id: Int) throws -> [Int] {
-        let node = doc.nodes[id]
-        if node.kind != kList {
-            throw BenchError.unsupported("gld-ion list")
-        }
-        var out: [Int] = []
-        out.reserveCapacity(node.nchild)
-        var edge = node.child
-        var i = 0
-        while i < node.nchild {
-            out.append(doc.edges[edge].child)
-            edge = doc.edges[edge].next
-            i += 1
-        }
-        return out
+    private static func list(_ tree: IonTree, _ name: String) throws -> [IonTree] {
+        guard case .list(let items) = try field(tree, name) else { throw BenchError.unsupported("gld-ion list") }
+        return items
     }
 
-    private static func i32(_ doc: IonDoc, _ id: Int) throws -> Int32 {
-        let value = try asI64(doc, id)
-        guard let n = Int32(exactly: value) else {
-            throw BenchError.unsupported("gld-ion int32")
-        }
+    private static func bool(_ tree: IonTree, _ name: String) throws -> Bool {
+        guard case .bool(let v) = try field(tree, name) else { throw BenchError.unsupported("gld-ion bool") }
+        return v
+    }
+
+    private static func i64(_ tree: IonTree, _ name: String) throws -> Int64 {
+        guard case .int(let v) = try field(tree, name) else { throw BenchError.unsupported("gld-ion int") }
+        return v
+    }
+
+    private static func i32(_ tree: IonTree, _ name: String) throws -> Int32 {
+        guard let n = Int32(exactly: try i64(tree, name)) else { throw BenchError.unsupported("gld-ion int32") }
         return n
+    }
+
+    private static func f64(_ tree: IonTree, _ name: String) throws -> Double {
+        try number(field(tree, name))
+    }
+
+    private static func str(_ tree: IonTree, _ name: String) throws -> String {
+        try text(field(tree, name))
+    }
+
+    private static func text(_ tree: IonTree) throws -> String {
+        guard case .string(let v) = tree else { throw BenchError.unsupported("gld-ion string") }
+        return v
+    }
+
+    private static func number(_ tree: IonTree) throws -> Double {
+        if case .float(let v) = tree { return v }
+        if case .int(let v) = tree { return Double(v) }
+        throw BenchError.unsupported("gld-ion float")
     }
 }

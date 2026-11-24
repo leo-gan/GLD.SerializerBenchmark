@@ -41,8 +41,8 @@
             .hash = "gld_avro_zig-0.2.0-1wSpKL0YBABB8zW6GcpS_Gte5L8IhuRKluGvxAakuVIe",
         },
         .gld_arrow_zig = .{
-            .url = "git+https://github.com/leo-gan/gld-arrow-zig?ref=0.2.0#9b3d8948747d761e748bdd95f7abcc796dcec07a",
-            .hash = "gld_arrow_zig-0.2.0-9moWMHGMAwD1Yaukj6dXUXAo3I7qNS75mLPTTMvfO162",
+            .url = "git+https://github.com/leo-gan/gld-arrow-zig#aec25e2e9ed8e0ff0e0d536e2317fe9b7f3773f3",
+            .hash = "gld_arrow_zig-0.2.0-9moWMIPjAwAW_7TMGKtlLLus1MJtDrcy800EJlQXk24N",
         },
         .jsonz = .{
             .url = "https://github.com/KercyDing/jsonz/archive/refs/tags/v0.9.3.tar.gz",
