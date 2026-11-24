@@ -80,6 +80,17 @@ import {
   togglePick,
   visiblePicks,
 } from './compare-picks.js';
+import {
+  extractSpreadStats,
+  isSpreadMetric,
+  migrateSelectedMetrics,
+  normalizeAvailableMetrics,
+  renderDivergingRatioHtml,
+  renderSpreadCellHtml,
+  spreadLabel,
+  spreadLatencyValues,
+  spreadLegendHtml,
+} from './table-visuals.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -161,36 +172,25 @@ const LANGUAGE_CATALOG = [
 
 const DEFAULT_SELECTED_METRICS = [
   'avg_ops_per_sec',
-  'avg_time_total_ns',
-  'avg_time_ser_ns',
-  'avg_time_deser_ns',
-  'total_median_ns',
-  'total_p95_ns',
-  'total_ci_low_ns',
-  'total_ci_high_ns',
+  'total_spread_ns',
+  'ser_spread_ns',
+  'deser_spread_ns',
   'median_size_bytes',
   'mean_fidelity',
   'mean_memory_peak_bytes',
   'runs',
-  'serializer_version',
 ];
 
 /** Metric presets for Compare catalog. */
 const METRIC_PRESETS = {
   defaults: DEFAULT_SELECTED_METRICS,
   latency: [
-    'avg_time_total_ns',
-    'avg_time_ser_ns',
-    'avg_time_deser_ns',
-    'total_median_ns',
-    'total_p95_ns',
-    'total_p50_ns',
-    'total_p99_ns',
+    'total_spread_ns',
+    'ser_spread_ns',
+    'deser_spread_ns',
     'total_ci_low_ns',
     'total_ci_high_ns',
     'total_cv',
-    'ser_median_ns',
-    'deser_median_ns',
   ],
   size: ['median_size_bytes', 'mean_memory_peak_bytes', 'mean_fidelity', 'runs'],
 };
@@ -1991,9 +1991,9 @@ function discoverMetricKeys(groups) {
       keys.add(k);
     }
   }
-  state.availableMetrics = [...keys].sort();
-  // Keep selected intersection; fill defaults if empty
-  state.selectedMetrics = state.selectedMetrics.filter((k) => state.availableMetrics.includes(k));
+  state.availableMetrics = normalizeAvailableMetrics([...keys]);
+  // Migrate legacy raw latency keys (mean/std/p50/p95/p99) → spread keys; fill defaults if empty
+  state.selectedMetrics = migrateSelectedMetrics(state.selectedMetrics, state.availableMetrics);
   if (!state.selectedMetrics.length) {
     state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
       state.availableMetrics.includes(k)
@@ -2776,6 +2776,64 @@ function formatRosterRelativeCell(row, key, higherIsBetter, scales, baselineGrou
   return formatRelativeCell(v, baseVal, higherIsBetter, scales, key, 'base');
 }
 
+/** Populate one Detailed Analytics metric cell (diverging bar for ×base, plain text for ×med). */
+function populateRosterMetricCell(td, row, key, higherIsBetter, scales, baselineGroup, isBaseline) {
+  const v = row[key];
+  const vsOwnMed =
+    key === 'ops_std' ||
+    key === 'ops_p95' ||
+    key === 'ops_p99' ||
+    key === 'total_std_ns' ||
+    key === 'total_p95_ns' ||
+    key === 'total_p99_ns';
+
+  if (vsOwnMed) {
+    const cell = formatRosterRelativeCell(row, key, higherIsBetter, scales, baselineGroup, isBaseline);
+    td.textContent = cell.text;
+    td.className = (td.className + ' ' + cell.className).trim();
+    return;
+  }
+
+  const valText = formatRosterCell(key, v, scales);
+  if (isBaseline) {
+    const vis = renderDivergingRatioHtml({
+      valueText: valText,
+      ratio: 1,
+      higherIsBetter,
+      isBaseline: true,
+      ratioTag: 'base',
+    });
+    td.innerHTML = vis.html;
+    td.title = vis.title;
+    td.classList.add('num', 'ratio-visual-cell', 'baseline-col');
+    return;
+  }
+
+  const baseVal = baselineGroup?.[key];
+  if (
+    baseVal == null ||
+    typeof baseVal !== 'number' ||
+    !Number.isFinite(baseVal) ||
+    baseVal === 0
+  ) {
+    td.textContent = valText;
+    td.classList.add('num');
+    return;
+  }
+
+  const vis = renderDivergingRatioHtml({
+    valueText: valText,
+    ratio: v / baseVal,
+    higherIsBetter,
+    isBaseline: false,
+    ratioTag: 'base',
+  });
+  td.innerHTML = vis.html;
+  td.title = vis.title;
+  td.classList.add('num');
+  if (vis.isVisual) td.classList.add('ratio-visual-cell');
+}
+
 function calculateParetoFrontier() {
   state.paretoSerializerNames = paretoOptimalGroups(
     state.filteredGroups,
@@ -3092,6 +3150,17 @@ function metricGroupName(key) {
   return 'Other';
 }
 
+const METRIC_GROUP_ORDER = [
+  'Throughput',
+  'Total time',
+  'Serialize',
+  'Deserialize',
+  'Size & memory',
+  'Quality',
+  'Samples',
+  'Other',
+];
+
 function groupMetrics(keys) {
   const map = new Map();
   keys.forEach((k) => {
@@ -3099,10 +3168,17 @@ function groupMetrics(keys) {
     if (!map.has(g)) map.set(g, []);
     map.get(g).push(k);
   });
-  return [...map.entries()].map(([name, ks]) => ({ name, keys: ks }));
+  return [...map.entries()]
+    .sort((a, b) => {
+      const ia = METRIC_GROUP_ORDER.indexOf(a[0]);
+      const ib = METRIC_GROUP_ORDER.indexOf(b[0]);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    })
+    .map(([name, ks]) => ({ name, keys: ks }));
 }
 
 function metricLabel(key) {
+  if (isSpreadMetric(key)) return spreadLabel(key);
   return key
     .replace(/_ns$/g, '')
     .replace(/_bytes$/g, '')
@@ -3307,7 +3383,7 @@ function renderTable() {
       ? ' View: <strong>Ops/s</strong> — Median, Std, P95, P99 + size.'
       : ' View: <strong>Latency</strong> — Median, Std, P95, P99 + size.';
     const ratioNote =
-      ' Median &amp; size: <code>×base</code> vs baseline (green better / red worse).' +
+      ' Median &amp; size: <span style="color:var(--color-blue)">◆</span> marks each serializer on a <code>1×</code>-centered bar vs baseline (green better / red worse).' +
       ' Std/P95/P99: <code>×med</code> vs that row’s median.';
     const paretoNote = ' <span style="color:var(--color-blue)">Blue rows</span> = Pareto-optimal.';
     if (baselineGroup) {
@@ -3406,9 +3482,7 @@ function renderTable() {
         return;
       }
 
-      const cell = formatRosterRelativeCell(r, key, higherIsBetter, scales, baselineGroup, isBaseline);
-      td.textContent = cell.text;
-      td.className = (td.className + ' ' + cell.className).trim();
+      populateRosterMetricCell(td, r, key, higherIsBetter, scales, baselineGroup, isBaseline);
       tr.appendChild(td);
     });
 
@@ -3444,9 +3518,7 @@ function renderChildRow(child, metricKeys, scales, baselineGroup) {
       tr.appendChild(td);
       return;
     }
-    const cell = formatRosterRelativeCell(enriched, key, higherIsBetter, scales, baselineGroup, false);
-    td.textContent = cell.text;
-    td.className = (td.className + ' ' + cell.className).trim();
+    populateRosterMetricCell(td, enriched, key, higherIsBetter, scales, baselineGroup, false);
     tr.appendChild(td);
   });
   return tr;
@@ -3680,9 +3752,9 @@ function commitComparePicks() {
 
 function scrollCompareColumnIntoView(key) {
   requestAnimationFrame(() => {
-    const nodes = document.querySelectorAll('#serializer-metrics-head th[data-pick-key]');
-    const th = [...nodes].find((el) => el.dataset.pickKey === key);
-    th?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const nodes = document.querySelectorAll('#serializer-metrics-body tr[data-pick-key]');
+    const row = [...nodes].find((el) => el.dataset.pickKey === key);
+    row?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
 }
 
@@ -3849,6 +3921,89 @@ function renderCompareAddSelect() {
   sel.value = '';
 }
 
+function setupSpreadTooltip() {
+  const tbody = document.getElementById('serializer-metrics-body');
+  const tip = document.getElementById('spread-tooltip');
+  if (!tbody || !tip || tbody.dataset.spreadTipBound) return;
+  tbody.dataset.spreadTipBound = '1';
+
+  const positionTip = (x, y) => {
+    const pad = 12;
+    tip.style.left = `${x + pad}px`;
+    tip.style.top = `${y + pad}px`;
+    const rect = tip.getBoundingClientRect();
+    let left = x + pad;
+    let top = y + pad;
+    if (left + rect.width > window.innerWidth - 8) left = x - rect.width - pad;
+    if (top + rect.height > window.innerHeight - 8) top = y - rect.height - pad;
+    tip.style.left = `${Math.max(8, left)}px`;
+    tip.style.top = `${Math.max(8, top)}px`;
+  };
+
+  const showFor = (cell, x, y) => {
+    const raw = cell?.dataset?.spreadTip;
+    if (!raw) return;
+    let d;
+    try {
+      d = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const u = escapeHtml(d.unit || 'µs');
+    const iqrRow = d.iqr
+      ? `<span class="st-k">IQR (p25–p75)</span><span class="st-v">${escapeHtml(d.iqr)} ${u}</span>`
+      : '';
+    tip.innerHTML =
+      `<div class="st-title">${escapeHtml(d.serializer || '')}` +
+        (d.phase ? ` <span class="st-phase">· ${escapeHtml(d.phase)}</span>` : '') +
+      `</div>` +
+      `<div class="st-grid">` +
+        `<span class="st-k">p50 (median)</span><span class="st-v st-strong">${escapeHtml(d.p50)} ${u}</span>` +
+        `<span class="st-k">mean</span><span class="st-v st-strong">${escapeHtml(d.mean)} ${u} (${escapeHtml(d.pullPct)})</span>` +
+        `<span class="st-k">± std</span><span class="st-v">${escapeHtml(d.std)} ${u}</span>` +
+        iqrRow +
+        `<span class="st-k">p95</span><span class="st-v">${escapeHtml(d.p95)} ${u}</span>` +
+        `<span class="st-k">p99</span><span class="st-v">${escapeHtml(d.p99)} ${u} (${escapeHtml(d.p99Ratio)})</span>` +
+        `<span class="st-k">min – max</span><span class="st-v">${escapeHtml(d.minmax)} ${u}</span>` +
+      `</div>`;
+    tip.hidden = false;
+    positionTip(x, y);
+  };
+
+  const hide = () => {
+    tip.hidden = true;
+  };
+
+  tbody.addEventListener('mouseover', (e) => {
+    const cell = e.target.closest?.('.spread-cell[data-spread-tip]');
+    if (!cell) return;
+    showFor(cell, e.clientX, e.clientY);
+  });
+  tbody.addEventListener('mousemove', (e) => {
+    if (tip.hidden) return;
+    const cell = e.target.closest?.('.spread-cell[data-spread-tip]');
+    if (!cell) {
+      hide();
+      return;
+    }
+    positionTip(e.clientX, e.clientY);
+  });
+  tbody.addEventListener('mouseout', (e) => {
+    const cell = e.target.closest?.('.spread-cell[data-spread-tip]');
+    if (!cell) return;
+    if (!cell.contains(e.relatedTarget)) hide();
+  });
+  tbody.addEventListener('focusin', (e) => {
+    const cell = e.target.closest?.('.spread-cell[data-spread-tip]');
+    if (!cell) return;
+    const rect = cell.getBoundingClientRect();
+    showFor(cell, rect.left + rect.width / 2, rect.bottom);
+  });
+  tbody.addEventListener('focusout', (e) => {
+    if (e.target.closest?.('.spread-cell[data-spread-tip]')) hide();
+  });
+}
+
 function setupComparePickListeners() {
   document.getElementById('compare-add-select')?.addEventListener('change', (e) => {
     const value = e.target.value;
@@ -3860,16 +4015,19 @@ function setupComparePickListeners() {
   document.getElementById('compare-pick-clear')?.addEventListener('click', () => {
     clearComparePicks();
   });
+  setupSpreadTooltip();
 }
 
 function renderCompareMatrix() {
   const thead = document.getElementById('serializer-metrics-head');
   const tbody = document.getElementById('serializer-metrics-body');
+  const legendEl = document.getElementById('compare-spread-legend');
   if (!thead || !tbody) return;
   thead.innerHTML = '';
   tbody.innerHTML = '';
 
-  const columns = orderedVisible(
+  const basePickKey = pickKey(effectiveVisibleBaseline());
+  const rows = orderedVisible(
     state.comparePicks,
     state.filteredGroups,
     state.comparePickBaseline,
@@ -3879,144 +4037,154 @@ function renderCompareMatrix() {
     const key = pickKey(pick);
     return {
       key,
+      lang: pick.lang,
+      serializer: pick.serializer,
+      serLabel,
       label: `${languageLabel(pick.lang)} / ${serLabel}`,
       group,
-      isBaseline: key === pickKey(effectiveVisibleBaseline()),
+      isBaseline: key === basePickKey,
     };
   });
 
-  const headerRow = document.createElement('tr');
-  const metricTh = document.createElement('th');
-  metricTh.className = 'str cmp-th-metric';
-  metricTh.textContent = 'Metric';
-  headerRow.appendChild(metricTh);
-  columns.forEach((col) => {
-    const th = document.createElement('th');
-    th.className = 'cmp-th-ser' + (col.isBaseline ? ' baseline-col' : '');
-    th.dataset.pickKey = col.key;
-    th.title = col.isBaseline ? `${col.label} (baseline)` : col.label;
+  const selectedKeys = state.selectedMetrics.filter((k) => state.availableMetrics.includes(k));
+  const orderedKeys = groupMetrics(selectedKeys).flatMap((g) => g.keys);
+  const hasSpread = orderedKeys.some((k) => isSpreadMetric(k));
 
-    // Split "Lang / name:ver" or "name:ver" into stacked lines (avoids interleaved wraps)
-    let main = col.label;
-    let sub = '';
-    const slash = col.label.indexOf(' / ');
-    if (slash >= 0) {
-      sub = col.label.slice(0, slash);
-      main = col.label.slice(slash + 3);
+  if (legendEl) {
+    if (hasSpread && rows.length > 0) {
+      legendEl.innerHTML = spreadLegendHtml();
+      legendEl.hidden = false;
+    } else {
+      legendEl.hidden = true;
+      legendEl.innerHTML = '';
     }
-    const colon = main.lastIndexOf(':');
-    let name = main;
-    let ver = '';
-    if (colon > 0 && colon < main.length - 1) {
-      name = main.slice(0, colon);
-      ver = main.slice(colon + 1);
+  }
+
+  const groupsForScale = rows.map((r) => r.group).filter(Boolean);
+  const scalarKeys = orderedKeys.filter((k) => !isSpreadMetric(k));
+  const scales = scalesFromGroups(groupsForScale, scalarKeys);
+  const spreadLats = spreadLatencyValues(groupsForScale, orderedKeys);
+  if (spreadLats.length) {
+    const scalarLats = [];
+    for (const g of groupsForScale) {
+      for (const k of scalarKeys) {
+        if (metricKind(k) === 'latency' && typeof g[k] === 'number' && Number.isFinite(g[k])) {
+          scalarLats.push(g[k]);
+        }
+      }
     }
-    const nameEl = document.createElement('span');
-    nameEl.className = 'cmp-th-name';
-    nameEl.textContent = name;
-    const serName = col.group?.serializer || (col.key.includes('|') ? col.key.split('|').slice(1).join('|') : col.key);
-    const serLang = col.group?.language || (col.key.includes('|') ? col.key.split('|')[0] : state.currentLanguage);
-    const src = serializerSourceUrl(serLang, serName);
-    // The node actually parented by <th>. insertBefore must use this, not the
-    // inner name span, or Cross-language headers throw and the matrix stays empty.
-    let nameHost = nameEl;
-    if (src) {
-      const a = document.createElement('a');
-      a.className = 'serializer-link';
-      a.href = src;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.appendChild(nameEl);
-      nameHost = a;
+    scales.latency = chooseLatencyUnit([...scalarLats, ...spreadLats]);
+  }
+
+  const headerRow = document.createElement('tr');
+  const serTh = document.createElement('th');
+  serTh.className = 'str cmp-th-ser-col';
+  serTh.textContent = 'Serializer';
+  headerRow.appendChild(serTh);
+
+  orderedKeys.forEach((key) => {
+    const th = document.createElement('th');
+    if (isSpreadMetric(key)) {
+      th.className = 'cmp-th-spread';
+      th.textContent = spreadLabel(key, scales.latency.header);
+    } else {
+      th.className = 'num cmp-th-metric-col';
+      th.textContent = metricHeaderLabel(key, scales);
     }
-    th.appendChild(nameHost);
-    if (ver) {
-      const verEl = document.createElement('span');
-      verEl.className = 'cmp-th-ver';
-      verEl.textContent = ver;
-      th.appendChild(verEl);
-    }
-    if (sub) {
-      const subEl = document.createElement('span');
-      subEl.className = 'cmp-th-lang';
-      subEl.textContent = sub;
-      th.insertBefore(subEl, nameHost);
-    }
-    if (col.isBaseline) {
-      const baseEl = document.createElement('span');
-      baseEl.className = 'cmp-th-base';
-      baseEl.textContent = 'baseline';
-      th.appendChild(baseEl);
-    }
+    th.title = key;
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
 
-  const colCount = Math.max(1, columns.length + 1);
-  if (!columns.length) {
+  const colCount = Math.max(1, orderedKeys.length + 1);
+  if (!rows.length) {
     const tr = document.createElement('tr');
-    const msg = 'Add a serializer to compare.';
-    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">${msg}</td>`;
+    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Add a serializer to compare.</td>`;
     tbody.appendChild(tr);
     return;
   }
 
-  const selectedKeys = state.selectedMetrics.filter((k) => state.availableMetrics.includes(k));
-
-  if (!selectedKeys.length) {
+  if (!orderedKeys.length) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select at least one metric</td>`;
     tbody.appendChild(tr);
     return;
   }
 
-  const groupsForScale = columns.map((c) => c.group).filter(Boolean);
-  const scales = scalesFromGroups(groupsForScale, selectedKeys);
-  const baselineCol = columns.find((c) => c.isBaseline) || columns[0];
+  const multiLang = isAllLanguages() || new Set(rows.map((r) => r.lang)).size > 1;
 
-  const groups = groupMetrics(selectedKeys);
-  groups.forEach((group) => {
-    const groupRow = document.createElement('tr');
-    groupRow.className = 'metric-group-row';
-    const groupTd = document.createElement('td');
-    groupTd.colSpan = colCount;
-    groupTd.textContent = group.name;
-    groupRow.appendChild(groupTd);
-    tbody.appendChild(groupRow);
+  rows.forEach((row) => {
+    const tr = document.createElement('tr');
+    tr.dataset.pickKey = row.key;
+    if (row.isBaseline) tr.classList.add('roster-baseline-row');
 
-    group.keys.forEach((key) => {
-      const tr = document.createElement('tr');
-      const tdKey = document.createElement('td');
-      tdKey.className = 'str';
-      tdKey.textContent = metricHeaderLabel(key, scales);
-      tdKey.title = key;
-      tr.appendChild(tdKey);
+    const tdSer = document.createElement('td');
+    tdSer.className = 'str cmp-td-ser';
+    tdSer.title = row.isBaseline ? `${row.label} (baseline)` : row.label;
+    const serName = row.group?.serializer || row.serializer;
+    const serLang = row.group?.language || row.lang || state.currentLanguage;
+    const colon = String(row.serLabel).lastIndexOf(':');
+    const namePart = colon > 0 ? row.serLabel.slice(0, colon) : row.serLabel;
+    const verPart = colon > 0 ? row.serLabel.slice(colon + 1) : '';
+    const langPrefix = multiLang ? `${languageLabel(serLang)} · ` : '';
 
-      const baselineVal =
-        baselineCol?.group && baselineCol.group[key] != null ? baselineCol.group[key] : null;
-      const higherIsBetter = metricHigherIsBetter(key);
+    let serHtml = '';
+    if (multiLang) {
+      serHtml += `<span class="cmp-row-lang">${escapeHtml(languageLabel(serLang))}</span>`;
+    }
+    serHtml += `<span class="cmp-row-main">${serializerNameHtml(serLang, serName, namePart, { strong: true })}`;
+    if (verPart) {
+      serHtml += `<span class="cmp-row-ver">:${escapeHtml(verPart)}</span>`;
+    }
+    if (row.isBaseline) {
+      serHtml += ' <span class="badge badge-cyan">Baseline</span>';
+    }
+    serHtml += '</span>';
+    tdSer.innerHTML = serHtml;
+    tdSer.dataset.md = `${langPrefix}${row.serLabel}${row.isBaseline ? ' (baseline)' : ''}`;
+    tr.appendChild(tdSer);
 
-      columns.forEach((col) => {
-        const td = document.createElement('td');
-        const v =
-          col.group && col.group[key] !== undefined && col.group[key] !== null
-            ? col.group[key]
-            : null;
-        if (v === null) {
+    orderedKeys.forEach((key) => {
+      const td = document.createElement('td');
+      if (isSpreadMetric(key)) {
+        const stats = extractSpreadStats(row.group, key);
+        if (!stats) {
           td.textContent = '—';
-          td.className = 'num sm-missing';
-        } else if (col.isBaseline || typeof v !== 'number' || typeof baselineVal !== 'number') {
-          td.textContent = formatMetricCell(key, v, scales);
-          td.className = 'num';
+          td.className = 'cmp-td-spread sm-missing';
+          td.dataset.md = '—';
         } else {
-          const rel = formatRelativeCell(v, baselineVal, higherIsBetter, scales, key);
-          td.textContent = rel.text;
-          td.className = rel.className;
+          const spread = renderSpreadCellHtml(stats, scales.latency, {
+            phaseLabel: spreadLabel(key),
+            serializerLabel: multiLang ? row.label : row.serLabel,
+          });
+          td.className = 'cmp-td-spread';
+          td.innerHTML = spread.html;
+          td.dataset.md = spread.md;
         }
         tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
+        return;
+      }
+
+      const v =
+        row.group && row.group[key] !== undefined && row.group[key] !== null
+          ? row.group[key]
+          : null;
+      if (v === null) {
+        td.textContent = '—';
+        td.className = 'num sm-missing';
+        td.dataset.md = '—';
+        tr.appendChild(td);
+        return;
+      }
+
+      const valText = formatMetricCell(key, v, scales);
+      td.textContent = valText;
+      td.className = 'num' + (row.isBaseline ? ' baseline-col' : '');
+      td.dataset.md = valText;
+      tr.appendChild(td);
     });
+
+    tbody.appendChild(tr);
   });
 }
 
@@ -4112,21 +4280,18 @@ function copyCompareMarkdown() {
   const table = document.getElementById('serializer-metrics-table');
   if (!table) return;
   const rows = [...table.querySelectorAll('tr')];
-  const md = rows
-    .map((tr) => {
-      const cells = [...tr.children].map((td) => td.textContent.trim().replace(/\|/g, '\\|'));
-      return `| ${cells.join(' | ')} |`;
-    })
-    .filter((line) => !line.includes('Throughput') || line.startsWith('| Metric'));
-  // simpler: all rows
-  const all = rows.map((tr) => {
-    const cells = [...tr.children].map((td) => td.textContent.trim().replace(/\|/g, '\\|'));
-    if (tr.classList.contains('metric-group-row')) {
-      return `\n**${cells[0]}**\n`;
+  if (!rows.length) return;
+  const cellText = (el) =>
+    (el.dataset.md ?? el.textContent).trim().replace(/\s+/g, ' ').replace(/\|/g, '\\|');
+  const lines = [];
+  rows.forEach((tr, idx) => {
+    const cells = [...tr.children].map(cellText);
+    lines.push(`| ${cells.join(' | ')} |`);
+    if (idx === 0) {
+      lines.push(`|${cells.map((_, i) => (i === 0 ? '---' : '---:')).join('|')}|`);
     }
-    return `| ${cells.join(' | ')} |`;
   });
-  copyText(all.join('\n'), 'Compare Markdown copied');
+  copyText(lines.join('\n'), 'Compare Markdown copied');
 }
 
 async function copyText(text, okMsg) {

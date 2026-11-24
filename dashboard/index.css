@@ -2039,7 +2039,7 @@ tr.roster-baseline-row td.num.baseline-col {
   font-size: 0.68rem;
 }
 
-/* Compare matrix: non-overlapping stacked headers */
+/* Compare matrix (transposed: serializers as rows, metrics as columns) */
 .compare-table-wrap {
   margin-top: 0;
 }
@@ -2052,104 +2052,442 @@ tr.roster-baseline-row td.num.baseline-col {
   min-width: 100%;
 }
 
-#serializer-metrics-table.compare-matrix-table th.cmp-th-metric {
+#serializer-metrics-table.compare-matrix-table th.cmp-th-ser-col {
   position: sticky;
   left: 0;
   z-index: 3;
-  min-width: 9rem;
-  max-width: 14rem;
+  min-width: 11rem;
+  max-width: 18rem;
   text-align: left;
   vertical-align: bottom;
   background: #f1f3f4;
+  border-right: 1px solid var(--border-color);
 }
 
-#serializer-metrics-table.compare-matrix-table th.cmp-th-ser {
-  min-width: 8.5rem;
-  width: 8.5rem;
-  max-width: none;
-  padding: 0.45rem 0.5rem;
-  text-align: center;
+#serializer-metrics-table.compare-matrix-table th.cmp-th-metric-col {
+  min-width: 6.5rem;
+  padding: 0.5rem 0.65rem;
+  text-align: right;
   vertical-align: bottom;
-  white-space: normal;
-  overflow: hidden;
-  line-height: 1.15;
+  white-space: nowrap;
+  line-height: 1.25;
   font-weight: 500;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
   background: #f1f3f4;
 }
 
-#serializer-metrics-table.compare-matrix-table th.cmp-th-ser.baseline-col {
-  background: var(--bg-blue-light) !important;
-  color: var(--color-blue);
-}
-
-#serializer-metrics-table.compare-matrix-table .cmp-th-lang {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-  margin-bottom: 0.1rem;
-}
-
-#serializer-metrics-table.compare-matrix-table .cmp-th-name {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: inherit;
-  overflow: hidden;
-  text-overflow: ellipsis;
+#serializer-metrics-table.compare-matrix-table th.cmp-th-spread {
+  min-width: 12.25rem;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: bottom;
   white-space: nowrap;
-  max-width: 100%;
-}
-
-#serializer-metrics-table.compare-matrix-table .cmp-th-ver {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 400;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#serializer-metrics-table.compare-matrix-table .cmp-th-base {
-  display: block;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-blue);
-  margin-top: 0.15rem;
-}
-
-#serializer-metrics-table.compare-matrix-table td.num {
-  min-width: 8.5rem;
-  width: 8.5rem;
-  max-width: none;
-  padding: 0.45rem 0.5rem;
-  text-align: right;
+  line-height: 1.25;
+  font-weight: 500;
   border-left: 1px solid rgba(0, 0, 0, 0.04);
-  /* Full value + ratio, e.g. 9,036 (0.76×) — never ellipsize */
-  overflow: visible;
-  text-overflow: clip;
-  white-space: nowrap;
-  font-size: 0.78rem;
+  background: #f1f3f4;
 }
 
-#serializer-metrics-table.compare-matrix-table td:first-child {
+#serializer-metrics-table.compare-matrix-table td.cmp-td-ser {
   position: sticky;
   left: 0;
   z-index: 2;
   background: var(--bg-surface);
-  max-width: 14rem;
+  font-family: var(--font-family);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 400;
+  min-width: 11rem;
+  max-width: 18rem;
+  white-space: nowrap;
+  border-right: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-/* Override older loose header rules that caused interleaved wraps */
-#serializer-metrics-table th {
-  white-space: normal;
+#serializer-metrics-table.compare-matrix-table tbody tr:hover td.cmp-td-ser {
+  background: #f1f3f4;
+}
+
+#serializer-metrics-table.compare-matrix-table tbody tr.roster-baseline-row td.cmp-td-ser {
+  background: var(--bg-blue-light);
+}
+
+#serializer-metrics-table.compare-matrix-table .cmp-row-lang {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  line-height: 1.15;
+}
+
+#serializer-metrics-table.compare-matrix-table .cmp-row-main {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#serializer-metrics-table.compare-matrix-table .cmp-row-main .badge {
+  margin-left: 0.35rem;
+}
+
+#serializer-metrics-table.compare-matrix-table .cmp-row-ver {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+#serializer-metrics-table.compare-matrix-table td.num {
+  min-width: 6.5rem;
+  width: auto;
   max-width: none;
+  padding: 0.45rem 0.65rem;
+  text-align: right;
+  vertical-align: middle;
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+#serializer-metrics-table.compare-matrix-table td.cmp-td-spread {
+  min-width: 12.25rem;
+  padding: 0.35rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#serializer-metrics-table.compare-matrix-table td.cmp-td-spread.sm-missing {
+  text-align: center;
+}
+
+/* Override older loose header rules */
+#serializer-metrics-table th {
+  white-space: nowrap;
+  max-width: none;
+}
+
+/* --- Proposal 1A: Log2 Diverging Baseline Cell --- */
+td.ratio-visual-cell {
+  vertical-align: middle;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.ratio-cell {
+  width: 144px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ratio-cell-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  line-height: 1.2;
+}
+
+.ratio-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ratio-val-base {
+  font-weight: 600;
+}
+
+.ratio-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ratio-tag-base {
+  color: var(--color-blue);
+}
+
+.ratio-tag.is-better {
+  color: var(--color-green);
+}
+
+.ratio-tag.is-worse {
+  color: var(--color-red);
+}
+
+.ratio-tag.is-neutral {
+  color: var(--text-muted);
+}
+
+.ratio-bar-svg {
+  display: block;
+  width: 144px;
+  height: 10px;
+}
+
+.ratio-track {
+  stroke: #dadce0;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.ratio-axis {
+  stroke: #80868b;
+  stroke-width: 1.25;
+}
+
+.ratio-axis-base {
+  stroke: var(--color-blue);
+  stroke-width: 1.5;
+}
+
+.ratio-base-diamond,
+.ratio-val-diamond {
+  fill: var(--color-blue);
+  stroke: var(--bg-surface);
+  stroke-width: 0.75;
+}
+
+.ratio-fill.is-better {
+  fill: var(--color-green);
+}
+
+.ratio-fill.is-worse {
+  fill: var(--color-red);
+}
+
+.ratio-fill.is-neutral {
+  fill: #9aa0a6;
+}
+
+/* --- Proposal 2A: Pin & Tail Latency Spread Cell --- */
+.spread-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.35rem 0.6rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  background: #f8f9fa;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.spread-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.spread-legend-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.spread-legend-muted {
+  color: var(--text-muted);
+}
+
+.spread-cell {
+  width: 176px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  outline: none;
+  cursor: default;
+}
+
+.spread-cell:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.spread-svg {
+  display: block;
+  width: 176px;
+  height: 28px;
+  overflow: visible;
+}
+
+.spread-rail {
+  stroke: #dadce0;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.spread-core {
+  stroke: var(--color-blue);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.spread-tail {
+  stroke: #8ab4f8;
+  stroke-width: 2.2;
+}
+
+.spread-p95-tick {
+  stroke: var(--color-blue);
+  stroke-width: 1.6;
+}
+
+.spread-p99-dot {
+  fill: #669df6;
+}
+
+.spread-p50-tick {
+  stroke: #174ea6;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.spread-std-band {
+  fill-opacity: 0.16;
+}
+
+.spread-std-band.is-calm {
+  fill: var(--color-blue);
+}
+
+.spread-std-band.is-mid-skew {
+  fill: #e37400;
+}
+
+.spread-std-band.is-high-skew {
+  fill: var(--color-red);
+}
+
+.spread-std-clip {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 1.5;
+  stroke-opacity: 0.8;
+}
+
+.spread-std-clip.is-calm {
+  stroke: var(--color-blue);
+}
+
+.spread-std-clip.is-mid-skew {
+  stroke: #e37400;
+}
+
+.spread-std-clip.is-high-skew {
+  stroke: var(--color-red);
+}
+
+.spread-pull {
+  stroke-width: 3.8;
+  stroke-linecap: round;
+}
+
+.spread-pull.is-calm {
+  stroke: var(--color-blue);
+}
+
+.spread-pull.is-mid-skew {
+  stroke: #e37400;
+}
+
+.spread-pull.is-high-skew {
+  stroke: var(--color-red);
+}
+
+.spread-pin.is-calm {
+  fill: var(--color-blue);
+}
+
+.spread-pin.is-mid-skew {
+  fill: #e37400;
+}
+
+.spread-pin.is-high-skew {
+  fill: var(--color-red);
+}
+
+.spread-labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+
+.spread-lbl-p50 {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.spread-lbl-mean {
+  font-weight: 600;
+}
+
+.spread-lbl-mean.is-mid-skew {
+  color: #c56200;
+}
+
+.spread-lbl-mean.is-high-skew {
+  color: var(--color-red);
+}
+
+.spread-lbl-p99 {
+  color: var(--text-secondary);
+}
+
+.spread-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  background: rgba(32, 33, 36, 0.96);
+  color: #ffffff;
+  border: 1px solid #5f6368;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  max-width: 19rem;
+}
+
+.spread-tooltip .st-title {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #ffffff;
+}
+
+.spread-tooltip .st-phase {
+  font-weight: 400;
+  color: #bdc1c6;
+}
+
+.spread-tooltip .st-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.1rem 0.9rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.spread-tooltip .st-k {
+  color: #bdc1c6;
+}
+
+.spread-tooltip .st-v {
+  text-align: right;
+  color: #f1f3f4;
+}
+
+.spread-tooltip .st-strong {
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .metrics-preset-row {
