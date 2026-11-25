@@ -1,171 +1,107 @@
-# Bit width is not bus width
+# 2.2 Bit Width Is Not Bus Width
 
-## Problem
+## Problem Statement
 
-Two facts are easy to mix together.
+Two distinct hardware facts are frequently conflated when designing binary formats:
 
-Hardware moves many bytes at once. A cache line on a typical server processor is 64 bytes. An on-chip bus may move 4, 8, 16, 32, or 64 bytes in one transfer. A SIMD register is wide in the same sense. SIMD means single instruction, multiple data: one instruction operates on several values at once. Graphics processors also move memory in wide chunks. From that fact it is tempting to decide that a serializer should stop using bytes and should emit one field as wide as each bus transfer.
+1. **Hardware moves memory in wide transfers:** Modern server cache lines are 64 bytes (512 bits), on-chip memory buses and DMA engines transfer 4–64 bytes per beat, and SIMD registers operate on 128–512 bits simultaneously.
+2. **Values often carry fewer than 8 bits of information:** A 12-bit sensor reading, a 4-bit quantized neural-network weight, or a 17-bit bounded identifier occupies strictly less entropy than standard 16-, 32-, or 64-bit scalar types.
 
-Some values need fewer than eight bits. A 12-bit sensor sample, a 4-bit weight, and an identifier that needs 17 bits each carry less information than the 8-bit, 32-bit, and 64-bit slots in the [memory layout](memory-layout.md) table. Storing each of them in a 16-bit or 64-bit integer spends bits the value does not need.
-
-Both facts are about width. They answer different questions.
-
-In this course a **byte** is eight bits. A few specialized processors use a wider character, so formal specifications say **octet** when they mean an eight-bit byte. This page says byte, and means eight bits.
+Conflating these two facts leads to two opposite design errors: widening every serialized field to match a 64-byte bus width, or assuming sub-byte bit-packing yields free speedup without unpacking overhead.
 
 ---
 
-## Short answer
+## Separating the Three Widths
 
-Keep three widths separate.
-
-| Width | What it measures | Examples |
-|-------|------------------|----------|
-| **Information width** | How many bits the value needs | A 12-bit sample, a 4-bit weight, a 17-bit identifier |
-| **Addressable unit** | What a program can point at | The byte. Specifications call this an octet. |
-| **Transfer width** | What hardware moves in one step | A cache line, an on-chip bus transfer, a SIMD register, a chunk of graphics-processor memory |
-
-A contiguous, aligned buffer of bytes already fills a wide transfer. The memory controller moves whole cache lines. Direct memory access (DMA) does the same job in hardware: it copies a buffer without the processor touching every byte. Field boundaries inside that buffer do not create extra transfers.
-
-Storing a value in fewer bits than a byte makes the buffer smaller. Before the program can add two such values, it has to pull them back out with a shift and a mask, or unpack a whole block.
-
-The order of those narrow values is a separate decision. The [FastLanes](https://github.com/cwida/FastLanes) library packs integers in blocks of 1,024 and arranges each block for a SIMD register. One load fills the register. Each part of that register then unpacks its own values with shifts and masks, and those shifts do not mix one part with another. The result is still a buffer of bytes.
-
-The coding a network link uses to send those bytes belongs to the link controller. The application still hands that controller a sequence of bytes.
-
-Choose the encoding from how many bits each value needs, and from how the reader will use the values. The bus already moves the bytes in wide transfers. A 3-bit integer does not become a 3-bit packet. The wire still wants bytes.
-
----
-
-## Mental model
+!!! note "Definition: Information, Addressable, and Transfer Widths"
+    - **Information width** ($b_{\text{val}}$): The minimum number of bits required to represent a value's domain (e.g., $\lceil \log_2 1000 \rceil = 10$ bits for integers in $[0, 999]$).
+    - **Addressable unit**: The 8-bit **byte** (*octet* in formal IETF/ISO specifications), which is the smallest unit a program directly addresses and exchanges across OS I/O interfaces.
+    - **Transfer width**: The hardware granularity moved per operation—a 64-byte cache line, a DMA burst, a SIMD vector register, or a GPU memory transaction.
 
 ```text
-  Information width     how many bits this value needs
-        │
-        ▼
-  Byte                  the unit a program indexes
-        │
-        ▼
-  Transfer width        cache line, bus transfer, SIMD register
+  Information width  ──►  Packed or aligned into Bytes (octets)  ──►  Moved in Transfer-width chunks
+  (e.g., 4b, 12b)         (format contract)                           (cache lines, DMA, SIMD)
 ```
 
-The serializer’s contract is the byte buffer, including any rule for how narrow values sit inside those bytes. The processor, the memory controller, and the link then move that buffer in wide transfers. A format that the documentation calls byte-oriented is still the payload of those transfers.
+A contiguous byte buffer already saturates wide hardware transfers. The memory controller fetches entire 64-byte cache lines and DMA copies contiguous regions regardless of whether logical fields inside that buffer are 1 byte, 4 bytes, or 12 bits wide. Buffer **start alignment** (for example, aligning a column buffer to 64 bytes as recommended by Apache Arrow) improves hardware load efficiency without abandoning the byte as the interchange unit.
 
 ---
 
-## How it works
+## Sub-Byte Bit-Packing vs. Byte-Aligned Layouts
 
-### A wide transfer already carries bytes
+### Packing Narrow Values
 
-A typical processor cache line is 64 bytes, which is 512 bits. When the processor copies a packed buffer, each store writes several bytes. It does not make a separate transfer for each narrow value. The memory controller then moves the cache line. An on-chip bus that is 32 or 64 bytes wide does the same for a DMA copy: one transfer carries many bytes from a contiguous range of addresses.
+Packing $N$ values of bit width $b_{\text{val}}$ tightly into contiguous bytes requires $\lceil N \cdot b_{\text{val}} / 8 \rceil$ bytes (excluding headers and alignment padding). For example, $N = 10^6$ readings of 12-bit sensor data occupy:
 
-```text
-  One cache line (64 bytes, one transfer)
-  ┌────┬────┬────┬────┬─── … ───┬────┐
-  │ 0  │ 1  │ 2  │ 3  │         │ 63 │
-  └────┴────┴────┴────┴─── … ───┴────┘
-  The serializer wrote bytes. The hardware moved the line.
-```
+$$\text{Packed: } \frac{10^6 \times 12}{8} = 1.5\text{ MB} \qquad\text{vs.}\qquad \text{16-bit aligned: } 2.0\text{ MB} \qquad\text{vs.}\qquad \text{64-bit float: } 8.0\text{ MB}$$
 
-Alignment still matters. A load is cheaper when the start address matches the width of the load. A DMA engine prefers a buffer aligned to the transfer or to the cache line. That is the same alignment idea as in [memory layout](memory-layout.md) and [zero-copy](zero-copy.md). It describes where the buffer starts. It does not replace the byte as the unit of the format.
+Tight packing cuts storage and bandwidth by 25% relative to 16-bit integers (and 81% relative to 64-bit floats), at the cost of decode-time extraction: the CPU must shift and mask individual values back into addressable machine registers before arithmetic. Bit-order within a byte (LSB-first vs. MSB-first) also becomes part of the wire contract.
 
-### Values narrower than a byte
+Two prominent real-world families illustrate sub-byte packing:
 
-Eight 4-bit values fit in one 32-bit word. Stored one value per byte, the same eight values occupy eight bytes.
+- **ASN.1 Unaligned PER (Packed Encoding Rules):** Encodes constrained integers in their exact minimum bit width across byte boundaries (e.g., an integer constrained to $0\text{–}999$ consumes 10 bits, not 16).[^1]
+- **SIMD-friendly bit-packing (FastLanes / Parquet RLE–bit-packing):** Arranges blocks of e.g. 1,024 narrow integers in interleaved lanes so a single SIMD load fills a vector register and parallel bit-shifts unpack many values per cycle without cross-lane shuffles.[^2]
 
-```text
-  One 32-bit word
-  ┌────┬────┬────┬────┬────┬────┬────┬────┐
-  │ v0 │ v1 │ v2 │ v3 │ v4 │ v5 │ v6 │ v7 │
-  └────┴────┴────┴────┴────┴────┴────┴────┘
-   4b   4b   4b   4b   4b   4b   4b   4b
-```
+### Aligned Direct-Load Layouts
 
-The same arithmetic applies to a long array. One million 12-bit samples occupy 1,500,000 bytes when packed tightly. Stored in 16-bit integers they occupy 2,000,000 bytes. The packed array is three quarters of the 16-bit array. These counts leave out headers, shared multipliers, and padding for alignment. They are teaching arithmetic, not a measurement from this benchmark. The [Dashboard](../../dashboard/index.html) owns measured sizes for this suite.
+Conversely, aligned formats spend padding bytes so readers can execute direct native loads without bit extraction:
 
-The packed form is smaller on disk and on the wire. A program that wants to add two samples has to extract them first. Extracting one value is a shift and a mask. Extracting a block, as FastLanes does, handles many values in one pass. A smaller file and numbers the processor can use directly are two different costs.
+- **Cap'n Proto** organizes messages into 64-bit words with natural field alignment.
+- **SBE (Simple Binary Encoding)** assigns fixed aligned offsets inside each record body (with variable-length data appended at the end).
+- **Apache Arrow** recommends 64-byte alignment on columnar buffers so SIMD kernels can scan contiguous numeric columns directly.[^3]
 
-**ASN.1 Unaligned PER** applies the same idea to fields with a known range. ASN.1 is a schema language used in telecommunications. PER means Packed Encoding Rules. Unaligned means a field may begin in the middle of a byte. An integer limited to the range 0 through 999 has 1,000 possible values. Nine bits distinguish only 512 values, so this field needs 10 bits. Unaligned PER can write those 10 bits without rounding the field up to 16. Headers around the field may still add bits. The message is still stored and sent as bytes. The reader counts bits from the start of the message.
+| Design Axis | Aligned Byte Layout (Arrow, Cap'n Proto, SBE) | Sub-Byte Bit-Packing (Unaligned PER, FastLanes) |
+|---|---|---|
+| **CPU read cost** | Direct native load (when endianness and alignment match) | Shift-and-mask extraction or SIMD block unpack |
+| **Wire / file size** | Larger due to type width rounding and alignment padding | Minimal bits per value (plus metadata/scales) |
+| **Random field access** | $O(1)$ arithmetic offset | Often requires unpacking an enclosing bit-block |
+| **Contract complexity** | Specify byte order and alignment | Also specify intra-byte bit order and block layout |
 
-The order of bits inside a byte is part of the contract. Writer and reader have to agree which end of the byte holds the first value.
+### Quantized Tensors: Stored Order vs. Compute Order
 
-### Aligned bytes and packed bits
+Low-precision machine-learning weights (4-bit or 8-bit quantized tensors) combine sub-byte packing with shared floating-point **scale** (and optional zero-point) multipliers per group of elements. Two distinct layouts arise:
 
-An aligned layout and a packed layout serve different ways of reading.
+- **Stored order:** Compact sequential layout optimized for file size and `mmap` loading.
+- **Calculation order:** Tiled/interleaved micro-blocks required by specific CPU or GPU matrix-multiplication kernels.
 
-An aligned layout places each multi-byte field on a boundary that matches its size, and sometimes pads a buffer out to a cache line. Cap’n Proto lays each message out as a sequence of 64-bit words, and aligns each field to that field’s own size. SBE (Simple Binary Encoding) gives each field inside one record a fixed offset and aligns it to the field’s size. Arrow’s format recommends aligning its column buffers to 64 bytes. A reader that uses the same byte order can load such a field with an ordinary load. The cost is the unused padding. See [zero-copy](zero-copy.md). SBE and Cap’n Proto are single-record layouts. Arrow’s alignment is for columns.
+A portable quantized format must declare element bit width, group size, scale placement, and stored layout; the CPU/GPU time spent repacking stored order into calculation order is part of the end-to-end load cost.
 
-A packed layout uses those bits for more values. Unaligned PER and integer bit-packing work this way. Reading one value in the middle of the array often means unpacking the block that contains it. Scanning a column of similar numbers in order is the case where arranging those values for a SIMD register earns back the unpacking work.
+### Link-Layer Coding Sits Below Serialization
 
-The same logical array can have a compact form for storage and an aligned form for calculation. Turning one into the other takes time and a temporary buffer. Count that conversion beside encode and decode when you measure.
-
-### Low-precision number blocks
-
-A low-precision tensor is a large example of values narrower than a byte. A tensor here is a multidimensional array of numbers, such as a matrix of model weights. Many elements share one **scale**: a multiplier that turns the small stored integers back into approximate real numbers. Each element may occupy 4 or 8 bits. The scale is a wider number. It may sit next to the elements, or in a separate array. Storing the elements in fewer bits and restoring an approximation with the scale is called quantization.
-
-Two orders then matter.
-
-- The **stored order** keeps the file small and easy to map into memory.
-- The **calculation order** is the small block a matrix multiplication expects.
-
-A description that another program can read records how many bits each element uses, how large each group is, where the scale sits, and which stored order was used. The time and the extra bytes spent rearranging stored order into calculation order are part of the cost of using the data.
-
-The file is still a byte buffer plus a written layout rule. Information width and access pattern both matter here. The width of the bus does not, by itself, choose that rule.
-
-### What the link controller already does
-
-A high-speed link turns bytes into symbols on the wire so the receiver can recover a clock, keep the electrical signal balanced, and correct errors. Older links expand every eight data bits into ten bits on the wire (8b/10b). Newer links add a short frame marker instead: two extra bits beside 64 data bits (64b/66b), or two extra bits beside 128 data bits (128b/130b). PCI Express, and CXL (a link used to reach memory on another processor), also group bytes into fixed-size frames called **flits**. A flit carries the bytes being sent, a check, and sometimes symbols used to correct errors.
-
-Those mechanisms add overhead and a small, predictable delay. They sit under the byte buffer. A checksum that the application stores beside those bytes does not change how many bytes the bus moves at once.
+Physical links (PCIe, Ethernet, CXL) apply their own line coding (8b/10b, 64b/66b, 128b/130b) and group bytes into fixed-size **flits** for clock recovery and forward error correction. Those mechanisms belong strictly to the hardware link controller below the byte-buffer abstraction; application serializers never target physical flit widths directly.
 
 ---
 
-## Costs and constraints
+## Connection to the Benchmark Suite
 
-| Axis | Aligned layout | Values packed narrower than a byte |
-|------|----------------|-------------------------------------|
-| Processor time | An ordinary load, when alignment and byte order match | A shift and a mask, or a SIMD unpack of a block |
-| Size | Padding out to 2, 4, 8, or 64 bytes | Fewer bits per value. Headers and scales still count. |
-| Random access | Arithmetic on a field offset | Often unpack a block to reach one element |
-| Portability | Write down byte order and alignment | Also write down which end of the byte holds the first value |
-
-Direct loads and tight packing pull in opposite directions. Cap’n Proto, SBE, and Arrow spend bytes so a reader can load a field directly. Unaligned PER and integer bit-packing spend instructions so the file can be smaller. Bit-packing is a decision about the format, in the sense of [Compression vs format](compression-is-not-a-format.md). A general compressor such as gzip does not know that eight values share one 32-bit word.
+This suite's portable primitive catalog (`bool`, `int32`, `int64`, `float64`, `utf8_string`, and epoch-millisecond `int64` timestamps; see [Data sets](../../analysis/test_data_configuration.md)) measures byte-addressable codecs across `suite`, `columnar`, `graph`, `array`, and `tensor` data sets. It does not currently benchmark sub-byte bit-packed or quantized-error data types; exact round-trip `mean_fidelity` applies to lossless codecs, whereas quantized formats require bounded-error evaluation rather than bit-exact equality.
 
 ---
 
-## Illustrative scenario
+## Exercises
 
-A recorder stores one million 12-bit sensor readings and later sends the file to another machine.
+1. **Bit-packing arithmetic:** A telemetry stream logs $4 \times 10^6$ unsigned status codes restricted to the range $[0, 19]$. Compute the raw payload size (ignoring headers) when stored as *(a)* 32-bit integers, *(b)* 8-bit bytes, and *(c)* tightly bit-packed values.
 
-Storing each reading as a 64-bit floating-point value uses the host slot from [memory layout](memory-layout.md): 8 bytes each, so 8,000,000 bytes for the values. Storing each as a 16-bit integer uses 2 bytes each, so 2,000,000 bytes. Packing 12 bits per reading uses 1,500,000 bytes. On the wire, the 16-bit file and the packed file are both contiguous bytes. A 64-byte cache line carries 64 bytes of either file. What a program can measure is how many bytes were stored, and how many instructions it spent unpacking.
+??? note "Solution"
+    Twenty distinct values ($0\text{–}19$) require $\lceil \log_2 20 \rceil = 5$ bits per value.
+    - *(a)* 32-bit integers: $4 \times 10^6 \times 4 = 16\,000\,000\text{ B}$ ($16.0\text{ MB}$).
+    - *(b)* 8-bit bytes: $4 \times 10^6 \times 1 = 4\,000\,000\text{ B}$ ($4.0\text{ MB}$).
+    - *(c)* 5-bit packed: $4 \times 10^6 \times 5 / 8 = 2\,500\,000\text{ B}$ ($2.5\text{ MB}$, 37.5% smaller than 1 byte/value).
 
-A matrix of 4-bit weights has the same split, one step further along. The stored block, including its scale, can be compact. The multiplication may want those values regrouped into a small block shaped for the processor that runs it. That regrouping has its own time and its own temporary buffer. Widening every value to the bus width spends bytes the value does not need, and the regrouping is still required.
+2. **Bus-width fallacy:** An engineer proposes padding every boolean field in an RPC message to 64 bytes so that each field matches the CPU's 64-byte cache line. Explain why this degrades performance instead of improving it.
 
----
+??? note "Solution"
+    Padding each boolean to 64 bytes increases memory footprint by 64× (or 512× vs. a 1-bit bitmap), causing 64× as many cache-line transfers over the memory bus and evicting useful working set from L1/L2 caches. Packing 64 contiguous 1-byte booleans (or 512 1-bit flags) into a *single* cache line transfers all of them in one hardware transaction.
 
-## In this suite
+3. **Exact fidelity vs. quantization:** Why is `mean_fidelity == 1.0` (exact round-trip equality) the wrong acceptance criterion for a 4-bit quantized weight serializer?
 
-The catalog primitives are `bool`, `int32`, `int64`, `float64`, `utf8_string`, and a datetime stored as an `int64` count of milliseconds since the epoch. The fixtures do not include a 12-bit sample, a 4-bit element, or a 17-bit identifier. Where a language registers Arrow IPC, Parquet, or ORC, those rows measure columns. Where it registers SBE (Simple Binary Encoding), those rows measure fixed field offsets inside one record. The stride is the bytes from the start of one record to the start of the next. Variable-length fields change that distance. SBE is schema-driven. It is not a columnar file format like Parquet. None of these rows measure values narrower than a byte.
-
-On the Dashboard, `mean_fidelity` is the average of the per-trial fidelity scores. It is 1.0 when every round trip reproduces the fixture. That check writes a fixture and reads it back. It is not a specification-compliance score. It is the right check for these codecs when the goal is an exact round trip. Quantization stores an approximation on purpose, so exact equality should not be the only score for it. The [Dashboard](../../dashboard/index.html) does not answer questions about bit width. A missing row means the suite did not measure that case. It is not a ranking. Family labels are a teaching cut. They are listed in [Families](../../analysis/families.md).
-
----
-
-## Common errors of reasoning
-
-- Inventing a format whose fields are as wide as the bus, because the computer has a 64-bit or 512-bit bus. A contiguous buffer of bytes already fills that transfer.
-- Treating the coding a link uses on the wire, or a flit, as a serialization format for application data.
-- Treating bit-packing as free speed. The smaller array still has to be unpacked before arithmetic.
-- Reading the host-width table in [memory layout](memory-layout.md) as a list of the only field sizes a format may use.
-- Scoring a quantized block by whether a round trip matches every bit. The useful check is whether the values stay inside an agreed error.
+??? note "Solution"
+    Quantization is deliberately lossy: mapping 32-bit floating-point weights to 4-bit integers plus a group scale discards precision. Correctness for a quantized codec must verify structural metadata integrity plus a bounded reconstruction error (e.g., max absolute error or cosine similarity) rather than bit-exact floating-point equality.
 
 ---
 
-## Key takeaways
+## References
 
-- How many bits a value needs, the byte a program indexes, and the chunk of bytes hardware moves are three different sizes.
-- A contiguous buffer of bytes already fills a wide hardware transfer.
-- Packing several values into one byte saves space and adds an unpacking step.
-- A SIMD-friendly order, as in FastLanes, is a way of arranging those bytes.
-- Direct loads and tight packing are a trade-off. See [zero-copy](zero-copy.md) and [Compression vs format](compression-is-not-a-format.md).
-- Low-precision tensors need a stored order and a calculation order. This suite does not measure that split.
-- Link coding and flits belong to the link controller. Application data is the payload inside them.
+[^1]: ITU-T. *Recommendation X.691: ASN.1 Encoding Rules — Specification of Packed Encoding Rules (PER)*.
+[^2]: Afroozeh, A., & Boncz, P. (2023). "The FastLanes Compression Layout: Decoding > 100 Billion Integers per Second with Scalar Code." *Proceedings of the VLDB Endowment*, 16(9), 2132–2144.
+[^3]: Apache Software Foundation. *Apache Arrow Columnar Format Specification (§ Buffer Alignment and Padding)*. <https://arrow.apache.org/docs/format/Columnar.html>

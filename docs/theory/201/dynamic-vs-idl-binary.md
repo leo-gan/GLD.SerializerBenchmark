@@ -1,162 +1,103 @@
-# Dynamic vs IDL binary
+# 2.6 Dynamic vs. IDL Binary Formats
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/dynamic_vs_idl_binary.ipynb)
 
-## Problem
+## Problem Statement
 
-Suppose text JSON is already judged unsuitable for a particular hop. Payloads are large enough, or the path is performance-sensitive enough, that a binary encoding is under consideration. Two frequent alternatives are:
+Once an engineering team determines that text JSON is too verbose or CPU-intensive for a given hop, two primary binary alternatives emerge:
 
-1. **Dynamic (schemaless) binary** — MessagePack, CBOR, and related formats. They keep a data model similar to JSON. They use a binary encoding. They need little or no **interface description language**. An IDL is a formal shared description of messages and field types.
-2. **IDL / schema-driven binary** — Protocol Buffers and related systems. They use a shared schema, field numbers, code generation, and explicit evolution discipline.
+1. **Dynamic (schemaless) binary formats**—such as MessagePack, CBOR, and BSON—which preserve a JSON-like dynamic data model while replacing decimal text with binary type tags.
+2. **IDL / schema-driven binary formats**—such as Protocol Buffers, Thrift, and Avro—which define record layouts out of band in an Interface Definition Language (IDL) and omit field names from the wire.
 
-Selections are often driven by popularity or by a single latency chart. A durable choice instead tracks two questions. How flexible must the data model remain? How much investment will you make in a shared contract?
-
----
-
-## Short answer
-
-**Dynamic binary** encodings preserve a flexible model of maps, arrays, and scalars. They usually place **type tags** and often **string keys** on the wire. They are a reasonable default for internal services and caches that want smaller or faster-than-JSON payloads without operating a full IDL toolchain. **Validation and compatibility remain the organization’s responsibility.**
-
-**IDL binary** encodings move names into a schema. They encode **field numbers** (or equivalent identifiers). They support code generation, higher density, and multi-language stubs. The cost is schema design, generation in continuous integration, and a process for change.
-
-A dynamic format lets you discover the shape at runtime. Sometimes that discovery is scheduled for 3 a.m. Prefer dynamic binary when document shapes vary and consumers are loosely coupled. Prefer IDL binary when the record shape is a product interface that will be versioned for years across languages.
-
-In other words: after you leave text JSON, the main fork is “flexible documents” versus “stable multi-language records.” It is not merely “which library is popular.”
+Choosing between them depends primarily on **data-model stability and cross-team contract longevity**, rather than binary speed alone.
 
 ---
 
-## Mental model
+## Mechanisms Compared
 
 ```text
-                 Binary encoding required?
-                      │
-          ┌───────────┴───────────┐
-          ▼                       ▼
-   Flexible documents        Stable record interface
-   many optional shapes      multi-language RPC
-          │                       │
-          ▼                       ▼
-   Dynamic binary            IDL / schema binary
-   (MessagePack, CBOR, …)    (Protocol Buffers, …)
-          │                       │
-          ▼                       ▼
-   Validate at boundaries    Schema + code generation
-   document compatibility    + compatibility rules
+                       Binary encoding needed
+                                 │
+              ┌──────────────────┴──────────────────┐
+              ▼                                     ▼
+     Dynamic binary (no IDL)               IDL / schema binary
+     MessagePack, CBOR, BSON               Protocol Buffers, Thrift, Avro
+     · Type tags + string keys on wire     · Field numbers / schema order
+     · Flexible maps, low build ceremony   · Generated types + CI evolution rules
 ```
 
-Here **RPC** means remote procedure call. One program invokes an operation on another over the network. Related dynamic formats such as CBOR and BSON differ in type systems and ecosystem fit. The **decision axis relative to IDL binary** remains the same.
+### Dynamic Binary (MessagePack / CBOR Class)
 
----
-
-## How it works
-
-### Dynamic binary encodings (MessagePack class)
-
-**Data model.** Values are typically maps (string keys to values), arrays, numbers, strings, booleans, null, and often raw binary blobs. That is analogous to JSON, with format-specific extensions.
-
-**Encoding idea (beginner sketch).** Instead of the characters `{`, `"id"`, `:`, `4`, `2`, a dynamic binary format might emit:
+Dynamic binary encodings mirror JSON's dynamic tree (maps, arrays, integers, floats, strings, booleans, null) while adding native raw binary byte-string types (and, in CBOR and BSON, extensible semantic tags such as timestamps).[^1][^2] For a record `{id: 42, label: "x"}`, a MessagePack map emits roughly:
 
 ```text
-  [tag: map with 1 entry]
-    [tag: string length 2]  'i' 'd'
-    [tag: small integer]    42
+  [map(2)]  [str(2) "id"]  [fixint 42]  [str(5) "label"]  [str(1) "x"]
 ```
 
-Exact tags differ by format. The teaching points are:
+Decimal digit parsing disappears, yet structural type tags and repeated string keys remain on the wire unless the application explicitly switches to positional arrays (which reintroduces an implicit positional contract). Validation and compatibility remain application-level responsibilities.
 
-- structure is discovered from **tags in the stream**;
-- **keys often remain strings**, so messages stay self-describing at the cost of repeating those keys;
-- decimal digit conversion is avoided relative to JSON text.
+### IDL Binary (Protocol Buffers Class)
 
-**Evolution.** Change control is largely a social and testing process. External schemas can help. JSON Schema–like definitions or shared types in source control are examples.
+An IDL declares message structure once (`message Item { int32 id = 1; string label = 2; }`), and compilers generate typed encoders and decoders for each target language.[^3] On the wire, field numbers (`1`, `2`) replace `"id"` and `"label"`, shrinking payloads and allowing generated decoders to dispatch on small integer tags without hashing string keys. Unknown field numbers can be skipped safely by wire type ([2.5 Schema evolution](schema-evolution.md)).
 
-### IDL binary encodings (Protocol Buffers class)
+### Side-by-Side Comparison for `{id: 42, label: "x"}`
 
-**Interface description.** Designers declare messages in an IDL. Tools generate types and encoders for each supported language.
+| Encoding Class | Wire Metadata | Inspectable Without Schema? | Typical Size Tendency |
+|---|---|---|---|
+| **JSON text** | Delimiters + string keys + decimal text | Yes (human-readable) | Largest |
+| **Dynamic binary (map)** | Binary type tags + string keys | Yes (via generic decoder) | Smaller than JSON; keys still repeat |
+| **IDL binary (tagged)** | Field numbers + wire types | Wire types only; names require IDL | Smallest for stable multi-field records |
 
-**Encoding idea (beginner sketch).** With schema
-
-```text
-  message Item {
-    int32 id = 1;
-    string label = 2;
-  }
-```
-
-the wire form uses **field number 1** and **field number 2**, not the Unicode names `id` and `label`. Unknown field numbers can often be skipped. That supports forward compatibility when used correctly. See [schema evolution](schema-evolution.md).
-
-**Density and speed** depend strongly on **generated** versus reflective code paths. Generated code knows the field layout at compile time. Reflective paths discover structure at runtime and are often slower.
-
-### Side-by-side miniature example
-
-Logical value: `id = 42`, `label = "x"`.
-
-| Approach | What a generic inspector sees without a project schema | Typical size tendency |
-|----------|--------------------------------------------------------|------------------------|
-| JSON text | Clear names and decimal numbers | Largest of the three |
-| Dynamic binary with string keys | Recoverable map structure; keys visible as strings | Smaller than JSON; keys still present |
-| IDL binary with field numbers | Opaque numbers unless the `.proto` (or equivalent) is available | Often smallest for stable records |
-
-### What this comparison is not
-
-Protocol Buffers versus Avro is not the question on this page. Both are schema-centric. Their operational cultures differ. See the [data science perspective](../101/data_science_perspective.md) for Avro-oriented workloads.
-
-Binary versus zero-copy is a different question. FlatBuffers-class designs are a separate point. See [zero-copy layouts](zero-copy.md).
-
-A MessagePack library is not guaranteed to outperform a Protocol Buffers library in a given language.
+*(Note: Comparing two schema-driven cultures—such as Protocol Buffers vs. Avro—is distinct and examined in Part III; zero-copy offset layouts such as FlatBuffers are covered in [2.7 Zero-copy layouts](zero-copy.md).)*
 
 ---
 
-## Costs and constraints
+## Trade-Offs and Selection Criteria
 
-| Axis | Dynamic binary | IDL binary |
-|------|----------------|------------|
-| Size | Usually much smaller than JSON; often larger than a tight IDL encoding when string keys are used | Often smallest for stable records |
-| Processor time | Efficient parsers exist; tag and key handling remain | Excellent with code generation; weaker if used only reflectively |
-| Flexibility | High—maps and optional keys are natural | Schema changes are deliberate |
-| Multiple languages | Broad library support without a single IDL | Strong when all languages participate in code generation |
-| Operability | Pretty-printing tools are needed for support | Schema versions are needed on debug paths |
-| Process cost | Low ceremony; risk of silent divergence | Higher ceremony; clearer shared types |
-| Security | Depth and size limits; validate untrusted data | Same; generated types do not authenticate the sender |
+| Axis | Dynamic Binary (MessagePack, CBOR) | IDL Binary (Protocol Buffers, Thrift) |
+|---|---|---|
+| **Wire density** | Smaller than JSON; string keys limit density on short records | High density; field names absent on wire |
+| **CPU cost** | Fast parsers exist; map key hashing remains unless positional | Very strong with compile-time codegen; weaker if purely reflective |
+| **Model flexibility** | High; accommodates ad-hoc, rapidly evolving document shapes | Deliberate; schema updates flow through codegen and review |
+| **Multi-language rigor** | Broad library support; type drift across teams is easy | Generated types keep polyglot services aligned |
+| **Build & CI complexity** | Minimal (add library dependency only) | Requires pinned IDL compilers, codegen steps, and compatibility checks |
+| **Observability** | Generic CLI tools print readable maps/trees | Requires schema registries or compiled descriptors for log decoding |
 
----
+### When Each Class Fits
 
-## Illustrative scenarios
-
-**A. Session document store.** A cache holds semi-structured user preferences that change weekly during product experimentation. MessagePack or CBOR between application nodes reduces size relative to JSON. A schema-compiler release is not required for every experiment. Validation belongs in the application’s typed model at write time.
-
-**B. Multi-language billing interface.** A remote interface spans Go, Java, and Python over several years of field additions. Protocol Buffers (or a similar IDL system) with breaking-change checks in continuous integration is less costly. The alternative is rediscovering, in each service, which string keys denote monetary amounts.
+- **Prefer dynamic binary** for internal caches, session stores, or telemetry documents whose keys change rapidly across experiments and where avoiding a schema-compiler pipeline matters more than strict multi-year contracts. Still validate untrusted inputs at runtime.
+- **Prefer IDL binary** for long-lived, multi-language RPC interfaces or event backbones owned by separate teams, where static generated types and automated breaking-change checks prevent runtime surprises.
 
 ---
 
-## In this suite
+## Connection to the Benchmark Suite
 
-| Family | Examples (orientation—language **Overview** pages are authoritative) |
-|--------|------------------------------------------------------------------------|
-| Schemaless binary | Python `msgpack` / `cbor2`; JavaScript `msgpackr` / `cbor-x`; Go MessagePack/CBOR libraries; Rust `rmp-serde` / CBOR crates; C mpack/msgpack/cbor variants |
-| Schema-driven | Protocol Buffers bindings where registered; other IDL or schema codecs per language |
-
-Compare within one language, one standard, one data set, and one data type. MessagePack and CBOR are standards. Protocol Buffers is a standard. A family chart is a teaching cut. A cross-standard ranking is a decision input when the workload sits on the boundary between two contracts. See [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/index.html).
+This suite benchmarks both classes across most languages (e.g., `msgpack`, `cbor2`, `msgpackr`, `rmp-serde`, `zbor` alongside `protobuf`, `avro`, `flatbuffers`, and `sbe`; see [Families](../../analysis/families.md)). Note that implementation design can narrow or invert class expectations: for instance, Python `msgspec-msgpack` using positional `array_like=True` structs omits map keys and behaves closer to a positional schema codec than generic dictionary MessagePack ([Python: msgspec-msgpack vs. orjson](../401/python-msgspec-vs-orjson.md)). Always compare within one language, data set, and data type on the [Dashboard](../../dashboard/index.html).
 
 ---
 
-## Common errors of reasoning
+## Exercises
 
-- Selecting Protocol Buffers “for speed” when the primary difficulty was public API inspectability. JSON at the edge may remain appropriate.
-- Adopting MessagePack without validation of untrusted input.
-- Expecting dynamic binary encodings that carry long Unicode keys to match IDL density.
-- Adopting an IDL without continuous-integration checks for compatibility or clear ownership of schema files.
-- Mixing dynamic maps and generated types on one hop without an explicit translation boundary.
+1. **Key-overhead threshold:** Consider an array of 10,000 small records `{lat: 47.6, lon: -122.3, alt: 54.0}`. Why does MessagePack (map mode) show a far larger wire-size penalty relative to Protocol Buffers on this payload than on a single record containing one 50 KB UTF-8 text body?
+
+??? note "Solution"
+    On 10,000 tiny records, repeating the three string keys (`"lat"`, `"lon"`, `"alt"`) 10,000 times adds ~120 KB of pure key overhead in MessagePack maps, whereas Protocol Buffers uses 1-byte field tags. On a single record holding a 50 KB text body, field-name metadata is only ~10–20 bytes (<0.05% of total size), so wire sizes of JSON, MessagePack, and Protocol Buffers converge closely.
+
+2. **Positional MessagePack trade-off:** A team encodes MessagePack records as positional arrays (`[42, "x"]`) instead of maps (`{"id": 42, "label": "x"}`) to cut wire size by 50%. What operational property of dynamic binary did they just give up?
+
+??? note "Solution"
+    They gave up **self-description and safe field reordering/evolution**. Both producer and consumer now depend on an undocumented positional contract: inserting, reordering, or dropping a middle element silently shifts all subsequent slots for older readers without type-tag or field-number protection.
+
+3. **Class choice:** Choose between CBOR and Protocol Buffers for *(a)* an internal Go–Java–Rust order-processing RPC service with a 5-year compatibility guarantee, and *(b)* an ephemeral Redis cache storing dynamic A/B feature-flag payloads owned by one Python web team.
+
+??? note "Solution"
+    - *(a)* **Protocol Buffers:** Long retention and three independent language teams benefit directly from a versioned IDL, generated types, and CI breaking-change checks.
+    - *(b)* **CBOR (or MessagePack / fast JSON):** Single team, short TTL, and rapidly changing nested flag shapes favor low-ceremony dynamic encoding paired with application-side validation.
 
 ---
 
-## Key takeaways
+## References
 
-- After rejecting JSON for a hop, the principal fork is **flexible documents** versus **stable multi-language records**.
-- Dynamic binary is roughly a JSON-like data model with a binary encoding. The organization still owns the contract.
-- IDL binary is a shared schema, field numbers, code generation, and an evolution process.
-- Size and speed depend on implementation and on whether keys or names remain on the wire.
-- Use the **Dashboard** per language. Do not treat informal ranking articles as policy.
-- Match process cost to the lifetime of the contract and the number of languages that share it.
-
----
+[^1]: Bormann, C., & Hoffman, P. (2020). *Concise Binary Object Representation (CBOR)*. IETF RFC 8949. <https://www.rfc-editor.org/rfc/rfc8949>
+[^2]: Furuhashi, S. *MessagePack Specification*. <https://github.com/msgpack/msgpack/blob/master/spec.md>
+[^3]: Protocol Buffers Documentation. *Language Guide (proto3) and Encoding*. <https://protobuf.dev/programming-guides/proto3/>

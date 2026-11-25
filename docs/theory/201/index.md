@@ -1,95 +1,31 @@
-# Serialization 201
+# Serialization 201: Mechanisms
 
-In this track you will learn **how serialization mechanisms work**. You will not only learn the names of formats. You will learn why they behave differently.
+Part II examines the low-level mechanisms that govern how data structures map to wire bytes and why serialization standards exhibit different size, latency, compatibility, and memory-access trade-offs.
 
-| Jump | |
-|------|--|
-| **Before this** | [Serialization 101](../101/index.md) vocabulary |
-| **After this** | [301 production judgment](../301/index.md) · [Dashboard](../../dashboard/index.html) |
-| **Lab depth** | [401 wire formats](../401/index.md) |
-
-These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the [Families](../../analysis/families.md) page and the [Dashboard](../../dashboard/index.html).
-
-Theory alone does not decide what you should ship. Use these pages to build clear mental models of the mechanisms. Then check those models against real libraries. When you must choose under several production constraints at once, continue into the advanced courses as they become available.
+**Prerequisites:** [Part I: Foundations (101)](../101/index.md). Methodological and fair-comparison rules are stated once in the [Course Syllabus](../index.md#methodological-principles).
 
 ---
 
-## How to use this track
+## Chapters
 
-1. Skim [Serialization 101](../101/index.md) so the model and the trade-off axes feel familiar.
-2. Optionally read one lens that matches your work: [Historical](../101/historical_perspective.md), [Data science](../101/data_science_perspective.md), or [Engineering](../101/engineer_perspective.md).
-3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
-4. Open [Families](../../analysis/families.md) and the [Dashboard](../../dashboard/index.html) for numbers measured on *this* benchmark runner.
+Work through the chapters in numerical order on a first pass (`2.2` is optional background on sub-byte bit packing and hardware transfer widths):
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. The standard bounds the wire. The library is how close that language gets. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one language, one standard, one data set, and one data type. A family is a teaching cut. It is not the comparison cell. Numbers that appear in prose are only illustrations. The **Dashboard** owns measured numbers for this benchmark runner.
+| Chapter | Topic | Core Question | Companion Lab |
+|---|---|---|---|
+| [2.1 Memory layout](memory-layout.md) | Alignment, padding, endianness, object graphs | Why is an uninterpreted process memory dump not a portable interchange format? | — |
+| [2.2 Bit width is not bus width](bit-width-and-bus-width.md) *(optional)* | Information width vs. byte addressability vs. bus/SIMD transfer width | How do bit-packed values, aligned layouts, and wide hardware transfers interact? | — |
+| [2.3 Encode and decode cost](encode-decode-cost.md) | Scanning, radix conversion, metadata, allocations, locality | Where do encode and decode CPU cycles and heap allocations actually go? | [Lab](../notebooks/201/encode_decode_cost.ipynb) |
+| [2.4 Self-describing vs. schema-dependent](self-describing-vs-schema-dependent.md) | Wire metadata vs. out-of-band contracts | Does field identity live inside every payload or in a shared external schema? | [Lab](../notebooks/201/self_describing_vs_schema.ipynb) |
+| [2.5 Schema evolution](schema-evolution.md) | Backward/forward/full compatibility, field numbers, Avro resolution | How do schemas change safely while older and newer software run concurrently? | [Lab](../notebooks/201/schema_evolution.ipynb) |
+| [2.6 Dynamic vs. IDL binary](dynamic-vs-idl-binary.md) | MessagePack/CBOR class vs. Protocol Buffers class | When does a binary format warrant an IDL and code generation? | [Lab](../notebooks/201/dynamic_vs_idl_binary.ipynb) |
+| [2.7 Zero-copy layouts](zero-copy.md) | Relative offsets, vtables, in-place reads, verification | What does "no deserialization" actually skip, and what costs remain? | — |
+| [2.8 Compression vs. format](compression-is-not-a-format.md) | Byte-level compression vs. structure-aware encoding | Why does enabling gzip or zstd not substitute for format design? | [Lab](../notebooks/201/compression_vs_format.ipynb) |
 
----
-
-## Suggested order (MVP path)
-
-The table below gives a suggested order for a first pass through Serialization 201. Each row states what you should be able to explain after reading that article. The optional row sits after memory layout. It is not part of the first pass.
-
-| Step | Article | You should be able to… |
-|------|---------|------------------------|
-| 1 | [Memory layout](memory-layout.md) | Explain why dumping raw process memory is not a portable interchange format |
-| optional | [Bit width is not bus width](bit-width-and-bus-width.md) | Explain the difference between how many bits a value needs, the byte a program indexes, and the wide chunk of bytes hardware moves at once |
-| 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parsing structure, converting numbers, allocating, copying). Do not say only that “JSON is slow.” |
-| 3 | [Self-describing vs schema](self-describing-vs-schema-dependent.md) | Say whether field identity lives in the payload itself or in a shared contract outside the message |
-| 4 | [Schema evolution](schema-evolution.md) | Plan additive changes that keep older readers and writers working during a rollout |
-| 5 | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) | Choose a MessagePack/CBOR-class encoding versus a Protocol Buffers–class encoding for a given workload. IDL means interface description language. An IDL is a formal shared description of messages and field types. |
-| 6 | [Zero-copy](zero-copy.md) | Explain what “no deserialize” usually means in marketing language—and what that design still costs |
-| 7 | [Compression vs format](compression-is-not-a-format.md) | Separate gzip-style compression on the wire from density that comes from the format itself |
+See [Lab notebooks](../notebooks/README.md) for local and Google Colab setup. Specification details for standards referenced in Part II are cataloged under [Compliance](../../compliance/index.md), and measured timings live on the [Dashboard](../../dashboard/index.html).
 
 ---
 
-## By module
+## Where to Go Next
 
-### Representation
-
-These articles explain how values become bytes, and where the time and memory go when you encode or decode them.
-
-- [Memory layout](memory-layout.md)
-- [Bit width is not bus width](bit-width-and-bus-width.md) (optional). Read this when a value is narrower than a byte, or when someone suggests matching the serializer to a wide bus.
-- [Encode/decode cost](encode-decode-cost.md)
-
-### Contracts & change
-
-These articles explain where the meaning of a field lives, and how systems stay compatible when that meaning changes over time.
-
-- [Self-describing vs schema](self-describing-vs-schema-dependent.md)
-- [Schema evolution](schema-evolution.md)
-
-### Mechanisms
-
-These articles compare common binary mechanisms and specialized layout designs you will meet in real systems. MessagePack, CBOR, Protocol Buffers, and FlatBuffers are **standards**. A family groups them. The spec for each name is the [compliance catalog](../../compliance/). These articles stay about mechanisms.
-
-- [Dynamic vs IDL binary](dynamic-vs-idl-binary.md)
-- [Zero-copy](zero-copy.md)
-
-### Systems concerns
-
-This article separates two mechanisms that people often conflate when they talk about “small payloads.”
-
-- [Compression vs format](compression-is-not-a-format.md)
-
----
-
-## Lab notebooks (Python / Colab)
-
-Several articles have an accompanying notebook you can run locally or in Colab. The notebooks let you experiment with the same ideas in code.
-
-| Notebook | Article |
-|----------|---------|
-| [Encode/decode cost](../notebooks/201/encode_decode_cost.ipynb) | [Encode/decode cost](encode-decode-cost.md) |
-| [Self-describing vs schema](../notebooks/201/self_describing_vs_schema.ipynb) | [Self-describing vs schema](self-describing-vs-schema-dependent.md) |
-| [Schema evolution](../notebooks/201/schema_evolution.ipynb) | [Schema evolution](schema-evolution.md) |
-| [Dynamic vs IDL binary](../notebooks/201/dynamic_vs_idl_binary.ipynb) | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) |
-| [Compression vs format](../notebooks/201/compression_vs_format.ipynb) | [Compression vs format](compression-is-not-a-format.md) |
-
-Install notes live in the [notebooks README](../notebooks/README.md).
-
-## Where to go next
-
-- **Core path:** [Serialization 301](../301/index.md) — production judgment when several constraints pull at once.
-- **Implementer elective:** [Serialization 401](../401/index.md) — wire formats, language-specific paths, and a hands-on lab.
-- Related reference pages: [Families](../../analysis/families.md), [Engineering](../101/engineer_perspective.md), [Data science](../101/data_science_perspective.md), [Benchmarks](../../analysis/index.md), and the [Dashboard](../../dashboard/index.html).
+- **Production architecture:** [Part III: Production Systems (301)](../301/index.md) — applying these mechanisms under conflicting security, contract, and latency constraints.
+- **Codec implementation:** [Part IV: Codec Internals (401)](../401/index.md) — Protocol Buffers byte layout, language runtime walkthroughs, and a hands-on encoder/decoder lab.

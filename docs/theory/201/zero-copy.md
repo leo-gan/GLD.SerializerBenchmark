@@ -1,141 +1,104 @@
-# Zero-copy
+# 2.7 Zero-Copy Layouts
 
-## Problem
+## Problem Statement
 
-In the classical serialization model, a byte sequence arrives and a parser **constructs a new object graph** in the language runtime. Application code then reads properties from those objects. Memory is later reclaimed, either manually or by **garbage collection**. Garbage collection (GC) is automatic reclamation of unused memory. That model is straightforward to reason about. It becomes expensive when messages are large, numerous, or only partly examined. The implementation pays to build full language objects in memory for fields that are never read.
+Classical deserialization parses a wire buffer and **allocates a parallel in-memory object graph** mirroring every field in the message. When payloads are large, frequently read, or only sparsely inspected (for example, checking two header fields inside a 50 KB catalog message), constructing heap objects for unread fields wastes CPU cycles and increases garbage-collection pressure.
 
-Some formats are described as **zero-copy**, or are said **not to deserialize**. Such phrasing is easily misread as “costless and invariably safer.” The underlying mechanism is more precise. For a chosen **endianness** (byte order) and alignment policy, **the on-the-wire layout is arranged so that fields can be read in place**. Readers use **offsets** into the receive buffer. An offset is a distance in bytes from a known base. The design avoids allocating a parallel tree of language objects.
-
----
-
-## Short answer
-
-In a **zero-copy** design, encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of building the full set of language objects in memory.
-
-In this suite the row zero-copy layouts are FlatBuffers, Cap’n Proto, FlexBuffers, rkyv, cista, and Bebop. FlatBuffers and Cap’n Proto read fields through a separate schema. FlexBuffers is the FlatBuffers layout that stores type tags in the buffer. rkyv is a Rust archive, cista is a C++ layout of offsets, and Bebop is a schema-driven format whose reader can use a view of the buffer. Each stores one record. They are not columnar files such as Parquet. rkyv can be read in place, but this suite times it as a full materialize: decode builds an owned value, and that copy is included in the Dashboard time.
-
-Zero-copy does not mean no work. It means one particular copy was skipped. You may still build the buffer, check the offsets, and argue about who frees it. Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary. Omitting validation is a serious risk. Partial mutation is often awkward. Operational tooling differs from text-oriented formats. Zero-copy is a layout and a way of reading that layout. It still needs a schema or an equivalent contract, and it still needs a trust model.
-
-This matters because marketing language can hide real costs. In-place reads can be very efficient. Construction, verification, and buffer lifetime still need careful design.
+Formats marketed as **zero-copy**—or described as requiring *"no deserialization"*—address this bottleneck by arranging the wire layout so fields can be read directly in place from the receive buffer. Evaluating them accurately requires separating what zero-copy actually eliminates from the costs it retains or shifts elsewhere.
 
 ---
 
-## Mental model
+## Mechanism: In-Place Access via Relative Offsets
+
+!!! note "Definition: Zero-Copy Serialization Format"
+    A **zero-copy serialization format** specifies an aligned, explicit-endianness binary layout in which variable-length fields and nested tables are addressed via **buffer-relative offsets** rather than raw process pointers. Generated accessors read fields directly from the receive buffer without allocating a mirror object graph.
 
 ![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy.svg#only-light)
 ![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy-dark.svg#only-dark)
 
-**Information versus building full objects in memory.** Interpreting bytes as typed fields *is* deserialization in the information-theoretic sense. What zero-copy designs avoid is the classical step of **allocating a full data-transfer object graph** that mirrors the message.
+Interpreting raw bytes as typed values is still deserialization in the information-theoretic sense; what zero-copy avoids is **eagerly materializing a full tree of language objects on the heap**.
 
----
+### How an In-Place Read Works (FlatBuffers Model)
 
-## How it works
+Unlike an uninterpreted C `struct` dump ([2.1 Memory layout](memory-layout.md)), a zero-copy layout is a portable, versioned contract:[^1]
 
-### Layout contract (building on memory layout)
+1. Multi-byte scalars sit at agreed alignments and fixed byte order (typically little-endian).
+2. Strings, vectors, and subtables are reached by adding a stored 32-bit relative offset to the current buffer position—never an absolute memory address from the sender.
+3. Optional fields and schema evolution are supported through a compact **vtable** (a table of 16-bit field offsets; an offset of `0` indicates an absent/default field).
 
-Recall from [memory layout](memory-layout.md) that a process-local structure may contain padding and host pointers. A zero-copy **message format** instead defines a **portable layout**:
-
-- multi-byte integers appear at agreed alignments and byte orders;
-- variable-length data (strings, vectors) are reached through **offsets** stored in the buffer;
-- optional fields may be indicated by a table of field offsets. That table is often called a **vtable** in FlatBuffers documentation. A vtable is a small table of offsets that tells the reader where each field lives.
-
-**Beginner sketch — reading one integer field.**
-
-Suppose a verified buffer begins with a root table. Generated code might perform steps equivalent to:
+Reading one 32-bit field `price_cents` from a verified receive buffer executes only a few pointer-arithmetic steps:
 
 ```text
-  1. Let base = address of the buffer in this process.
-  2. Read a root offset (e.g. 32-bit little-endian) at a known position.
-  3. From the table at base+root, read the offset of field "price_cents".
-  4. Load a 32-bit little-endian integer at that location.
-  5. Return that integer to the application — without constructing a "Message" object
-     that owns a separate "price_cents" heap field.
+  1. base   = address of receive buffer
+  2. root   = base + read_u32_le(base)              // locate root table
+  3. vtable = root - read_i32_le(root)              // locate field-offset table
+  4. off    = read_u16_le(vtable + FIELD_SLOT)      // 0 if absent -> return default
+  5. return read_i32_le(root + off)                 // direct load, zero heap allocations
 ```
 
-No host pointer from the **writer’s** address space appears in the file. Offsets are relative to the buffer. The image remains meaningful after the bytes are copied to another machine, given matching endianness rules as defined by the format.
+No `Message` object is allocated, and unread sibling fields are never touched.
 
-### FlatBuffers as a concrete case study
+### Where the Cost Moves
 
-| Stage | What happens |
-|-------|----------------|
-| Design | An IDL (interface description language) / schema declares tables and fields; tools generate readers and builders. |
-| Encode | A builder API appends data (often depth-first) and patches offsets so the final buffer is self-consistent. |
-| Verify | A verifier checks that offsets and lengths lie within the buffer (essential for untrusted input). |
-| Read | Accessors traverse offsets; unread fields need not become heap objects. |
+Zero-copy eliminates *eager read-time allocation*, not all computational work:
 
-So “FlatBuffers does not deserialize” means “does not classically build the whole message as language objects in memory.” It does **not** mean “does no work and needs no schema.”
+- **Encode / builder complexity:** Writers must lay out subtables depth-first (often back-to-front in FlatBuffers), align fields, deduplicate vtables, and patch relative offsets. Encode is therefore frequently more complex—and not always faster—than sequential varint or positional writers.
+- **Mandatory verification on untrusted input:** Skipping eager parsing does *not* make untrusted bytes safe. A malicious buffer can encode out-of-bounds offsets, overlapping tables, or cyclic offset pointers. Any untrusted zero-copy buffer **must pass a structural verifier** (`VerifyBuffer`) before field access, which reintroduces an $O(n)$ validation scan.[^1][^2]
+- **Buffer lifetime and immutability:** Views borrow directly from the backing byte buffer, so the buffer must outlive every accessor reference. Because variable-length fields cannot grow in place without invalidating surrounding offsets, zero-copy buffers are typically immutable; mutating a payload usually requires rebuilding it.
+- **Alignment padding:** Direct aligned loads introduce padding bytes, so raw wire size is often slightly larger than varint-encoded Protocol Buffers (Cap'n Proto addresses zero-byte padding with an optional lightweight *packed* encoding layer).[^2]
 
-### The encode path is not free
+### Related Concepts (Do Not Conflate)
 
-Builders must produce a correct buffer. Packing, offsets, and padding all require work. Workloads that **mutate** messages continuously may find the classical pattern simpler: populate a structure, then serialize. Zero-copy layouts are most advantageous when messages are **constructed once and read many times**, or when only a few fields of a large message are examined.
-
-### Validation
-
-Avoiding the creation of full language objects in memory must not mean avoiding **bounds and structural checks** on untrusted data. FlatBuffers-style stacks provide verifiers. Using them on adversarial input is part of the security discussion in the [engineering perspective](../101/engineer_perspective.md). An unverified buffer is a collection of offsets that an attacker may craft to induce out-of-bounds access.
-
-### Mutation and operability
-
-In-place updates are constrained. Sufficient space must already exist. Changing lengths is difficult. Many deployments treat buffers as **immutable messages** and rebuild when state changes. Debugging requires format-aware tools. Hexadecimal dumps are less informative than structured text logs.
-
-### Related but distinct ideas
-
-Several ideas sound similar to message zero-copy but solve different problems:
-
-| Idea | Relation to message zero-copy |
-|------|-------------------------------|
-| Memory-mapped columnar formats (Arrow, Parquet access paths) | Zero-copy *columns* for analytical workloads—a different problem domain ([data science perspective](../101/data_science_perspective.md)) |
-| `span` / buffer views on ordinary codecs | Reduce copies without adopting a full zero-copy message format |
-| Protocol Buffers with arenas or pooling | Fast creation of full language objects in memory, or reduced allocation. This is not the same layout model. |
-| Values packed into shared bytes | Several values share one byte. Reading one of them means extracting bits. That is different from loading an aligned field directly from the buffer ([Bit width is not bus width](bit-width-and-bus-width.md)). |
+| Technique | Relationship to Single-Record Zero-Copy |
+|---|---|
+| **Columnar memory mapping (Apache Arrow IPC)**[^3] | Zero-copy across *columnar arrays* for analytics rather than nested single-record RPC messages |
+| **Borrowed string slices / `Span<T>` in classical codecs** | Avoids string heap copies during classical parsing without adopting an offset-table wire format |
+| **Protocol Buffers arenas** | Speeds up allocation/deallocation via bump-pointer arenas while still materializing full message objects |
 
 ---
 
-## Costs and constraints
+## Trade-Offs and Suitability
 
-| Axis | Typical effect of zero-copy layouts | Remaining responsibilities |
-|------|-------------------------------------|----------------------------|
-| Processor time (read) | Often lower for sparse access to large messages | Verification cost; access patterns |
-| Processor time (write) | Builder complexity; not always faster than packed classical encode | — |
-| Memory / allocations | Fewer objects on the read path | Buffer lifetime must outlive views |
-| Size / bandwidth | Competitive; alignment may introduce padding | Not a substitute for compression ([Compression vs format](compression-is-not-a-format.md)) |
-| Evolution | Schema or IDL still required | Compatibility discipline remains |
-| Security | Omitting verification can look “fast” and is unsafe | Always verify untrusted buffers |
-| Operability | Specialized inspectors | Weaker ad hoc log readability |
-
----
-
-## Illustrative scenario
-
-A mobile client downloads a large catalogue message. The user interface needs only a few fields per screen. Classical decoding may allocate thousands of objects at load time. A FlatBuffers-style buffer is retained (or memory-mapped) once, verified once, and read on demand. The same pattern appears in some remote-procedure-call or inter-process paths for large, immutable configuration snapshots.
-
-The approach fits poorly for small, frequently mutated documents when builder complexity exceeds any gain. It also fits poorly when a team will not adopt schema tooling.
+| Dimension | Zero-Copy (FlatBuffers, Cap'n Proto, `rkyv`) | Classical Materializing Codec (Protocol Buffers, JSON) |
+|---|---|---|
+| **Sparse read of large messages** | $O(1)$ per accessed field; zero heap allocations | $O(n)$ parse and allocation of entire message |
+| **Full-message read** | Competitive; pays indirection per field access | Fast sequential field reads once materialized |
+| **Encode ergonomics** | Builder API (often reverse-order construction) | Populate ordinary language struct, then encode |
+| **Mutation** | Awkward; generally treat buffers as immutable | Natural mutation on ordinary in-memory objects |
+| **Untrusted input safety** | Requires explicit verifier pass prior to access | Parser validates structure inherently during decode |
+| **Best fit** | Large, read-heavy, mostly immutable payloads (game assets, mobile catalogs, `mmap` configs, ML metadata) | Small, frequently mutated RPC messages or environments requiring text observability |
 
 ---
 
-## In this suite
+## Connection to the Benchmark Suite
 
-Where FlatBuffers or a similar row zero-copy codec is registered for a language, compare it with other libraries on the same language, standard, data set, and data type. rkyv’s timed decode materializes an owned value, so do not read that row as an in-place access time. See [rkyv versus Speedy](../401/rust-rkyv-vs-speedy.md). Absence from a language benchmark runner means the suite did not measure that library here. The [family map](../../analysis/families.md) and the language overviews record what is wired today.
+Row-oriented zero-copy codecs registered across languages in this suite include **FlatBuffers**, **Cap'n Proto**, **FlexBuffers** (FlatBuffers' self-describing schemaless variant), **Rust `rkyv`**, **C++ `cista`**, and **Bebop**.
 
----
-
-## Common errors of reasoning
-
-- Interpreting “no deserialization” as “no processor work and no schema.”
-- Using zero-copy buffers received from a network **without verification**.
-- Retaining views into a buffer that has been freed, recycled, or overwritten.
-- Selecting zero-copy for small, highly mutable messages because a benchmark used large static ones.
-- Comparing an unverified zero-copy path with a fully validating classical parser on speed alone.
+Check timing semantics carefully on each language Overview before reading Dashboard rows: in particular, this suite times Rust **`rkyv`** as a full materialization into an owned `Document` (`from_bytes`) rather than zero-copy `access`—see [Rust: rkyv vs. Speedy](../401/rust-rkyv-vs-speedy.md) and [Timing honesty](../../analysis/TIMING_HONESTY.md). For zero-copy tensor buffer borrowing (`tensor_view`), see [Tensor](../../analysis/tensor.md) and the [Dashboard](../../dashboard/index.html).
 
 ---
 
-## Key takeaways
+## Exercises
 
-- Zero-copy means **in-place field access** from a designed layout. It does not mean “no interpretation of bytes.”
-- “Does not deserialize” targets the classical step of **building a full object graph as language objects in memory**.
-- Construction and **verification** still cost time. Security requires verification for untrusted data.
-- Best fit: large or sparsely read, mostly immutable messages, with acceptance of schema tooling.
-- Poor fit: tiny mutable documents, or environments that require text inspectability above all else.
-- Columnar and buffer-view techniques are related but not identical.
-- Interpret suite measurements in light of validation settings and access patterns.
+1. **Sparse vs. full access:** A service receives 200 KB configuration snapshots over a trusted internal link and reads only 3 boolean flags per request. Why does FlatBuffers outperform Protocol Buffers on decode latency here, and what changes if the service must immediately transform and mutate all 500 nested records?
+
+??? note "Solution"
+    When reading only 3 flags from a 200 KB snapshot, FlatBuffers follows three vtable offsets in $O(1)$ time with zero allocations, whereas Protocol Buffers must parse and allocate objects for the entire 200 KB stream. If the service mutates all 500 nested records, the advantage largely vanishes: every field must be visited anyway, and mutating a FlatBuffers payload typically requires unpacking into mutable structs and re-running the FlatBuffers builder.
+
+2. **Benchmarking trap:** An engineer benchmarks an *unverified* FlatBuffers read against a fully validating JSON parser on untrusted HTTP input and reports a 40× speedup. Identify the methodological flaw.
+
+??? note "Solution"
+    The comparison is asymmetric on safety: the JSON parser validates syntax, UTF-8, and structure on every byte, whereas unverified FlatBuffers trusts arbitrary caller-supplied offsets and is vulnerable to out-of-bounds crashes. A fair comparison for untrusted HTTP input must include FlatBuffers' `VerifyBuffer` pass inside the timed decode path.
+
+3. **Lifetime hazard:** In C++ or Rust, a function reads a FlatBuffers buffer into a local stack `std::vector<uint8_t>`, returns a FlatBuffers table view pointing into it, and exits. What happens next?
+
+??? note "Solution"
+    The returned view holds a dangling pointer into freed stack/vector memory (**use-after-free**). Because zero-copy views borrow directly from the backing buffer, the caller must keep the owning buffer alive (or copy out the needed fields) for as long as any view remains in use.
 
 ---
+
+## References
+
+[^1]: Google. *FlatBuffers Internals and C++ Verification Guide*. <https://flatbuffers.dev/internals/>
+[^2]: Varda, K. *Cap'n Proto Encoding Specification*. <https://capnproto.org/encoding.html>
+[^3]: Apache Software Foundation. *Apache Arrow IPC Format*. <https://arrow.apache.org/docs/format/Columnar.html#serialization-and-interprocess-communication-ipc>
