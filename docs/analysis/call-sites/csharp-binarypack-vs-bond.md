@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, **BinaryPack** finishes more encode-and-decode cycles per second than **Microsoft Bond Fast**. Both omit JSON field names. Both compile a specialized writer once. The remaining difference is what that writer *puts on the wire* and how the runner calls it.
+On this suite’s **document** payload, one instance, **BinaryPack** finishes more encode-and-decode cycles per second than **Microsoft Bond Fast**. Both omit JSON field names. Both compile a specialized writer once. The remaining difference is what that writer *puts on the wire* and how the runner calls it.
 
 This page compares the two timed wrappers and the library code they invoke. After reading it you should be able to point at Bond’s per-field type-and-identifier prefix and at BinaryPack’s positional stores.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking. That published slice timed Base64 around both binary codecs. Compare ranks inside C#, not those sizes against another language.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=csharp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=BinaryPack&ser=BinaryPack&ser=MS%20Bond%20Fast#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [C# overview](../../c-sharp/index.md)
 
 ## Short answer

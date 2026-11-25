@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, **orjson** and the standard library `json` module emit the **same 448 bytes**. orjson finishes about **five times** as many encode-and-decode cycles per second. The encodings are the same JSON objects with the same keys. The gap is how each library walks a Python dictionary and how it hands bytes back to the caller.
+On this suite’s **document** payload, one instance, **orjson** and the standard library `json` module emit the **same 448 bytes**. orjson finishes about **five times** as many encode-and-decode cycles per second. The encodings are the same JSON objects with the same keys. The gap is how each library walks a Python dictionary and how it hands bytes back to the caller.
 
 This page compares the two timed wrappers and the library functions they call. After reading it you should be able to point at the extra `str` and the missed cached encoder in the standard-library path.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=python&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Python overview](../../python/index.md)
 
 ## Short answer
@@ -93,7 +93,7 @@ orjson (`dumps` / `loads` in the Rust crate `ijl/orjson`) takes a Python object 
 
 ## What this page is not
 
-It is not “JSON is slow.” jsoniter, Glaze, yyjson, and V8 `JSON.stringify` show that JSON can be fast when the implementation is specialized. It is not “orjson beats msgspec.” [msgspec-msgpack versus orjson](python-msgspec-vs-orjson.md) is a different experiment: positional MessagePack Structs versus named JSON dictionaries.
+It is not “JSON is slow.” jsoniter, Glaze, yyjson, and V8 `JSON.stringify` show that JSON can be fast when the implementation is specialized. It is not “orjson beats msgspec.” [msgspec-msgpack versus orjson](../../theory/401/python-msgspec-vs-orjson.md) is a different experiment: positional MessagePack Structs versus named JSON dictionaries.
 
 A fairer stdlib call would keep a long-lived `JSONEncoder(ensure_ascii=False, separators=(",", ":"))` and write with `encode`. That would remove the per-call constructor. It would not remove the `str` then UTF-8 copy. The five-times gap would shrink. It would not vanish.
 

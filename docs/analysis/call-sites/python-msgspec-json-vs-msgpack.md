@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-The [msgspec-msgpack versus orjson](python-msgspec-vs-orjson.md) page compares two libraries *and* two layouts at once. A student can fairly ask: how much of that gap is MessagePack, and how much is msgspec?
+The [msgspec-msgpack versus orjson](../../theory/401/python-msgspec-vs-orjson.md) page compares two libraries *and* two layouts at once. A student can fairly ask: how much of that gap is MessagePack, and how much is msgspec?
 
 This page holds the library still. Both rows use the same `array_like` Structs, the same C core, and the same untimed conversion from a dataclass. Only the encoder class changes. After reading it you should be able to say what remains when names are already gone and the implementation is already native.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=msgspec&ser=msgspec&ser=msgspec-msgpack#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Python overview](../../python/index.md)
 
 ## Short answer
@@ -83,17 +83,17 @@ The letters of `"id"` and `"name"` appear in neither row. JSON still spends byte
 
 On the suite document the same arithmetic scales up. Eight line items mean eight copies of quotes around every string and eight decimal integers. That is most of the 192 − 129 = 63 bytes.
 
-**History.** JSON ([Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford), early 2000s) chose characters a human can type. MessagePack ([Sadayuki Furuhashi](https://en.wikipedia.org/wiki/Sadayuki_Furuhashi), 2008) kept the JSON *data model* and replaced those characters with short binary type codes. msgspec (Jim Crist-Harif, early 2020s) applied both encodings to one C Struct type. This page is that history with the library held constant. See [Historical perspective](../101/historical_perspective.md).
+**History.** JSON ([Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford), early 2000s) chose characters a human can type. MessagePack ([Sadayuki Furuhashi](https://en.wikipedia.org/wiki/Sadayuki_Furuhashi), 2008) kept the JSON *data model* and replaced those characters with short binary type codes. msgspec (Jim Crist-Harif, early 2020s) applied both encodings to one C Struct type. This page is that history with the library held constant. See [Historical perspective](../../theory/101/historical_perspective.md).
 
 ## Why encode does not follow size
 
-Writing 192 bytes of JSON in 1.66 µs, versus 129 bytes of MessagePack in 1.73 µs, looks surprising. The JSON writer in msgspec is a tight C loop that emits punctuation and copies UTF-8. The MessagePack writer emits a type code per value. On a small document that type-code path is not cheaper than “write a bracket and a digit.” Size and encode time are different questions. [Encode and decode cost](../201/encode-decode-cost.md) made that distinction; here you can see it in one package.
+Writing 192 bytes of JSON in 1.66 µs, versus 129 bytes of MessagePack in 1.73 µs, looks surprising. The JSON writer in msgspec is a tight C loop that emits punctuation and copies UTF-8. The MessagePack writer emits a type code per value. On a small document that type-code path is not cheaper than “write a bracket and a digit.” Size and encode time are different questions. [Encode and decode cost](../../theory/201/encode-decode-cost.md) made that distinction; here you can see it in one package.
 
 Decode favours MessagePack because the reader does not scan for quotes or convert decimal digits. It reads a type code and a length. That is the 2.39 µs versus 1.95 µs.
 
 ## What this page is for
 
-Use this pair when you need a **control experiment**. If you want the larger story — typed Struct versus a Python dictionary — return to [msgspec-msgpack versus orjson](python-msgspec-vs-orjson.md). If you want the same JSON bytes from two libraries, go to [orjson versus stdlib json](python-orjson-vs-json.md).
+Use this pair when you need a **control experiment**. If you want the larger story — typed Struct versus a Python dictionary — return to [msgspec-msgpack versus orjson](../../theory/401/python-msgspec-vs-orjson.md). If you want the same JSON bytes from two libraries, go to [orjson versus stdlib json](python-orjson-vs-json.md).
 
 ## Self-check
 

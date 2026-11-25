@@ -2,16 +2,16 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **FlatBuffers** finishes more encode-and-decode cycles per second than **protobuf-java**, while writing a **larger** message (416 bytes versus 155). Smaller is not faster. The two libraries are optimizing different moments: FlatBuffers arranges the buffer so a field is an offset plus a load; Protocol Buffers writes a compact tag stream and must parse that stream to recover a field.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **FlatBuffers** finishes more encode-and-decode cycles per second than **protobuf-java**, while writing a **larger** message (416 bytes versus 155). Smaller is not faster. The two libraries are optimizing different moments: FlatBuffers arranges the buffer so a field is an offset plus a load; Protocol Buffers writes a compact tag stream and must parse that stream to recover a field.
 
-This page compares the two timed wrappers on the Kotlin harness. The Swift pair of the same two formats is [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md).
+This page compares the two timed wrappers in the Kotlin benchmark runner. The Swift pair of the same two formats is [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md).
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=kotlin&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=flatbuffers&ser=flatbuffers&ser=protobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Kotlin overview](../../kotlin/index.md)
 
 ## Short answer
@@ -103,9 +103,9 @@ The information is the same. The layout is not.
 | `Int32` / `Int64` stored at full width, with alignment padding | Variable-length integers (a small `status` is one byte) |
 | A vector of eight item *offsets* plus eight item tables | Eight tagged nested messages |
 
-416 bytes is close to JSON’s 440 on this fixture because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact Protocol Buffers layout taught in the [Protocol Buffers wire format](protobuf-wire-format.md) article.
+416 bytes is close to JSON’s 440 on this payload because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact Protocol Buffers layout taught in the [Protocol Buffers wire format](../../theory/401/protobuf-wire-format.md) article.
 
-The Kotlin FlatBuffers row is 416 bytes, not the 440 bytes on the Swift page. Swift wraps every fixture in a `FixtureRoot` table. Kotlin writes the `Document` table as the buffer root.
+The Kotlin FlatBuffers row is 416 bytes, not the 440 bytes on the Swift page. Swift wraps every test record in a `FixtureRoot` table. Kotlin writes the `Document` table as the buffer root.
 
 ## Why FlatBuffers is still faster here
 
@@ -121,7 +121,7 @@ This suite does **not** stop at a FlatBuffers view. `fromDocument` copies string
 
 | Axis | FlatBuffers | protobuf-java |
 |------|-------------|---------------|
-| Size on this fixture | Larger (vtables, padding) | Smaller (field numbers, varints) |
+| Size on this payload | Larger (vtables, padding) | Smaller (field numbers, varints) |
 | Read one field | Offset + load | Must parse up to that field (or the whole message, as timed) |
 | Evolution | Schema + vtable slots | Field numbers, skip unknowns |
 | Mutation | Rebuild the buffer | Rebuild the message and encode |

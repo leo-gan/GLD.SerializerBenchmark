@@ -103,39 +103,39 @@ Open the adapter. Answer four questions. All four must be yes, or the row is dis
 3. Does timed `deserialize` call the library’s **decode / parse / read / fromBinary / ParseFromArray**?
 4. If this adapter is compared with another in a 401 article, do both time the same kind of object (suite value vs prepared native message) on both encode and decode?
 
-## Audit of the 401 comparison pairs
+## Audit of the 401 labs and call-site notes
 
 Checked against the adapters in this repository after the google-protobuf encode fix.
 
 | Article | What the two timed paths actually do | Contract |
 |---------|--------------------------------------|----------|
-| [Python: orjson vs json](../theory/401/python-orjson-vs-json.md) | Both dump/load a prepared dict | Same work. Honest. |
+| [Python: orjson vs json](call-sites/python-orjson-vs-json.md) | Both dump/load a prepared dict | Same work. Honest. |
 | [Python: msgspec-msgpack vs orjson](../theory/401/python-msgspec-vs-orjson.md) | Struct encode vs dict JSON; maps untimed | Different layouts, same clock rule. Honest. |
-| [Python: msgspec JSON vs MessagePack](../theory/401/python-msgspec-json-vs-msgpack.md) | Same Struct, two encoders | Same work. Honest. |
+| [Python: msgspec JSON vs MessagePack](call-sites/python-msgspec-json-vs-msgpack.md) | Same Struct, two encoders | Same work. Honest. |
 | [Rust: Speedy vs Bincode](../theory/401/rust-speedy-vs-bincode.md) | Speedy writes a `Document`. Bincode writes a `Fixture` enum through Serde | **Wrapper asymmetry**, already stated in the article. |
-| [Rust: Speedy vs Postcard](../theory/401/rust-speedy-vs-postcard.md) | Same asymmetry as above | Documented. |
+| [Rust: Speedy vs Postcard](call-sites/rust-speedy-vs-postcard.md) | Same asymmetry as above | Documented. |
 | [Rust: rkyv vs Speedy](../theory/401/rust-rkyv-vs-speedy.md) | Both fill an owned `Document`; rkyv does not use `access` | Documented. Honest for that choice. |
-| [C: custom-binary vs ubj](../theory/401/c-custom-binary-vs-ubj.md) | ubj encodes custom-binary, then an envelope | Documented. Honest for that choice. |
-| [C++: Bitsery vs YAS](../theory/401/cpp-bitsery-vs-yas.md) | Both encode the C++ value | Same work. Honest. |
+| [C: custom-binary vs ubj](call-sites/c-custom-binary-vs-ubj.md) | ubj encodes custom-binary, then an envelope | Documented. Honest for that choice. |
+| [C++: Bitsery vs YAS](call-sites/cpp-bitsery-vs-yas.md) | Both encode the C++ value | Same work. Honest. |
 | [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode is nlohmann `dump` of a prepared object. Decode is simdjson parse, then a DOM walk | Encode is **not** simdjson. Must stay labelled. |
-| [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode the library byte payload. The published table on that page still includes a shared Base64 step | Same extra work in that table. Honest **within C#**. |
-| [Go: kelindar vs Avro](../theory/401/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
-| [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
-| [Kotlin: Protostuff vs protobuf](../theory/401/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |
-| [Kotlin: kotlinx-json vs Moshi](../theory/401/kotlin-kotlinx-json-vs-moshi.md) | Both dump/load a suite `Document` as named JSON | Same work. Honest. |
-| [Kotlin: FlatBuffers vs protobuf](../theory/401/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
-| [PHP: JSON vs protobuf](../theory/401/php-json-vs-protobuf.md) | Both time suite arrays → bytes → suite arrays. protobuf still builds a generated message in the middle | Same work at the suite boundary. |
-| [Fortran: json-fortran vs rojff](../theory/401/fortran-json-fortran-vs-rojff.md) | Both time a suite document → compact JSON text → suite document | Same named JSON. Integers outside int32 are JSON numbers on both rows. |
-| [Zig: std.json vs serde.json](../theory/401/zig-std-json-vs-serde-json.md) | Both time suite structs → JSON bytes → suite structs | Same comptime `@typeInfo` idea, two libraries. |
-| [Mojo: EmberJson vs mojo-avro](../theory/401/mojo-emberjson-vs-avro.md) | EmberJson times `serialize` / `deserialize`. Avro times `encode` / `decode` on `AvroDatum`. | Same suite `Document`; JSON text vs Avro binary. |
+| [C#: BinaryPack vs Bond Fast](call-sites/csharp-binarypack-vs-bond.md) | Both encode the library byte payload. The published table on that page still includes a shared Base64 step | Same extra work in that table. Honest **within C#**. |
+| [Go: kelindar vs Avro](call-sites/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
+| [Java: Protostuff vs protobuf-java](call-sites/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
+| [Kotlin: Protostuff vs protobuf](call-sites/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |
+| [Kotlin: kotlinx-json vs Moshi](call-sites/kotlin-kotlinx-json-vs-moshi.md) | Both dump/load a suite `Document` as named JSON | Same work. Honest. |
+| [Kotlin: FlatBuffers vs protobuf](call-sites/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
+| [PHP: JSON vs protobuf](call-sites/php-json-vs-protobuf.md) | Both time suite arrays → bytes → suite arrays. protobuf still builds a generated message in the middle | Same work at the suite boundary. |
+| [Fortran: json-fortran vs rojff](call-sites/fortran-json-fortran-vs-rojff.md) | Both time a suite document → compact JSON text → suite document | Same named JSON. Integers outside int32 are JSON numbers on both rows. |
+| [Zig: std.json vs serde.json](call-sites/zig-std-json-vs-serde-json.md) | Both time suite structs → JSON bytes → suite structs | Same comptime `@typeInfo` idea, two libraries. |
+| [Mojo: EmberJson vs mojo-avro](call-sites/mojo-emberjson-vs-avro.md) | EmberJson times `serialize` / `deserialize`. Avro times `encode` / `decode` on `AvroDatum`. | Same suite `Document`; JSON text vs Avro binary. |
 | Zig `protobuf` (Arwalk/zig-protobuf) | Prepare copies suite → generated message. Timed path is `encode` / `decode`. Domain copy-back is after decode (same shape as Rust `prost`) | Honest schema row. |
-| Zig `flatbuffers` | Prepare stores fixtures. Timed path is `Builder.writeTable` / `decodeRoot` | Honest schema row. |
+| Zig `flatbuffers` | Prepare stores test records. Timed path is `Builder.writeTable` / `decodeRoot` | Honest schema row. |
 | Zig `capnproto` | Prepare fills C structs. Timed path is official C++ `MallocMessageBuilder` / `FlatArrayMessageReader` | Honest schema row (C++ runtime, same as Swift). |
 | C++ `capnproto` | Prepare fills `MallocMessageBuilder`. Timed path is `messageToFlatArray` / `writeMessage` and `FlatArrayMessageReader` / `InputStreamMessageReader`. `to_domain` walks fields | Honest schema row (same split as C++ `protobuf`). |
 | Dagr, seven languages | Prepare builds the direct-builder value or the arena. Timed serialize is `direct::build`, `Arena::serialize`, or `to_bytes` (every field is written). Timed deserialize materializes the suite value. N=1 to N=100 size ratio is about 100, and the same layout has the same size across languages | Honest schema row. A latency win for `dagr-frozen-packed` on `message` is that packed encode, not a buffer cached in prepare. |
-| [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
+| [JavaScript: JSON vs google-protobuf](call-sites/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
 | [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
-| [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
+| [Swift: FlatBuffers vs SwiftProtobuf](call-sites/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
 
 ## Remaining contract gaps (not 401 pairs)
 

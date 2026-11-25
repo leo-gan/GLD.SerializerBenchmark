@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **Bitsery** finishes about **1.3 times** as many encode-and-decode cycles per second as **YAS**, and it writes 84 fewer bytes. Both libraries omit field names. Both store integers at fixed width. The gap is not “binary versus text.” It is how each library writes *lengths*, whether it emits a header, and whether it reuses a buffer.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **Bitsery** finishes about **1.3 times** as many encode-and-decode cycles per second as **YAS**, and it writes 84 fewer bytes. Both libraries omit field names. Both store integers at fixed width. The gap is not “binary versus text.” It is how each library writes *lengths*, whether it emits a header, and whether it reuses a buffer.
 
 This page compares the two C++ call sites and the library code they invoke.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=cpp&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=bitsery&ser=bitsery&ser=yas#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [C++ overview](../../cpp/index.md)
 
 ## Short answer
@@ -126,7 +126,7 @@ Bitsery’s layout is a private contract. There are no field numbers. Adding a f
 
 A fairer YAS configuration would add `yas::compacted` and `yas::no_header`. This suite does not. The measured gap is therefore “Bitsery’s defaults versus YAS’s archive defaults,” which is how both libraries are commonly first used.
 
-A JSON row on the same Dashboard slice is a different lesson: [what the simdjson row times](cpp-simdjson-wrapper.md).
+A JSON row on the same Dashboard slice is a different lesson: [what the simdjson row times](../../theory/401/cpp-simdjson-wrapper.md).
 
 ## Self-check
 

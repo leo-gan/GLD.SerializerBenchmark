@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **kelindar/binary** and **hamba/avro** finish within about **10 percent** of each other. Their messages are almost the same size (113 bytes versus 116). Both omit field names. Both cache a per-type encode plan. This pair is useful because the *idea* is the same and the remaining difference is visible in the walk each library performs.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **kelindar/binary** and **hamba/avro** finish within about **10 percent** of each other. Their messages are almost the same size (113 bytes versus 116). Both omit field names. Both cache a per-type encode plan. This pair is useful because the *idea* is the same and the remaining difference is visible in the walk each library performs.
 
 This page compares the two timed wrappers and the library code they invoke.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=go&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=kelindar/binary&ser=kelindar/binary&ser=hamba/avro#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Go overview](../../go/index.md)
 
 ## Short answer
@@ -109,7 +109,7 @@ The extra *time* is the schema-shaped walk: fingerprint lookup, per-field Avro e
 
 kelindar/binary is the faster private dump. It is not a contract you can hand to Java or Python.
 
-hamba/avro is three percent larger and about ten percent slower on this payload, and it is an encoding with twenty years of data-platform use. If the document will sit in a log for years, Avro’s schema resolution is the reason to pay those nanoseconds. See [2.5 Schema evolution](../201/schema-evolution.md) and [3.3 Schema registries](../301/two-schema-cultures.md#schema-registries).
+hamba/avro is three percent larger and about ten percent slower on this payload, and it is an encoding with twenty years of data-platform use. If the document will sit in a log for years, Avro’s schema resolution is the reason to pay those nanoseconds. See [2.5 Schema evolution](../../theory/201/schema-evolution.md) and [3.3 Schema registries](../../theory/301/two-schema-cultures.md#schema-registries).
 
 ## Self-check
 
