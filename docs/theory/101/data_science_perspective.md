@@ -1,235 +1,137 @@
-# Data Science Perspective
+# 1.2 Data Science Perspective
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/101/data_science_perspective.ipynb)
 
-## Who this page is for
-
-This lens is written for people who move **tables, events, features, and models**. It is not only about single API messages. You may recognize yourself in one or more of these roles:
-
-- Analysts and analytics engineers who move data between warehouses, lakes, and notebooks  
-- Machine-learning engineers who checkpoint models, features, and batch scores  
-- Data platform engineers who choose formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform") topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service") layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine"), [DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database"), or Polars  
-- Scientists who currently “just pickle everything” and want a safer mental model  
-
-Even if you are a first-year student, this page is useful. It shows how the same idea of serialization looks when the unit of work is a table or a stream of events, not a single HTTP response.
+Analytical, data-engineering, and machine-learning workloads differ structurally from online service APIs. Rather than exchanging isolated request/response messages, data platforms move large partitioned tables, multi-year event logs, feature batches, multidimensional numeric arrays, and model weight artifacts. Choosing an appropriate standard starts from the unit of work and the dominant access pattern ([how standards differ](index.md#how-standards-differ)).
 
 ---
 
-## How data work differs from service work
+## Workload Profiles in Data Systems
 
-In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back") often means **one message in, one message out**. In data work it usually means one or more of the following:
-
-| Workload | Typical unit | What you usually optimize for |
-|----------|--------------|-------------------------------|
-| **Batch tables** | Partitions of rows or columns on object storage | Scan cost, compression, schema evolution over years |
-| **Streaming events** | Records on a log (Kafka and similar) | Compatibility between old and new producers and consumers |
-| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_%28software%29 "pandas — tabular data library commonly used via DataFrames"), dictionaries, artifacts | Friction versus portability and safety |
-| **Model artifacts** | Weights plus preprocessing graph | Load speed, versioning, who is allowed to load the file |
-| **Feature interchange** | Training and serving feature payloads | Stable types, low training/serving skew, predictable nulls |
-
-Different workloads want different points on [how standards differ](index.md#how-standards-differ). Those properties include text versus binary, schema versus schemaless, row versus columnar, and portable versus language-native.
+| Workload | Typical Unit | Primary Optimization Goals |
+|---|---|---|
+| **Analytical tables** | Partitioned files on object storage (S3, GCS, HDFS) | Column projection, compression ratio, multi-year schema stability |
+| **Streaming event logs** | Append-only records on brokers (Kafka, Pulsar) | Independent producer/consumer evolution under compatibility checks |
+| **Engine-to-engine exchange** | In-memory DataFrames (Python, DuckDB, Polars, Spark) | Minimal conversion and zero-copy inter-process transfer |
+| **Scientific arrays and tensors** | Dense N-dimensional numeric grids and model weights | Contiguous memory layout, hyperslab/slice reads, safe non-executable loading |
+| **Interactive exploration** | Local CSV, JSON, and notebook checkpoints | Low human friction versus reproducibility and portability |
 
 ---
 
-## A short history of formats in data work
+## Formats in Analytical and ML Pipelines
 
-The formats that data teams use did not appear all at once. They layered on top of earlier practice:
+### CSV (RFC 4180)
 
-1. **Fixed-width layouts and [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")** — still everywhere for exports and simple tables. Typing is weak. Nesting is awkward.  
-2. **Language-native blobs (`pickle`, joblib, many machine-learning checkpoints)** — maximum Python convenience. Poor multi-language story. **Unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization") under language-native formats.  
-3. **JSON documents and JSON Lines** — universal glue. Fine for small or medium configs and APIs. Painful as a primary lake format at huge scale.  
-4. **[Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas") (plus schema registry patterns)** — row-oriented binary with a serious **evolution** story for event streams.  
-5. **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format") / [ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")** — **columnar** on-disk formats for analytic scans.  
-6. **[Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")** — shared **in-memory** columnar layout so engines exchange tables without endless convert-and-copy cycles.  
-7. **Validators ([JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON"), Pydantic, msgspec, and similar)** — structure and types when the wire format stays JSON or [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values").
+Comma-Separated Values[^1] remains the lowest common denominator for tabular exports and spreadsheet exchange, but it is a **weakly typed** format. Nulls versus empty strings, date formats, quoting edge cases, leading zeros (which spreadsheet importers routinely coerce into integers), and uncoordinated column changes cause silent corruption. Use CSV at human-facing edges; avoid it as a durable system of record.
 
----
+### JSON and JSON Lines (JSONL)
 
-## Common formats in plain language
+JSON serves well for semi-structured ingestion, webhook landing zones, and metadata configuration. **JSON Lines** places one self-contained JSON object per newline, enabling streaming appends and parallel line-based splitting without parsing an entire file into memory. For large analytical scans, however, repeating keys per row and parsing decimal text remains far more expensive in storage and CPU than binary columnar formats, even under gzip or zstd compression.
 
-### CSV
+### Language-Native Checkpoints (`pickle`, `cloudpickle`, `joblib`)
 
-**Use it when** humans edit data, you need a quick export or import, or you need the smallest common denominator between tools.
+Scientific Python ecosystems rely heavily on `pickle` and `joblib` because they snapshot arbitrary object graphs—including fitted scikit-learn pipelines and custom classes—with a single call. Two constraints restrict their legitimate scope (see [historical context](historical_perspective.md#native-graphs) and [Trust boundaries](../301/trust-boundaries.md)):
 
-**Avoid it as the system of record when** types matter. Dates, nulls versus empty strings, nesting, and silent column changes all hurt. Multiple producers that change columns without coordination make the problem worse.
+- **Security:** Unpickling executes arbitrary opcodes; loading a file from an untrusted source constitutes remote code execution.[^2]
+- **Longevity and portability:** Native blobs are coupled to Python module paths and library versions and cannot be consumed directly by non-Python serving engines.
 
-CSV is not “wrong.” It is a **lossy social format**. It is easy to share and easy to misinterpret. Treat it as an edge adapter, not as the core of a data lake.
+Restrict `pickle`-backed checkpoints to ephemeral, single-environment, fully trusted training workflows. Before sharing or promoting artifacts to production, convert tables to Parquet/Arrow and model weights to non-executable portable formats.
 
-### JSON and JSON Lines
+### Apache Avro
 
-**Use them when** you need semi-structured logs, configuration, small-to-medium interchange, or a landing zone before a typed table format.
+Avro encodes row-oriented binary records compactly while treating the schema as a first-class artifact stored either in container file headers or in an external **schema registry**.[^3] Because Avro resolves a *writer schema* against a *reader schema* using explicit defaults and field aliases, it excels for long-lived event streams where producers and consumers upgrade on independent schedules.
 
-**Costs include** repeated keys on every object, ambiguity around numbers and dates, and parse cost that stays higher than mature columnar binary formats for large analytics. That remains true even when compression shrinks the file.
+### Apache Parquet and Apache ORC
 
-**JSON Lines** puts one JSON object per line. It is often abbreviated JSONL. It is a pragmatic compromise for streaming and batch. It is append-friendly and parallelizable by line, and it is still text. In other words, each line is a complete record. Tools can split a large file without parsing the whole document first.
+Parquet and ORC store values **column by column** inside row groups or stripes.[^4] Grouping homogeneous column values together enables three major gains for analytical queries:
 
-### Pickle and friends
+1. **Column projection:** Queries touching 3 columns of a 200-column table read only those 3 columns from storage.
+2. **Type-aware compression:** Dictionary encoding, run-length encoding (RLE), and delta encoding exploit low-cardinality and monotonic columns far more effectively than row-wise compression.
+3. **Predicate pushdown:** Min/max statistics in page and stripe headers let engines skip entire blocks that cannot match a filter.
 
-**Trust boundary check—do this every time:**
+Columnar file formats are poorly suited to low-latency single-record lookups: for a single row, file footers, metadata headers, and alignment padding dominate both size and latency.
 
-- Is the byte stream from a fully trusted source you control?
-  - **No** → do not unpickle and do not use other native “deserialize anything” APIs.
-  - **Yes** → still prefer portable formats for anything long-lived or multi-language.
+### Apache Arrow
 
-A **trust boundary** is any place where data may come from outside your fully controlled environment. Unpickling a file you did not write is how a notebook grows a shell. The longer version is in the [history of native graphs](historical_perspective.md#native-graphs).
+Arrow specifies a standardized **in-memory** columnar buffer layout (explicit null bitmaps, 64-byte alignment recommendations, nested list/struct buffers) plus an IPC streaming format.[^5] When processes such as Python, DuckDB, Polars, and Spark share Arrow buffers, data crosses language boundaries with minimal or zero serialization copying. Arrow complements rather than replaces Parquet: a standard modern architecture uses **Parquet on disk** for archival compression and **Arrow in memory/IPC** between execution engines.
 
-| Approach | Strength | Risk |
-|----------|----------|------|
-| `pickle` / `cloudpickle` | Almost any Python object graph | Code execution on load; Python-only |
-| `joblib` | Convenient for [scikit-learn](https://en.wikipedia.org/wiki/Scikit-learn "scikit-learn — Python ML library")-style arrays and pipelines | Same trust issues when backed by pickle-like protocols |
-| Framework checkpoints (often pickle-based) | One-command save and load inside that stack | Environment coupling; supply-chain and tampering risk |
+### Scientific Array and Tensor Formats
 
-**Practical rule:** use native formats for **ephemeral, trusted, same-environment** artifacts. For sharing, audit, or multi-year storage, prefer safer options. Use **explicit weight formats** with framework-specific safe loaders. Use **Arrow or Parquet tables**. Use **versioned model registries**. Do not leave a raw pickle file in an open bucket.
+Dense multidimensional grids and neural-network weights introduce requirements distinct from relational tables:
 
-### Avro
+- **HDF5, NetCDF, and ADIOS2** support chunked multidimensional arrays and interior **hyperslab / window reads** without loading entire grids into memory (evaluated under this suite's `array` data set).
+- **Safe tensor formats** (such as Safetensors, ONNX, Arrow IPC tensors, FlatBuffers, or Kiln) store shape, dtype, and contiguous numeric buffers without executing arbitrary code on load. For quantized (e.g., 4-bit or 8-bit) weights, the format must also document group size, scaling factors, and whether stored order differs from the blocked layout required by matrix-multiplication kernels ([Bit width is not bus width](../201/bit-width-and-bus-width.md)).
 
-**Avro** stores values compactly and treats the **schema as a first-class object**. The schema may live in file headers or an external registry. Reader and writer schemas can differ under documented compatibility rules. Defaults and field addition and removal policies are part of that story.
+### MessagePack, CBOR, BSON, and Protocol Buffers
 
-**Prefer Avro when:**
-
-- Producers and consumers change on different schedules  
-- You need a long-lived event log with compatibility checks  
-- Row-oriented access (full events) matters more than wide analytic scans  
-
-**Operational reality:** the schema **process** matters as much as the binary encoding itself. Registry setup, continuous-integration checks, and compatibility mode all count.
-
-### Parquet and ORC
-
-**Columnar** layout stores each column’s values together. That enables:
-
-- Reading only the columns a query needs  
-- Better compression, because similar values sit next to each other  
-- Predicate pushdown and page skipping in mature engines (skipping data that cannot match a filter)  
-
-**Prefer these when** you run data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")-style scans, wide tables, or read-heavy analytics.
-
-**Avoid them when** you mostly fetch one nested document by key at low latency. That is still a **row or document** problem, or a specialized store. It is not Parquet’s sweet spot. A columnar layout pays off when the row count is large. At one row, file headers and alignment padding dominate both size and time.
-
-### Arrow
-
-**Arrow** standardizes **in-memory** columnar buffers. Types, null bitmaps, and nested layouts are part of the design. The project was co-founded with **[Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Apache Arrow")** and others. When two tools speak Arrow, transfer can be a pointer handoff or a cheap [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication") stream. That is better than “write CSV, then parse again.”
-
-**Prefer Arrow when:**
-
-- You cross process boundaries in a data plane. Python ↔ DuckDB ↔ Polars ↔ Spark components is one example.  
-- You build zero-copy or low-copy pipelines  
-- You want one logical table type across languages  
-
-Arrow is complementary to Parquet. A common modern pattern is **Parquet on disk in the lake** and **Arrow in memory between engines**. Arrow is not usually your only long-term archive format by itself.
-
-### MessagePack, BSON, and CBOR
-
-These are **schemaless binary** encodings of JSON-like values:
-
-| Format | Note for data work |
-|--------|--------------------|
-| **MessagePack** | Compact caches, internal service payloads, some feature buses |
-| **BSON** | Document database heritage ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")); extra types such as datetime and binary |
-| **CBOR** | Standards-track; strong story for constrained devices and some security/[IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things") stacks |
-
-They help when JSON is too slow or large but you still want a **dynamic** model. You do not need a fixed schema file first. They do **not** replace Parquet for lake analytics.
-
-### Protocol Buffers and Thrift
-
-Schema-driven remote-procedure-call formats show up when machine-learning **serving** or feature stores talk to microservices. They are excellent **online** contracts. They are usually a poor **sole** lake format compared with Parquet for bulk analytics. Many platforms use **both**: Protocol Buffers online, columnar formats offline.
+Schemaless binary formats (MessagePack, CBOR, BSON) fit compact internal caches and dynamic feature buses, while schema-driven RPC formats (Protocol Buffers, Thrift) fit online inference and feature-serving boundaries. Neither replaces columnar files for bulk offline analytics; mature platforms routinely run Protocol Buffers on online serving paths and Parquet in the analytical lake.
 
 ---
 
-## Schema evolution in data platforms
+## Schema Evolution and Data Contracts
 
-“We added a field” is easy in a notebook and hard in a multi-year lake or event bus. **Schema evolution** means changing the shape of data over time without breaking every old reader or writer.
+Analytical datasets often outlive multiple generations of application code. Schema evolution strategies vary by retention horizon:
 
-| Strategy | Idea | Typical home |
-|----------|------|--------------|
-| **Positional fixed width** | Every field has a byte offset | Legacy finance and mainframe feeds |
-| **Writer schema plus resolution** | Old and new schemas reconciled by rules | Avro plus a registry |
-| **Field numbers** | Stable numeric tags; ignore unknown fields | Protocol Buffers-style systems |
-| **Table schemas in the catalog** | Lakehouse table metadata plus file footers | Parquet plus Glue/Hive/Unity-style catalogs |
-| **“Only append columns, never reuse names”** | A social contract | JSON Lines and ad-hoc pipelines (fragile) |
+| Mechanism | Typical Context | Operational Requirement |
+|---|---|---|
+| Writer/reader schema resolution | Avro + schema registry on event logs | Automated compatibility checks (BACKWARD / FORWARD / FULL) in CI |
+| Stable numeric field tags | Protocol Buffers on online serving paths | Additive optional fields; never reuse deleted field numbers |
+| Catalog-managed table schemas | Parquet + Iceberg / Delta / Hive catalogs | Explicit nullability, partition evolution, and type-promotion rules |
+| Append-only key conventions | JSON Lines landing zones | External validation (JSON Schema, Pydantic, `msgspec`) before promotion |
 
-**Takeaway for data science:** pick a format whose **evolution story matches your retention**. For an ephemeral experiment, JSON Lines is often fine. For seven years of events, invest in Avro plus a registry, or an equivalent contract process. For analytic tables, plan column adds carefully and document null and default semantics.
-
----
-
-## Machine-learning guidance
-
-### Features and tables
-
-- Store large training and feature tables as **Parquet** (or an equivalent columnar format) with explicit data types and a partitioned layout. Time and region are common partition keys.  
-- Interchange between training jobs with **Arrow** where the stack supports it.  
-- Keep a **data contract**. That means a schema plus the meaning of nulls, units, and categorical encodings. Format choice cannot replace documentation.
-
-### Model artifacts
-
-| Need | Prefer |
-|------|--------|
-| Same machine, trusted, rapid iteration | Framework-native checkpoint (understand its trust model) |
-| Portable inference across languages | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange"), framework export formats, or dedicated model servers |
-| Bundle preprocessing and model for one Python service | Still better with a versioned registry and immutable artifact IDs than ad-hoc pickles in chat threads |
-| Audit and compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
-| Quantized weights shared across runtimes | A file that records how many bits each number uses, how the numbers are grouped, and the multiplier that turns those bits back into approximate real values. Loading the file must not run code. The order on disk and the order a matrix calculation expects can differ ([Bit width is not bus width](../201/bit-width-and-bus-width.md)). |
-
-### Experiments versus production
-
-Experiment trackers often accept pickles and arbitrary blobs. **Production promotion** should rebuild critical data as full language objects in memory and write them into **portable tables** and **reviewed model formats**. Do not promote “whatever was left in `/tmp`.”
+A wire format defines syntax and primitive types; a **data contract** must additionally document units, timezone semantics, null interpretations, and categorical codebooks.[^6]
 
 ---
 
-## JSON validation
+## Format Selection Guide
 
-Data platforms still emit JSON for APIs, webhooks, and configuration. Pair text or schemaless payloads with an explicit contract:
+Select the standard from the primary access pattern first, then compare concrete library implementations within one language ([how to compare](index.md#how-to-compare)):
 
-- **JSON Schema** or **[OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")** for cross-team [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol") boundaries  
-- **Pydantic, msgspec, or similar** for Python services that ingest JSON or MessagePack  
-- Table-level quality checks (orthogonal to wire format, but part of the same reliability story)
-
-Validation is how you keep the flexibility of schemaless formats without surprise `null` values in production training jobs.
-
----
-
-## Decision guide
-
-The shape and the access pattern choose the standard. The library is the next question, inside one language. See [how to compare](index.md#how-to-compare).
-
-**What is the primary access pattern?**
-
-| If you need… | Prefer… |
-|--------------|---------|
-| Analytic scans over many rows and few columns | **Parquet** (disk/lake) plus **Arrow** (memory/engines) |
-| Event stream with long retention and multiple consumer versions | **Avro** (or similar) plus a schema registry and a compatibility policy |
-| Human-edited or lowest-common-denominator export | **CSV** (document the schema separately) |
-| Application or API interchange, semi-structured, multi-language | **JSON** (plus schema or validation if the contract matters) |
-| Compact internal dynamic payloads (not a lake table) | **MessagePack** or **CBOR** (still validate at boundaries) |
-| Online low-latency service contract (features, inference input/output) | **Schema-driven** formats (Protocol Buffers and similar)—see the [engineering perspective](engineer_perspective.md) |
-| A dense numeric grid, or a tensor a reader may borrow | **HDF5**, **NetCDF**, or **ADIOS2** for arrays. **Kiln**, **Arrow IPC**, or **FlatBuffers** for tensors |
-| Python-only, trusted, short-lived object graph | **pickle** or **joblib** only with eyes open; plan a portable exit path |
-
-[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) describes the commas in CSV. A spreadsheet may still decide that `00123` is the number 123. The bytes did not change. The reader developed a personality.
-
-### Quick comparison
-
-| Contract | Human-readable | Best at | Weak at |
-|----------|----------------|---------|---------|
-| CSV | Yes | Exchange with humans and tools | Types, nesting, evolution |
-| JSON / JSON Lines | Yes | Universal semi-structured glue | Huge analytic tables |
-| pickle / native | No | Rich Python graphs | Trust, portability, longevity |
-| Avro | No | Evolving event records | “Just open in Excel” |
-| Parquet / ORC | No | Lake analytics | Point lookups of one blob |
-| Arrow | No (binary IPC) | In-memory multi-engine share | Being your only on-disk archive format (usually pair with Parquet) |
-| MessagePack / CBOR | No | Compact dynamic messages | Replacing columnar lakes |
-| Protocol Buffers and similar | No | Online contracts and RPC | Sole format for wide analytics |
+| Access Pattern / Requirement | Default Standard Class | Notes |
+|---|---|---|
+| Wide-table analytical scans | **Parquet** (disk) + **Arrow** (memory/IPC) | Best projection and columnar compression |
+| Multi-year event stream with independent consumers | **Avro** (or Protocol Buffers) + schema registry | Enforce compatibility modes in CI |
+| Human-edited or spreadsheet exchange | **CSV** | Edge adapter only; document schema separately |
+| Semi-structured API or landing logs | **JSON / JSONL** + JSON Schema or typed validator | Inspectable; migrate to Parquet for bulk analytics |
+| Compact dynamic cache / feature payload | **MessagePack** or **CBOR** | Validate shapes at trust boundaries |
+| Low-latency online feature / inference RPC | **Protocol Buffers** (or FlatBuffers) | See [Engineering perspective](engineer_perspective.md) |
+| Chunked scientific grids with window reads | **HDF5**, **NetCDF**, or **ADIOS2** | Measured in this suite's `array` data set |
+| Zero-copy or portable model tensors | **Arrow IPC**, **FlatBuffers**, **Kiln**, **Safetensors** / **ONNX** | Avoid `pickle` across trust or language boundaries |
 
 ---
 
-## How this suite helps (and what it does not)
+## Scope of This Benchmark Suite
 
-These measurements are the encode and decode cost of one fixture. [How to compare](index.md#how-to-compare) states which questions a number can answer. The [Dashboard](../../dashboard/index.html) shows the numbers for one language, one standard, one data set, and one data type. The shapes are on the [test data](../../analysis/test_data_configuration.md) page.
-
-Data platform success also depends on input/output layout, compression, partitioning, cluster execution, and schema governance. Those topics are larger than a single serialize call. Use this page to choose the workload and the standard. Choose the library after that, inside one language.
+The [Dashboard](../../dashboard/index.html) measures single-node encode latency, decode latency, round-trip fidelity, and payload size across controlled data types (`suite`, `columnar`, `graph`, `array`, and `tensor`; see [Data sets](../../analysis/test_data_configuration.md)). End-to-end data-platform performance also depends on file partitioning, object-store I/O latency, query-engine execution, and schema governance—factors that must be evaluated alongside single-codec benchmarks.
 
 ---
 
-## Further reading
+## Exercises
 
-- Kleppmann, *Designing Data-Intensive Applications* — a systems view of encoding and evolution  
-- Apache Parquet, Arrow, and Avro official documentation  
+1. **Columnar vs. row storage:** A telemetry table contains 150 columns and 100 million rows. A daily aggregation reads only `device_id`, `timestamp`, and `temperature_c`. Explain why converting the archive from gzip-compressed JSON Lines to Parquet reduces both I/O volume and CPU time even if raw compression ratios are comparable.
+
+??? note "Solution"
+    With gzip-compressed JSON Lines, the query engine must read and decompress the entire file and parse all 150 fields of every row to extract 3 columns. With Parquet, the engine reads only the column chunks for `device_id`, `timestamp`, and `temperature_c` (roughly 2% of the columns), skips irrelevant row groups via min/max statistics, and avoids JSON tokenization and decimal–binary float parsing.
+
+2. **Parquet on small messages:** Why is Apache Parquet a poor choice for an online service that fetches one 300-byte user profile per HTTP request?
+
+??? note "Solution"
+    Parquet's advantages—column projection, dictionary/RLE compression across many values, and stripe statistics—require large batches of rows (thousands to millions). For a single 300-byte record, Parquet file metadata, Thrift footers, and column-page framing inflate size dramatically and add substantial per-request encode/decode overhead compared with JSON or Protocol Buffers.
+
+3. **Artifact promotion boundary:** A data scientist saves a trained model and preprocessing pipeline with `joblib.dump` (backed by `pickle`) during experimentation and hands the file to a Rust inference team. Identify two concrete problems with this handoff and propose a portable alternative.
+
+??? note "Solution"
+    1. **Language lock-in:** Rust cannot natively execute Python `pickle` opcodes or reconstruct Python scikit-learn classes.
+    2. **Security and reproducibility:** `pickle` files execute arbitrary code on load and break silently across Python/library version upgrades.
+    *Alternative:* Export the model graph and weights to **ONNX** (or export weights in Safetensors alongside explicit JSON/Arrow preprocessing parameters) so the Rust runtime loads pure, non-executable data.
+
+---
+
+## References
+
+[^1]: Shafranovich, Y. (2005). *Common Format and MIME Type for Comma-Separated Values (CSV) Files*. IETF RFC 4180. <https://www.rfc-editor.org/rfc/rfc4180>
+[^2]: Python Software Foundation. *`pickle` — Python object serialization*. Python 3 Documentation. <https://docs.python.org/3/library/pickle.html>
+[^3]: Apache Software Foundation. *Apache Avro Specification*. <https://avro.apache.org/docs/>
+[^4]: Apache Software Foundation. *Apache Parquet Format Specification*. <https://parquet.apache.org/docs/>
+[^5]: Apache Software Foundation. *Apache Arrow Columnar Format Specification*. <https://arrow.apache.org/docs/format/Columnar.html>
+[^6]: Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 4. O'Reilly Media.

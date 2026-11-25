@@ -1,155 +1,102 @@
-# Self-describing vs schema
+# 2.4 Self-Describing vs. Schema-Dependent Encodings
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/self_describing_vs_schema.ipynb)
 
-## Problem
+## Problem Statement
 
-Two systems exchange the “same” logical record. The record has an identifier, a name, and a monetary balance. Encoded as JSON, you can often open a log line and infer meaning from the field names. Encoded as a compact binary sequence without documentation nearby, the same person sees only opaque bytes. Meaning returns only when a **schema** file, interface description, or other authoritative specification is consulted. A schema, in this context, is a formal description of messages and field types that producers and consumers agree to share.
+Any decoder reading a serialized byte stream must recover three facts for every field:
 
-The design question is not merely “are there types?” The question is **where the meaning of each field is recorded** when the message is in transit or at rest.
+1. **Extent:** Where the field begins and ends (via delimiters, length prefixes, or fixed widths).
+2. **Type:** How the bytes should be interpreted (integer, floating-point, UTF-8 string, array, nested record).
+3. **Identity:** Which logical attribute the value represents (field name, numeric tag, or positional index).
 
----
-
-## Short answer
-
-**Self-describing** formats embed enough structure in the **payload** that a generic tool can recover a tree of values. The payload is the actual message bytes. Field names and/or type tags travel with the data. The degree of self-description varies by format. JSON, MessagePack, CBOR, and many “binary JSON” encodings sit in this family.
-
-**Schema-dependent** formats omit most of that metadata from each message. Readers need a **shared schema or interface description language (IDL)**. An IDL is a formal description of messages and field types shared by producers and consumers. Classic Protocol Buffers binary encoding, raw Avro data bytes, and many compact remote-procedure-call encodings work this way. For example, you need the schema to know that field number `3` means `balance` and how that field is encoded.
-
-Self-describing formats typically trade larger size and extra parsing work for inspectability and flexibility. Schema-dependent formats trade an explicit, maintained contract and supporting tooling for density, code generation, and clearer evolution rules. Those benefits appear when that contract is actually maintained.
-
-In other words: you either pay for meaning inside every message, or you pay for a shared contract outside the message.
+The fundamental structural divide among serialization standards is **where type and identity metadata live**: embedded inside every payload on the wire, or held out of band in a shared schema contract.
 
 ---
 
-## Mental model
+## Core Distinction and Spectrum
+
+!!! note "Definition: Self-Describing vs. Schema-Dependent"
+    - A **self-describing** encoding carries field names and/or type tags inside the byte stream itself so a generic parser can reconstruct a tree of values without an application-specific schema (e.g., JSON, XML, MessagePack, CBOR, Amazon Ion).
+    - A **schema-dependent** encoding omits field names (and often type tags) from individual payloads; interpreting the bytes requires a shared external schema or interface description (e.g., Protocol Buffers binary, raw Avro, SBE, FlatBuffers).
 
 ![Self-describing payload versus schema-dependent encoding](../assets/diagrams/201-self-describing-vs-schema.svg#only-light)
 ![Self-describing payload versus schema-dependent encoding](../assets/diagrams/201-self-describing-vs-schema-dark.svg#only-dark)
 
-“Self-describing” is a spectrum, not a single switch. JSON prioritizes human inspection. MessagePack remains machine-oriented yet still carries tags and often keys. Operational deployments that ship descriptor sets alongside Protocol Buffers are hybrid arrangements. They are not the minimal on-the-wire encoding.
+### Worked Comparison
+
+For the logical record `{user_id: 42, name: "Ada"}`:
+
+- **Self-describing JSON (27 bytes):**[^2]
+  ```json
+  {"user_id":42,"name":"Ada"}
+  ```
+  Any generic parser reconstructs both keys and values without external files, but the ASCII strings `"user_id"` and `"name"` are transmitted in every single record.
+- **Schema-dependent Protocol Buffers binary (7 bytes):**[^3]
+  With a shared schema assigning `user_id = 1` (varint) and `name = 2` (length-delimited UTF-8), the wire sequence is `08 2a 12 03 41 64 61`. Field names are absent; without the `.proto` definition, a reader can see only "field 1 = varint 42, field 2 = 3 bytes `Ada`."
+
+### Hybrid Points Along the Spectrum
+
+Self-description is a continuum rather than a strict binary switch. Production systems frequently combine wire compactness with accessible metadata:
+
+| Arrangement | Locus of Schema Metadata | Resulting Trade-Off |
+|---|---|---|
+| **Avro Object Container File / Parquet**[^4] | Writer schema embedded once in file header or footer | Amortizes schema overhead across thousands or millions of records |
+| **Event bus + Schema Registry** | Compact 4-byte schema ID prefixed to each message; schema stored in registry | Minimal per-message overhead while preserving full historical interpretability |
+| **JSON + JSON Schema / OpenAPI** | Self-describing wire payload validated against an external specification | Retains human debuggability while enforcing strict structural contracts |
+| **Protocol Buffers JSON mapping** | Same `.proto` schema emitted with text field names for debugging edges | Trades wire density for human readability on diagnostic or HTTP boundaries |
+
+**Crucial distinction:** "Schemaless on the wire" does *not* mean "no contract in the organization." Teams using JSON or MessagePack still must govern allowed shapes, optionality, and breaking changes through validators, contract tests, and documentation.[^1]
 
 ---
 
-## How it works
+## Trade-Offs and Failure Modes
 
-### Three questions every reader must answer
+| Dimension | Self-Describing (JSON, MessagePack, CBOR) | Schema-Dependent (Protocol Buffers, Avro, FlatBuffers, SBE) |
+|---|---|---|
+| **Wire size** | Larger; field names and type tags repeat per record | Compact; names omitted from payload |
+| **CPU cost** | Key hashing / string comparison and dynamic dispatch | Integer tag switch or fixed-offset loads via generated code |
+| **Observability** | Logs and captures inspectable with generic tools | Requires schema-aware decoders and version tracking |
+| **Tooling & process** | Minimal build friction; universal generic parsers | Requires IDL authoring, codegen in CI, and version governance |
+| **Security** | Untrusted shapes still require validation and depth/size limits | Presence of a schema does not replace bounds checks or input limits |
 
-Any decoder must recover:
-
-1. **Extent** — where each field begins and ends. Delimiters, length prefixes, or fixed layout can provide that answer.
-2. **Type** — whether the value is an integer, string, nested record, and so on. A schema may fix the type instead.
-3. **Identity** — which logical field is present. The answer may be a name, a numeric identifier, or a positional index.
-
-Self-describing formats answer (2) and (3) **inside the byte stream**. Schema-dependent formats answer them primarily from a **contract outside the message itself** (for example in a separate schema file) agreed at build or deployment time. That contract is sometimes versioned through a registry.
-
-### Beginner example: one logical record, two encodings
-
-Logical record:
-
-| Field | Value |
-|-------|--------|
-| `user_id` | 42 |
-| `name` | `Ada` |
-
-**Self-describing text (JSON):**
-
-```json
-{"user_id":42,"name":"Ada"}
-```
-
-A general-purpose parser can construct a map without any project-specific schema file. The characters `user_id` and `name` appear in **every** message. That helps debugging. It costs space when millions of messages are stored or transmitted.
-
-**Schema-dependent sketch (Protocol Buffers style, conceptual):**
-
-Suppose the shared schema states:
-
-```text
-  field number 1: user_id, 32-bit integer
-  field number 2: name, length-delimited UTF-8 string
-```
-
-The on-the-wire form carries **field numbers and values**, not the Unicode names `user_id` and `name`. A reader that lacks the schema cannot reliably map number `1` to the product concept “user identifier.” Density improves because names are not repeated. **Correct interpretation depends on sharing the same schema version.**
-
-### Why dense binary encodings “require” a schema
-
-Protocol Buffers’ compact binary encoding is small largely **because field names are absent from the stream**. Field numbers and wire types remain. Without the mapping from numbers to names and types, only limited generic inspection is possible. That property is not peculiar to one product. It is the general pattern of **schema-dependent density**. The schema is part of the product contract. The bytes are an encoding of values under that contract.
-
-This matters because people sometimes expect “binary” to mean both small *and* self-explanatory. Those two goals pull in opposite directions.
-
-### “Schemaless” on the wire is not “no contract in the organization”
-
-JSON and MessagePack do not eliminate the need for agreements among producers and consumers. They relocate validation, documentation, and compatibility policy into other places. Specifications such as OpenAPI or JSON Schema, shared source types, tests, and operational practice all play a role. The wire representation remains flexible. The organization still needs an authoritative definition of allowed shapes.
-
-### Hybrid arrangements
-
-In practice, many systems sit between the pure extremes. The table below shows common hybrids and where the contract lives in each case.
-
-| Arrangement | Where the contract lives | What the payload emphasizes |
-|-------------|--------------------------|-----------------------------|
-| Avro data file with embedded writer schema | File header and/or registry | Compact values, with the schema available nearby |
-| Events with a schema-registry identifier | Registry entry referenced by id | Small per-record overhead; the full schema is fetched by id |
-| JSON validated against JSON Schema | External schema document | Self-describing payload plus separate correctness checks |
-| Protocol Buffers JSON mapping | Schema plus JSON field names | Human-oriented debugging at larger size |
+**Common pitfalls:**
+- Expecting MessagePack or CBOR maps (which still encode string keys) to match Protocol Buffers wire size.
+- Archiving raw schema-dependent bytes without recording which schema version produced them, leaving historical archives unreadable.
+- Assuming a schema compiler makes untrusted inputs inherently safe against oversized or deeply nested payloads.
 
 ---
 
-## Costs and constraints
+## Connection to the Benchmark Suite
 
-| Axis | Self-describing (typical) | Schema-dependent (typical) |
-|------|---------------------------|----------------------------|
-| Size / bandwidth | Names and tags are repeated, so payloads are larger | Often smaller for the same logical record |
-| Processor time | Parse tags and names; flexible decoders | Less metadata; code generation can be efficient |
-| Evolution | Easy to add keys; also easy to disagree silently | Explicit rules (field numbers, compatibility modes)—if you enforce them |
-| Operability | Logs and support benefit from inspectable payloads | You need decoders and schema versions for observability |
-| Tooling | Widely available generic parsers | IDL, code generation, and continuous-integration discipline |
-| Security / trust | Untrusted input must still be validated | Presence of a schema does not by itself make input safe |
+The suite's teaching families ([Families](../../analysis/families.md)) align closely with this axis: **JSON** and **schemaless binary** transmit names/tags per message; **schema-driven** codecs rely on generated IDLs (`schemas/v2/`); **columnar** files (Parquet, ORC, Arrow IPC) carry schemas once per file footer or stream header. Note that **SBE** is a schema-driven single-record format measured on the `columnar` data set (`signal`), not a columnar file format. Compare density and speed within one language and data type on the [Dashboard](../../dashboard/index.html).
 
 ---
 
-## Illustrative scenarios
+## Exercises
 
-**Public HTTP API.** JSON is retained so browsers, gateways, and external partners can inspect errors without a code generator.
+1. **Wire overhead scaling:** Suppose a telemetry record has 6 fields whose average JSON key name is 10 bytes, and its values total 24 bytes in compact binary form. Estimate the fraction of wire bytes spent on key names alone in a self-describing map encoding, and explain how batching 1,000 records into an Avro container file changes that fraction.
 
-**Internal event bus among owned services.** A schema-dependent binary codec with a registry reduces payload size. Continuous integration enforces compatibility. Both designs can be appropriate. They locate field identity differently because **audiences and change-control processes** differ.
+??? note "Solution"
+    In a single self-describing record, key names alone contribute ~60 bytes (plus quotes/delimiters or length tags), making metadata >70% of the ~84+ byte payload. In an Avro container file, the schema (a few hundred bytes) is written **once** in the file header and amortized across 1,000 records (~0.3–0.5 bytes/record), leaving nearly 100% of the body for values.
 
----
+2. **Inspecting unknown bytes:** You receive the 7-byte Protocol Buffers payload `08 2a 12 03 41 64 61` without a `.proto` file. Which of the three decoder questions (*extent*, *type*, *identity*) can you recover from the bytes alone, and which cannot be recovered reliably?
 
-## In this suite
+??? note "Solution"
+    - **Extent:** Recoverable (varint continuation bits and length prefix `03` delimit every field).
+    - **Type:** Partially recoverable at the *wire-type* level only (field 1 is a varint, field 2 is 3 length-delimited bytes—you cannot tell whether field 1 is `int32`, `sint32`, `uint64`, or `enum`, nor whether field 2 is a UTF-8 string, raw `bytes`, or a nested message).
+    - **Identity:** **Not recoverable** (field numbers `1` and `2` carry no semantic names without the schema).
 
-The suite’s families are a teaching cut. They line up roughly with this axis:
+3. **Hybrid selection:** An external partner API must remain debuggable with `curl`, yet partners repeatedly send strings where integers are expected. Should the team migrate the wire format to Protocol Buffers, or adopt a hybrid arrangement? Justify your answer.
 
-| Family | Typical metadata on the wire |
-|--------|------------------------------|
-| JSON (text) | Field names and textual structure |
-| Schemaless binary | Type tags; often string keys |
-| Schema-driven | Field numbers or layout derived from a schema |
-| Columnar (Parquet, ORC, Arrow IPC) | Schema in a footer, a stream header, or a catalog. Values from one field sit together across many rows. |
-| Language-native | Runtime type metadata (generally unsuitable as portable interchange) |
-
-SBE (Simple Binary Encoding) is schema-driven, and its data set in this suite is Columnar. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file like Parquet.
-
-See [Families](../../analysis/families.md) and language **Overview** pages for registered examples. Claims about density and speed belong on the **Dashboard**, inside one language, standard, data set, and data type. They do not belong on the family label alone.
+??? note "Solution"
+    Adopt a **hybrid arrangement**: keep JSON on the wire for `curl` inspectability and partner ergonomics, and enforce a strict **JSON Schema / OpenAPI** contract (backed by server-side typed validation) at the API gateway so malformed types fail fast with explicit errors.
 
 ---
 
-## Common errors of reasoning
+## References
 
-- Describing JSON as “schemaless” as if the product had no contract at all.
-- Expecting Protocol Buffers–like size from MessagePack while still transmitting full key strings in every message.
-- Deploying schema-dependent bytes without a versioned account of which party holds which schema.
-- Treating human readability as a substitute for validation at trust boundaries.
-- Assuming that the existence of a schema makes deserialization safe against adversarial input. Resource limits and verifiers remain necessary.
-
----
-
-## Key takeaways
-
-- The central design choice is **where field identity and types live**: in the payload or in a shared contract.
-- Self-describing formats favour flexibility and inspectability. They typically cost size and some parsing work.
-- Schema-dependent formats favour density and code generation. They require tooling and contract discipline.
-- “Protocol Buffers requires a schema” is one instance of a general lesson: **dense binary encoding without names on the wire**.
-- Flexible wire formats still require organizational contracts. Documentation, validators, and tests all count.
-- Choose the locus of truth according to who must read the bytes and how change is managed.
-
----
+[^1]: Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 4: "Encoding and Evolution." O'Reilly Media.
+[^2]: Bray, T. (Ed.). (2017). *The JavaScript Object Notation (JSON) Data Interchange Format*. IETF RFC 8259. <https://www.rfc-editor.org/rfc/rfc8259>
+[^3]: Protocol Buffers Documentation. *Encoding Guide*. <https://protobuf.dev/programming-guides/encoding/>
+[^4]: Apache Software Foundation. *Apache Avro Specification (§ Object Container Files)*. <https://avro.apache.org/docs/>

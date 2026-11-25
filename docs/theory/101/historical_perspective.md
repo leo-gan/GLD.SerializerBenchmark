@@ -1,223 +1,162 @@
-# Historical Perspective
+# 1.1 Historical Perspective
 
-This page is the “big picture” lens of Serialization 101. You do not need to memorize every product name. The goal is to see a simple pattern: **pressure → response**. In each era, people felt certain constraints most strongly. The formats of that era were answers to those constraints.
+The history of data serialization is best read as a recurring sequence of **engineering pressure and architectural response**. Each major format reflects the dominant bottleneck of its era—physical storage limits, heterogeneous hardware on early networks, distributed object graphs, web-scale interoperability, datacenter CPU budgets, or wide analytical tables.
 
-## The problem that never goes away
+Three distinct kinds of change recur across this timeline (following the [four-layer serialization model](index.md#the-serialization-model)):
 
-Programs hold **rich structure in memory**. Nested records, arrays, graphs of objects, different integer widths, and different byte orders all live there. Disks, networks, and many caches only store **linear sequences of bytes**.
-
-[Serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back") is the durable answer to a simple question with hard consequences. How do we flatten meaning into bytes and recover it later? The reader may be another machine, another language, or a program years in the future.
-
-Every major format is a bet on which constraints matter most. Human readability is one bet. Portability across CPU architectures is another. Schema evolution means changing the data layout without breaking old readers. Processor cost, memory pressure, and analytics input/output are further bets. History is the story of those bets.
-
-Three kinds of change show up in that story. A **new contract** is a new set of rules for what bytes mean. JSON, Protocol Buffers, and Parquet are contracts. A **new implementation** is a faster or safer library for a contract that already exists. A SIMD JSON parser does not invent a new standard. A **new workload** is a job the older contracts fit badly, such as scanning huge tables, sharing an object graph, or moving a tensor. A later name is not automatically a faster library for the previous contract. The model for these layers is on [Serialization 101](index.md#the-serialization-model).
+- **A new standard** defines new rules for what wire bytes mean (for example, JSON, Protocol Buffers, or Apache Parquet).
+- **A new implementation** realizes an existing standard more efficiently or safely (for example, a SIMD-accelerated JSON parser).
+- **A new workload** exposes structural limits of older contracts (such as columnar analytics, shared object graphs, or zero-copy tensor views).
 
 ---
 
-## Era map
+## Chronological Overview
 
-The table below is a map of the course of history. You do not need to memorize every name. Learn the **pressure → response** pattern. Ask what was expensive or broken, and what idea fixed it.
-
-| Years | Era | Dominant pressure | Representative answers |
-|-------|-----|-------------------|------------------------|
-| 1950s–1960s | Physical & fixed records | Media limits; batch business data | [Punched cards](https://en.wikipedia.org/wiki/Punched_card "Punched card — early physical data medium"); [COBOL](https://en.wikipedia.org/wiki/COBOL "COBOL — Common Business-Oriented Language") fixed-width records; raw memory dumps |
-| 1970s–1980s | Network portability | Heterogeneous machines on one network | Network byte order; [XDR](https://en.wikipedia.org/wiki/External_Data_Representation "XDR — External Data Representation"); [ASN.1](https://en.wikipedia.org/wiki/ASN.1 "ASN.1 — Abstract Syntax Notation One") |
-| Late 1980s–1990s | Distributed objects | Object graphs; “call a method elsewhere” | [CORBA](https://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture "CORBA — Common Object Request Broker Architecture") [IDL](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language"); Java / Python native serialization |
-| Mid-1990s–early 2000s | Universal documents | Web-scale multi-vendor interchange | [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language"); [SOAP](https://en.wikipedia.org/wiki/SOAP "SOAP — Simple Object Access Protocol") stack |
-| 2000s–2010s | Lightweight web data | Browser & API simplicity | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation"); [REST](https://en.wikipedia.org/wiki/REST "REST — Representational State Transfer")-style APIs |
-| Mid-2000s onward | Efficient services & storage | Datacenter cost; long-lived data | [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — Google schema-driven binary format"), [Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework"); [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")/[BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")/[CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation"); [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas") |
-| 2010s onward | Analytics & zero-copy | Scan huge tables; avoid copy/[GC](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation") | [Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")/[ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar"); [Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format"); [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library"); [Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC") |
-| ~2015 onward | Validation as product | Correctness of dynamic JSON at scale | [JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for annotating and validating JSON"); typed validators (e.g. Pydantic, msgspec) |
+| Period | Era | Dominant Pressure | Representative Formats and Standards |
+|---|---|---|---|
+| 1950s–1960s | Physical and fixed records | Fixed media widths; batch business processing | Punched cards; COBOL fixed-width records; raw memory dumps |
+| 1970s–1980s | Network portability | Heterogeneous CPU architectures on shared networks | Network byte order; ASN.1 (BER/DER); Sun XDR |
+| Late 1980s–1990s | Distributed objects | Object graphs, references, remote method invocation | CORBA CDR; Java serialization; Python `pickle` |
+| Mid-1990s–2000s | Universal documents | Multi-vendor web interchange and document validation | XML 1.0; XSD; SOAP |
+| 2000s–2010s | Lightweight web interchange | Browser integration and low-friction HTTP APIs | JSON (RFC 8259); RESTful APIs; YAML; TOML |
+| Mid-2000s onward | Datacenter efficiency | CPU, bandwidth, and long-lived schema evolution | Protocol Buffers; Thrift; MessagePack; BSON; CBOR; Avro |
+| 2010s onward | Analytics and zero-copy | Wide-table scans and avoiding decode-time allocation | Parquet; ORC; Arrow; Cap'n Proto; FlatBuffers |
+| Mid-2010s–present | External validation layer | Enforcing static contracts over dynamic wire formats | JSON Schema; OpenAPI; Pydantic; `msgspec` |
 
 ---
 
-## 1950s–1960s: Physical media and fixed contracts
+## 1950s–1960s: Physical Media and Positional Records
 
-Early “serialization” was often **the medium itself**. **[Herman Hollerith](https://en.wikipedia.org/wiki/Herman_Hollerith "Herman Hollerith — inventor of punched-card tabulation")** designed punched cards that encoded values as hole patterns in fixed columns. That technology was used in the 1890 census and remained central mid-century. The physical layout *was* the format. If you knew which columns held a person’s age or occupation, you could “read” the card.
+Early structured data interchange was defined directly by the physical medium. Herman Hollerith's punched cards (introduced for the 1890 U.S. Census and ubiquitous into the 1960s) assigned semantic meaning strictly by column position: losing the column map rendered the card uninterpretable.
 
-Before anyone could argue about YAML indentation, computers were already exchanging structured data as holes in cardboard. The schema was which column the hole sat in. Lose that map, and a census is just cardboard.
+When magnetic tape and disk replaced cards, two binary conventions emerged:
 
-When magnetic tape and disk arrived, two durable ideas competed:
+1. **Uninterpreted memory dumps** wrote raw CPU memory images directly to storage (common in early Fortran unformatted I/O). While fast on the originating host, raw dumps break across differing word widths, structure padding, and byte orders.
+2. **Explicit fixed-width record layouts**—exemplified by COBOL `DATA DIVISION` descriptions—declared exact field widths and offsets out of band. Any program sharing the layout could parse the record, but inserting or resizing a field invalidated every existing reader.
 
-1. **Raw memory image** — write the bytes exactly as the CPU lays them out. This was common in [FORTRAN](https://en.wikipedia.org/wiki/Fortran "Fortran — early scientific programming language")-era binary I/O. This is fast on one machine. It is useless or wrong on another machine with a different word size or [endianness](https://en.wikipedia.org/wiki/Endianness "Endianness — byte order of multi-byte values"). Endianness is the byte order of multi-byte values.
-2. **Explicit record layout** — declare field widths and types once. COBOL `DATA DIVISION` fixed-width records are an example. Any program that shares the layout can read the bytes. This is interoperable but rigid. If you insert a field, every reader must change or mis-parse the rest of the record.
-
-**Lesson still true today:** a format is a **contract between writer and reader**. The simpler and more positional the layout, the harder it is to extend without breaking old readers. That tension still shows up in modern APIs and event schemas.
+**Enduring principle:** Positional layouts minimize wire overhead at the cost of tight coupling between writer and reader.
 
 ---
 
-## 1970s–1980s: Networks force canonical forms
+## 1970s–1980s: Heterogeneous Networks and Canonical Wire Forms
 
-Connecting incompatible architectures made ad-hoc binary dumps a liability. The [PDP-11](https://en.wikipedia.org/wiki/PDP-11 "PDP-11 — influential minicomputer architecture") was little-endian. IBM machines were big-endian. Later Intel and Motorola worlds differed as well. A multi-byte integer that means `1` on one host can mean millions on another if the byte order differs.
+Connecting machines with incompatible byte orders—little-endian PDP-11 and later x86 systems alongside big-endian IBM and Motorola architectures—made ad-hoc memory dumps unusable across networks. Danny Cohen's 1980 paper *On Holy Wars and a Plea for Peace* framed byte order as an interoperability protocol problem and helped establish big-endian as the canonical **network byte order**.[^1]
 
-**[Danny Cohen](https://en.wikipedia.org/wiki/Danny_Cohen_%28engineer%29 "Danny Cohen — computer scientist; endianness essay")** wrote a 1980 essay called *On Holy Wars and a Plea for Peace*. It popularized “endian” as a network problem. It argued for a single **network byte order** (big-endian) for interchange. The choice of big-endian was somewhat arbitrary. Engineers had reached the point where the order of two bytes required diplomacy. Agreement mattered more than which side “won.”
+Three foundational specifications from the 1980s established patterns still used in modern codecs:
 
-Three threads answered “structured data on the wire” and how to call remote code:
-
-### 1984: ASN.1
-
-Telecom and [ISO](https://en.wikipedia.org/wiki/International_Organization_for_Standardization "ISO — International Organization for Standardization") standards defined **ASN.1**. The design was formalized in the mid-1980s. ASN.1 describes abstract types plus encoding rules. Notable rules include [BER](https://en.wikipedia.org/wiki/X.690 "BER/DER — ASN.1 encoding rules (X.690)") and [DER](https://en.wikipedia.org/wiki/X.690 "DER — Distinguished Encoding Rules (ASN.1)"). **[Type–Length–Value (TLV)](https://en.wikipedia.org/wiki/Type%E2%80%93length%E2%80%93value "TLV — Type–Length–Value encoding structure")** encoding lets a parser skip unknown pieces. That is an early, powerful approach to **extensibility**. A new field can be added without forcing every old reader to fail. DER-encoded structures still sit under [HTTPS](https://en.wikipedia.org/wiki/HTTPS "HTTPS — HTTP over TLS") certificates ([X.509](https://en.wikipedia.org/wiki/X.509 "X.509 — public key certificate standard")) and other infrastructure you use every day.
-
-### 1984: RPC as an idea
-
-**Birrell & [Nelson](https://en.wikipedia.org/wiki/Bruce_Jay_Nelson "Bruce Jay Nelson — co-author of “Implementing Remote Procedure Calls”")** worked on remote procedure calls. Their work formalized a pattern that never left the industry. The idea is simple to state. Describe the interface once. **Generate** the code that packs and unpacks arguments. Make a network call *feel* like a local function call. CORBA, `protoc`, Thrift, and [gRPC](https://en.wikipedia.org/wiki/GRPC "gRPC — high-performance RPC framework (often with Protobuf)") are descendants of that DNA.
-
-### 1987: XDR
-
-Sun’s **XDR** (External Data Representation) powered [NFS](https://en.wikipedia.org/wiki/Network_File_System "NFS — Network File System") and Sun [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call"). It is described in RFC 1014 and later RFC 4506. It used fixed alignment rules, big-endian integers, and length-prefixed strings and arrays. It was portable and efficient for its time. It was **not self-describing**. You needed the agreed procedure and types to interpret the stream. Those were often defined in an `.x` description file.
-
-**Lesson:** networks demand a **canonical** representation that every machine can agree on. That pressure still pushes industry toward an interface description language (IDL) and **generated** encode/decode code.
+- **ASN.1 (1984):** Developed by ISO and ITU-T for telecommunications, Abstract Syntax Notation One separated abstract type definitions from encoding rules such as BER and DER.[^2] Its **Type–Length–Value (TLV)** framing allowed decoders to skip unrecognized fields—an early mechanism for forward-compatible extensibility. DER-encoded ASN.1 remains the wire format underlying X.509 TLS certificates.
+- **Birrell and Nelson's RPC model (1984):** Formalized generating marshalling stubs from an interface specification so remote calls resemble local procedure calls.[^3] CORBA, `protoc`, Thrift, and gRPC descend from this architecture.
+- **Sun XDR (1987):** Specified in RFC 1014 (later RFC 4506) for NFS and Sun RPC, External Data Representation defined fixed 4-byte alignment, big-endian scalars, and length-prefixed strings and arrays.[^4] XDR was compact and portable, but non-self-describing: readers required the out-of-band `.x` interface definition.
 
 ---
 
-## Late 1980s–1990s: Objects and native graphs {#native-graphs}
+## Late 1980s–1990s: Object Graphs and Language-Native Serializers {#native-graphs}
 
-Object-oriented runtimes introduced **graphs**. Shared references, cycles, and inheritance all appear. Flat records and simple RPC structs were not enough for “save this object and restore it later in the same ecosystem.”
+Object-oriented runtimes introduced shared references, inheritance hierarchies, and reference cycles that flat RPC records could not represent directly:
 
-- **CORBA (1991)** — language-neutral IDL and binary [CDR](https://en.wikipedia.org/wiki/Common_Data_Representation "CDR — Common Data Representation (CORBA)") on the wire. It was powerful but operationally heavy. It declined as the web favored looser coupling.
-- **Java serialization (1995)** — language work associated with **[James Gosling](https://en.wikipedia.org/wiki/James_Gosling "James Gosling — co-creator of the Java language")** and the Java platform. You implement a marker interface. The runtime reflects fields. This is ergonomic inside the [JVM](https://en.wikipedia.org/wiki/Java_virtual_machine "JVM — Java Virtual Machine"). It is **not portable** to other languages. Versioning via `serialVersionUID` is brittle. It is **unsafe** on untrusted bytes. Gadget chains can lead to remote code execution.
-- **Python** was created by **[Guido van Rossum](https://en.wikipedia.org/wiki/Guido_van_Rossum "Guido van Rossum — creator of Python")**. **[pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python’s built-in object serialization (see Serialization § Python)")** arrived in the mid-1990s. It is an opcode stream for a small virtual machine. It can reconstruct rich Python objects. With `cloudpickle`, it can reconstruct many dynamic callables. It is central to much scientific Python. It is **Python-only** and **unsafe** on untrusted input. A checkpoint from your own training job is a convenience. A checkpoint from a link in a chat is a guest who brought their own interpreter.
+- **CORBA (1991)** paired a language-neutral Interface Definition Language (IDL) with binary Common Data Representation (CDR) on the wire, but its operational and specification complexity hindered adoption as web HTTP architectures gained ground.
+- **Java serialization (1995)** allowed JVM programs to serialize arbitrary object graphs through runtime reflection on classes implementing `Serializable`. While convenient inside one JVM, it is non-portable, brittle across class evolution (`serialVersionUID`), and vulnerable to remote code execution via deserialization gadget chains on untrusted input.
+- **Python `pickle` (mid-1990s)** serializes Python object graphs into a bytecode stream executed by a stack-based virtual machine during unpickling. Extensions such as `cloudpickle` and `dill` broaden coverage to closures and scientific computing objects, but `pickle` remains strictly Python-specific and unsafe across trust boundaries.
 
-**Lesson:** language-native formats maximize convenience **inside one trust boundary and one language**. They repeatedly fail as universal interchange. They are a poor security boundary when input is untrusted.
-
----
-
-## Mid-1990s–2000s: The XML decade
-
-The public web needed something **language-neutral, hierarchical, and human-inspectable**. **XML 1.0** was published by the [W3C](https://en.wikipedia.org/wiki/World_Wide_Web_Consortium "W3C — World Wide Web Consortium") in 1998. Editors included **[Tim Bray](https://en.wikipedia.org/wiki/Tim_Bray "Tim Bray — co-editor of XML 1.0")** and **[Jean Paoli](https://en.wikipedia.org/wiki/Jean_Paoli "Jean Paoli — co-editor of XML 1.0")**. XML has roots in [SGML](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language "SGML — Standard Generalized Markup Language"). It wrapped data in named tags. Tooling exploded. [XSD](https://en.wikipedia.org/wiki/XML_Schema_%28W3C%29 "XSD — XML Schema Definition"), [XPath](https://en.wikipedia.org/wiki/XPath "XPath — query language for XML trees"), [XSLT](https://en.wikipedia.org/wiki/XSLT "XSLT — XML transformations"), and namespaces all appeared.
-
-Enterprise systems layered **SOAP** and the WS-\* stack on XML over [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol"). In theory this was universal. In practice it was verbose and complex. Parse cost and document weight became obvious at scale. SOAP 1.1 expanded the name as Simple Object Access Protocol. SOAP 1.2 gave up and said the name no longer stands for anything. The protocol did not get simpler. It just stopped promising to. XML made data explicit. Sometimes the tags held a longer conversation than the number they were carrying.
-
-```xml
-<temperature>
-  <value>25</value>
-</temperature>
-```
-
-JSON looked at that ceremony and kept the 25.
-
-One famous hostile XML document is called the **billion laughs** attack. A tiny file expands into a billion copies of the word `lol`. The joke is in the name. The outage is not. Do not learn it by pasting it into a parser.
-
-**Lesson:** **self-description and universality have real processor and bandwidth costs.** The industry spent the following decades trying to keep interoperability while reducing that “XML tax.”
+**Enduring principle:** Language-native serializers optimize single-runtime convenience at the expense of cross-language portability and boundary security.
 
 ---
 
-## 2000s–: JSON and the web API default {#json-and-the-web}
+## Mid-1990s–2000s: XML and Universal Self-Description
 
-**[Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford "Douglas Crockford — popularized JSON")** named and popularized **JSON** in the early 2000s. JSON is essentially [JavaScript](https://en.wikipedia.org/wiki/JavaScript "JavaScript — programming language of the web") object literal syntax used as a data format. It was later standardized as RFC 4627, then RFC 8259 / ECMA-404. JSON has a small set of types: `null`, bool, number, string, array, and object. It is trivial for browsers. It is good enough for most public APIs.
+The early World Wide Web demanded a language-neutral, hierarchical, human-inspectable interchange format. W3C published **XML 1.0** in 1998 (co-edited by Tim Bray, Jean Paoli, and colleagues), deriving a simplified subset of SGML.[^5] An extensive ecosystem followed: XML Schema (XSD), XPath, XSLT, and the SOAP/WS-\* enterprise RPC stack.
 
-REST-style HTTP APIs made JSON the default **public** interchange language. REST is an architectural style articulated by **[Roy Fielding](https://en.wikipedia.org/wiki/Roy_Fielding "Roy Fielding — co-author of HTTP/1.1; REST dissertation")**. Mobile clients reinforced that default. Limitations became part of everyday engineering:
+In production, XML revealed two practical costs of verbose self-description:
 
-- There is no standard date or binary type. People use conventions and [base64](https://en.wikipedia.org/wiki/Base64 "Base64 — binary-to-text encoding").
-- Numbers are not a full [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754 "IEEE 754 — floating-point arithmetic standard") taxonomy of int versus float.
-- Schema is optional. Later work filled that gap with **JSON Schema**, [OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions"), and language validators.
-
-**JSON has no comments, on purpose.** Crockford removed them. People were hiding parsing instructions inside comments, and a comment one parser ignores is a command another parser obeys. He wrote that the lack of comments makes some people sad, and that it should not. His suggested cure was to comment anyway, then minify the file before parsing. The sadness was relocated, not cured.
-
-**Norway is sometimes false.** In YAML 1.1, an unquoted `no` is a boolean, in several capitalizations. A list of country codes can therefore contain Sweden, Finland, and `false`. YAML 1.2's core schema stopped treating those words as booleans. Many parsers still in use, including older PyYAML defaults, did not. If the config says Norway and the program says false, you are not having a geography argument.
-
-**Lesson:** the “winning” format is often the one that minimizes **integration friction** for many teams and tools. It is not always the one that wins a microbenchmark on one machine.
+1. **Bandwidth and parsing tax:** Closing tags, namespaces, and text encoding inflated wire payloads and CPU time relative to payload information content.
+2. **Parser attack surface:** Features such as Document Type Definition (DTD) external entities and nested entity expansion (*billion laughs* denial-of-service attacks) required defensive parser hardening.
 
 ---
 
-## 2000s–2010s: Schema-driven binary efficiency
+## 2000s–2010s: JSON and Lightweight Web Interchange {#json-and-the-web}
 
-Inside large service meshes, repeating field names as text and parsing characters became a measurable **datacenter tax**. Companies paid real money in CPU time and bandwidth for formats that were convenient but heavy.
+In the early 2000s, Douglas Crockford popularized **JSON** (JavaScript Object Notation), later standardized in RFC 4627 and RFC 8259 / ECMA-404.[^6] JSON restricted the data model to six primitives and containers—`null`, boolean, number, string, array, and object—eliminating XML namespaces, attributes, and comments. Paired with RESTful HTTP APIs (articulated by Roy Fielding in 2000),[^7] JSON became the default public interchange format for browsers, mobile clients, and third-party APIs.
 
-### Early 2000s: Protocol Buffers
+JSON's deliberate minimalism left recurring operational trade-offs:
 
-Google’s **Protocol Buffers** began internal use in the early 2000s and were open-sourced in 2008. Design lineage includes work associated with **[Jeff Dean](https://en.wikipedia.org/wiki/Jeff_Dean "Jeff Dean — Google Fellow; large-scale systems")**, **[Sanjay Ghemawat](https://en.wikipedia.org/wiki/Sanjay_Ghemawat "Sanjay Ghemawat — Google Fellow; systems co-designer")**, **Kenton Varda**, and many others. Protocol Buffers revived IDL plus code generation with a compact binary encoding. Field **numbers** replace field names on the wire. Why send the text `customer_id` thousands of times when both sides already agreed that field 3 means that? The number is enough. The bandwidth bill will not send a thank-you card. Variable-length integers (**varints**) keep small numbers small. Evolution rules center on never reusing field numbers for different meanings. The bytes are opaque without the `.proto` schema. The format is excellent for multi-language services that invest in schema discipline.
+- No native binary, timestamp, or integer-versus-float distinction (handled by conventions such as Base64 and ISO 8601 strings; large 64-bit integers lose precision in IEEE 754 `double` parsers).
+- Comments were intentionally omitted to prevent parsers from diverging on embedded directives, pushing human-authored configuration toward **YAML** and **TOML**.
+- Human-oriented text grammars carry their own edge-case hazards: in YAML 1.1, unquoted `NO` (the ISO 3166-1 code for Norway) parses as boolean `false`, a quirk removed in YAML 1.2's Core Schema though still present in widely deployed YAML 1.1 libraries.
 
-### 2007: Apache Thrift
-
-Facebook’s **Thrift** (later Apache) combined an IDL, multi-language code generation, and pluggable protocols and transports. It offered RPC-oriented flexibility in environments that used many programming languages.
-
-### ~2008–2013: Schemaless binary cousins
-
-Not every team wanted a compiler in the loop. Some wanted a binary form of the JSON data model:
-
-| Format | Approx. | Intent |
-|--------|---------|--------|
-| **MessagePack** | ~2008 ([Sadayuki Furuhashi](https://en.wikipedia.org/wiki/Sadayuki_Furuhashi "Sadayuki Furuhashi — creator of MessagePack")) | JSON data model, binary tags, smaller/faster than text JSON |
-| **BSON** | ~2009 ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")) | Document storage/wire types (dates, binary) with length prefixes |
-| **CBOR** | 2013 (RFC 7049 / 8949) | Standards-track concise binary objects; strong [IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things") / constrained-device story |
-
-**Lesson:** once JSON locked a simple *data model* in people’s heads, the industry cloned that model into **binary** for speed and size. It reintroduced **schemas** where long-lived evolution and efficiency dominated.
+**Enduring principle:** Public interchange standards succeed primarily by minimizing multi-party integration friction rather than maximizing single-machine throughput.
 
 ---
 
-## Late 2000s–2010s: Long-lived data and analytics
+## Mid-2000s Onward: Schema-Driven and Dynamic Binary Efficiency
 
-Batch and streaming platforms needed formats that survive **years** of readers and writers coexisting. The [Hadoop](https://en.wikipedia.org/wiki/Apache_Hadoop "Apache Hadoop — distributed storage and MapReduce ecosystem") ecosystem and its successors are examples.
+At datacenter scale, repeating ASCII field names and converting decimal text across thousands of internal service hops imposed measurable CPU and bandwidth costs. Two complementary binary responses emerged:
 
-- **Apache Avro** was designed by [Doug Cutting](https://en.wikipedia.org/wiki/Doug_Cutting "Doug Cutting — creator of Lucene/Hadoop; Avro designer") and others around 2009. It stores compact binary values. The schema often travels with the data or lives in a **registry**. It has a strong story for **matching a writer’s schema to a reader’s schema by rules** (*schema resolution*). Defaults and reader/writer schema compatibility are first-class ideas. It became a default mental model for event logs. [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform") plus registry patterns is a common example.
-- **Columnar storage** — Google’s **[Dremel](https://en.wikipedia.org/wiki/Dremel_%28software%29 "Dremel — Google interactive analytic query system")** paper (2010) popularized nested columnar layout for analytic queries that touch few columns of wide tables. **Apache Parquet** was open-sourced around 2013 by Julien Le Dem, Nong Li, and community. **ORC** made the same idea the backbone of data lakes. Asking a row file for two columns of a thousand-column table is like ordering extra cheese and receiving the restaurant's inventory. A columnar file can leave the rest of the restaurant on disk.
-- **Apache Arrow** began around 2016. [Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Arrow") and co-founders and community led the project. It defines a standard **in-memory** columnar layout. Systems can share tables with minimal or zero copy instead of endlessly converting.
-
-**Lesson:** **transactional messaging** and **analytical scanning** want different layouts. History gradually splits “messages on the wire” from “tables on disk or in memory for analytics.”
+- **Schema-driven IDL codecs:** Google developed **Protocol Buffers** internally in the early 2000s and open-sourced it in 2008. Field names are replaced on the wire by small integer field numbers paired with variable-length integers (*varints*), preserving forward compatibility via unknown-field skipping provided field numbers are never reused. Facebook introduced **Apache Thrift** (2007), combining an IDL with pluggable transports and binary/compact protocols.[^8]
+- **Schemaless ("dynamic") binary codecs:** Teams wanting binary density without a schema compiler mapped the JSON data model directly onto binary type tags: **MessagePack** (Sadayuki Furuhashi, 2008), **BSON** (MongoDB, 2009, adding native dates and length-prefixed traversal), and **CBOR** (IETF RFC 7049 / RFC 8949, 2013, targeting constrained devices and standards-track protocols).[^9]
 
 ---
 
-## 2010s: Zero-copy access
+## Late 2000s–2010s: Long-Lived Event Logs, Columnar Storage, and Zero-Copy
 
-Even fast encode and decode still **copy** data into language objects. Domains with tight latency or memory budgets pushed further. Games, some telemetry, and certain RPC paths are examples.
+Three specialized workloads drove further divergence from classical RPC message codecs:
 
-- **Cap’n Proto** (Kenton Varda, ~2013) lays the buffer out so a reader can load fields in place. Building that buffer still takes work. A simple read can skip a second object tree. Encode is not free. Engineers made the encode faster, then noticed the expensive step was copying the result into a second tree of objects. Stopping that copy sends the bill to alignment, lifetimes, and whoever owns the buffer.
-- **FlatBuffers** (Wouter van Oortmerssen, Google, ~2014) has the same access goal, with a small offset table for optional fields. It has a strong mobile and game heritage. It also appears in [ML](https://en.wikipedia.org/wiki/Machine_learning "ML — Machine learning") runtime ecosystems.
-
-These two formats store one record. Parquet and Arrow, in the previous section, store columns. The era map puts them on one row because they arrived in the same decade. They answer different pressures.
-
-**Trade-off theme:** less parse work often means more care around **validation**, how you mutate data, and day-to-day tooling. Debuggability, proxies, and HTTP-centric infrastructure all change.
+1. **Schema-resolved event streams:** **Apache Avro** (Doug Cutting et al., 2009) omitted field tags entirely from individual records by pairing compact binary streams with explicit writer and reader schemas (stored in file headers or an external schema registry), making schema resolution a first-class operation for multi-year event logs.
+2. **Columnar analytics:** Google's **Dremel** paper (2010) demonstrated nested columnar storage for interactive queries that read only a few columns of wide tables.[^10] **Apache Parquet** (2013) and **Apache ORC** brought columnar storage with per-column encoding and predicate pushdown to open data lakes. **Apache Arrow** (2016) extended the columnar model to a standardized **in-memory** layout so analytical engines exchange tables across language boundaries without repeated serialization copies.
+3. **Zero-copy record access:** **Cap'n Proto** (Kenton Varda, 2013) and **FlatBuffers** (Wouter van Oortmerssen, 2014) arranged single-record wire layouts using aligned fields and relative offsets so readers access individual fields directly from the receive buffer without allocating a mirror object graph—trading away casual mutation and requiring explicit buffer verification on untrusted inputs.
 
 ---
 
-## Mid-2010s–present: Validation renaissance
+## Mid-2010s–Present: Validation as an Independent Layer
 
-Public and internal APIs stayed on JSON for reach. Teams paid for **ad-hoc validation**. The response was not a single new wire format. It was **schema as a product layer**:
-
-- **JSON Schema** and **OpenAPI** — contracts and generated clients and servers for HTTP JSON.
-- Runtime validators bound to language types — in Python, notably **Pydantic** and high-performance tools like **msgspec**. These treat annotations as schema and validate on the way in and out.
-
-**Lesson:** the popularity of schemaless JSON created demand for **optional, enforceable structure**. Contracts and validators can fill that demand without always switching the bytes on the wire.
+Because JSON remained entrenched at public edges, the ecosystem separated *contract enforcement* from *wire encoding*. **JSON Schema** and **OpenAPI** formalized structural contracts over JSON payloads, while typed runtime libraries such as Python's **Pydantic** and **`msgspec`** coupled static type annotations directly to fast validation and serialization without abandoning standard wire formats.
 
 ---
 
-## Tensions diagram
+## Recurring Architectural Tensions
 
-History does not converge on a single winner. It accumulates niches along recurring trade-offs:
+History does not converge on a single universal format; modern production architectures routinely combine multiple formats along four enduring trade-offs:
 
-| One pole | ↔ tension ↔ | Other pole |
-|----------|-------------|------------|
-| **Human-readable & universal** (JSON / XML) | | **Compact & CPU-cheap** (Protobuf / MessagePack / …) |
-| **Flexible & ad hoc** (JSON / pickle / MessagePack) | | **Evolvable & explicit** (Avro / Protobuf + process) |
-| **Whole-record access** (messages / documents) | | **Wide-table analytics** (Parquet / Arrow) |
-| **Safe across trust boundaries** (portable + validated) | | **Max power in one runtime** (native pickle / Java serialization) |
-
----
-
-## Using this history
-
-1. When someone says “just use X,” ask **which pressure** they are optimizing. Debugging, multi-language support, long retention, scan speed, and safety under untrusted input are different goals.
-2. Prefer portable, explicit formats when data **crosses** a language boundary or a trust boundary.
-3. Expect **multiple** formats in one healthy organization. JSON at the public edge, binary remote procedure calls inside, and Parquet in the data lake is historically normal. It is not a sign of failure.
+| Pole A | Pole B | Typical Division in Practice |
+|---|---|---|
+| Human-readable and universal (JSON, XML) | Compact and low-CPU (Protocol Buffers, MessagePack) | JSON at public edges; binary RPC internally |
+| Ad-hoc and flexible (JSON, MessagePack) | Explicitly versioned (Protocol Buffers, Avro + registry) | Schemaless for volatile documents; IDL for long-lived contracts |
+| Whole-record access (messages, documents) | Wide-table projection (Parquet, ORC, Arrow) | Row formats for OLTP/RPC; columnar formats for OLAP lakes |
+| Safe across trust boundaries (portable + validated) | Full runtime graph fidelity (`pickle`, Java serialization) | Portable everywhere bytes cross a process or team boundary |
 
 ---
 
-## Selected references
+## Exercises
 
-These are entry points, not an exhaustive bibliography. Wikipedia articles for major formats appear on first mention above.
+1. **Pressure-to-response mapping:** Identify the specific limitation of *(a)* XDR that ASN.1 BER addressed, *(b)* XML/SOAP that JSON addressed, and *(c)* row-oriented Avro that Parquet addressed.
 
-1. Cohen, D. (1980). “On Holy Wars and a Plea for Peace.” *IEEE Computer*.
-2. Sun Microsystems / IETF. *XDR* — RFC 1014; RFC 4506.
-3. ITU-T / ISO. *ASN.1* (e.g. X.680 and related encoding rules).
-4. Birrell, A. D., & Nelson, B. J. (1984). “Implementing Remote Procedure Calls.” *ACM TOCS*.
-5. Bray, T., et al. *Extensible Markup Language (XML) 1.0*. W3C.
-6. Bray, T. (Ed.). *The JavaScript Object Notation (JSON) Data Interchange Format* — RFC 8259.
-7. Fielding, R. T. (2000). *Architectural Styles and the Design of Network-Based Software Architectures* (REST).
-8. Google Protocol Buffers documentation and open-source history.
-9. Slee, M., Agarwal, A., & Kwiatkowski, M. (2007). *Thrift* white paper; Apache Thrift project.
-10. Apache Avro, Parquet, and Arrow project documentation.
-11. Bormann, C., & Hoffman, P. *CBOR* — RFC 7049; RFC 8949.
-12. Cap’n Proto and FlatBuffers project documentation.
-13. Kleppmann, M. (2017). *Designing Data-Intensive Applications*. O’Reilly. (Formats in real systems.)
-14. MessagePack specification; MongoDB BSON specification.
+??? note "Solution"
+    - *(a)* XDR is strictly positional and non-self-describing, so old readers cannot skip newly added fields; ASN.1 BER introduced Type–Length–Value (TLV) framing so decoders can skip unrecognized elements.
+    - *(b)* XML/SOAP imposed heavy syntax verbosity, schema/namespace complexity, and high parsing friction in browsers; JSON reduced the data model to six web-native primitives with minimal syntax.
+    - *(c)* Row-oriented Avro requires scanning every field of every record even when an analytical query projects only a few columns; Parquet groups values by column so unused columns are skipped and per-column compression improves.
+
+2. **Three kinds of change:** Classify each of the following as a *new standard*, a *new implementation*, or a *new workload* response: *(a)* `simdjson` parsing RFC 8259 JSON, *(b)* Apache Arrow standardizing columnar buffers in RAM, *(c)* adopting FlatBuffers to avoid decode allocations in a mobile game client.
+
+??? note "Solution"
+    - *(a)* **New implementation** (faster SIMD realization of the existing RFC 8259 JSON standard).
+    - *(b)* **New standard** targeting a **new workload** (cross-engine in-memory analytical interchange without convert-at-every-boundary copies).
+    - *(c)* **New standard** targeting a **new workload** (in-place read access to large records under tight frame-time allocation budgets).
+
+3. **Multi-format architecture:** Why is an organization that uses JSON for public REST APIs, Protocol Buffers for internal gRPC calls, and Parquet in its analytical lake exhibiting sound architecture rather than format sprawl?
+
+??? note "Solution"
+    Each boundary faces a different dominant constraint: public APIs prioritize third-party debuggability and browser compatibility (JSON); internal service-to-service RPC prioritizes strict multi-language contracts and low CPU/bandwidth overhead (Protocol Buffers); analytical lakes prioritize column projection and compression over multi-year tables (Parquet). No single format optimizes all three simultaneously.
+
+---
+
+## References
+
+[^1]: Cohen, D. (1980). "On Holy Wars and a Plea for Peace." *IEEE Computer*, 14(10), 48–54 (originally IEN 137, April 1980).
+[^2]: ITU-T. *Recommendation X.680 / X.690: Abstract Syntax Notation One (ASN.1) and Encoding Rules (BER, CER, DER)*.
+[^3]: Birrell, A. D., & Nelson, B. J. (1984). "Implementing Remote Procedure Calls." *ACM Transactions on Computer Systems*, 2(1), 39–59.
+[^4]: Eisler, M. (Ed.). (2006). *XDR: External Data Representation Standard*. IETF RFC 4506 (obsoleting RFC 1014). <https://www.rfc-editor.org/rfc/rfc4506>
+[^5]: Bray, T., Paoli, J., Sperberg-McQueen, C. M., Maler, E., & Yergeau, F. (2008). *Extensible Markup Language (XML) 1.0* (5th ed.). W3C Recommendation. <https://www.w3.org/TR/xml/>
+[^6]: Bray, T. (Ed.). (2017). *The JavaScript Object Notation (JSON) Data Interchange Format*. IETF RFC 8259. <https://www.rfc-editor.org/rfc/rfc8259>
+[^7]: Fielding, R. T. (2000). *Architectural Styles and the Design of Network-Based Software Architectures*. Ph.D. Dissertation, University of California, Irvine.
+[^8]: Slee, M., Agarwal, A., & Kwiatkowski, M. (2007). *Thrift: Scalable Cross-Language Services Implementation*. Facebook Technical Report.
+[^9]: Bormann, C., & Hoffman, P. (2020). *Concise Binary Object Representation (CBOR)*. IETF RFC 8949. <https://www.rfc-editor.org/rfc/rfc8949>
+[^10]: Melnik, S., et al. (2010). "Dremel: Interactive Analysis of Web-Scale Datasets." *Proceedings of the VLDB Endowment*, 3(1–2), 330–339.
