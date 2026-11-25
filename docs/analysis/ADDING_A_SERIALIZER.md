@@ -8,17 +8,6 @@ Background: [Architecture](architecture.md) · [Modes](modes.md) · [Metrics](ME
 
 ---
 
-## Learning goals
-
-After this page you should be able to:
-
-1. Wire a library into one language’s benchmark runner so it appears in the CSV.
-2. Land a **performance-complete** client (documented hot path, not only a correct round-trip).
-3. Fill `SerializerVersion`, inventory docs, and counts correctly.
-4. Run a smoke/full bench, re-run that language’s compliance suite, regenerate published results, and open a PR that reviewers can merge.
-
----
-
 ## Before you start
 
 | Question | Why it matters |
@@ -105,7 +94,7 @@ Then compare **order of magnitude** against an existing peer on the **same stand
 | Signal | Action |
 |--------|--------|
 | Size matches a same-standard peer; ops within ~2–3× of a peer of similar design | Good enough to proceed to full |
-| Size wrong (0/1, or ≪ peers) | Fix harness / batch framing first (LABEL≠WORK) |
+| Size wrong (0/1, or ≪ peers) | Fix runner / batch framing first (LABEL≠WORK) |
 | Size OK but ops ≪ peers by ~5–10× | Re-check docs for reuse, typed API, prepare placement — **do not publish full numbers yet** |
 | Still slow after hot-path audit | Document as expected library cost; cite docs |
 
@@ -122,7 +111,7 @@ Official [Reflect README](https://avro.apache.org/docs/1.12.0/api/csharp/html/md
 
 Isolation was preserved by binding `ReflectWriter<>` / `ReflectReader<>` from the runtime primary `Type` in `Initialize` (compiled delegates), not by hard-coding suite type names.
 
-**Lesson:** “Works like the docs sample” ≠ “optimal for a microbenchmark harness.” Do the hot-path pass **before** full-matrix results.
+**Lesson:** “Works like the docs sample” ≠ “optimal for a microbenchmark runner.” Do the hot-path pass **before** full-matrix results.
 
 ---
 
@@ -316,7 +305,7 @@ namespace GLD.SerializerBenchmark.Serializers
 | Prefer typed APIs (`Something<T>`) bound once from `Type` | Avoid re-resolving via `object` every call |
 | Reuse `MemoryStream` + encoder/decoder on the **bytes** path when the library allows | Official samples often `new` every time; the timed path should not |
 | Pass a **reuse** instance into deserialize when the API supports it | Cuts alloc on the hot loop |
-| Stream path: real library write/read on the harness `Stream` | Do not invent a slow redirect layer unless measurements show it helps |
+| Stream path: real library write/read on the runner `Stream` | Do not invent a slow redirect layer unless measurements show it helps |
 
 Reference client that went through this audit: `c-sharp/src/Serializers/ApacheAvroSerializerSer.cs` (typed Reflect + reuse on the bytes path).
 

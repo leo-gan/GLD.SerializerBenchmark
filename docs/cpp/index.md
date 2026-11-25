@@ -66,7 +66,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | [capnproto](https://github.com/capnproto/capnproto) | Schema | Cap'n Proto | `messageToFlatArray` / `writeMessage` of a prepared `MallocMessageBuilder`; decode is `FlatArrayMessageReader` / `InputStreamMessageReader` | Domain fill is `prepare`; field walk is `to_domain`. **native stream** |
 | [cereal](https://github.com/USCiLab/cereal) | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
 | [cista](https://github.com/felixguendling/cista) | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
-| [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Binary | harness | length-prefixed fields | Baseline; stream adapted |
+| [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Binary | runner | length-prefixed fields | Baseline; stream adapted |
 | [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | direct builder / lazy reader | Direct value structs built in prepare (like protobuf's messages); `direct::build` into one reused `dagr::Builder` timed; lazy accessors → domain timed; N>1 suite frame; stream adapted |
 | [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | arena serializer / lazy reader | Regular (vtable) nodes; generated arena built in prepare; `Arena::serialize` into a reused builder and caches timed; lazy accessors → domain timed; N>1 suite frame |
 | [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`cpp/dagr_gen`) | arena serializer / lazy reader | Frozen nodes; same call path as dagr-regular |
@@ -279,7 +279,7 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
-For Arrow and SBE, `prepare` only stores the fixture. Building the Arrow table (or filling the SBE flyweight) runs inside timed `serialize_bytes`. `table_project` deserialize reads the `f_float_0` column only. Those rows are bytes-only in the columnar run config; the stream methods are adapted and are not a second codec.
+For Arrow and SBE, `prepare` only stores the test record. Building the Arrow table (or filling the SBE flyweight) runs inside timed `serialize_bytes`. `table_project` deserialize reads the `f_float_0` column only. Those rows are bytes-only in the columnar run config; the stream methods are adapted and are not a second codec.
 
 ## C vs C++ — clear separation
 
@@ -363,4 +363,4 @@ see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 1. **Prepare outside the loop** — DOM trees, packers, flexbuffers builders, domain→wire convert.
 2. **Optimal APIs** — library-recommended encode/decode; no pretty-print JSON.
 3. **Dual mode** — `bytes` and `stream` with `StreamMode` metadata.
-4. **C++20** — ArduinoJson v7 / zpp_bits / modern `std::variant` fixtures.
+4. **C++20** — ArduinoJson v7 / zpp_bits / modern `std::variant` data types.

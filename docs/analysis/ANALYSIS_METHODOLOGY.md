@@ -18,17 +18,6 @@ Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml
 
 ---
 
-## Learning goals
-
-By the end of this page you should be able to:
-
-1. Trace a CSV row from load → warmup drop → outlier filter → summary statistics.
-2. Explain why warmup and outlier rules exist (and that they run only in analysis).
-3. Read a confidence interval and an effect size in plain language.
-4. Know what the published outputs are and where they are written.
-
----
-
 ## Inputs
 
 | Source | Role |
@@ -106,11 +95,17 @@ Configured warmup length: `reproducibility.warmup_repetitions` = **1**.
 
 Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences") [interquartile range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range "Interquartile range — spread of the middle 50% of values")** fences (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
 
-**Idea in plain language:** look at the middle half of the data (from the 25th to the 75th [percentile](https://en.wikipedia.org/wiki/Percentile "Percentile — value below which a given percentage of observations fall")). Anything far outside fences built from that middle half is treated as an [outlier](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data"). If *any* of the three times is an outlier, the **whole repetition** is dropped so the three series stay paired.
+**Idea in plain language:** look at the middle half of the data (from the 25th percentile $Q_1$ to the 75th percentile $Q_3$, with $\text{IQR} = Q_3 - Q_1$). Observations outside the Tukey fences
+
+$$
+[Q_1 - k \cdot \text{IQR},\;\; Q_3 + k \cdot \text{IQR}]
+$$
+
+are treated as [outliers](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data"). If *any* of the three times (serialize, deserialize, total) falls outside its fence, the **whole repetition** is dropped so the three series stay paired.
 
 | Rule | Default behavior |
 |------|------------------|
-| Fences | `[Q1 − k·IQR, Q3 + k·IQR]` computed **separately** on serialize, deserialize, and total |
+| Fences | $[Q_1 - k \cdot \text{IQR},\ Q_3 + k \cdot \text{IQR}]$ computed **separately** on serialize, deserialize, and total |
 | Keep rule | A row is kept only if it sits **inside all three** fences |
 | Group size | Apply only if there are at least `min_samples_for_outlier_filter` samples (10) |
 | IQR = 0 for a metric | That metric does not remove anyone |
@@ -170,17 +165,15 @@ Produced only when the post-filter sample size is at least `min_samples_for_infe
 
 When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant") are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The standard is not part of that peer set. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions") story of the suite.
 
-| Method | Role in plain language |
-|--------|------------------------|
-| **[Cliff’s δ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")** | How often this library is slower or faster than the reference, without assuming a normal distribution |
-| **[Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")** | Standardized mean difference with a small-sample correction |
-| **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test") + [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")** | Optional [p-values](https://en.wikipedia.org/wiki/P-value "P-value — probability of data as extreme as observed under the null") vs the reference; Holm adjusts for **many serializers in that one group only** |
+| Method | Definition and role |
+|--------|---------------------|
+| **[Cliff’s $\delta$ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")** | Nonparametric dominance: $\delta = \frac{\#(x_i > y_j) - \#(x_i < y_j)}{n_1 n_2} \in [-1, 1]$; measures how often this library is slower than the reference without normality assumptions |
+| **[Hedges’ $g$](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")** | Bias-corrected standardized mean difference: $g = J(n_1 + n_2 - 2)\,\frac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}$, where $J(\nu) \approx 1 - \frac{3}{4\nu - 1}$ |
+| **[Mann–Whitney $U$](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test") + [Holm–Bonferroni](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")** | Two-sample rank test with step-down adjustment $p_{(i)}^{\text{Holm}} = \min\!\big(1,\; \max_{j \le i}\,(m - j + 1)\,p_{(j)}\big)$ across the $m$ peers **in that one group only** |
 
 Use these for **within-language** interpretation. Do not treat them as cross-runtime rankings. Multi-way tables treat ranks as **exploratory** — see [Exploratory ranks](#exploratory-ranks).
 
 ### Exploratory ranks {#exploratory-ranks}
-
-This section is written for a **first-year university student**.
 
 #### What problem are we solving?
 
@@ -218,8 +211,6 @@ Regression gates: `analyze-benchmarks --check-regression` against `paths.baselin
 
 ## Regression gate {#regression-gate}
 
-This section is written for a **first-year university student**. No advanced stats course required.
-
 ### What problem are we solving?
 
 Imagine you measured how long a library takes to serialize data **yesterday** (the **baseline**), and you measure again **today** (the **current** run).
@@ -240,9 +231,13 @@ With **OR**, a noisy average alone could fail the gate even when the confidence 
 
 ### What we do now (AND)
 
-By default the gate uses logical **AND**:
+By default the gate uses logical **AND** with threshold $\tau = \text{threshold\_percent} / 100$ (default $\tau = 0.10$):
 
-> Fail only if the run looks **practically** slower **and** the data still look slower even if we give the new run the benefit of the doubt (CI lower bound).
+$$
+\text{Regression} \iff \Big(\hat{t}_{\text{curr}} > t_{\text{base}}(1 + \tau)\Big) \;\land\; \Big(\text{CI}_{\text{low}}(\bar{t}_{\text{curr}}) > t_{\text{base}}(1 + \tau)\Big)
+$$
+
+> Fail only if the run looks **practically** slower **and** the data still look slower even under the lower bound of the bootstrap confidence interval.
 
 | Check | Plain meaning |
 |-------|----------------|
@@ -287,7 +282,7 @@ Config lives under `regression:` in [`config/benchmark_config.yaml`](https://git
 
 ## Multi-session and multi-machine claims {#multi-session-claims}
 
-This section is written for a **first-year university student**. Full ladder: [Claims and replication](CLAIMS_AND_REPLICATION.md).
+Full claim ladder: [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
 ### Why one run is not enough for strong claims
 

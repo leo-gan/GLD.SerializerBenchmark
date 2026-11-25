@@ -9,6 +9,7 @@ on:
       - 'docs/**'
       - 'dashboard/**'
       - 'mkdocs.yml'
+      - 'scripts/check-docs.py'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -55,6 +56,11 @@ jobs:
 
       - name: Setup MkDocs
         run: pip install mkdocs-material mkdocs-redirects
+
+      - name: Check docs quality and strict build
+        run: |
+          python3 scripts/check-docs.py
+          mkdocs build --strict
 
       - name: Deploy Docs to gh-pages
         run: mkdocs gh-deploy --force

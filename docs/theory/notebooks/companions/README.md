@@ -4,9 +4,9 @@ Thin appendices to the **Python-first** Colab labs. These are **not** full cours
 
 | Path | Role |
 |------|------|
-| [`js/`](js/) | Node snippets for API/JSON mental models (101/201 flavor) |
-| [`go/`](go/) | MiniUser golden vectors G1–G5 (401 homework) |
-| [`rust/`](rust/) | MiniUser golden vectors G1–G5 (401 homework) |
+| [`js/`](js/README.md) | Node snippets for API/JSON mental models (101/201 flavor) |
+| [`go/`](go/README.md) | MiniUser golden vectors G1–G5 (401 homework) |
+| [`rust/`](rust/README.md) | MiniUser golden vectors G1–G5 (401 homework) |
 
 ## When to use
 

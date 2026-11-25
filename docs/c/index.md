@@ -153,7 +153,7 @@ Nordic zcbor was created to generate C from CDDL and to encode/decode CBOR on co
 
 #### [ubj](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_ubj.c)
 
-This row is the suite's in-tree UBJSON marker codec around the V2 binary payload. UBJSON was created as a binary cousin of JSON with explicit types. The harness implements the markers so C has a UBJSON size/speed point without a third-party dependency.
+This row is the suite's in-tree UBJSON marker codec around the V2 binary payload. UBJSON was created as a binary cousin of JSON with explicit types. The benchmark runner implements the markers so C has a UBJSON size/speed point without a third-party dependency.
 
 #### [libyaml](https://github.com/yaml/libyaml)
 
@@ -178,7 +178,7 @@ gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses on
 
 ### Stream honesty
 
-Stream mode uses an in-memory `FILE*` (`fmemopen`). **`ion-c` and `yyjson` set both FILE* callbacks, so those rows are `StreamMode=native`.** Every other stream row is **`StreamMode=adapted`**: the harness writes the already-encoded buffer. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
+Stream mode uses an in-memory `FILE*` (`fmemopen`). **`ion-c` and `yyjson` set both FILE* callbacks, so those rows are `StreamMode=native`.** Every other stream row is **`StreamMode=adapted`**: the benchmark runner writes the already-encoded buffer. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
 ## Numbers
 

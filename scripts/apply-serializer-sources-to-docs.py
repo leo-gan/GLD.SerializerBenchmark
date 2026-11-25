@@ -146,13 +146,25 @@ def render_specifics(lang: str, sources: dict[str, dict], table_names: list[str]
         if n not in seen:
             # skip compliance-only extras that never appear in the language table
             continue
+    # Group serializers that share an identical (source_url, specifics) entry
+    # while preserving first-seen table order.
+    grouped: list[tuple[list[str], str, str]] = []
+    key_to_idx: dict[tuple[str, str], int] = {}
     for name in ordered:
         rec = sources[name]
         url = rec["source_url"]
-        spec = rec.get("specifics") or ""
-        lines.append(f"#### [{name}]({url})")
+        spec = (rec.get("specifics") or "").strip()
+        key = (url, spec)
+        if key in key_to_idx:
+            grouped[key_to_idx[key]][0].append(name)
+        else:
+            key_to_idx[key] = len(grouped)
+            grouped.append(([name], url, spec))
+    for names_group, url, spec in grouped:
+        heading = ", ".join(f"[{n}]({url})" for n in names_group)
+        lines.append(f"#### {heading}")
         lines.append("")
-        lines.append(spec.strip())
+        lines.append(spec)
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 

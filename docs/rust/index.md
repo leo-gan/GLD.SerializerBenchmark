@@ -63,13 +63,13 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
 | [fory](https://github.com/apache/fory) | Binary | `fory` | `ForyStruct` derive; native mode | adapted | Reused output buffer; suite types only |
 | [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) | Binary | `gld-kiln` 0.2.0 | Kiln `Value` built in `prepare` | adapted | One struct, or one `list` of that struct for N>1. Schema is not rebuilt. `encode_into` appends to the harness buffer. |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-rust) | Binary | `gld-kiln` 0.2.0 | Kiln `Value` built in `prepare` | adapted | One struct, or one `list` of that struct for N>1. Schema is not rebuilt. `encode_into` appends to the runner buffer. |
 | [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
 | [parquet](https://docs.rs/parquet) | Columnar | `parquet` 60.0.0 | `RecordBatch` in serialize; props in `prepare` | adapted | Snappy page codec. Encodings not overridden. `table_project`: `ProjectionMask::columns(..., ["f_float_0"])`. No compliance decoder. |
 | [parquet-uncompressed](https://docs.rs/parquet) | Columnar | `parquet` 60.0.0 | Same writer, compression off | adapted | `Compression::UNCOMPRESSED` only. |
 | [postcard](https://github.com/jamesmunns/postcard) | Binary | `postcard` | Serde | adapted | no_std-friendly format |
-| [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
+| [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + shared suite protos) |
 | [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | [rmp-serde](https://github.com/3Hren/msgpack-rust) | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
 | [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated `dagr_benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Direct value structs built in `prepare` (like prost's messages); timed encode is `write_into` only; bytes copied out because Dagr writes back-to-front |
@@ -112,7 +112,7 @@ ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSO
 
 #### [scuffle-amf0](https://github.com/scufflecloud/scuffle)
 
-scuffle-amf0 is a pure-Rust AMF0 encoder and decoder from the Scuffle RTMP stack. AMF0 is the command encoding inside RTMP. The timed path is `to_bytes` / `from_slice` and `to_writer` / `from_reader` through Serde. The crate does not write AMF0 object references, so a graph with a shared node or a cycle does not round-trip.
+scuffle-amf0 is a pure-Rust AMF0 encoder and decoder from the Scuffle RTMP stack. AMF0 is the command encoding inside RTMP. The timed path is to_bytes and from_slice through Serde. The crate does not write object references.
 
 #### [flexbuffers](https://github.com/google/flatbuffers)
 

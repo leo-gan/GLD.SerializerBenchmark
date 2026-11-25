@@ -1,25 +1,12 @@
 # Claims and replication
 
-This page is written for a **first-year university student**. No advanced stats course required.
+This page answers one practical question:
 
-It answers one practical question:
+> **After inspecting the Dashboard, what strength of claim does the evidence support?**
 
-> **After I look at the Dashboard, what am I allowed to say out loud?**
+State the controlled cell explicitly: same language, same standard, same data set, same data type, and the claim level below.
 
-If the result looks too good to say out loud, name the part of the race you left out. Same language, same standard, same data set, same data type, and the claim level below.
-
-Different amounts of evidence support different claim strengths. We call those levels **L1**, **L2**, and **L3**.
-
----
-
-## Learning goals
-
-By the end of this page you should be able to:
-
-1. Tell whether a published Dashboard run is a **single-session snapshot** (L1).
-2. Explain why repeating the suite on the **same machine** (L2) is stronger than one lucky run.
-3. Explain why **different machines** (L3) are needed before you talk about “generalizes across hardware.”
-4. Know the command that aggregates several CSVs for one language.
+Different amounts of evidence support different claim strengths, classified as **L1**, **L2**, and **L3**.
 
 ---
 

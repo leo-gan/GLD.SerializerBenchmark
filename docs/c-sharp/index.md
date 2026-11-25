@@ -55,7 +55,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
 - **56 serializers** in `Program.cs`. Includes `arrow-ipc`, `parquet`, `parquet-uncompressed`, `fory`, `gld-kiln`, `Toon.Format`, `ToonNet`, and `Corvus.Toon`.
-- **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar fixtures](#columnar-fixtures)); ORC; ParquetSharp
+- **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs); **sbe** (no `Org.SbeTool.Sbe.Dll` 1.40.2 package — see [Columnar data types](#columnar-data-types)); ORC; ParquetSharp
 
 ## Serializers
 
@@ -161,11 +161,7 @@ FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so reader
 
 Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers. The bytes path is the library payload, and the stream path is adapted.
 
-#### [FsPickler](https://github.com/mbraceproject/FsPickler)
-
-FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
-
-#### [FsPicklerJson](https://github.com/mbraceproject/FsPickler)
+#### [FsPickler](https://github.com/mbraceproject/FsPickler), [FsPicklerJson](https://github.com/mbraceproject/FsPickler)
 
 FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
 
@@ -229,11 +225,7 @@ Microsoft Bond was created for large-scale Microsoft services that needed a sche
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol.
 
-#### [MS DataContract](https://github.com/dotnet/runtime)
-
-DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
-
-#### [MS DataContract Json](https://github.com/dotnet/runtime)
+#### [MS DataContract](https://github.com/dotnet/runtime), [MS DataContract Json](https://github.com/dotnet/runtime)
 
 DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
 
@@ -279,29 +271,25 @@ SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet line
 
 #### [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the CBOR payload. The package has no stream API, so the stream row adapts its byte-array API.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes the CBOR bytes. The package has no stream API, so the stream row adapts its byte-array API.
 
 #### [ShapeShift.Json](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is UTF-8 of the serializer's text API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
 
 #### [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the MessagePack payload. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
 
 #### [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The bytes path is the library payload. The package has no stream API, so the stream row adapts its byte-array API.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API.
 
 #### [ShapeShift.Taml](https://github.com/AArnott/ShapeShift)
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output. The `strings` data type is unsupported because its N=100 batch cannot be deserialized.
 
-#### [ShapeShift.Toml](https://github.com/AArnott/ShapeShift)
-
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output.
-
-#### [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift)
+#### [ShapeShift.Toml](https://github.com/AArnott/ShapeShift), [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift)
 
 ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output.
 
@@ -342,9 +330,9 @@ YAXLib is a flexible XML serializer for .NET. The problem was XmlSerializer and 
 ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary serializer for .NET, inspired by FlatBuffers/Cap'n Proto ideas. Dynamic IL is broken on .NET 8; this suite uses KeyTuple shapes.
 
 
-### Columnar fixtures
+### Columnar data types
 
-Arrow and Parquet time the **bytes** path: the IPC or Parquet buffer. The stream path is **adapted** (the same buffer is copied onto the harness `Stream`). It is not a native streaming writer. There is **no compliance decoder** for Arrow or Parquet.
+Arrow and Parquet time the **bytes** path: the IPC or Parquet buffer. The stream path is **adapted** (the same buffer is copied onto the runner `Stream`). It is not a native streaming writer. There is **no compliance decoder** for Arrow or Parquet.
 
 `Supports` on these rows is true only for `table`, `table_project`, `nested_table`, and `signal`. Older classes still default `Supports` to true. A columnar run without a comma-separated allow-list is forbidden: an empty filter selects all 50 names, and a filter with no comma is still a case-insensitive substring (`json` matches every JSON library). With a comma, names must match exactly, ignoring case. `json,` selects nothing. `protobuf,` selects only `ProtoBuf`, not `Google.Protobuf`, LightProto, or ShapeShift.Protobuf.
 
@@ -397,7 +385,7 @@ CSV column `StringOrStream` is **`bytes`** or **`stream`**, the same labels as t
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path writes or reads a finished buffer rather than a native streaming API | **arrow-ipc**, **parquet**, **parquet-uncompressed** (the IPC or Parquet buffer copied onto the harness stream), ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper, fastJson, NetJSON, Ceras |
+| **Adapted stream** | Stream path writes or reads a finished buffer rather than a native streaming API | **arrow-ipc**, **parquet**, **parquet-uncompressed** (the IPC or Parquet buffer copied onto the runner stream), ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper, fastJson, NetJSON, Ceras |
 | **Native text stream** | Library writes/reads `Stream` directly with its text codec API | ShapeShift.Json |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |

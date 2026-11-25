@@ -27,19 +27,9 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 
 ---
 
-## Learning goals
-
-By the end of this page you should be able to:
-
-1. Define **data set**, **data type**, **run config**, **cell**, and **make_one** in one sentence each.
-2. Name the five data sets and open the page that explains the types in each.
-3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
-
----
-
 ## Vocabulary
 
-These are the words for sample data. The full list is [Terminology](terminology.md). That page is also where Fixture and harness are prohibited.
+These terms govern sample data across the suite. See [Terminology](terminology.md) for the complete glossary and deprecated legacy aliases.
 
 | Term | Meaning | Examples |
 |------|---------|----------|
@@ -61,19 +51,17 @@ These are the words for sample data. The full list is [Terminology](terminology.
 | `DataTypeInstanceCount` | batch size `N` |
 | `TypeConfigHash` | short hash of the resolved type config |
 
-> Older pages and some runner source still say *fixture*. [Terminology](terminology.md#fixture) says to write **data type**.
-
 Batch cells may appear on the Dashboard as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
 
 ---
 
 ## Two axes (shape × batch size)
 
-```text
-W = [ { type_id, type_config }, ... ]     # which shapes
-C = [ n1, n2, ... ]                       # how many instances per call
-cells = W × C                             # cartesian product
-```
+Each run expands a Cartesian product of shape configurations $W = \{(type\_id, type\_config)\}$ and batch sizes $C = \{n_1, n_2, \dots\}$:
+
+$$
+\text{cells} = W \times C
+$$
 
 | Axis | Owns |
 |------|------|
@@ -214,11 +202,11 @@ Modes: `none` | `size_only` | `timed` (timed path is post-MVP).
 
 ## Wall-clock budget
 
-```text
-soft_budget_seconds = soft_seconds_per_10_serializers * ceil(n_serializers / 10)
-```
+$$
+T_{\text{soft}} = s_{10} \cdot \left\lceil \frac{N_{\text{serializers}}}{10} \right\rceil
+$$
 
-`soft_seconds_per_10_serializers` defaults to 60. Before each repetition the runner reads elapsed wall-clock time.
+where $s_{10}$ (`soft_seconds_per_10_serializers`) defaults to 60 seconds. Before each repetition the runner reads elapsed wall-clock time.
 
 - Inside the soft budget, the run keeps its repetition count.
 - Past the soft budget, the runner lowers the plan to `reps_fallback` (50). Repetitions already written stay in the CSV. Later cells use the lower count.

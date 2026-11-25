@@ -69,7 +69,7 @@ How to install the toolchain and run the benchmark: [`fortran/README.md`](https:
 | [rojff](https://github.com/everythingfunctional/rojff) | JSON | everythingfunctional/rojff | bytes | `to_compact_string` / `parse_json_from_string`. int32 kind; wider integers are JSON numbers |
 | [toml-f](https://github.com/toml-f/toml-f) | Text | toml-f/toml-f | bytes | `toml_serialize` / `toml_loads`. TOML 1.0 |
 | [fortran-messagepack](https://github.com/synthfi/fortran-messagepack) | Binary | synthfi/fortran-messagepack | bytes | `pack_alloc` / `unpack`, including int64 |
-| [custom-binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90) | Binary | harness | bytes | Little-endian length-prefixed baseline |
+| [custom-binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90) | Binary | runner | bytes | Little-endian length-prefixed baseline |
 | [hdf5-fortran](https://github.com/HDFGroup/hdf5) | HDF5 | HDF-Group/hdf5 | bytes | Array data set. Core driver. One dataset `grid`. Hyperslab on `grid_window` |
 | [netcdf-fortran](https://github.com/Unidata/netcdf-fortran) | NetCDF | Unidata/netcdf-fortran | file | Array data set. Real NetCDF-4 file. File-only. Window uses 1-based start |
 | [adios2](https://github.com/ornladios/ADIOS2) | ADIOS2 | ornladios/ADIOS2 | file | Array data set. Serial BP5 directory. File-only. Window uses `adios2_set_selection` |
