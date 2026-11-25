@@ -1,4 +1,4 @@
-"""mojo-smile (gld-smile) document encode/decode on suite types."""
+"""mojo-smile (gld-smile) cursor on suite types."""
 
 from std.collections import List
 
@@ -13,303 +13,257 @@ from bench.data import (
     Telemetry,
     fidelity,
 )
-from smile import decode_bytes, encode_doc
-from smile_runtime.doc import (
-    K_ARRAY,
-    K_BOOL,
-    K_F64,
-    K_I32,
-    K_I64,
-    K_OBJECT,
-    K_STRING,
-    SmileDoc,
-)
-from smile_runtime.options import EncodeOptions
+from smile_wire.direct import SmileBin, SmileCur
 
 
-def _need(doc: SmileDoc, id: Int, kind: Int) raises:
-    if id < 0 or doc.nodes[id].kind != kind:
-        raise Error("smile type")
+def _key[o: ImmOrigin](mut c: SmileCur[o], name: StaticString) raises:
+    var id = c.next_id()
+    if not c.name_is(id, name):
+        raise Error("smile field")
 
 
-def _field(doc: SmileDoc, obj: Int, name: String) raises -> Int:
-    _need(doc, obj, K_OBJECT)
-    var n = doc.nodes[obj]
-    var i = 0
-    while i < n.nchild:
-        var e = doc.edges[n.child + i]
-        if doc.texts[e.key] == name:
-            return e.val
-        i += 1
-    raise Error("smile field " + name)
+def _end_obj[o: ImmOrigin](mut c: SmileCur[o]) raises:
+    if c.next_id() != -1:
+        raise Error("smile end")
 
 
-def _sstr(doc: SmileDoc, id: Int) raises -> String:
-    _need(doc, id, K_STRING)
-    # `text_at` indexes the text table. The string node stores that index in `a`.
-    return doc.texts[doc.nodes[id].a]
+def _write_message(mut bin: SmileBin, m: Message):
+    bin.start_object()
+    bin.key_lit("f_bool")
+    bin.write_bool(m.f_bool)
+    bin.key_lit("f_int32")
+    bin.write_i64(Int64(m.f_int32))
+    bin.key_lit("f_int64")
+    bin.write_i64(m.f_int64)
+    bin.key_lit("f_float64")
+    bin.write_f64(m.f_float64)
+    bin.key_lit("f_string")
+    bin.write_str(m.f_string)
+    bin.key_lit("f_bool_2")
+    bin.write_bool(m.f_bool_2)
+    bin.key_lit("f_int32_2")
+    bin.write_i64(Int64(m.f_int32_2))
+    bin.key_lit("f_string_2")
+    bin.write_str(m.f_string_2)
+    bin.end_object()
 
 
-def _sbool(doc: SmileDoc, id: Int) raises -> Bool:
-    _need(doc, id, K_BOOL)
-    return doc.nodes[id].a != 0
+def _write_item(mut bin: SmileBin, item: DocumentItem):
+    bin.start_object()
+    bin.key_lit("sku")
+    bin.write_str(item.sku)
+    bin.key_lit("qty")
+    bin.write_i64(Int64(item.qty))
+    bin.key_lit("price_minor")
+    bin.write_i64(item.price_minor)
+    bin.end_object()
 
 
-def _si32(doc: SmileDoc, id: Int) raises -> Int32:
-    _need(doc, id, K_I32)
-    return Int32(doc.nodes[id].a)
-
-
-def _si64(doc: SmileDoc, id: Int) raises -> Int64:
-    _need(doc, id, K_I64)
-    return Int64(doc.nodes[id].a)
-
-
-def _sf64(doc: SmileDoc, id: Int) raises -> Float64:
-    _need(doc, id, K_F64)
-    return Float64(from_bits=doc.f64s[doc.nodes[id].a])
-
-
-def _elems(doc: SmileDoc, id: Int) raises -> List[Int]:
-    _need(doc, id, K_ARRAY)
-    var out = List[Int]()
-    var n = doc.nodes[id]
-    var i = 0
-    while i < n.nchild:
-        out.append(doc.edges[n.child + i].val)
-        i += 1
-    return out^
-
-
-def _key(mut doc: SmileDoc, name: String) -> Int:
-    return doc._text(String(name))
-
-
-def _put_str(mut doc: SmileDoc, text: String) -> Int:
-    return doc.add_string(String(text))
-
-
-def _ffield(mut doc: SmileDoc, obj: Int, name: String, val: Int):
-    # Name and value must be built before this call. One expression that
-    # mutates the document twice can store the key text as the value.
-    var key = _key(doc, name)
-    doc.add_field(obj, key, val)
-
-
-def _write_message(mut doc: SmileDoc, m: Message) -> Int:
-    var obj = doc.start_object()
-    var b0 = doc.add_bool(m.f_bool)
-    _ffield(doc, obj, "f_bool", b0)
-    var i0 = doc.add_i32(Int(m.f_int32))
-    _ffield(doc, obj, "f_int32", i0)
-    var i1 = doc.add_i64(Int(m.f_int64))
-    _ffield(doc, obj, "f_int64", i1)
-    var f0 = doc.add_f64(m.f_float64)
-    _ffield(doc, obj, "f_float64", f0)
-    var s0 = _put_str(doc, m.f_string)
-    _ffield(doc, obj, "f_string", s0)
-    var b1 = doc.add_bool(m.f_bool_2)
-    _ffield(doc, obj, "f_bool_2", b1)
-    var i2 = doc.add_i32(Int(m.f_int32_2))
-    _ffield(doc, obj, "f_int32_2", i2)
-    var s1 = _put_str(doc, m.f_string_2)
-    _ffield(doc, obj, "f_string_2", s1)
-    return obj
-
-
-def _write_item(mut doc: SmileDoc, item: DocumentItem) -> Int:
-    var obj = doc.start_object()
-    var sku = _put_str(doc, item.sku)
-    _ffield(doc, obj, "sku", sku)
-    var qty = doc.add_i32(Int(item.qty))
-    _ffield(doc, obj, "qty", qty)
-    var price = doc.add_i64(Int(item.price_minor))
-    _ffield(doc, obj, "price_minor", price)
-    return obj
-
-
-def _write_document(mut doc: SmileDoc, d: Document) -> Int:
-    var obj = doc.start_object()
-    var id = _put_str(doc, d.id)
-    _ffield(doc, obj, "id", id)
-    var status = doc.add_i32(Int(d.status))
-    _ffield(doc, obj, "status", status)
-    var meta = doc.start_object()
-    var region = _put_str(doc, d.meta.region)
-    _ffield(doc, meta, "region", region)
-    var version = doc.add_i32(Int(d.meta.version))
-    _ffield(doc, meta, "version", version)
-    _ffield(doc, obj, "meta", meta)
-    var arr = doc.start_array()
+def _write_document(mut bin: SmileBin, d: Document):
+    bin.start_object()
+    bin.key_lit("id")
+    bin.write_str(d.id)
+    bin.key_lit("status")
+    bin.write_i64(Int64(d.status))
+    bin.key_lit("meta")
+    bin.start_object()
+    bin.key_lit("region")
+    bin.write_str(d.meta.region)
+    bin.key_lit("version")
+    bin.write_i64(Int64(d.meta.version))
+    bin.end_object()
+    bin.key_lit("items")
+    bin.start_array()
     var i = 0
     while i < len(d.items):
-        doc.add_elem(arr, _write_item(doc, d.items[i]))
+        _write_item(bin, d.items[i])
         i += 1
-    _ffield(doc, obj, "items", arr)
-    return obj
+    bin.end_array()
+    bin.end_object()
 
 
-def _write_telemetry(mut doc: SmileDoc, t: Telemetry) -> Int:
-    var obj = doc.start_object()
-    var source = _put_str(doc, t.source)
-    _ffield(doc, obj, "source", source)
-    var ts = doc.add_i64(Int(t.ts))
-    _ffield(doc, obj, "ts", ts)
-    var tags = doc.start_array()
+def _write_telemetry(mut bin: SmileBin, t: Telemetry):
+    bin.start_object()
+    bin.key_lit("source")
+    bin.write_str(t.source)
+    bin.key_lit("ts")
+    bin.write_i64(t.ts)
+    bin.key_lit("tags")
+    bin.start_array()
     var i = 0
     while i < len(t.tags):
-        doc.add_elem(tags, _put_str(doc, t.tags[i]))
+        bin.write_str(t.tags[i])
         i += 1
-    _ffield(doc, obj, "tags", tags)
-    var values = doc.start_array()
+    bin.end_array()
+    bin.key_lit("values")
+    bin.start_array()
     i = 0
     while i < len(t.values):
-        doc.add_elem(values, doc.add_f64(t.values[i]))
+        bin.write_f64(t.values[i])
         i += 1
-    _ffield(doc, obj, "values", values)
-    return obj
+    bin.end_array()
+    bin.end_object()
 
 
-def _write_strings(mut doc: SmileDoc, s: Strings) -> Int:
-    var obj = doc.start_object()
-    var arr = doc.start_array()
+def _write_strings(mut bin: SmileBin, s: Strings):
+    bin.start_object()
+    bin.key_lit("items")
+    bin.start_array()
     var i = 0
     while i < len(s.items):
-        doc.add_elem(arr, _put_str(doc, s.items[i]))
+        bin.write_str(s.items[i])
         i += 1
-    _ffield(doc, obj, "items", arr)
-    return obj
+    bin.end_array()
+    bin.end_object()
 
 
-def _write_attr(mut doc: SmileDoc, a: EventAttr) -> Int:
-    var obj = doc.start_object()
-    var key = _put_str(doc, a.key)
-    _ffield(doc, obj, "key", key)
-    var value = _put_str(doc, a.value)
-    _ffield(doc, obj, "value", value)
-    return obj
+def _write_attr(mut bin: SmileBin, a: EventAttr):
+    bin.start_object()
+    bin.key_lit("key")
+    bin.write_str(a.key)
+    bin.key_lit("value")
+    bin.write_str(a.value)
+    bin.end_object()
 
 
-def _write_event(mut doc: SmileDoc, ev: Event) -> Int:
-    var obj = doc.start_object()
-    var event_id = _put_str(doc, ev.event_id)
-    _ffield(doc, obj, "event_id", event_id)
-    var event_type = _put_str(doc, ev.event_type)
-    _ffield(doc, obj, "event_type", event_type)
-    var occurred = doc.add_i64(Int(ev.occurred_at))
-    _ffield(doc, obj, "occurred_at", occurred)
-    var producer = _put_str(doc, ev.producer)
-    _ffield(doc, obj, "producer", producer)
-    var arr = doc.start_array()
+def _write_event(mut bin: SmileBin, ev: Event):
+    bin.start_object()
+    bin.key_lit("event_id")
+    bin.write_str(ev.event_id)
+    bin.key_lit("event_type")
+    bin.write_str(ev.event_type)
+    bin.key_lit("occurred_at")
+    bin.write_i64(ev.occurred_at)
+    bin.key_lit("producer")
+    bin.write_str(ev.producer)
+    bin.key_lit("attrs")
+    bin.start_array()
     var i = 0
     while i < len(ev.attrs):
-        doc.add_elem(arr, _write_attr(doc, ev.attrs[i]))
+        _write_attr(bin, ev.attrs[i])
         i += 1
-    _ffield(doc, obj, "attrs", arr)
-    return obj
+    bin.end_array()
+    bin.end_object()
 
 
-def _read_message(doc: SmileDoc, id: Int) raises -> Message:
+def _read_message[o: ImmOrigin](mut c: SmileCur[o]) raises -> Message:
+    c.start_object()
     var m = Message()
-    m.f_bool = _sbool(doc, _field(doc, id, "f_bool"))
-    m.f_int32 = _si32(doc, _field(doc, id, "f_int32"))
-    m.f_int64 = _si64(doc, _field(doc, id, "f_int64"))
-    m.f_float64 = _sf64(doc, _field(doc, id, "f_float64"))
-    m.f_string = _sstr(doc, _field(doc, id, "f_string"))
-    m.f_bool_2 = _sbool(doc, _field(doc, id, "f_bool_2"))
-    m.f_int32_2 = _si32(doc, _field(doc, id, "f_int32_2"))
-    m.f_string_2 = _sstr(doc, _field(doc, id, "f_string_2"))
+    _key(c, "f_bool")
+    m.f_bool = c.read_bool()
+    _key(c, "f_int32")
+    m.f_int32 = Int32(c.read_i64())
+    _key(c, "f_int64")
+    m.f_int64 = c.read_i64()
+    _key(c, "f_float64")
+    m.f_float64 = c.read_f64()
+    _key(c, "f_string")
+    m.f_string = c.read_string()
+    _key(c, "f_bool_2")
+    m.f_bool_2 = c.read_bool()
+    _key(c, "f_int32_2")
+    m.f_int32_2 = Int32(c.read_i64())
+    _key(c, "f_string_2")
+    m.f_string_2 = c.read_string()
+    _end_obj(c)
     return m^
 
 
-def _read_item(doc: SmileDoc, id: Int) raises -> DocumentItem:
+def _read_item[o: ImmOrigin](mut c: SmileCur[o]) raises -> DocumentItem:
+    c.start_object()
     var item = DocumentItem()
-    item.sku = _sstr(doc, _field(doc, id, "sku"))
-    item.qty = _si32(doc, _field(doc, id, "qty"))
-    item.price_minor = _si64(doc, _field(doc, id, "price_minor"))
+    _key(c, "sku")
+    item.sku = c.read_string()
+    _key(c, "qty")
+    item.qty = Int32(c.read_i64())
+    _key(c, "price_minor")
+    item.price_minor = c.read_i64()
+    _end_obj(c)
     return item^
 
 
-def _read_document(doc: SmileDoc, id: Int) raises -> Document:
+def _read_document[o: ImmOrigin](mut c: SmileCur[o]) raises -> Document:
+    c.start_object()
     var d = Document()
-    d.id = _sstr(doc, _field(doc, id, "id"))
-    d.status = _si32(doc, _field(doc, id, "status"))
-    var meta = _field(doc, id, "meta")
-    d.meta.region = _sstr(doc, _field(doc, meta, "region"))
-    d.meta.version = _si32(doc, _field(doc, meta, "version"))
-    var elems = _elems(doc, _field(doc, id, "items"))
-    var i = 0
-    while i < len(elems):
-        var item = _read_item(doc, elems[i])
+    _key(c, "id")
+    d.id = c.read_string()
+    _key(c, "status")
+    d.status = Int32(c.read_i64())
+    _key(c, "meta")
+    c.start_object()
+    _key(c, "region")
+    d.meta.region = c.read_string()
+    _key(c, "version")
+    d.meta.version = Int32(c.read_i64())
+    _end_obj(c)
+    _key(c, "items")
+    c.start_array()
+    while not c.at_array_end():
+        var item = _read_item(c)
         d.items.append(item^)
-        i += 1
+    _end_obj(c)
     return d^
 
 
-def _read_telemetry(doc: SmileDoc, id: Int) raises -> Telemetry:
+def _read_telemetry[o: ImmOrigin](mut c: SmileCur[o]) raises -> Telemetry:
+    c.start_object()
     var t = Telemetry()
-    t.source = _sstr(doc, _field(doc, id, "source"))
-    t.ts = _si64(doc, _field(doc, id, "ts"))
-    var tags = _elems(doc, _field(doc, id, "tags"))
-    var i = 0
-    while i < len(tags):
-        var tag = _sstr(doc, tags[i])
-        t.tags.append(tag)
-        i += 1
-    var values = _elems(doc, _field(doc, id, "values"))
-    i = 0
-    while i < len(values):
-        t.values.append(_sf64(doc, values[i]))
-        i += 1
+    _key(c, "source")
+    t.source = c.read_string()
+    _key(c, "ts")
+    t.ts = c.read_i64()
+    _key(c, "tags")
+    c.start_array()
+    while not c.at_array_end():
+        t.tags.append(c.read_string())
+    _key(c, "values")
+    c.start_array()
+    while not c.at_array_end():
+        t.values.append(c.read_f64())
+    _end_obj(c)
     return t^
 
 
-def _read_strings(doc: SmileDoc, id: Int) raises -> Strings:
+def _read_strings[o: ImmOrigin](mut c: SmileCur[o]) raises -> Strings:
+    c.start_object()
     var s = Strings()
-    var elems = _elems(doc, _field(doc, id, "items"))
-    var i = 0
-    while i < len(elems):
-        var item = _sstr(doc, elems[i])
-        s.items.append(item)
-        i += 1
+    _key(c, "items")
+    c.start_array()
+    while not c.at_array_end():
+        s.items.append(c.read_string())
+    _end_obj(c)
     return s^
 
 
-def _read_attr(doc: SmileDoc, id: Int) raises -> EventAttr:
+def _read_attr[o: ImmOrigin](mut c: SmileCur[o]) raises -> EventAttr:
+    c.start_object()
     var a = EventAttr()
-    a.key = _sstr(doc, _field(doc, id, "key"))
-    a.value = _sstr(doc, _field(doc, id, "value"))
+    _key(c, "key")
+    a.key = c.read_string()
+    _key(c, "value")
+    a.value = c.read_string()
+    _end_obj(c)
     return a^
 
 
-def _read_event(doc: SmileDoc, id: Int) raises -> Event:
+def _read_event[o: ImmOrigin](mut c: SmileCur[o]) raises -> Event:
+    c.start_object()
     var ev = Event()
-    ev.event_id = _sstr(doc, _field(doc, id, "event_id"))
-    ev.event_type = _sstr(doc, _field(doc, id, "event_type"))
-    ev.occurred_at = _si64(doc, _field(doc, id, "occurred_at"))
-    ev.producer = _sstr(doc, _field(doc, id, "producer"))
-    var elems = _elems(doc, _field(doc, id, "attrs"))
-    var i = 0
-    while i < len(elems):
-        var attr = _read_attr(doc, elems[i])
+    _key(c, "event_id")
+    ev.event_id = c.read_string()
+    _key(c, "event_type")
+    ev.event_type = c.read_string()
+    _key(c, "occurred_at")
+    ev.occurred_at = c.read_i64()
+    _key(c, "producer")
+    ev.producer = c.read_string()
+    _key(c, "attrs")
+    c.start_array()
+    while not c.at_array_end():
+        var attr = _read_attr(c)
         ev.attrs.append(attr^)
-        i += 1
+    _end_obj(c)
     return ev^
-
-
-def _top(doc: SmileDoc) raises -> Int:
-    if len(doc.top) != 1:
-        raise Error("smile top")
-    return doc.top[0]
-
-
-def _one_or_items(doc: SmileDoc, n: Int) raises -> List[Int]:
-    var root = _top(doc)
-    if n == 1:
-        var out = List[Int]()
-        out.append(root)
-        return out^
-    return _elems(doc, _field(doc, root, "items"))
 
 
 struct SmileSer:
@@ -322,71 +276,81 @@ struct SmileSer:
         return "mojo-smile"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
-        var doc = SmileDoc()
+        var cap = 256
+        if fx.n > 1:
+            cap = 4096 + fx.n * 64
+        var bin = SmileBin(capacity=cap)
+        bin.begin()
         if fx.type_id == "message":
             if fx.n == 1:
-                doc.add_top(_write_message(doc, fx.messages[0]))
+                _write_message(bin, fx.messages[0])
             else:
-                var obj = doc.start_object()
-                var arr = doc.start_array()
+                bin.start_object()
+                bin.key_lit("items")
+                bin.start_array()
                 var i = 0
                 while i < len(fx.messages):
-                    doc.add_elem(arr, _write_message(doc, fx.messages[i]))
+                    _write_message(bin, fx.messages[i])
                     i += 1
-                doc.add_field(obj, _key(doc, "items"), arr)
-                doc.add_top(obj)
+                bin.end_array()
+                bin.end_object()
         elif fx.type_id == "document":
             if fx.n == 1:
-                doc.add_top(_write_document(doc, fx.documents[0]))
+                _write_document(bin, fx.documents[0])
             else:
-                var obj = doc.start_object()
-                var arr = doc.start_array()
+                bin.start_object()
+                bin.key_lit("items")
+                bin.start_array()
                 var i = 0
                 while i < len(fx.documents):
-                    doc.add_elem(arr, _write_document(doc, fx.documents[i]))
+                    _write_document(bin, fx.documents[i])
                     i += 1
-                doc.add_field(obj, _key(doc, "items"), arr)
-                doc.add_top(obj)
+                bin.end_array()
+                bin.end_object()
         elif fx.type_id == "telemetry":
             if fx.n == 1:
-                doc.add_top(_write_telemetry(doc, fx.telemetries[0]))
+                _write_telemetry(bin, fx.telemetries[0])
             else:
-                var obj = doc.start_object()
-                var arr = doc.start_array()
+                bin.start_object()
+                bin.key_lit("items")
+                bin.start_array()
                 var i = 0
                 while i < len(fx.telemetries):
-                    doc.add_elem(arr, _write_telemetry(doc, fx.telemetries[i]))
+                    _write_telemetry(bin, fx.telemetries[i])
                     i += 1
-                doc.add_field(obj, _key(doc, "items"), arr)
-                doc.add_top(obj)
+                bin.end_array()
+                bin.end_object()
         elif fx.type_id == "strings":
             if fx.n == 1:
-                doc.add_top(_write_strings(doc, fx.strings[0]))
+                _write_strings(bin, fx.strings[0])
             else:
-                var obj = doc.start_object()
-                var arr = doc.start_array()
+                bin.start_object()
+                bin.key_lit("items")
+                bin.start_array()
                 var i = 0
                 while i < len(fx.strings):
-                    doc.add_elem(arr, _write_strings(doc, fx.strings[i]))
+                    _write_strings(bin, fx.strings[i])
                     i += 1
-                doc.add_field(obj, _key(doc, "items"), arr)
-                doc.add_top(obj)
+                bin.end_array()
+                bin.end_object()
         else:
             if fx.n == 1:
-                doc.add_top(_write_event(doc, fx.events[0]))
+                _write_event(bin, fx.events[0])
             else:
-                var obj = doc.start_object()
-                var arr = doc.start_array()
+                bin.start_object()
+                bin.key_lit("items")
+                bin.start_array()
                 var i = 0
                 while i < len(fx.events):
-                    doc.add_elem(arr, _write_event(doc, fx.events[i]))
+                    _write_event(bin, fx.events[i])
                     i += 1
-                doc.add_field(obj, _key(doc, "items"), arr)
-                doc.add_top(obj)
-        return encode_doc(doc^, EncodeOptions())
+                bin.end_array()
+                bin.end_object()
+        return bin^.take()
 
     def deserialize_bytes(self, fx: Fixture, data: List[Byte]) raises -> Fixture:
-        var parsed = decode_bytes(Span(data))
+        var cur = SmileCur(Span(data))
+        cur.open()
         var out = Fixture(
             fx.type_id,
             fx.n,
@@ -397,33 +361,43 @@ struct SmileSer:
             List[Strings](),
             List[Event](),
         )
-        var ids = _one_or_items(parsed, fx.n)
-        var i = 0
-        if fx.type_id == "message":
-            while i < len(ids):
-                var m = _read_message(parsed, ids[i])
+        if fx.n == 1:
+            if fx.type_id == "message":
+                var m = _read_message(cur)
                 out.messages.append(m^)
-                i += 1
-        elif fx.type_id == "document":
-            while i < len(ids):
-                var d = _read_document(parsed, ids[i])
+            elif fx.type_id == "document":
+                var d = _read_document(cur)
                 out.documents.append(d^)
-                i += 1
-        elif fx.type_id == "telemetry":
-            while i < len(ids):
-                var t = _read_telemetry(parsed, ids[i])
+            elif fx.type_id == "telemetry":
+                var t = _read_telemetry(cur)
                 out.telemetries.append(t^)
-                i += 1
-        elif fx.type_id == "strings":
-            while i < len(ids):
-                var s = _read_strings(parsed, ids[i])
+            elif fx.type_id == "strings":
+                var s = _read_strings(cur)
                 out.strings.append(s^)
-                i += 1
-        else:
-            while i < len(ids):
-                var ev = _read_event(parsed, ids[i])
+            else:
+                var ev = _read_event(cur)
                 out.events.append(ev^)
-                i += 1
+            return out^
+        cur.start_object()
+        _key(cur, "items")
+        cur.start_array()
+        while not cur.at_array_end():
+            if fx.type_id == "message":
+                var m = _read_message(cur)
+                out.messages.append(m^)
+            elif fx.type_id == "document":
+                var d = _read_document(cur)
+                out.documents.append(d^)
+            elif fx.type_id == "telemetry":
+                var t = _read_telemetry(cur)
+                out.telemetries.append(t^)
+            elif fx.type_id == "strings":
+                var s = _read_strings(cur)
+                out.strings.append(s^)
+            else:
+                var ev = _read_event(cur)
+                out.events.append(ev^)
+        _end_obj(cur)
         return out^
 
     def check(self, fx: Fixture, data: List[Byte]) raises -> Bool:

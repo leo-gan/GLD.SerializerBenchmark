@@ -18,35 +18,35 @@ from bson_wire.writer import WireWriter
 
 def _write_message(mut w: WireWriter, m: Message):
     var at = w.begin_document()
-    w.write_bool_field("f_bool", m.f_bool)
-    w.write_i32_field("f_int32", m.f_int32)
-    w.write_i64_field("f_int64", m.f_int64)
-    w.write_f64_field("f_float64", m.f_float64)
-    w.write_string_field("f_string", m.f_string)
-    w.write_bool_field("f_bool_2", m.f_bool_2)
-    w.write_i32_field("f_int32_2", m.f_int32_2)
-    w.write_string_field("f_string_2", m.f_string_2)
+    w.write_bool_lit("f_bool", m.f_bool)
+    w.write_i32_lit("f_int32", m.f_int32)
+    w.write_i64_lit("f_int64", m.f_int64)
+    w.write_f64_lit("f_float64", m.f_float64)
+    w.write_string_lit("f_string", m.f_string)
+    w.write_bool_lit("f_bool_2", m.f_bool_2)
+    w.write_i32_lit("f_int32_2", m.f_int32_2)
+    w.write_string_lit("f_string_2", m.f_string_2)
     w.end_document(at)
 
 
 def _write_item(mut w: WireWriter, item: DocumentItem):
     var at = w.begin_document()
-    w.write_string_field("sku", item.sku)
-    w.write_i32_field("qty", item.qty)
-    w.write_i64_field("price_minor", item.price_minor)
+    w.write_string_lit("sku", item.sku)
+    w.write_i32_lit("qty", item.qty)
+    w.write_i64_lit("price_minor", item.price_minor)
     w.end_document(at)
 
 
 def _write_document(mut w: WireWriter, doc: Document):
     var at = w.begin_document()
-    w.write_string_field("id", doc.id)
-    w.write_i32_field("status", doc.status)
-    w.write_type_key(TY_DOCUMENT, "meta")
+    w.write_string_lit("id", doc.id)
+    w.write_i32_lit("status", doc.status)
+    w.write_type_lit(TY_DOCUMENT, "meta")
     var meta = w.begin_document()
-    w.write_string_field("region", doc.meta.region)
-    w.write_i32_field("version", doc.meta.version)
+    w.write_string_lit("region", doc.meta.region)
+    w.write_i32_lit("version", doc.meta.version)
     w.end_document(meta)
-    var arr = w.begin_array_field("items")
+    var arr = w.begin_array_lit("items")
     var i = 0
     while i < len(doc.items):
         w.write_type_index(TY_DOCUMENT, i)
@@ -58,15 +58,15 @@ def _write_document(mut w: WireWriter, doc: Document):
 
 def _write_telemetry(mut w: WireWriter, t: Telemetry):
     var at = w.begin_document()
-    w.write_string_field("source", t.source)
-    w.write_i64_field("ts", t.ts)
-    var tags = w.begin_array_field("tags")
+    w.write_string_lit("source", t.source)
+    w.write_i64_lit("ts", t.ts)
+    var tags = w.begin_array_lit("tags")
     var i = 0
     while i < len(t.tags):
         w.write_string_index(i, t.tags[i])
         i += 1
     w.end_document(tags)
-    var values = w.begin_array_field("values")
+    var values = w.begin_array_lit("values")
     i = 0
     while i < len(t.values):
         w.write_f64_index(i, t.values[i])
@@ -77,7 +77,7 @@ def _write_telemetry(mut w: WireWriter, t: Telemetry):
 
 def _write_strings(mut w: WireWriter, s: Strings):
     var at = w.begin_document()
-    var arr = w.begin_array_field("items")
+    var arr = w.begin_array_lit("items")
     var i = 0
     while i < len(s.items):
         w.write_string_index(i, s.items[i])
@@ -88,18 +88,18 @@ def _write_strings(mut w: WireWriter, s: Strings):
 
 def _write_attr(mut w: WireWriter, a: EventAttr):
     var at = w.begin_document()
-    w.write_string_field("key", a.key)
-    w.write_string_field("value", a.value)
+    w.write_string_lit("key", a.key)
+    w.write_string_lit("value", a.value)
     w.end_document(at)
 
 
 def _write_event(mut w: WireWriter, ev: Event):
     var at = w.begin_document()
-    w.write_string_field("event_id", ev.event_id)
-    w.write_string_field("event_type", ev.event_type)
-    w.write_i64_field("occurred_at", ev.occurred_at)
-    w.write_string_field("producer", ev.producer)
-    var arr = w.begin_array_field("attrs")
+    w.write_string_lit("event_id", ev.event_id)
+    w.write_string_lit("event_type", ev.event_type)
+    w.write_i64_lit("occurred_at", ev.occurred_at)
+    w.write_string_lit("producer", ev.producer)
+    var arr = w.begin_array_lit("attrs")
     var i = 0
     while i < len(ev.attrs):
         w.write_type_index(TY_DOCUMENT, i)
@@ -114,22 +114,22 @@ def _read_message[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Messag
     var m = Message()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "f_bool" and typ == 0x08:
+        r.load_key()
+        if r.key_loaded("f_bool") and typ == 0x08:
             m.f_bool = r.read_u8() != 0
-        elif key == "f_int32" and typ == TY_INT32:
+        elif r.key_loaded("f_int32") and typ == TY_INT32:
             m.f_int32 = r.read_i32()
-        elif key == "f_int64" and typ == TY_INT64:
+        elif r.key_loaded("f_int64") and typ == TY_INT64:
             m.f_int64 = r.read_i64()
-        elif key == "f_float64" and typ == TY_DOUBLE:
+        elif r.key_loaded("f_float64") and typ == TY_DOUBLE:
             m.f_float64 = r.read_f64()
-        elif key == "f_string" and typ == TY_STRING:
+        elif r.key_loaded("f_string") and typ == TY_STRING:
             m.f_string = r.read_bson_string()
-        elif key == "f_bool_2" and typ == 0x08:
+        elif r.key_loaded("f_bool_2") and typ == 0x08:
             m.f_bool_2 = r.read_u8() != 0
-        elif key == "f_int32_2" and typ == TY_INT32:
+        elif r.key_loaded("f_int32_2") and typ == TY_INT32:
             m.f_int32_2 = r.read_i32()
-        elif key == "f_string_2" and typ == TY_STRING:
+        elif r.key_loaded("f_string_2") and typ == TY_STRING:
             m.f_string_2 = r.read_bson_string()
         else:
             r.skip_value(typ)
@@ -142,12 +142,12 @@ def _read_item[origin: ImmOrigin](mut r: WireReader[origin]) raises -> DocumentI
     var item = DocumentItem()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "sku" and typ == TY_STRING:
+        r.load_key()
+        if r.key_loaded("sku") and typ == TY_STRING:
             item.sku = r.read_bson_string()
-        elif key == "qty" and typ == TY_INT32:
+        elif r.key_loaded("qty") and typ == TY_INT32:
             item.qty = r.read_i32()
-        elif key == "price_minor" and typ == TY_INT64:
+        elif r.key_loaded("price_minor") and typ == TY_INT64:
             item.price_minor = r.read_i64()
         else:
             r.skip_value(typ)
@@ -160,24 +160,24 @@ def _read_document[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Docum
     var doc = Document()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "id" and typ == TY_STRING:
+        r.load_key()
+        if r.key_loaded("id") and typ == TY_STRING:
             doc.id = r.read_bson_string()
-        elif key == "status" and typ == TY_INT32:
+        elif r.key_loaded("status") and typ == TY_INT32:
             doc.status = r.read_i32()
-        elif key == "meta" and typ == TY_DOCUMENT:
+        elif r.key_loaded("meta") and typ == TY_DOCUMENT:
             var mend = r.enter_document()
             while r.pos < mend - 1:
                 var mt = r.read_u8()
-                var mk = r.read_cstring()
-                if mk == "region" and mt == TY_STRING:
+                r.load_key()
+                if r.key_loaded("region") and mt == TY_STRING:
                     doc.meta.region = r.read_bson_string()
-                elif mk == "version" and mt == TY_INT32:
+                elif r.key_loaded("version") and mt == TY_INT32:
                     doc.meta.version = r.read_i32()
                 else:
                     r.skip_value(mt)
             r.finish_document(mend)
-        elif key == "items" and typ == TY_ARRAY:
+        elif r.key_loaded("items") and typ == TY_ARRAY:
             var aend = r.enter_document()
             doc.items = List[DocumentItem]()
             while r.pos < aend - 1:
@@ -200,12 +200,12 @@ def _read_telemetry[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Tele
     var t = Telemetry()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "source" and typ == TY_STRING:
+        r.load_key()
+        if r.key_loaded("source") and typ == TY_STRING:
             t.source = r.read_bson_string()
-        elif key == "ts" and typ == TY_INT64:
+        elif r.key_loaded("ts") and typ == TY_INT64:
             t.ts = r.read_i64()
-        elif key == "tags" and typ == TY_ARRAY:
+        elif r.key_loaded("tags") and typ == TY_ARRAY:
             var aend = r.enter_document()
             t.tags = List[String]()
             while r.pos < aend - 1:
@@ -216,7 +216,7 @@ def _read_telemetry[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Tele
                 else:
                     r.skip_value(at)
             r.finish_document(aend)
-        elif key == "values" and typ == TY_ARRAY:
+        elif r.key_loaded("values") and typ == TY_ARRAY:
             var aend = r.enter_document()
             t.values = List[Float64]()
             while r.pos < aend - 1:
@@ -238,8 +238,8 @@ def _read_strings[origin: ImmOrigin](mut r: WireReader[origin]) raises -> String
     var s = Strings()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "items" and typ == TY_ARRAY:
+        r.load_key()
+        if r.key_loaded("items") and typ == TY_ARRAY:
             var aend = r.enter_document()
             s.items = List[String]()
             while r.pos < aend - 1:
@@ -261,10 +261,10 @@ def _read_attr[origin: ImmOrigin](mut r: WireReader[origin]) raises -> EventAttr
     var a = EventAttr()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "key" and typ == TY_STRING:
+        r.load_key()
+        if r.key_loaded("key") and typ == TY_STRING:
             a.key = r.read_bson_string()
-        elif key == "value" and typ == TY_STRING:
+        elif r.key_loaded("value") and typ == TY_STRING:
             a.value = r.read_bson_string()
         else:
             r.skip_value(typ)
@@ -277,16 +277,16 @@ def _read_event[origin: ImmOrigin](mut r: WireReader[origin]) raises -> Event:
     var ev = Event()
     while r.pos < end - 1:
         var typ = r.read_u8()
-        var key = r.read_cstring()
-        if key == "event_id" and typ == TY_STRING:
+        r.load_key()
+        if r.key_loaded("event_id") and typ == TY_STRING:
             ev.event_id = r.read_bson_string()
-        elif key == "event_type" and typ == TY_STRING:
+        elif r.key_loaded("event_type") and typ == TY_STRING:
             ev.event_type = r.read_bson_string()
-        elif key == "occurred_at" and typ == TY_INT64:
+        elif r.key_loaded("occurred_at") and typ == TY_INT64:
             ev.occurred_at = r.read_i64()
-        elif key == "producer" and typ == TY_STRING:
+        elif r.key_loaded("producer") and typ == TY_STRING:
             ev.producer = r.read_bson_string()
-        elif key == "attrs" and typ == TY_ARRAY:
+        elif r.key_loaded("attrs") and typ == TY_ARRAY:
             var aend = r.enter_document()
             ev.attrs = List[EventAttr]()
             while r.pos < aend - 1:
@@ -320,7 +320,7 @@ struct BsonSer:
                 _write_message(w, fx.messages[0])
             else:
                 var at = w.begin_document()
-                var arr = w.begin_array_field("items")
+                var arr = w.begin_array_lit("items")
                 var i = 0
                 while i < len(fx.messages):
                     w.write_type_index(TY_DOCUMENT, i)
@@ -333,7 +333,7 @@ struct BsonSer:
                 _write_document(w, fx.documents[0])
             else:
                 var at = w.begin_document()
-                var arr = w.begin_array_field("items")
+                var arr = w.begin_array_lit("items")
                 var i = 0
                 while i < len(fx.documents):
                     w.write_type_index(TY_DOCUMENT, i)
@@ -346,7 +346,7 @@ struct BsonSer:
                 _write_telemetry(w, fx.telemetries[0])
             else:
                 var at = w.begin_document()
-                var arr = w.begin_array_field("items")
+                var arr = w.begin_array_lit("items")
                 var i = 0
                 while i < len(fx.telemetries):
                     w.write_type_index(TY_DOCUMENT, i)
@@ -359,7 +359,7 @@ struct BsonSer:
                 _write_strings(w, fx.strings[0])
             else:
                 var at = w.begin_document()
-                var arr = w.begin_array_field("items")
+                var arr = w.begin_array_lit("items")
                 var i = 0
                 while i < len(fx.strings):
                     w.write_type_index(TY_DOCUMENT, i)
@@ -372,7 +372,7 @@ struct BsonSer:
                 _write_event(w, fx.events[0])
             else:
                 var at = w.begin_document()
-                var arr = w.begin_array_field("items")
+                var arr = w.begin_array_lit("items")
                 var i = 0
                 while i < len(fx.events):
                     w.write_type_index(TY_DOCUMENT, i)
