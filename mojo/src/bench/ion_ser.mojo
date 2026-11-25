@@ -1,4 +1,4 @@
-"""mojo-ion (gld-ion) binary document encode/decode on suite types."""
+"""mojo-ion (gld-ion) binary cursor on suite types."""
 
 from std.collections import List
 
@@ -13,295 +13,317 @@ from bench.data import (
     Telemetry,
     fidelity,
 )
-from ion import decode, encode
-from ion_runtime.doc import (
-    IonDoc,
-    K_BOOL,
-    K_FLOAT,
-    K_INT,
-    K_LIST,
-    K_STRING,
-    K_STRUCT,
-)
-from ion_runtime.options import EncodeOptions
-from ion_runtime.symtab import Catalog
+from ion_wire.direct import IonBin, IonCur
 
 
-def _need(doc: IonDoc, id: Int, kind: Int) raises:
-    if id < 0 or doc.nodes[id].kind != kind:
-        raise Error("ion type")
+def _sid(got: Int, want: Int) raises:
+    if got != want:
+        raise Error("ion field")
 
 
-def _fname(doc: IonDoc, field: Int) -> String:
-    if field < 0:
-        return String()
-    return doc.sym_text(field)
+def _write_message(mut bin: IonBin, m: Message) raises:
+    var st = bin.open_container()
+    bin.field(10)
+    bin.write_bool(m.f_bool)
+    bin.field(11)
+    bin.write_i64(Int64(m.f_int32))
+    bin.field(12)
+    bin.write_i64(m.f_int64)
+    bin.field(13)
+    bin.write_f64(m.f_float64)
+    bin.field(14)
+    bin.write_str(m.f_string)
+    bin.field(15)
+    bin.write_bool(m.f_bool_2)
+    bin.field(16)
+    bin.write_i64(Int64(m.f_int32_2))
+    bin.field(17)
+    bin.write_str(m.f_string_2)
+    bin.close_container(st, 13)
 
 
-def _field(doc: IonDoc, obj: Int, name: String) raises -> Int:
-    _need(doc, obj, K_STRUCT)
-    var node = doc.nodes[obj]
-    var edge = node.child
-    var i = 0
-    while i < node.nchild:
-        if _fname(doc, doc.edges[edge].field) == name:
-            return doc.edges[edge].child
-        edge = doc.edges[edge].next
-        i += 1
-    raise Error("ion field " + name)
+def _write_item(mut bin: IonBin, item: DocumentItem) raises:
+    var st = bin.open_container()
+    bin.field(16)
+    bin.write_str(item.sku)
+    bin.field(17)
+    bin.write_i64(Int64(item.qty))
+    bin.field(18)
+    bin.write_i64(item.price_minor)
+    bin.close_container(st, 13)
 
 
-def _elems(doc: IonDoc, id: Int) raises -> List[Int]:
-    _need(doc, id, K_LIST)
-    var out = List[Int]()
-    var node = doc.nodes[id]
-    var edge = node.child
-    var i = 0
-    while i < node.nchild:
-        out.append(doc.edges[edge].child)
-        edge = doc.edges[edge].next
-        i += 1
-    return out^
-
-
-def _istr(doc: IonDoc, id: Int) raises -> String:
-    _need(doc, id, K_STRING)
-    return doc.text_at(id)
-
-
-def _ibool(doc: IonDoc, id: Int) raises -> Bool:
-    _need(doc, id, K_BOOL)
-    return doc.nodes[id].a != 0
-
-
-def _ii64(doc: IonDoc, id: Int) raises -> Int64:
-    _need(doc, id, K_INT)
-    var n = doc.nodes[id]
-    if n.b <= 0:
-        return Int64(0)
-    var mag = UInt64(doc.limbs[n.a])
-    if n.b >= 2:
-        mag = mag | (UInt64(doc.limbs[n.a + 1]) << UInt64(32))
-    if n.c != 0:
-        if mag == (UInt64(1) << UInt64(63)):
-            return Int64(-9223372036854775807) - Int64(1)
-        return Int64(0) - Int64(mag)
-    return Int64(mag)
-
-
-def _if64(doc: IonDoc, id: Int) raises -> Float64:
-    _need(doc, id, K_FLOAT)
-    return Float64(from_bits=doc.floats[doc.nodes[id].b])
-
-
-def _sym(mut doc: IonDoc, name: String) -> Int:
-    var node = doc.add_symbol_text(String(name))
-    return doc.nodes[node].a
-
-
-def _put(mut doc: IonDoc, parent: Int, name: String, child: Int):
-    doc.add_child(parent, child, _sym(doc, name))
-
-
-def _str(mut doc: IonDoc, text: String) -> Int:
-    return doc.add_string(String(text))
-
-
-def _f64(mut doc: IonDoc, value: Float64) -> Int:
-    return doc.add_float(8, UInt64(value.to_bits()))
-
-
-def _write_message(mut doc: IonDoc, m: Message) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "f_bool", doc.add_bool(m.f_bool))
-    _put(doc, obj, "f_int32", doc.add_i64(Int64(m.f_int32)))
-    _put(doc, obj, "f_int64", doc.add_i64(m.f_int64))
-    _put(doc, obj, "f_float64", _f64(doc, m.f_float64))
-    _put(doc, obj, "f_string", _str(doc, m.f_string))
-    _put(doc, obj, "f_bool_2", doc.add_bool(m.f_bool_2))
-    _put(doc, obj, "f_int32_2", doc.add_i64(Int64(m.f_int32_2)))
-    _put(doc, obj, "f_string_2", _str(doc, m.f_string_2))
-    return obj
-
-
-def _write_item(mut doc: IonDoc, item: DocumentItem) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "sku", _str(doc, item.sku))
-    _put(doc, obj, "qty", doc.add_i64(Int64(item.qty)))
-    _put(doc, obj, "price_minor", doc.add_i64(item.price_minor))
-    return obj
-
-
-def _write_document(mut doc: IonDoc, d: Document) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "id", _str(doc, d.id))
-    _put(doc, obj, "status", doc.add_i64(Int64(d.status)))
-    var meta = doc.start_container(K_STRUCT)
-    _put(doc, meta, "region", _str(doc, d.meta.region))
-    _put(doc, meta, "version", doc.add_i64(Int64(d.meta.version)))
-    _put(doc, obj, "meta", meta)
-    var arr = doc.start_container(K_LIST)
+def _write_document(mut bin: IonBin, d: Document) raises:
+    var st = bin.open_container()
+    bin.field(10)
+    bin.write_str(d.id)
+    bin.field(11)
+    bin.write_i64(Int64(d.status))
+    bin.field(12)
+    var meta = bin.open_container()
+    bin.field(13)
+    bin.write_str(d.meta.region)
+    bin.field(14)
+    bin.write_i64(Int64(d.meta.version))
+    bin.close_container(meta, 13)
+    bin.field(15)
+    var arr = bin.open_container()
     var i = 0
     while i < len(d.items):
-        doc.add_child(arr, _write_item(doc, d.items[i]), -1)
+        _write_item(bin, d.items[i])
         i += 1
-    _put(doc, obj, "items", arr)
-    return obj
+    bin.close_container(arr, 11)
+    bin.close_container(st, 13)
 
 
-def _write_telemetry(mut doc: IonDoc, t: Telemetry) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "source", _str(doc, t.source))
-    _put(doc, obj, "ts", doc.add_i64(t.ts))
-    var tags = doc.start_container(K_LIST)
+def _write_telemetry(mut bin: IonBin, t: Telemetry) raises:
+    var st = bin.open_container()
+    bin.field(10)
+    bin.write_str(t.source)
+    bin.field(11)
+    bin.write_i64(t.ts)
+    bin.field(12)
+    var tags = bin.open_container()
     var i = 0
     while i < len(t.tags):
-        doc.add_child(tags, _str(doc, t.tags[i]), -1)
+        bin.write_str(t.tags[i])
         i += 1
-    _put(doc, obj, "tags", tags)
-    var values = doc.start_container(K_LIST)
+    bin.close_container(tags, 11)
+    bin.field(13)
+    var values = bin.open_container()
     i = 0
     while i < len(t.values):
-        doc.add_child(values, _f64(doc, t.values[i]), -1)
+        bin.write_f64(t.values[i])
         i += 1
-    _put(doc, obj, "values", values)
-    return obj
+    bin.close_container(values, 11)
+    bin.close_container(st, 13)
 
 
-def _write_strings(mut doc: IonDoc, s: Strings) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    var arr = doc.start_container(K_LIST)
+def _write_strings(mut bin: IonBin, s: Strings) raises:
+    var st = bin.open_container()
+    bin.field(10)
+    var arr = bin.open_container()
     var i = 0
     while i < len(s.items):
-        doc.add_child(arr, _str(doc, s.items[i]), -1)
+        bin.write_str(s.items[i])
         i += 1
-    _put(doc, obj, "items", arr)
-    return obj
+    bin.close_container(arr, 11)
+    bin.close_container(st, 13)
 
 
-def _write_attr(mut doc: IonDoc, a: EventAttr) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "key", _str(doc, a.key))
-    _put(doc, obj, "value", _str(doc, a.value))
-    return obj
+def _write_attr(mut bin: IonBin, a: EventAttr) raises:
+    var st = bin.open_container()
+    bin.field(15)
+    bin.write_str(a.key)
+    bin.field(16)
+    bin.write_str(a.value)
+    bin.close_container(st, 13)
 
 
-def _write_event(mut doc: IonDoc, ev: Event) -> Int:
-    var obj = doc.start_container(K_STRUCT)
-    _put(doc, obj, "event_id", _str(doc, ev.event_id))
-    _put(doc, obj, "event_type", _str(doc, ev.event_type))
-    _put(doc, obj, "occurred_at", doc.add_i64(ev.occurred_at))
-    _put(doc, obj, "producer", _str(doc, ev.producer))
-    var arr = doc.start_container(K_LIST)
+def _write_event(mut bin: IonBin, ev: Event) raises:
+    var st = bin.open_container()
+    bin.field(10)
+    bin.write_str(ev.event_id)
+    bin.field(11)
+    bin.write_str(ev.event_type)
+    bin.field(12)
+    bin.write_i64(ev.occurred_at)
+    bin.field(13)
+    bin.write_str(ev.producer)
+    bin.field(14)
+    var arr = bin.open_container()
     var i = 0
     while i < len(ev.attrs):
-        doc.add_child(arr, _write_attr(doc, ev.attrs[i]), -1)
+        _write_attr(bin, ev.attrs[i])
         i += 1
-    _put(doc, obj, "attrs", arr)
-    return obj
+    bin.close_container(arr, 11)
+    bin.close_container(st, 13)
 
 
-def _read_message(doc: IonDoc, id: Int) raises -> Message:
+def _names_message(mut bin: IonBin, batch: Bool):
+    _ = bin.intern_lit("f_bool")
+    _ = bin.intern_lit("f_int32")
+    _ = bin.intern_lit("f_int64")
+    _ = bin.intern_lit("f_float64")
+    _ = bin.intern_lit("f_string")
+    _ = bin.intern_lit("f_bool_2")
+    _ = bin.intern_lit("f_int32_2")
+    _ = bin.intern_lit("f_string_2")
+    if batch:
+        _ = bin.intern_lit("items")
+
+
+def _names_document(mut bin: IonBin):
+    _ = bin.intern_lit("id")
+    _ = bin.intern_lit("status")
+    _ = bin.intern_lit("meta")
+    _ = bin.intern_lit("region")
+    _ = bin.intern_lit("version")
+    _ = bin.intern_lit("items")
+    _ = bin.intern_lit("sku")
+    _ = bin.intern_lit("qty")
+    _ = bin.intern_lit("price_minor")
+
+
+def _names_telemetry(mut bin: IonBin, batch: Bool):
+    _ = bin.intern_lit("source")
+    _ = bin.intern_lit("ts")
+    _ = bin.intern_lit("tags")
+    _ = bin.intern_lit("values")
+    if batch:
+        _ = bin.intern_lit("items")
+
+
+def _names_strings(mut bin: IonBin, batch: Bool):
+    _ = bin.intern_lit("items")
+    _ = batch
+
+
+def _names_event(mut bin: IonBin, batch: Bool):
+    _ = bin.intern_lit("event_id")
+    _ = bin.intern_lit("event_type")
+    _ = bin.intern_lit("occurred_at")
+    _ = bin.intern_lit("producer")
+    _ = bin.intern_lit("attrs")
+    _ = bin.intern_lit("key")
+    _ = bin.intern_lit("value")
+    if batch:
+        _ = bin.intern_lit("items")
+
+
+def _read_message[o: ImmOrigin](mut c: IonCur[o]) raises -> Message:
+    var end = c.enter_struct()
     var m = Message()
-    m.f_bool = _ibool(doc, _field(doc, id, "f_bool"))
-    m.f_int32 = Int32(_ii64(doc, _field(doc, id, "f_int32")))
-    m.f_int64 = _ii64(doc, _field(doc, id, "f_int64"))
-    m.f_float64 = _if64(doc, _field(doc, id, "f_float64"))
-    m.f_string = _istr(doc, _field(doc, id, "f_string"))
-    m.f_bool_2 = _ibool(doc, _field(doc, id, "f_bool_2"))
-    m.f_int32_2 = Int32(_ii64(doc, _field(doc, id, "f_int32_2")))
-    m.f_string_2 = _istr(doc, _field(doc, id, "f_string_2"))
+    _sid(c.field_sid(), 10)
+    m.f_bool = c.read_bool()
+    _sid(c.field_sid(), 11)
+    m.f_int32 = Int32(c.read_i64())
+    _sid(c.field_sid(), 12)
+    m.f_int64 = c.read_i64()
+    _sid(c.field_sid(), 13)
+    m.f_float64 = c.read_f64()
+    _sid(c.field_sid(), 14)
+    m.f_string = c.read_string()
+    _sid(c.field_sid(), 15)
+    m.f_bool_2 = c.read_bool()
+    _sid(c.field_sid(), 16)
+    m.f_int32_2 = Int32(c.read_i64())
+    _sid(c.field_sid(), 17)
+    m.f_string_2 = c.read_string()
+    if c.i != end:
+        raise Error("ion message")
     return m^
 
 
-def _read_item(doc: IonDoc, id: Int) raises -> DocumentItem:
+def _read_item[o: ImmOrigin](mut c: IonCur[o]) raises -> DocumentItem:
+    var end = c.enter_struct()
     var item = DocumentItem()
-    item.sku = _istr(doc, _field(doc, id, "sku"))
-    item.qty = Int32(_ii64(doc, _field(doc, id, "qty")))
-    item.price_minor = _ii64(doc, _field(doc, id, "price_minor"))
+    _sid(c.field_sid(), 16)
+    item.sku = c.read_string()
+    _sid(c.field_sid(), 17)
+    item.qty = Int32(c.read_i64())
+    _sid(c.field_sid(), 18)
+    item.price_minor = c.read_i64()
+    if c.i != end:
+        raise Error("ion item")
     return item^
 
 
-def _read_document(doc: IonDoc, id: Int) raises -> Document:
+def _read_document[o: ImmOrigin](mut c: IonCur[o]) raises -> Document:
+    var end = c.enter_struct()
     var d = Document()
-    d.id = _istr(doc, _field(doc, id, "id"))
-    d.status = Int32(_ii64(doc, _field(doc, id, "status")))
-    var meta = _field(doc, id, "meta")
-    d.meta.region = _istr(doc, _field(doc, meta, "region"))
-    d.meta.version = Int32(_ii64(doc, _field(doc, meta, "version")))
-    var elems = _elems(doc, _field(doc, id, "items"))
-    var i = 0
-    while i < len(elems):
-        var item = _read_item(doc, elems[i])
+    _sid(c.field_sid(), 10)
+    d.id = c.read_string()
+    _sid(c.field_sid(), 11)
+    d.status = Int32(c.read_i64())
+    _sid(c.field_sid(), 12)
+    var mend = c.enter_struct()
+    _sid(c.field_sid(), 13)
+    d.meta.region = c.read_string()
+    _sid(c.field_sid(), 14)
+    d.meta.version = Int32(c.read_i64())
+    if c.i != mend:
+        raise Error("ion meta")
+    _sid(c.field_sid(), 15)
+    var lend = c.enter_list()
+    while c.i < lend:
+        var item = _read_item(c)
         d.items.append(item^)
-        i += 1
+    if c.i != end:
+        raise Error("ion document")
     return d^
 
 
-def _read_telemetry(doc: IonDoc, id: Int) raises -> Telemetry:
+def _read_telemetry[o: ImmOrigin](mut c: IonCur[o]) raises -> Telemetry:
+    var end = c.enter_struct()
     var t = Telemetry()
-    t.source = _istr(doc, _field(doc, id, "source"))
-    t.ts = _ii64(doc, _field(doc, id, "ts"))
-    var tags = _elems(doc, _field(doc, id, "tags"))
-    var i = 0
-    while i < len(tags):
-        var tag = _istr(doc, tags[i])
-        t.tags.append(tag)
-        i += 1
-    var values = _elems(doc, _field(doc, id, "values"))
-    i = 0
-    while i < len(values):
-        t.values.append(_if64(doc, values[i]))
-        i += 1
+    _sid(c.field_sid(), 10)
+    t.source = c.read_string()
+    _sid(c.field_sid(), 11)
+    t.ts = c.read_i64()
+    _sid(c.field_sid(), 12)
+    var tags = c.enter_list()
+    while c.i < tags:
+        t.tags.append(c.read_string())
+    _sid(c.field_sid(), 13)
+    var values = c.enter_list()
+    while c.i < values:
+        t.values.append(c.read_f64())
+    if c.i != end:
+        raise Error("ion telemetry")
     return t^
 
 
-def _read_strings(doc: IonDoc, id: Int) raises -> Strings:
+def _read_strings[o: ImmOrigin](mut c: IonCur[o]) raises -> Strings:
+    var end = c.enter_struct()
     var s = Strings()
-    var elems = _elems(doc, _field(doc, id, "items"))
-    var i = 0
-    while i < len(elems):
-        var item = _istr(doc, elems[i])
-        s.items.append(item)
-        i += 1
+    _sid(c.field_sid(), 10)
+    var lend = c.enter_list()
+    while c.i < lend:
+        s.items.append(c.read_string())
+    if c.i != end:
+        raise Error("ion strings")
     return s^
 
 
-def _read_attr(doc: IonDoc, id: Int) raises -> EventAttr:
+def _read_attr[o: ImmOrigin](mut c: IonCur[o]) raises -> EventAttr:
+    var end = c.enter_struct()
     var a = EventAttr()
-    a.key = _istr(doc, _field(doc, id, "key"))
-    a.value = _istr(doc, _field(doc, id, "value"))
+    _sid(c.field_sid(), 15)
+    a.key = c.read_string()
+    _sid(c.field_sid(), 16)
+    a.value = c.read_string()
+    if c.i != end:
+        raise Error("ion attr")
     return a^
 
 
-def _read_event(doc: IonDoc, id: Int) raises -> Event:
+def _read_event[o: ImmOrigin](mut c: IonCur[o]) raises -> Event:
+    var end = c.enter_struct()
     var ev = Event()
-    ev.event_id = _istr(doc, _field(doc, id, "event_id"))
-    ev.event_type = _istr(doc, _field(doc, id, "event_type"))
-    ev.occurred_at = _ii64(doc, _field(doc, id, "occurred_at"))
-    ev.producer = _istr(doc, _field(doc, id, "producer"))
-    var elems = _elems(doc, _field(doc, id, "attrs"))
-    var i = 0
-    while i < len(elems):
-        var attr = _read_attr(doc, elems[i])
+    _sid(c.field_sid(), 10)
+    ev.event_id = c.read_string()
+    _sid(c.field_sid(), 11)
+    ev.event_type = c.read_string()
+    _sid(c.field_sid(), 12)
+    ev.occurred_at = c.read_i64()
+    _sid(c.field_sid(), 13)
+    ev.producer = c.read_string()
+    _sid(c.field_sid(), 14)
+    var lend = c.enter_list()
+    while c.i < lend:
+        var attr = _read_attr(c)
         ev.attrs.append(attr^)
-        i += 1
+    if c.i != end:
+        raise Error("ion event")
     return ev^
 
 
-def _top(doc: IonDoc) raises -> Int:
-    if len(doc.top) < 1:
-        raise Error("ion top")
-    return doc.top[0]
-
-
-def _one_or_items(doc: IonDoc, n: Int) raises -> List[Int]:
-    var root = _top(doc)
-    if n == 1:
-        var out = List[Int]()
-        out.append(root)
-        return out^
-    return _elems(doc, _field(doc, root, "items"))
+def _read_list[o: ImmOrigin](mut c: IonCur[o], items_sid: Int) raises -> Int:
+    var end = c.enter_struct()
+    _sid(c.field_sid(), items_sid)
+    _ = end
+    return c.enter_list()
 
 
 struct IonSer:
@@ -314,68 +336,91 @@ struct IonSer:
         return "mojo-ion"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
-        var doc = IonDoc()
-        var root: Int
+        var cap = 256
+        if fx.n > 1:
+            cap = 4096 + fx.n * 64
+        var bin = IonBin(capacity=cap)
+        var batch = fx.n != 1
         if fx.type_id == "message":
-            if fx.n == 1:
-                root = _write_message(doc, fx.messages[0])
+            _names_message(bin, batch)
+            bin.begin()
+            if not batch:
+                _write_message(bin, fx.messages[0])
             else:
-                root = doc.start_container(K_STRUCT)
-                var arr = doc.start_container(K_LIST)
+                var root = bin.open_container()
+                bin.field(18)
+                var arr = bin.open_container()
                 var i = 0
                 while i < len(fx.messages):
-                    doc.add_child(arr, _write_message(doc, fx.messages[i]), -1)
+                    _write_message(bin, fx.messages[i])
                     i += 1
-                _put(doc, root, "items", arr)
+                bin.close_container(arr, 11)
+                bin.close_container(root, 13)
         elif fx.type_id == "document":
-            if fx.n == 1:
-                root = _write_document(doc, fx.documents[0])
+            _names_document(bin)
+            bin.begin()
+            if not batch:
+                _write_document(bin, fx.documents[0])
             else:
-                root = doc.start_container(K_STRUCT)
-                var arr = doc.start_container(K_LIST)
+                var root = bin.open_container()
+                bin.field(15)
+                var arr = bin.open_container()
                 var i = 0
                 while i < len(fx.documents):
-                    doc.add_child(arr, _write_document(doc, fx.documents[i]), -1)
+                    _write_document(bin, fx.documents[i])
                     i += 1
-                _put(doc, root, "items", arr)
+                bin.close_container(arr, 11)
+                bin.close_container(root, 13)
         elif fx.type_id == "telemetry":
-            if fx.n == 1:
-                root = _write_telemetry(doc, fx.telemetries[0])
+            _names_telemetry(bin, batch)
+            bin.begin()
+            if not batch:
+                _write_telemetry(bin, fx.telemetries[0])
             else:
-                root = doc.start_container(K_STRUCT)
-                var arr = doc.start_container(K_LIST)
+                var root = bin.open_container()
+                bin.field(14)
+                var arr = bin.open_container()
                 var i = 0
                 while i < len(fx.telemetries):
-                    doc.add_child(arr, _write_telemetry(doc, fx.telemetries[i]), -1)
+                    _write_telemetry(bin, fx.telemetries[i])
                     i += 1
-                _put(doc, root, "items", arr)
+                bin.close_container(arr, 11)
+                bin.close_container(root, 13)
         elif fx.type_id == "strings":
-            if fx.n == 1:
-                root = _write_strings(doc, fx.strings[0])
+            _names_strings(bin, batch)
+            bin.begin()
+            if not batch:
+                _write_strings(bin, fx.strings[0])
             else:
-                root = doc.start_container(K_STRUCT)
-                var arr = doc.start_container(K_LIST)
+                var root = bin.open_container()
+                bin.field(10)
+                var arr = bin.open_container()
                 var i = 0
                 while i < len(fx.strings):
-                    doc.add_child(arr, _write_strings(doc, fx.strings[i]), -1)
+                    _write_strings(bin, fx.strings[i])
                     i += 1
-                _put(doc, root, "items", arr)
+                bin.close_container(arr, 11)
+                bin.close_container(root, 13)
         else:
-            if fx.n == 1:
-                root = _write_event(doc, fx.events[0])
+            _names_event(bin, batch)
+            bin.begin()
+            if not batch:
+                _write_event(bin, fx.events[0])
             else:
-                root = doc.start_container(K_STRUCT)
-                var arr = doc.start_container(K_LIST)
+                var root = bin.open_container()
+                bin.field(17)
+                var arr = bin.open_container()
                 var i = 0
                 while i < len(fx.events):
-                    doc.add_child(arr, _write_event(doc, fx.events[i]), -1)
+                    _write_event(bin, fx.events[i])
                     i += 1
-                _put(doc, root, "items", arr)
-        doc.add_top(root)
-        return encode(doc^, EncodeOptions(True), Catalog())
+                bin.close_container(arr, 11)
+                bin.close_container(root, 13)
+        return bin^.take()
 
     def deserialize_bytes(self, fx: Fixture, data: List[Byte]) raises -> Fixture:
-        var parsed = decode(Span(data), Catalog())
+        var cur = IonCur(Span(data))
+        cur.open()
         var out = Fixture(
             fx.type_id,
             fx.n,
@@ -386,33 +431,51 @@ struct IonSer:
             List[Strings](),
             List[Event](),
         )
-        var ids = _one_or_items(parsed, fx.n)
-        var i = 0
         if fx.type_id == "message":
-            while i < len(ids):
-                var m = _read_message(parsed, ids[i])
+            if fx.n == 1:
+                var m = _read_message(cur)
                 out.messages.append(m^)
-                i += 1
+            else:
+                var lend = _read_list(cur, 18)
+                while cur.i < lend:
+                    var m = _read_message(cur)
+                    out.messages.append(m^)
         elif fx.type_id == "document":
-            while i < len(ids):
-                var d = _read_document(parsed, ids[i])
+            if fx.n == 1:
+                var d = _read_document(cur)
                 out.documents.append(d^)
-                i += 1
+            else:
+                var lend = _read_list(cur, 15)
+                while cur.i < lend:
+                    var d = _read_document(cur)
+                    out.documents.append(d^)
         elif fx.type_id == "telemetry":
-            while i < len(ids):
-                var t = _read_telemetry(parsed, ids[i])
+            if fx.n == 1:
+                var t = _read_telemetry(cur)
                 out.telemetries.append(t^)
-                i += 1
+            else:
+                var lend = _read_list(cur, 14)
+                while cur.i < lend:
+                    var t = _read_telemetry(cur)
+                    out.telemetries.append(t^)
         elif fx.type_id == "strings":
-            while i < len(ids):
-                var s = _read_strings(parsed, ids[i])
+            if fx.n == 1:
+                var s = _read_strings(cur)
                 out.strings.append(s^)
-                i += 1
+            else:
+                var lend = _read_list(cur, 10)
+                while cur.i < lend:
+                    var s = _read_strings(cur)
+                    out.strings.append(s^)
         else:
-            while i < len(ids):
-                var ev = _read_event(parsed, ids[i])
+            if fx.n == 1:
+                var ev = _read_event(cur)
                 out.events.append(ev^)
-                i += 1
+            else:
+                var lend = _read_list(cur, 17)
+                while cur.i < lend:
+                    var ev = _read_event(cur)
+                    out.events.append(ev^)
         return out^
 
     def check(self, fx: Fixture, data: List[Byte]) raises -> Bool:
