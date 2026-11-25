@@ -15,17 +15,6 @@ Think of it as the **lab design** for the experiment. How we turn raw timings in
 
 ---
 
-## Learning goals
-
-By the end of this page you should be able to:
-
-1. Name the main folders of the repository and what each one is for.
-2. Explain the difference between **setup work** and **timed work**.
-3. List the rules every language **benchmark runner** (older docs: *harness*) must follow so results stay comparable.
-4. Choose a **run mode** (smoke, full, research, …) for your purpose.
-
----
-
 ## One pipeline, four kinds of reader
 
 Everyone uses the **same measurement contract** and the **same analysis path**. What changes is the question you bring:

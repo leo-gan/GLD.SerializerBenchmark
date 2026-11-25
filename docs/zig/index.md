@@ -28,7 +28,7 @@ Zig still changes in breaking ways between minor versions, so the host script in
 
 Building without optimizations is the error that changes the numbers the most, because an unoptimized Zig binary is far slower than a release build. Codecs that use comptime, such as `std.json`, serde.zig, and `comptime-bin`, generate the field walk while the program compiles.
 
-A `@bitCast` of a live suite value is not a valid encoding. Slices inside that value are pointers, not payload bytes. See [Not a `@bitCast`](#not-a-bitcast-of-the-whole-fixture).
+A `@bitCast` of a live suite value is not a valid encoding. Slices inside that value are pointers, not payload bytes. See [Not a `@bitCast`](#not-a-bitcast-of-the-whole-value).
 
 ### Suite-specific gotchas
 
@@ -49,7 +49,7 @@ The steps to install the toolchain and run the benchmark are in [`zig/README.md`
 - Runner: `zig/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: `zig/src/serializers.zig`
 
-The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The harness owns a reusable output buffer per serializer, and every text codec writes into it through `std.Io.Writer`, so no row pays for a throwaway slice the runner then copies and frees. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
+The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The benchmark runner owns a reusable output buffer per serializer, and every text codec writes into it through `std.Io.Writer`, so no row pays for a throwaway slice the runner then copies and frees. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
 
 ## Serializers
 
@@ -102,7 +102,7 @@ ZON (Zig Object Notation) is Zig's own data notation, in the standard library. I
 
 #### [comptime-bin](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md)
 
-comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers).
+comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live struct value is not a valid encoding (slices are pointers).
 
 #### [serde.json](https://github.com/OrlovEvgeny/serde.zig)
 
@@ -181,7 +181,7 @@ gld-arrow is a registered serializer in the zig suite. This page links its upstr
 gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
 
 
-## Not a `@bitCast` of the whole fixture
+## Not a `@bitCast` of the whole value
 
 A live suite value has `[]const u8` slices. `@bitCast` of that type is not a portable encoding. `comptime-bin` is the honest idiomatic stand-in: comptime reflection writes a length-prefixed little-endian image.
 
@@ -195,7 +195,7 @@ These rows compile the **same** suite IDLs as the other languages. They do not i
 | flatbuffers | `cpp/schemas/benchmark.fbs` | `./zig/scripts/generate-flatbuffers.sh` |
 | capnproto | `cpp/schemas/benchmark.capnp` | `./zig/scripts/generate-capnp.sh` |
 
-Prepare copies each suite fixture into the library’s native form (untimed). The timer measures encode and decode only. Fidelity copies back to the suite struct after decode.
+Prepare copies each suite record into the library’s native form (untimed). The timer measures encode and decode only. Fidelity copies back to the suite struct after decode.
 
 `capnproto` uses the official C++ library (like Swift) because the Zig Cap’n Proto plugin requires Zig 0.17-dev. The host needs `libcapnp` / `libkj` under `~/.local` (`./scripts/install-host-requirements.sh zig`).
 

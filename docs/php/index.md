@@ -104,11 +104,7 @@ rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as 
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
-#### [symfony-json](https://github.com/symfony/serializer)
-
-The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
-
-#### [symfony-xml](https://github.com/symfony/serializer)
+#### [symfony-json](https://github.com/symfony/serializer), [symfony-xml](https://github.com/symfony/serializer)
 
 The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
 
@@ -155,13 +151,13 @@ These candidates from the intake lists are **not** rows:
 
 | Candidate | Why not |
 |-----------|---------|
-| Goridge / RoadRunner | RPC framing, not a fixture codec |
+| Goridge / RoadRunner | RPC framing, not a general data-type codec |
 | opis/closure, laravel/serializable-closure | Packs executable closures — not suite data, and a security surface |
 | salsify/jsonstreamingparser | Decode-only SAX parser |
 | clue/ndjson | Line-delimited stream, different payload |
-| Symfony CSV | Nested fixtures are not a CSV table |
+| Symfony CSV | Nested data types are not a CSV table |
 | Spatie laravel-data / Laravel serialization | Framework hydrators, not a wire format |
-| YAS PHP / AMQP codecs | No official PHP codec for this suite’s fixtures |
+| YAS PHP / AMQP codecs | No official PHP codec for this suite’s data types |
 | Cap’n Proto PHP | No official PHP runtime |
 | FlatBuffers / Thrift PHP | No generated PHP tables in-tree yet (can be added like protobuf) |
 | PDO / custom hydrators | Object mapping, not encode/decode of bytes |

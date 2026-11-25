@@ -143,8 +143,8 @@ These rows violate the contract or mix two contracts. They are listed so a later
 
 | Gap | Where | What is wrong |
 |-----|--------|----------------|
-| Domain map on the clock | C `protobuf` `to_proto` / `from_proto` on every timed call | The C runner passes a distinct fixture per instance, so convert-in-prepare cannot cover N>1 without a `prepare_many` hook. Rust `prost` now converts every instance in untimed `prepare_many`. |
-| Fixture vs inner struct | Rust Serde rows vs Speedy / rkyv / minicbor | Same as the 401 Speedy articles. Documented, not a silent bug. |
+| Domain map on the clock | C `protobuf` `to_proto` / `from_proto` on every timed call | The C runner passes a distinct test record per instance, so convert-in-prepare cannot cover N>1 without a `prepare_many` hook. Rust `prost` now converts every instance in untimed `prepare_many`. |
+| Wrapper enum vs inner struct | Rust Serde rows vs Speedy / rkyv / minicbor | Same as the 401 Speedy articles. Documented, not a silent bug. |
 | Envelope instead of native model | C avro-c, flatcc, ubj | Timed path wraps custom-binary. Teaching rows; see the C 401 article. |
 | C nanopb / protobuf-c / protobuf-wire | C schema rows | Same in-tree `pb_v2_encode` body under three names. Wiring the real libraries is a separate implementation task. |
 | Some C# XML/JSON ctors still lazy | DataContract XML, XmlSerializer | Warmup drops rep 0. Bond now builds in `Initialize`. |

@@ -12,17 +12,6 @@ Kotlin (2026) showed that `benchmark_config.yaml` is **not** the only registry. 
 
 ---
 
-## Learning goals
-
-After this page you should be able to:
-
-1. Register a language in the master config **and** every closed-set consumer.
-2. Implement a benchmark runner that writes a valid CSV and respects the timing rules.
-3. Publish Dashboard payloads, experiment tabs, and a 401 call-site article.
-4. Land the language with [prepare-pr](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/.grok/skills/prepare-pr/SKILL.md).
-
----
-
 ## 0. Choose the id
 
 Use a short lowercase id (`php`, `kotlin`, `go`). Check substring collisions **before** you name the tree:
@@ -273,4 +262,4 @@ Do not land a language whose Experiments tab is empty. That is how Kotlin shippe
 
 ## Suggested order
 
-Do **1 → 0 (collisions) → 2–5 → 6 → 7 → 8 → 9 → 10–12**. Experiments and Dashboard last, after the harness is honest. prepare-pr is the last gate, not a substitute for the closed-set list.
+Do **1 → 0 (collisions) → 2–5 → 6 → 7 → 8 → 9 → 10–12**. Experiments and Dashboard last, after the benchmark runner is honest. prepare-pr is the last gate, not a substitute for the closed-set list.

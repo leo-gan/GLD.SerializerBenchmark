@@ -8,20 +8,6 @@ You do not need to be a performance engineer to read these pages. They are writt
 
 ---
 
-## Learning goals
-
-After reading this section you should be able to:
-
-1. Say what a **benchmark** is measuring here (serialize and deserialize time, size, and correctness).
-2. Find the page for the five data sets, for modes, for statistics, for metrics, or for published numbers.
-3. Compare serializers **within one language and one standard**, on the same data set and data type, instead of treating absolute times as a global ranking.
-4. Open a language **Overview** (what libraries we measure, roster and caveats) under the **Languages** tab.
-5. Open the **Dashboard** for measured numbers and interactive comparisons.
-
-For the ideas behind formats, start with [Serialization 101](../theory/101/index.md) under **Learn**.
-
----
-
 ## Data sets
 
 Every published number is for one **data set** and one **data type** inside it. A library is measured only on the sets it can carry. There are five sets.
@@ -67,7 +53,7 @@ Each programming language has a small program called a **benchmark runner**. The
 
 ## Terminology
 
-Data set, data type, runner, and the prohibited words are defined on [Terminology](terminology.md). **Fixture** means data type. **Harness** means benchmark runner.
+Data set, data type, benchmark runner, and deprecated legacy aliases are defined on [Terminology](terminology.md).
 
 ---
 
@@ -89,7 +75,7 @@ Contributor checklists come after that path: **[Adding a serializer](ADDING_A_SE
 
 | Page | What you will learn | Start here if you want… |
 |------|---------------------|-------------------------|
-| **[Terminology](terminology.md)** | Data set, data type, runner, and the words this site does not use | A term is unclear, or an older page says “fixture” |
+| **[Terminology](terminology.md)** | Data set, data type, benchmark runner, and deprecated legacy aliases | A term is unclear |
 | **[Data sets](test_data_configuration.md)** | The five sets, the shared knobs, and links to each set’s page | What we serialize |
 | **[Suite](suite.md)**, **[Columnar](columnar.md)**, **[Graph](graph.md)**, **[Array](array.md)**, **[Tensor](tensor.md)** | The types in one set, and what each one stresses. Array also lists who is measured. | One data set |
 | **[Families](families.md)** | Teaching map: JSON, schemaless binary, schema-driven, language-native, columnar | Which standard a product question points at |

@@ -11,17 +11,6 @@ A third related idea is **batch size N** (1 vs 100 instances in one call). That 
 
 ---
 
-## Learning goals
-
-After this page you should be able to:
-
-1. Tell I/O mode and run mode apart in one sentence each.
-2. Explain why the dashboard ranks one parent row, and when an I/O child is the average of two levels or a C# Base64 string.
-3. Choose a run mode for a quick check vs a publishable snapshot.
-4. Avoid unfair comparisons (different modes, or “adapted” stream vs a real stream API).
-
----
-
 ## Picture: three knobs on one experiment
 
 ```text

@@ -26,7 +26,7 @@ The language is specified by the [Java Language Specification](https://docs.orac
 
 ### What this suite runs
 
-We compile and run as Java 21. [Kotlin](../kotlin/) uses the same kind of JVM. Java is built with Maven. Kotlin is built with the Gradle wrapper that lives inside `kotlin/`.
+We compile and run as Java 21. [Kotlin](../kotlin/index.md) uses the same kind of JVM. Java is built with Maven. Kotlin is built with the Gradle wrapper that lives inside `kotlin/`.
 
 ### What changes the numbers
 

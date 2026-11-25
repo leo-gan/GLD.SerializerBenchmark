@@ -132,11 +132,11 @@ cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a 
 
 #### [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF)
 
-Py3AMF is a Python 3 fork of PyAMF. It encodes and decodes Adobe Action Message Format. This row uses AMF0, the form RTMP still uses for commands. Every number is written as a double. The timed path calls `pyamf.encode` and `pyamf.decode` on a dict.
+Py3AMF is a Python 3 fork of PyAMF. This row uses AMF0, the form RTMP still uses for commands. Every number is written as a double. The timed path calls pyamf.encode and pyamf.decode on a dict.
 
 #### [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF)
 
-The same library, with the AMF3 encoding. AMF3 can store a small integer more tightly than AMF0, and it can share repeated strings and objects. The timed path is the same encode and decode calls.
+The same Py3AMF library, with the AMF3 encoding. AMF3 can store a small integer more tightly than AMF0, and it can share repeated strings and objects. The timed path is the same encode and decode calls.
 
 #### [cloudpickle](https://github.com/cloudpipe/cloudpickle)
 

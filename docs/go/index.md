@@ -128,11 +128,11 @@ fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF bin
 
 #### [gamf-amf0](https://github.com/gnolizuh/gamf)
 
-gamf is a second Go AMF codec. The AMF0 path is `Marshal`, shaped like `encoding/json`. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row. AMF0 and AMF3 stay separate standards so a later AMF3 library is not ranked with these AMF0 rows.
+gamf is a Go AMF0 codec. AMF0 is the command encoding inside RTMP. The timed path is Marshal, shaped like encoding/json. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row.
 
 #### [go-amf0](https://github.com/yutopp/go-amf0)
 
-go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an `Encoder` and calls `Encode` on the suite struct. Decode fills a new struct of the same type. The library does not implement AMF0 references, so a graph with a shared node is skipped.
+go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an Encoder and calls Encode on the suite struct. The library does not implement AMF0 references, so a graph is skipped.
 
 #### [goccy/go-json](https://github.com/goccy/go-json)
 

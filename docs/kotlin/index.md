@@ -9,7 +9,7 @@ Kotlin’s serialization landscape spans the **kotlinx.serialization format fami
 
 ### What it is
 
-Kotlin is a programming language. This runner targets the **same JVM** as [Java](../java/): bytecode on HotSpot, just-in-time compilation, and garbage collection. Kotlin can also compile to native code or to JavaScript. This suite does not measure those backends. It measures Kotlin running on the JVM.
+Kotlin is a programming language. This runner targets the **same JVM** as [Java](../java/index.md): bytecode on HotSpot, just-in-time compilation, and garbage collection. Kotlin can also compile to native code or to JavaScript. This suite does not measure those backends. It measures Kotlin running on the JVM.
 
 The language is specified by the [Kotlin language specification](https://kotlinlang.org/spec/). That text covers Kotlin/Core and is still marked experimental. A short overview is [Kotlin](https://en.wikipedia.org/wiki/Kotlin_(programming_language)). The bytecode this suite runs is specified by the [Java Virtual Machine Specification](https://docs.oracle.com/javase/specs/jvms/se21/html/index.html) for Java SE 21.
 
@@ -142,7 +142,7 @@ ktoon is a community Kotlin Multiplatform TOON codec on kotlinx.serialization. T
 
 kbson is BSON for kotlinx.serialization. BSON exists for MongoDB documents. kbson lets Kotlin `@Serializable` types dump/load BSON without a separate mapper.
 
-#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization)
+#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization), [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization), [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization), [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization)
 
 kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
@@ -157,18 +157,6 @@ Amazon Ion was created as a rich, self-describing superset of JSON (text and bin
 #### [gld-ion](https://github.com/leo-gan/gld-ion-kotlin)
 
 gld-ion is a registered serializer in the kotlin suite. This page links its upstream source; the language inventory table describes the timed call path.
-
-#### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization)
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization)
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
-
-#### [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization)
-
-kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
 
 #### [kryo](https://github.com/EsotericSoftware/kryo)
 
@@ -257,7 +245,7 @@ for rep:
 
 - **kryo**, **fory**, and **protostuff** are not universal cross-language wire formats.
 - **moshi-codegen** vs **moshi-reflect** share the same domain types; reflection adds `KotlinJsonAdapterFactory` first so it wins over generated adapters.
-- **tomlkt**, **kotlinx-hocon**, and **kbson** wrap N>1 fixtures as a table `{ batch = [...] }` (TOML/HOCON have no root array; BSON forbids a root array). The wrap key is `batch`, not `items`, so it does not collide with `Document.items` / `Strings.items`.
+- **tomlkt**, **kotlinx-hocon**, and **kbson** wrap N>1 batches as a table `{ batch = [...] }` (TOML/HOCON have no root array; BSON forbids a root array). The wrap key is `batch`, not `items`, so it does not collide with `Document.items` / `Strings.items`.
 - **protobuf** uses the Java builder API; **protobuf-kotlin** uses the generated Kotlin DSL on the same wire types.
 - **kotlinx-ion** uses official `ion-java` through a kotlinx `BinaryFormat` (the community `kotlinx-serialization-ion` artifact is JitPack-only and unmaintained).
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.

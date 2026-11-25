@@ -6,16 +6,6 @@ How those numbers are produced (warmup, outlier filter, shared sanitize for tabl
 
 ---
 
-## Learning goals
-
-After this page you should be able to:
-
-1. Distinguish **CSV columns** written by benchmark runners from **group metrics** computed by analysis.
-2. Read the **importance** tags (high / medium / low) and know which appear on Dashboard Details / Compare by default.
-3. Explain multi-way versus pairwise reporting in one sentence.
-
----
-
 ## Importance tiers
 
 | Tier | Meaning |
@@ -75,7 +65,7 @@ After warmup drop and optional outlier filter, analysis publishes one parent gro
 | `total_std_ns` / `*_mad_ns` / `*_cv` | Dispersion (spread) | medium | no (context) |
 | `total_p5_ns` … `total_p99_ns` | Percentiles | medium (p95/p99) / low (others) | no |
 | `total_ci_low_ns` / `total_ci_high_ns` | [Bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics)") [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval") on **mean** total | medium | — |
-| `avg_ops_per_sec` | `1e9 / total_mean_ns` | high (display) | **yes** |
+| `avg_ops_per_sec` | Throughput from mean total latency: $\text{ops/s} = 10^9 / \bar{t}_{\text{ns}}$ | high (display) | **yes** |
 | `runs` / `runs_raw` / `warmup_skipped` / `outliers_removed` | Sample provenance | high | — |
 | `values_clipped` | Rows touched by winsorize (0 for drop filters) | medium | — |
 | `filter` | Policy provenance block (`policy`, `method`, `iqr_k`, fences, counts) | high (dashboard) | — |

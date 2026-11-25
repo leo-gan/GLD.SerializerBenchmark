@@ -12,16 +12,6 @@ Theory pages cover product trade-offs. Timings live on the [Dashboard](../dashbo
 
 ---
 
-## Learning goals
-
-By the end of this page you should be able to:
-
-1. Name the families and one real example of each.
-2. Move from a product question to a family, and from that family to a named standard.
-3. Apply the comparison rule at the end of this page before treating a rank as a decision.
-
----
-
 ## The families
 
 These rows are orientation only. Real speed and size depend on the implementation and the payload.

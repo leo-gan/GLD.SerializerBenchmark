@@ -46,7 +46,7 @@ The `paragraph` names the latitude:
 - **Optional BOM.** RFC 7159 and RFC 8259 allow a parser to ignore a
   leading U+FEFF. RFC 4627 does not, so that case is `reject` there.
 
-A harness that wants a house rule (always reject duplicate names, always
+A benchmark runner that wants a house rule (always reject duplicate names, always
 accept a big integer) keeps that rule outside this corpus. These cases
 exist so a report can show what the library did.
 
