@@ -1,110 +1,54 @@
-# Case study: analytics lake on object storage
+# Case 4: Analytics Lake on Object Storage
 
-> Nightly and ad-hoc analytics must scan large histories efficiently. What belongs in the lake versus on the service bus?
-
-A **data lake** is a large, durable store of historical data. It often holds files on object storage. It is optimized for analytical scans rather than for single-record API responses. This case study separates the operational event path from the analytics store. Neither workload should be forced into the wrong layout.
+> **Design brief:** Finance and product analytics run daily and ad-hoc aggregations over years of commerce history stored in S3-class object storage using Spark and DuckDB, while operational services already emit real-time events on a message bus.
 
 ---
 
-## Context and goals
+## Scenario and Hard Constraints
 
-**Setting:** Product analytics and finance report on years of commerce data in object storage. Query engines in the Spark or DuckDB class scan a few columns over huge tables. Real-time services already emit events on a bus.
-
-**Object storage** means systems such as S3-compatible buckets. Those systems hold files cheaply at large scale. **Scan** means reading many rows to answer a question. Scans often use only a subset of columns.
-
-**Goals:** Cheap scans. Reliable schema evolution for tables. A clear separation from operational RPC.
-
----
-
-## Non-goals and hard constraints
-
-- This is not low-latency checkout RPC. See [internal RPC case](case-internal-rpc.md).
-- This is not browser-facing REST. See [public REST case](case-public-rest-api.md).
-- Analysts must not be forced to parse opaque service-only native blobs.
-
-In other words, the lake is for analytics economics. It is not for reusing whatever codec the services already like.
+- **Workload shape:** Wide tables (tens to hundreds of columns) spanning billions of historical rows; typical analytical queries touch 3–8 columns filtered by date range and region.
+- **Infrastructure:** Object storage for durable retention; distributed/embedded analytical engines (Spark, DuckDB, Trino) for queries.
+- **Hard constraints:**
+  - Low-latency transactional serving remains separate ([Case 2](case-internal-rpc.md) and [Case 3](case-event-stream.md)).
+  - Analysts and query engines must read an open, portable format—never opaque service-native blobs.
 
 ---
 
-## Options on the table
+## Candidate Options and Trade-Offs
 
-| Option | Sketch |
-|--------|--------|
-| **A. Columnar lake (Parquet/ORC) plus catalog** | Compact jobs turn events or database extracts into partitions |
-| **B. Store Protobuf/JSON event files as the lake** | Land raw bus dumps forever |
-| **C. One RPC codec for serve and lake** | “Everything is Protobuf files” |
-
-A **catalog** tracks tables, partitions, and schemas. Engines then know what files exist and how to read them. **Compaction** is a batch job that rewrites many small files into efficient columnar partitions.
-
----
-
-## Trade-off matrix
-
-| Axis | A. Columnar lake | B. Raw event dump | C. RPC codec as lake |
-|------|------------------|-------------------|----------------------|
-| Scan efficiency | High | Poor | Poor |
-| Evolution | Table and file schema | Event culture only | Wrong tool |
-| Operations | Compaction pipelines | Simple to land, hard to query | Simple to land, hard to query |
-| Fit | Analytics | Temporary landing only | Anti-pattern |
-
-This matters because landing data is easy. Querying it cheaply years later is the real product of a lake.
+| Dimension | A. Compacted Columnar Lake (Parquet/ORC + Catalog) | B. Raw Row Event Archives (Protobuf/JSON Files) | C. Unified RPC Format Everywhere |
+|---|---|---|---|
+| **Scan I/O & query latency** | Minimal (column pruning, min/max predicate pushdown, columnar compression) | High (reads and parses every unused column) | Poor (anti-pattern for analytics) |
+| **Object-store overhead** | Low (compacted 64–512 MB partitioned files) | Severe small-file listing and open overhead | Severe small-file overhead |
+| **Table schema evolution** | Managed via table catalog (Iceberg/Delta/Hive) + file footers | Per-message schema only; no table snapshots | Wrong abstraction |
+| **Operational complexity** | Requires compaction & catalog maintenance | Trivial landing, expensive queries forever | Trivial landing, unacceptable analytics cost |
 
 ---
 
-## Recommendation (under these constraints)
+## Recommended Architecture
 
-**Prefer A.** Keep operational events as row messages on the bus. See [event backbone](case-event-stream.md). **Compact** them into columnar partitions with a catalog. Use B only as a **landing zone** with time-to-live. Do not use B as the system of record for analytics. **Reject C.** See [row vs columnar](row-vs-columnar.md).
-
-In other words, row events and columnar tables are two hops of one pipeline. They are not two names for the same file format.
-
----
-
-## Experiments
-
-**Question:** For the lake path and the stated query mix, how does a columnar analytical format compare with storing row event dumps?
-
-### Setup
-
-1. Representative analytical queries and data volume.
-2. Candidates: Parquet, ORC, or Arrow versus raw JSON or Avro row dumps.
-3. A cluster or local prototype with the same dataset.
-
-### Procedure
-
-1. Load the same data into row dumps and columnar tables.
-2. Run the query set. Record wall time and bytes read.
-3. Measure storage footprint.
-4. Confirm the ingest path still uses an appropriate **row** codec if needed.
-5. Reject “use RPC Protobuf files as the lake.”
-
-### Decision rule
-
-- When scan queries dominate, choose columnar.
-- When only point lookup of whole events is needed, a row store may suffice. That case is rare for a true “lake.”
+1. **Choose Option A (two-hop row-to-columnar pipeline):** Keep operational events in a schema-driven row format (Avro or Protobuf) on the event bus, and run a scheduled or streaming **compaction pipeline** that writes date-partitioned **Parquet** (or ORC) files registered in an open table catalog ([3.5 Row vs. columnar](row-vs-columnar.md)).
+2. **Restrict Option B to a short-TTL landing zone:** Raw event dumps on object storage are useful as a replayable staging buffer (e.g., 7–30 days), never as the primary analytical query table.
+3. **Reject Option C:** Unifying serving RPC and analytical lake storage onto one encoding penalizes one workload severely.
 
 ---
 
-## Metrics
+## Verification Plan and Suite Limits
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Query wall time and bytes scanned** | **Primary** |
-| Storage bytes | Cost |
-| Ingest throughput | Pipeline fit |
-| Suite row-codec metrics | Ingest hop only |
-| Compression ratio | Secondary |
+- **Within this suite:** Compare row codecs on `Suite` types only for the *ingestion* path; inspect `Columnar` data types (`table`, `table_project`, `nested_table`) on the [Dashboard](../../dashboard/index.html) solely to understand single-node columnar projection and library variance (e.g., `parquet` vs. `parquet-uncompressed` vs. `arrow-ipc`).
+- **Outside this suite:** Prototype representative analytical SQL queries on realistic multi-gigabyte datasets comparing compacted Parquet against raw row archives; measure **bytes scanned**, **wall-clock query time**, **storage bytes**, and **compaction compute cost**.
+- **What would change the answer:** Small datasets fitting comfortably inside an OLTP read replica do not justify building a lake compaction pipeline; very small row counts ($N = 1$) lose columnar advantages to footer and metadata overhead.
 
 ---
 
-## What would change the answer
+## Discussion Prompts
 
-- Tiny data that fits in OLTP replicas can make a warehouse optional. A one-row columnar file also pays header and alignment cost. Columnar layout pays off when the row count is large.
-- Streaming SQL directly on the bus with acceptable cost still needs a plan for compacting history.
+1. Why does dumping raw Kafka events straight into S3 as 10 KB Parquet files every second still yield poor Spark/DuckDB query performance?
 
----
+??? note "Guidance"
+    Parquet relies on large row groups (tens to hundreds of megabytes) for effective dictionary/RLE compression and amortized object-store `GET`/footer reads. Writing 10 KB files per second creates millions of tiny objects where S3 metadata/listing latency and per-file footer reads dominate query time. Compaction into properly sized files is essential.
 
-## Key takeaways
+2. When is Apache Arrow IPC preferred over Apache Parquet inside this analytics platform?
 
-- Lakes want **columnar** storage. Buses want **row events**.
-- Compaction bridges them deliberately.
-- This suite does not replace lake engine benchmarks.
+??? note "Guidance"
+    Use **Parquet** for durable on-disk object storage (compact page compression and statistics) and **Arrow IPC** for transient in-memory data exchange between analytical engines, UDF workers, or notebooks where zero-copy buffer sharing matters more than on-disk compression ratio.

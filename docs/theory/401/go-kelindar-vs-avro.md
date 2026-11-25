@@ -109,7 +109,7 @@ The extra *time* is the schema-shaped walk: fingerprint lookup, per-field Avro e
 
 kelindar/binary is the faster private dump. It is not a contract you can hand to Java or Python.
 
-hamba/avro is three percent larger and about ten percent slower on this fixture, and it is an encoding with twenty years of data-platform use. If the document will sit in a log for years, Avro’s schema resolution is the reason to pay those nanoseconds. See [201 schema evolution](../201/schema-evolution.md) and [301 schema registries](../301/schema-registries.md).
+hamba/avro is three percent larger and about ten percent slower on this payload, and it is an encoding with twenty years of data-platform use. If the document will sit in a log for years, Avro’s schema resolution is the reason to pay those nanoseconds. See [2.5 Schema evolution](../201/schema-evolution.md) and [3.3 Schema registries](../301/two-schema-cultures.md#schema-registries).
 
 ## Self-check
 

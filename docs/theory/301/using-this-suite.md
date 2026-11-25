@@ -1,188 +1,120 @@
-# Using this suite without fooling yourself
+# 3.9 Fair Benchmarking and Implementation Variance
 
-## Problem
+## Problem Statement
 
-Benchmark tables are easy to misuse. A single chart often becomes a policy decision. Someone says “library A is 3× faster than library B.” Nobody asks whether A and B implement the **same job**. Nobody checks the **same payload shape**. Nobody checks the **same language**. Nobody checks the **same timing rules**. Organizations then switch codecs. They observe little improvement. They conclude that “benchmarks lie.” The real issue was **misaligned comparison**.
+Benchmark charts are routinely misused to justify architectural policy. A single summary bar—"library A is $3\times$ faster than library B"—invites invalid conclusions whenever A and B differ in **language**, **wire standard**, **payload shape**, **timing rules**, or **safety checks**. Organizations then execute expensive format migrations only to see negligible service improvement because the underlying comparison was misaligned.
 
-This multi-language suite is built to support **fair, local** comparisons. It answers a question inside one language, one standard, one data set, and one data type. In this section you will learn how to read the numbers as a first-year student should. Read them as answers to carefully stated questions.
-
----
-
-## Short answer
-
-Before declaring a winner, check that both libraries ran the same race. Treat every published number as the answer to a **narrow question**. For a given **language**, **standard**, **data set**, and **data type**, how do registered serializers compare? Compare encode time, decode time, size, and related metrics. Do that **after** the analysis pipeline’s warmup and optional outlier rules.
-
-The Dashboard filter bar is that question. **Language**, **Standard**, **Data set**, and **Data type** are the cell. The shapes are on the [test data](../../analysis/test_data_configuration.md) page. Choosing a standard prefers a data set that standard is measured on. You can still change the data set. Which question a chart answers is on [Serialization 101](../101/index.md#how-to-compare).
-
-A **family** is a teaching cut. It groups formats that solve roughly the same product job. See [Families](../../analysis/families.md). A family is not a filter. A **library** is one implementation of a standard. The filter is the standard.
-
-A cross-language or cross-standard chart needs the workload stated again before it becomes architecture policy. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**. They are one part of the argument. See the rest of Serialization 301.
+A second, symmetric error stops at the format name ("we standardized on JSON" or "we use Protocol Buffers") without naming the concrete implementation. Even within one language and one standard, implementations routinely span an order of magnitude in latency, allocation rate, and edge-case compliance.
 
 ---
 
-## Constraints that matter
+## Controlling the Experimental Cell
 
-| Constraint | Why it breaks naive rankings |
-|------------|------------------------------|
-| **Language and runtime** | Different virtual machines, garbage collectors, and standard libraries; “Protobuf in Python” is not “Protobuf in C.” |
-| **Standard** | JSON and YAML are both readable text. They are different contracts. Protocol Buffers and Avro are both schema-driven. They are different contracts. |
-| **Data set and data type** | Suite `message` and Columnar `table` are different jobs, including inside one standard that has both. |
-| **Payload shape** | Dense structs versus deep graphs change cost centers (see [Encode/decode cost](../201/encode-decode-cost.md)). |
-| **Implementation** | Several libraries can share a format label and differ by an order of magnitude. |
-| **What is timed** | Benchmark runner paths measure serialize and deserialize of prepared fixtures—not network round-trip time, disk I/O, or your production validation layer. |
-| **Analysis policy** | Warmup exclusion and outlier filters change means; raw CSV is not the published table unless you re-run analysis with the same config. |
+!!! note "Definition: Controlled Benchmark Cell"
+    A valid same-runtime performance comparison in this suite holds five variables constant:
+    $$\mathcal{C} = (\text{Language},\ \text{Standard},\ \text{Data set},\ \text{Data type},\ \text{Batch size})$$
+    Only `SerializerName` rows belonging to the same cell $\mathcal{C}$—evaluated under identical warmup, outlier, and metric policies—compete directly on speed and wire size.
 
-**Warmup** means early iterations that may be slower while the runtime heats up. That includes **just-in-time (JIT) compilation**—the runtime optimizes frequently used code while the program runs—and caches. Analysis often drops those so the table reflects steady state. It does not reflect cold start.
+The [Dashboard](../../dashboard/index.html) filter bar implements $\mathcal{C}$ directly. Distinguish four terms that are often conflated:
 
-This matters because a mixed chart can look like a tournament. The honest use is a same-language, same-standard shortlist.
+1. **Family** ([Families](../../analysis/families.md)): A conceptual taxonomy (text, schemaless binary, schema-driven, columnar, language-native) used for architectural orientation, *not* a Dashboard ranking filter.
+2. **Standard**: A concrete wire specification (e.g., JSON, Protocol Buffers, MessagePack, Apache Parquet). Standard selection is governed by trust, interoperability, and evolution constraints (Chapters 3.1–3.8).
+3. **Data set and data type** ([Test data configuration](../../analysis/test_data_configuration.md)): `Suite` (`message`, `document`, `telemetry`, `strings`, `event`) vs. `Columnar` (`table`, `table_project`, `nested_table`, `signal`). Recall that `table_project` reads only `f_float_0`, whereas `message` decodes a full operational record.
+4. **Implementation**: A concrete library and pinned version (`SerializerName` + `serializer_version`) implementing that standard in one language.
 
----
+### Pre-Quotation Validity Checklist
 
-## Decision frame
+Before citing any Dashboard number in an architecture decision record (ADR), verify every gate:
 
-Use this checklist **before** quoting a Dashboard number:
-
-1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
-2. **Same standard?** This is the Dashboard **Standard** control. A cross-standard chart is allowed when the product question is which contract. Speed is then one axis among others.
-3. **Conformance?** If the question is whether the library follows the specification, open [Compliance](../../dashboard/index.html#compliance) for that standard. A speed row does not answer it. **No public spec** has no score.
-4. **Same data set?** The sets are on the [test data](../../analysis/test_data_configuration.md) page. A standard can appear on more than one set. Read the data set, then the data type.
-5. **Same data type?** `message`, `document`, `table`, and `table_project` are different jobs. `table_project` writes every column and reads only `f_float_0`.
-6. **Which metric, and which sample policy?** Mean encode, mean decode, size, operations per second, or tails. On Overview the toggle is Ops/Sec or Latency. On Compare the metric row is separate. The **Samples** control (for example IQR 1.5) decides which runs enter the chart. Pick the one your reliability target (*service-level objective*) cares about. State it with the number.
-7. **Still missing?** Compression on the wire, authentication, schema registry behavior, and multi-hop delivery of one message to many consumers (*fan-out*) sit outside the core tables. Design a separate experiment for those.
-
-Bytes versus stream is a caveat on languages that still publish a stream row. Keep that row off the parent-row chart. It is a language Overview note, and it is a separate axis from the four filters above.
+1. **Same language?** Cross-language rankings compare runtimes (VM, JIT, GC, FFI), not wire formats. Use them only for rough orientation, never to crown a format.
+2. **Same standard?** Cross-standard charts are informative only when weighing alternative contracts alongside trust, schema evolution, and ecosystem constraints.
+3. **Conformance checked?** Speed rows do not measure specification compliance. Inspect [Compliance](../../dashboard/index.html#compliance) for standards with public test suites (formats with no public specification carry no compliance score).
+4. **Fidelity gate passed?** `mean_fidelity` verifies local encode-then-decode round-trip correctness inside one runner—disqualify rows with fidelity failures or disqualifying Overview caveats (such as stream-only rows kept separate from buffer rows).
+5. **Metric and sample policy stated?** Specify whether the claim cites encode median (`ser_median_ns`), decode median (`deser_median_ns`), total median (`total_median_ns`), throughput (`avg_ops_per_sec`), or wire size (`median_size_bytes`), along with the sample policy (warmup exclusion drops `RepetitionIndex == 0` by default, and IQR $1.5\times$ filtering excludes extreme outliers; see [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md)).[^1]
 
 ```text
-  Question: “Is X better than Y for us?”
+  Question: "Which library should we ship on this boundary?"
         │
         ▼
-  Fix language + standard + data set + data type + metric
+  Fix architectural constraints first (trust, evolution, workload, polyglot contract)
+        │  → determines Standard
+        ▼
+  Fix controlled cell (Language, Standard, Data set, Data type, Batch size, Metric)
         │
         ▼
-  Read the Dashboard for that slice only
+  Filter Dashboard to faithful rows in that cell; inspect effect sizes & caveats
         │
         ▼
-  Re-check product constraints (trust, evolution, operations)
-        │
-        ▼
-  Decide — or design a measurement this suite cannot do
+  Pin concrete library + version; validate tails and non-codec costs under load
 ```
 
-In other words: fix the experimental cell first. Then read numbers inside that cell. Then bring product constraints back into the decision.
+---
+
+## Implementation Variance Within a Standard {#implementation-variance}
+
+Holding $\mathcal{C}$ constant isolates **pure implementation engineering quality**—for example, comparing `yyjson`, `simdjson`, and `nlohmann/json` in C++ on JSON, or `msgspec`, `orjson`, and stdlib `json` in Python. Large intra-standard spreads arise from five concrete engineering mechanisms:
+
+| Source of Variance | Engineering Contrast | Typical Impact |
+|---|---|---|
+| **Parser architecture** | Full DOM tree construction vs. streaming/SAX vs. SIMD structural indexing | $3\times$–$20\times$ decode latency and peak memory spread |
+| **Dispatch strategy** | Ahead-of-time code generation vs. runtime reflection / dynamic hash maps | Eliminates per-field metadata lookup and boxing overhead |
+| **Allocation strategy** | Heap-allocating a new string per field vs. borrowed slices or reusable arenas | Directly governs managed GC pause frequency and allocator contention |
+| **Wire encoding choices** | Positional arrays vs. string-keyed maps (e.g., MessagePack struct encodings) | Substantial wire size and decode-time differences under the same standard |
+| **Safety and spec strictness** | Full UTF-8 validation, duplicate-key rejection, depth caps, and exact float parsing vs. permissive shortcuts | Faster libraries occasionally skip checks required on untrusted inputs |
+
+Because implementation quality varies independently across ecosystems, **never copy a library decision across languages** or assume a brand name determines performance. An ADR stating "we use JSON for our public API" is operationally incomplete until each service language specifies and pins its concrete library version (e.g., `orjson` in Python, `encoding/json/v2` or `sonic` in Go) and verifies safety defaults.
 
 ---
 
-## Failure modes
+## Common Failure Modes
 
-| Mistake | What goes wrong |
-|---------|-----------------|
-| **Global leaderboard thinking** | Picking the top row of a mixed chart as “the company format.” |
-| **Cross-language crowning** | Mandating a library because it looked fast in another runtime. |
-| **Format brand equals one speed** | “We moved to binary” without naming the implementation. |
-| **Ignoring warmup and cold path** | Production cold starts differ from steady-state tables (analysis drops `RepetitionIndex == 0` by default). |
-| **Confusing size with latency** | The smallest payload on a local network may not win 99th-percentile latency (*p99*: 99% of requests are faster than this) if CPU or allocations dominate. |
-| **Treating fidelity notes as optional** | Some codecs are registered with documented shape limits; Overview caveats bound the claim. |
-| **Policy from means only** | Garbage-collection pauses and tail latency may not appear as a single mean encode time. |
-
----
-
-## Real-world sketch
-
-A team sees that a schema-driven library is fastest on the **Rust** Dashboard for a dense fixture. The team mandates it for a **public multi-language HTTP API**. Clients are browser and mobile. Operators need human-readable debug logs. The public contract is already JSON.
-
-The suite result answered “fastest schema path in Rust for this fixture.” It did not answer “best public API contract.” A better use of the suite is to compare **JSON implementations within each language** that must speak the public contract. Measure schema-driven codecs only on internal hops that already accept an IDL.
+| Mistake | Analytical Defect |
+|---|---|
+| **Global leaderboard mentality** | Selecting the top row of an unfiltered chart mixing languages, standards, or data types |
+| **Averaging ranks across languages** | Collapsing incompatible runtimes into a meaningless composite rank[^2] |
+| **Brand-only ADRs** | Naming "JSON" or "Protobuf" without pinning libraries, allowing services to drift onto slow or incompatible parsers |
+| **Treating `mean_fidelity` as spec compliance** | A library can round-trip its own output cleanly while violating official RFC or protobuf edge-case rules |
+| **Ignoring warmup and cold start** | Steady-state JIT timings (`RepetitionIndex > 0`) conceal cold-start penalties in short-lived serverless functions |
+| **Equating microbenchmark time with service latency** | Benchmark runners time in-memory encode/decode only—excluding TLS, network RTT, validation middleware, and broker I/O |
 
 ---
 
-## In this suite
+## Verification Protocol and Benchmark Limits
 
-| Resource | Use it for |
-|----------|------------|
-| [Families](../../analysis/families.md) | Families as orientation, then the named standard |
-| Language **Overview** | Registered names, categories, fidelity caveats (inventory source of truth) |
-| [Dashboard](../../dashboard/index.html) | Published timings and sizes (filter by language) |
-| [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
-| [Metrics catalog](../../analysis/METRICS.md) | What each field means |
-| [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
-| [Benchmark architecture](../../analysis/architecture.md) | What the benchmark runner times |
-| Dashboard (top-level **Dashboard** tab) | Interactive slices of the same analysis story |
+When selecting a library for a production service:
 
-**Grouping key for fair peers (conceptually):**  
-`(Language, Standard, Data set, Data type)` — then compare `SerializerName` rows inside that cell.
+1. **Freeze the contract:** Confirm the standard using Chapters 3.1–3.8 before opening speed charts.
+2. **Pull a single controlled cell:** Filter the Dashboard to your exact `(Language, Standard, Data set, Data type)` and check both [Metrics](../../analysis/METRICS.md) and language Overview caveats.
+3. **Check statistical significance:** Inspect dispersion and effect sizes (such as Cliff's $\delta$ in [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md)) before paying migration cost for a small median difference.
+4. **Verify safety and maintenance:** Confirm active maintenance, fuzzing posture, UTF-8/depth-limit behavior, and license compliance.
+5. **Pin and re-verify under load:** Pin `serializer_version` in lockfiles and re-measure under production concurrency ([3.10 Latency tails, GC, and system compression](latency-tails-and-gc.md)).
 
-**Illustrative only:** prose in theory pages must not invent winners. When you need a number, open the **Dashboard** for the language you will actually run.
+**Limits of this benchmark suite:** Single-node microbenchmarks do not evaluate dependency supply-chain risk, custom middleware/validation cost, network RTT, or cold-start behavior in ephemeral containers.
 
 ---
 
-## Experiments
+## Exercises
 
-**Question:** Am I about to quote a **fair** suite comparison for a real decision, or a misaligned chart?
+1. **Spotting a misaligned claim:** An engineering proposal quotes this suite to claim: *"Our Python REST API should switch from JSON to FlatBuffers because Rust FlatBuffers has a $15\times$ lower median decode time than Python `json`."* Identify **three** distinct methodological errors in that argument.
 
-### Setup
+??? note "Solution"
+    1. **Cross-language comparison:** Comparing Rust against Python conflates runtime/compiler speed with wire-format cost.
+    2. **Implementation variance ignored:** Comparing against Python's stdlib `json` ignores faster C/Rust-backed Python JSON implementations (`orjson`, `msgspec`) within the *same* JSON standard.
+    3. **Product constraints ignored:** Public REST APIs require external JSON ergonomics and inspectability; FlatBuffers on untrusted inputs also requires verifier overhead and changes the API contract.
 
-1. Write the decision question in one sentence. One example is “Which JSON library in Python for message-shaped RPC?”
-2. Open [Families](../../analysis/families.md) and the language **Overview** / [Dashboard](../../dashboard/index.html) for the runtime you will ship.
-3. Note analysis configuration from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables. Include warmup and outlier policy.
+2. **Warmup vs. serverless cold starts:** Why does this suite drop `RepetitionIndex == 0` by default in published steady-state summaries, and when should an engineer inspect cold-start measurements instead?
 
-### Procedure
+??? note "Solution"
+    Dropping `RepetitionIndex == 0` removes one-time JIT compilation, dynamic library loading, and cold-cache effects so published tables reflect steady-state long-running server performance.[^1] For short-lived serverless functions (AWS Lambda, Cloud Run scale-to-zero) or CLI tools that execute once per process invocation, cold-start initialization and first-call decode dominate latency and must be measured separately without warmup exclusion.
 
-1. Apply the checklist in **Decision frame**. Check language, then standard. If the question is the specification, stop at conformance. Otherwise check data set, then data type, then metric.
-2. Pull only the matching rows from the Dashboard. Leave cross-standard and cross-language ranks out of the policy claim.
-3. Record which metric column you will use. Examples include encode versus decode versus size versus operations per second.
-4. List product constraints the suite does **not** measure. Examples include trust, registry, and network RTT.
-5. Either decide from that slice or design an out-of-suite experiment for the missing constraints.
+3. **Fidelity vs. compliance:** A newly added YAML library scores `mean_fidelity = 1.0` on the benchmark suite's test records, yet fails 20% of cases in the YAML Compliance Suite. How can both results be true simultaneously?
 
-### Decision rule
-
-- If any checklist box fails, **do not** use the number as architecture policy.
-- If the slice is fair but the product question is not about performance, treat suite data as **supporting**. Do not treat it as decisive.
+??? note "Solution"
+    `mean_fidelity = 1.0` only checks that the library can decode the specific subset of structures it just encoded itself. The YAML specification includes subtle features (anchors, aliases, multiline scalars, implicit type coercion such as the Norway problem `NO` $\to$ `false`) that may not appear in basic benchmark records but break specification compliance on real-world inputs.
 
 ---
 
-## Metrics
+## References
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Comparison validity** (same language, standard, data set, data type) | **Primary gate.** Binary pass/fail before any number. |
-| Chosen reliability-target (SLO) metric (for example decode median or size) | The one number allowed in the argument |
-| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on the Dashboard |
-| `median_size_bytes` | Density and bandwidth axis |
-| `mean_fidelity` | Fixture round trip (write, then read). Not specification compliance. Non-faithful rows are out. |
-| `serializer_version` | Reproducibility of the claim |
-| `runs`, warmup, outliers removed | Trust in the statistic |
-| Dashboard or CSV **filter state** | Document what you hid |
-
-**Conclusion style:** “Under Python, standard JSON, Suite, `message` at n=1, A beats B on deserialize median; size is similar; fidelity is 1.0.”
-
-**Outside the claim:** a chart that mixes standards, and a cross-language champion.
-
----
-
-## What this suite cannot tell you
-
-- End-to-end **service** latency. That includes queueing, network, TLS, and framework overhead.
-- **Correctness of your schema evolution policy** when services are updated gradually so old and new versions run at the same time. See 201 [schema evolution](../201/schema-evolution.md) and later 301 contract articles.
-- **Security** of deserializing untrusted bytes. That includes native formats and hostile inputs.
-- Whether **gzip or zstd** on the wire wins for your message size mix. Compression is orthogonal. See 201 [compression vs format](../201/compression-is-not-a-format.md).
-- Cross-language byte identity for every registered pair. Benchmark runners are per-language unless you design a fidelity experiment.
-- Business constraints. Those include compliance, team skill, vendor lock-in, and existing public contracts.
-
----
-
-## Common mistakes
-
-- Screenshotting one latency distribution into an architecture decision record without stating language, standard, and data type.
-- Averaging ranks across languages “to be fair.”
-- Changing fixture generation parameters and comparing to old published snapshots without regenerating both sides.
-- Using language-native serializers’ speed as an argument for **network** interchange.
-
----
-
-## Key takeaways
-
-- Suite numbers answer **narrow, local** questions. They do not answer “what format should the industry use.”
-- Fix **language, standard, data set, data type, and metric** before comparing serializers.
-- Implementation quality and payload shape often dominate format brand.
-- Analysis policies are part of the claim. Know warmup and outlier rules.
-- Use Dashboard numbers as evidence inside a larger 301 decision about trust, contracts, and workload.
-- Explicitly list what you still must measure outside this benchmark runner.
+[^1]: Georges, A., Buytaert, D., & Eeckhout, L. (2007). *Statistically Rigorous Java Performance Evaluation*. OOPSLA '07, ACM SIGPLAN Notices, 42(10), 57–76.
+[^2]: Fleming, P. J., & Wallace, J. J. (1986). *How Not to Lie with Statistics: The Correct Way to Summarize Benchmark Results*. Communications of the ACM, 29(3), 218–221.

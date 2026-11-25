@@ -1,153 +1,104 @@
-# RPC and messaging payload design
+# 3.7 RPC, Messaging, Caches, and Queues
 
-## Problem
+## Problem Statement
 
-Teams often reuse the same payload for synchronous RPC, fan-out events, and user-interface refresh. The result is chatty RPCs that carry analytics blobs. Or the result is events so large that consumers fall behind.
+Operational teams frequently reuse a single bloated domain object across synchronous RPCs, asynchronous event buses, Redis caches, and background task queues. That conflation triggers two recurring pathologies:
 
-**RPC** means remote procedure call. It is a request-and-response style of communication. The caller waits for an answer. **Messaging** (or event streaming) is asynchronous. A producer writes a fact to a bus. Many consumers may process it later, at their own pace. **Fan-out** means one published event is delivered to many consumers.
+1. **Payload shape mismatch:** Synchronous high-QPS RPCs serialize unused analytics subgraphs, while fan-out event topics ship megabyte payloads that cause consumer lag.
+2. **Undesigned storage boundaries:** Engineers place a fast language-native serializer (such as `pickle` or Java serialization) into Redis or a task queue as a "temporary internal optimization," only to create a security vulnerability and lock out future services written in other languages.
 
-Serialization format debates hide a prior question: **what is the unit of work, and who needs which fields?**
-
----
-
-## Short answer
-
-Design **message shape** from the access pattern. Use small, stable records for high-QPS RPC. **High-QPS** means high requests per second. Use explicit event types for async backbones. Use projections or separate APIs for “wide” reads. Prefer **narrow messages** plus references. Prefer identifiers over embedding entire aggregates on every hop.
-
-In other words, do not ship the whole customer graph on every authorization check. Do not do that just because one team might want a field someday.
-
-Partial reads and zero-copy help only when the layout matches the access pattern. See 201 [zero-copy](../201/zero-copy.md) and [zero-copy in production](zero-copy-in-production.md). **Idempotency** means applying the same command twice has the same effect as applying it once. Ordering is also a product property. Codecs do not invent either property.
+Before selecting a serialization library, architects must design the **payload shape** for the communication pattern and treat every shared cache or queue as a **cross-process interchange boundary**.
 
 ---
 
-## Constraints that matter
+## Synchronous RPC vs. Asynchronous Messaging
 
-| Pattern | Payload bias |
-|---------|----------------|
-| **Request/response RPC** | Minimal fields for the decision; keep allocations low |
-| **Async event** | The fact, identifiers, and enough context for consumers; stable evolution |
-| **Fan-out** (one message delivered to many consumers) | One event, many consumers. Avoid bloating the event for a single consumer. |
-| **Streaming partial results** | Chunking or pagination; not one multi-megabyte JSON blob |
-| **Idempotent command** | Stable command identifier; dedupe keys live outside pure codec choice |
+RPC (request/response) and asynchronous messaging (publish/subscribe event streams) optimize for different failure modes and cost curves:
 
-This matters because network round-trips and consumer lag often dominate codec microseconds. Shape fixes can beat format swaps.
+| Dimension | Synchronous RPC | Asynchronous Messaging / Event Stream |
+|---|---|---|
+| **Primary metric** | Per-request tail latency ($p_{99}$) and timeout budget | Consumer lag, throughput, durable replay, and evolution |
+| **Payload shape** | Narrow **data-transfer object (DTO)** containing only fields needed for the decision | Self-contained business fact plus entity IDs; stable across years |
+| **Amplification risk** | Network RTT from chatty fine-grained calls | **Fan-out amplification:** $K$ independent consumers multiply wire bytes and CPU by $K \cdot S$ |
+| **Large binary attachments** | Stream or return signed URL | **Claim-check pattern:**[^1] store blob in object storage; publish pointer + metadata |
+| **Semantic guarantees** | Caller observes immediate success/error | At-least-once delivery is typical; consumers must enforce **idempotency** via stable keys |
 
----
-
-## Decision frame
+### Payload Shape Rules
 
 ```text
-  Sync decision path?
-        → thin RPC data-transfer object; schema-driven is often a good fit
-  Multiple independent consumers?
-        → distinct event types, not one “god struct”
-  Need most fields only rarely?
-        → split messages or add a query API
+  Synchronous decision path (high QPS, tight p99)?
+        → narrow, flat RPC DTO; avoid embedding unrelated nested aggregates
+  Asynchronous topic with K independent consumers?
+        → distinct, versioned event types per domain fact (avoid a single "god struct")
+  Payload includes large blobs (PDFs, images, multi-MB arrays)?
+        → apply the Claim-Check pattern (object-store URI + digest + small metadata event)
 ```
 
-| Smell | Redesign |
-|-------|----------|
-| RPC returns the entire customer graph “just in case” | Field masks or separate resources |
-| Event embeds PDF bytes | Object-store pointer plus a small metadata event |
-| Same proto for the UI list and the fraud pipeline | Separate contracts or views |
-| Mutation of a shared buffer across threads | Copy or freeze policy |
+Two common misconceptions deserve explicit correction:
 
-A **god struct** (or god message) is a single type that tries to satisfy every consumer. It therefore grows until every change breaks someone.
+- **Format optimization cannot fix a bloated DTO.** Switching a 50 KB "god struct" from JSON to Protocol Buffers saves less CPU and bandwidth than splitting it into a 300-byte authorization DTO and an asynchronous detail query.
+- **Deterministic encoding does not provide exactly-once delivery.** Encoding the same command into identical wire bytes does not prevent duplicate execution under network retries or broker redelivery. Idempotency requires explicit deduplication keys and transactional state management at the consumer.[^2]
 
 ---
 
-## Failure modes
+## Shared Caches and Queues {#caching-and-queues}
 
-| Mistake | Outcome |
-|---------|---------|
-| God message that carries everything | Every change breaks everyone |
-| Chatty fine-grained RPC without batching | Latency death by network round-trip time (RTT) |
-| Huge events on the hot bus | Consumer lag |
-| Relying on the codec for exactly-once delivery | False safety |
-| Mixing command and event semantics | Replay nightmares |
+!!! note "Rule: Shared Infrastructure Is an Interchange Boundary"
+    Any Redis key, Memcached entry, SQS queue, or Kafka topic that can be read by another process, another language, or a future deployment of the same service is an **interchange boundary**. It requires a **portable, versioned format** and falls under the trust rules of [3.1 Trust boundaries](trust-boundaries.md).
 
-For example, **exactly-once delivery** is a system property of queues and consumers. Dedupe and transactions matter there. Encoding the same bytes twice in a deterministic format does not make the business operation exactly-once.
+Treating a shared cache or queue as "private memory" fails in four predictable ways:
 
----
+1. **The short-TTL myth:** A 60-second time-to-live (TTL) bounds how long a corrupt or hostile value *persists*, not whether an unsafe deserializer executes arbitrary code during those 60 seconds. Nor does short TTL prevent rolling-deployment skew when version $v_1$ and version $v_2$ share the same cache keys simultaneously.
+2. **Poison messages without quarantine:** A single malformed, oversized, or schema-incompatible task in a queue can crash a consumer in an infinite retry loop, stalling the entire partition. Every queue requires bounded retries and a **Dead-Letter Queue (DLQ)**[^1] to isolate poison payloads for inspection.
+3. **Unversioned cache blobs:** Changing a cached struct's layout or enabling compression without a key namespace or format version tag (e.g., `user:v2:{id}` or an explicit header byte) causes silent decode failures during rolling deploys.
+4. **Unredacted secrets in queues and caches:** Session tokens, PII, and credentials written into shared stores inherit the store's backup, snapshot, and replication exposure (see [3.2 Untrusted input and payload surfaces](untrusted-input.md#payload-surfaces)).
 
-## Real-world sketch
-
-Checkout RPC needs an authorization result and a risk score. That is tens of fields. Marketing wants full cart contents on `OrderPlaced`. One Protobuf is forced to carry both. Fraud p99 suffers. **p99** is 99th-percentile latency. Marketing still has to join a catalog service.
-
-A better split uses a thin `AuthorizePayment` RPC. It uses an `OrderPlaced` event with line-item identifiers. A marketing consumer then loads details asynchronously.
-
----
-
-## In this suite
-
-| Resource | Role |
-|----------|------|
-| Fixtures | Record shapes for codec cost—not architecture proof |
-| **Dashboard** | Cost of encoding a *given* shape |
-| [Row vs columnar](row-vs-columnar.md) | Batch analytics path |
-| [Using this suite](using-this-suite.md) | Same fixture when comparing libraries |
+| Store Class | Recommended Encoding | Operational Safeguards |
+|---|---|---|
+| **Cross-service Redis / Memcached** | Portable binary (Protobuf, MessagePack) or schema-documented JSON | Key-version prefix (`v2:`), maximum value size cap, no native codecs |
+| **Strictly in-process memory cache** | Plain language structs (no serialization needed) | Never expose raw native dumps across admin or debug endpoints |
+| **Background task queues (SQS, RabbitMQ, Celery)** | Versioned portable JSON or Protobuf job envelope | Explicit `schema_version`, idempotency key, max-retry cap + DLQ |
+| **Durable event logs (Kafka, Pulsar)** | Avro or Protobuf + enforced Schema Registry | Compatibility modes ([3.3 Schema cultures](two-schema-cultures.md)), retention & PII policy |
 
 ---
 
-## Experiments
+## Verification Checklist and Benchmark Limits
 
-**Question:** Should this payload be optimized as **sync RPC** (latency, small messages) or **async messaging** (throughput, fan-out, evolution)?
+Before deploying a new RPC, event, cache, or queue contract:
 
-### Setup
+1. **Audit payload shape and fan-out:** Measure $p_{95}$ payload size against broker/cache limits and multiply by consumer fan-out $K$ to estimate aggregate decode CPU and network egress.
+2. **Enforce versioned keys or envelopes:** Verify that rolling upgrades (old writer $\leftrightarrow$ new reader and new writer $\leftrightarrow$ old reader) read or cleanly cache-miss without throwing unhandled exceptions.
+3. **Fault-inject poison payloads:** Push a truncated, oversized, and schema-invalid message into a staging queue and confirm it moves to the DLQ after the configured retry limit without halting healthy traffic.
+4. **Shortlist portable codecs on the Dashboard:** Once shape, trust, and versioning are fixed, compare candidate portable implementations for your runtime and record shape on the [Dashboard](../../dashboard/index.html).
 
-1. Measure or estimate requests per second, fan-out, maximum acceptable p99, and message retention.
-2. Note whether consumers tolerate lag.
-3. List candidate families for each style.
-
-### Procedure
-
-1. Classify the hop with the decision frame.
-2. For RPC-like hops: use the suite plus a load test on encode and decode latency and size.
-3. For messaging: prioritize schema evolution, registry health, and consumer lag under burst. Do not prioritize only mean serialize time.
-4. Reject designs that use chatty RPC patterns on bulk fan-out topics. Also reject the reverse.
-5. Document payload size budgets per pattern.
-
-### Decision rule
-
-- Strict sync reliability targets (*service-level objectives*) with request and response traffic call for an RPC-shaped codec and size budget.
-- Multi-consumer durable streams are dominated by messaging evolution and backlog metrics.
+**Limits of this benchmark suite:** Codec timings measure serialize/deserialize cost for a fixed shape; they do not evaluate service boundaries, Kafka partition-key skew, Redis eviction policies, broker backpressure, or transactional outbox/idempotency implementations.
 
 ---
 
-## Metrics
+## Exercises
 
-| Metric / signal | Role |
-|-----------------|------|
-| **RPC p99 and timeout budget** | **Primary** for sync hops |
-| Message size at p95 | Network and serialize cost |
-| Suite `ser_median_ns`, `deser_median_ns`, and size | Codec shortlist |
-| Consumer lag and throughput | **Primary** for async hops |
-| Schema-change failure rate | Messaging evolution health |
-| Fan-out factor | Amplification of size and CPU |
+1. **Fan-out amplification:** An `OrderPlaced` event currently embeds a 40 KB product-catalog snapshot required by only 1 of 12 downstream consumers, at 2,000 events/second. Without the snapshot, the event is 1 KB. Compute the excess aggregate consumer ingress bandwidth caused by the god struct, and propose the structural fix.
 
-**Conclusion style:** “User RPC uses small Protobuf messages; the audit topic uses Avro plus a registry; each path has its own size budget.”
+??? note "Solution"
+    - **With snapshot:** $12 \times 40\text{ KB} \times 2{,}000\text{/s} = 960\text{ MB/s}$ aggregate consumer ingress.
+    - **Without snapshot:** $12 \times 1\text{ KB} \times 2{,}000\text{/s} = 24\text{ MB/s}$ — removing **936 MB/s** of unnecessary network transfer and decode CPU across the 11 unaffected consumers.
+    - **Fix:** Emit a narrow 1 KB `OrderPlaced` event carrying item IDs (or an object-store claim-check pointer), and let the single consumer that needs catalog details fetch or join them independently.
 
----
+2. **Rolling-deploy cache skew:** A Python service currently caches user sessions in Redis using `pickle` with a 120-second TTL. The team argues `pickle` is acceptable because "only our service accesses Redis and keys expire in two minutes." Give two distinct reasons why this design should be rejected.
 
-## What this suite cannot tell you
+??? note "Solution"
+    1. **Trust and RCE exposure:** Any Redis misconfiguration, SSRF, or compromised sibling process with Redis write access achieves immediate remote code execution in the Python service regardless of the 120-second TTL.
+    2. **Rolling-deploy and polyglot lock-in:** Class refactors during rolling deployments break `pickle` deserialization between old and new replicas, and any future Go or TypeScript edge service cannot read the session store. Replace with version-prefixed portable JSON or MessagePack/Protobuf.
 
-- Correct service boundaries for your domain.
-- Kafka partition key design.
-- Whether field masks are supported in your RPC stack.
+3. **Poison-message resilience:** A queue consumer decodes incoming JSON task payloads and crashes on `KeyError` whenever a malformed job arrives, causing the broker to redeliver the same job immediately. What two operational controls are missing?
 
----
-
-## Common mistakes
-
-- Optimizing the codec while messages stay bloated.
-- Treating “we’ll filter in the consumer” as a permanent design.
-- Ignoring idempotency keys because Protobuf encoding is deterministic.
+??? note "Solution"
+    1. **Boundary schema validation and structured error classification:** Distinguish permanent deserialization/validation errors (non-retryable) from transient downstream failures (retryable).
+    2. **Bounded retries with a Dead-Letter Queue (DLQ):** Route malformed payloads directly to a monitored DLQ after failing validation so the consumer continues processing valid jobs.
 
 ---
 
-## Key takeaways
+## References
 
-- **Shape first, codec second.**
-- RPC and messaging want different payload economics.
-- Fan-out punishes god structs.
-- The suite measures encode cost of the shape you already chose.
+[^1]: Hohpe, G., & Woolf, B. (2003). *Enterprise Integration Patterns* (Claim Check; Dead Letter Channel). Addison-Wesley.
+[^2]: Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 11 (*Stream Processing*). O'Reilly Media.

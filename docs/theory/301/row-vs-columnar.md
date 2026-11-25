@@ -1,185 +1,119 @@
-# Row vs columnar at system scale
+# 3.5 Row vs. Columnar at System Scale
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/row_vs_columnar.ipynb)
 
-## Problem
+## Problem Statement
 
-The same organization often runs two very different workloads:
+Most production organizations run two structurally opposed workloads over the same business domain:
 
-- **Services** that exchange whole records. Examples include a user profile, an order command, or a device event.
-- **Analytics** that scan billions of rows but only a few columns. Examples include revenue by day or feature columns for training.
+1. **Operational services (OLTP / RPC / messaging):** Read or write entire records one entity at a time (a user profile, payment command, or telemetry event) under millisecond latency targets.
+2. **Analytical processing (OLAP / ML / reporting):** Scan millions or billions of records while projecting only a small subset of attributes (for example, summing revenue by region and day).
 
-In a **row-oriented** layout, all fields of one record sit together. That is natural when you usually need the whole record. In a **columnar** layout, values from the same field across many records sit together. That is natural when you usually need a few fields across huge tables.
-
-Teams collapse both onto one encoding. They say “everything is Protobuf” or “everything is Parquet.” Then they pay either impossible scan costs or impossible per-message overhead. The 101 axis *row versus columnar* becomes a **system boundary** question at Serialization 301 scale.
+Collapsing both workloads onto one encoding—"everything is Protobuf" or "everything is Parquet"—imposes either prohibitive analytical I/O costs or prohibitive per-request overhead. At system scale, the row-versus-columnar axis introduced in [1.2 Data science perspective](../101/data_science_perspective.md) becomes a **workload-boundary architecture decision**.
 
 ---
 
-## Short answer
+## Layout Economics: Row Messages vs. Columnar Tables
 
-Use **row-oriented** messages when the unit of work is **whole records**. Those messages include JSON objects, Protobuf messages, Avro records, and MessagePack maps. They fit low-latency point access and per-event processing. Use **columnar** layouts when the unit of work is a **bulk scan or aggregate over few columns** on large datasets. Those layouts include Parquet, ORC, and Arrow tables.
+!!! note "Definition: Row-Oriented vs. Columnar Storage"
+    In a **row-oriented** layout, all fields of record $i$ occupy contiguous bytes, minimizing seeks when fetching a single entity. In a **columnar** layout, all values of attribute $j$ across a batch of $N$ records occupy contiguous bytes, enabling **column pruning** (reading only referenced attributes), **predicate pushdown** (skipping row groups via min/max statistics), and homogeneous **column encodings** (dictionary, run-length, delta, and bit-packing).[^1]
 
-A **data lake** is a large store of historical data. It often lives on object storage. It is designed for analytics rather than for single-record API responses.
+Let a table contain $N$ rows and $C$ equally sized columns, and let an analytical query reference $k \ll C$ columns. A row-oriented archive must read and parse $O(N \cdot C)$ field values, whereas a columnar store reads $O(N \cdot k)$ values before compression and statistics pruning—and achieves higher compression ratios because adjacent values share a single data type and distribution. Conversely, constructing a columnar file for a single record ($N = 1$) pays fixed metadata, footer, and alignment overhead that dwarfs the payload.
 
-Crossing the streams is occasional glue. Export jobs are one example. Crossing the streams is not a default architecture. Do not pick columnar because it compresses well in a blog chart. That choice is wrong if every request needs the full row in under a millisecond. A columnar layout pays off when the row count is large. At one row, headers and alignment padding dominate both size and time.
+| Dimension | Row-Oriented Messages | Columnar Tables and Files |
+|---|---|---|
+| **Unit of work** | Single entity or event (all or most fields) | Bulk scan or aggregate over $k \ll C$ columns |
+| **I/O and memory shape** | Whole record stored contiguously | Contiguous column chunks; row-group min/max pruning |
+| **Latency regime** | Microseconds to low milliseconds per message | Throughput-oriented batch, streaming micro-batch, or interactive queries |
+| **Schema governance** | Per-message schema registry or IDL repository | Table catalog, file footers, and partition metadata |
+| **Compression** | Optional framing-level codec (zstd, gzip) | Type-aware dictionary, RLE, delta, plus per-page codecs |
+| **Typical home** | Public/internal RPC, queues, caches, operational events | Object-storage data lakes, warehouses, feature stores, notebooks |
 
-This page assumes the 101 row and columnar axis. Here we own **workload architecture**.
+### In-Memory Interchange vs. On-Disk Storage
 
----
+Columnar formats split further by role:
 
-## Constraints that matter
-
-| Axis | Row-oriented messages | Columnar tables and files |
-|------|----------------------|---------------------------|
-| **Access** | Get one entity; process one event | Scan column subsets over partitions |
-| **I/O shape** | Whole record stored contiguously | Column chunks; predicate pushdown can skip data |
-| **Latency** | Often microseconds to milliseconds per message | Throughput-oriented batch or stream jobs |
-| **Evolution** | Per-message schema or IDL culture | Table schema, file footers, and a catalog |
-| **Compression** | Per message or stream framing | Column statistics, dictionaries, page compression |
-| **Typical home** | APIs, RPC, queues, OLTP-style paths | Lakes, warehouses, feature stores, machine-learning batch |
-
-**Predicate pushdown** means the storage engine uses filters to avoid reading irrelevant files or column chunks. One filter example is “date = yesterday.” **OLTP** means online transaction processing. That style uses many small, interactive updates and reads.
-
-In other words, row and columnar optimize for different questions. They are not two brands of the same tool.
+- **Apache Arrow**[^2] specifies a language-independent **in-memory** columnar buffer layout (and IPC stream format) for zero-copy interchange between analytical engines, data frames, and GPUs.
+- **Apache Parquet**[^3] and **Apache ORC** specify **on-disk** columnar file formats optimized for object storage (S3-class buckets), adding row-group footers, column statistics, bloom filters, and page-level compression.
 
 ---
 
-## Decision frame
-
-| Workload | Default encoding class | Poor default |
-|----------|------------------------|--------------|
-| Public or internal RPC | Row (JSON, schema-driven, or schemaless binary) | Opening Parquet files per request |
-| Kafka-style event processing (one event at a time) | Row (Avro, Protobuf, or JSON) | Columnar unless you deliberately micro-batch |
-| Nightly lake on object storage | Columnar (Parquet or ORC) | Millions of tiny Protobuf files as the lake |
-| Interactive notebook on large tables | Arrow or other columnar engines | Nested JSON Lines as the sole store |
-| Feature training over wide tables | Columnar | Row RPC dumps without projection |
-| Cache get-by-id | Row | Opening a columnar file per key |
+## Architectural Decision Frame
 
 ```text
-  Do we mostly read ALL fields of FEW records?
-        yes → row-oriented message codecs
-  Do we mostly read FEW fields of MANY records?
-        yes → columnar storage or Arrow-class interchange
+  Do readers usually access MOST fields of FEW records (point lookup, RPC, per-event)?
+        yes → row-oriented message codec (JSON, Protobuf, Avro, MessagePack)
+  Do readers usually access FEW fields across MANY records (analytical scans, aggregations)?
+        yes → columnar storage (Parquet/ORC) or in-memory columnar IPC (Arrow)
+  Do both workloads exist over the same domain?
+        yes → two-hop architecture: row events on the bus, periodic compaction into columnar partitions
 ```
 
-This matters because a format that is excellent for service RPC can be a terrible lake format. The reverse is also true.
+| Workload | Appropriate Default | Anti-Pattern |
+|---|---|---|
+| Public or internal RPC | Row message (JSON, Protobuf, MessagePack) | Opening Parquet files per request |
+| Per-event Kafka stream | Row message (Avro, Protobuf, or schema-validated JSON) | Columnar files per single event |
+| Historical data lake on object storage | Parquet or ORC with partitioning and table catalog | Millions of small Protobuf or JSON files as the query store |
+| Interactive multi-million-row analytics | Arrow in-memory interchange over Parquet storage | Repeatedly parsing nested JSON Lines |
+| Cache lookup by primary key | Row message | Reading a columnar file for one key |
+
+### Common Failure Modes
+
+1. **The Protobuf data lake:** Archiving raw RPC or event messages as millions of small files forces analytical engines to incur high object-store listing overhead and parse every unused field.
+2. **Parquet on a low-latency RPC path:** File footer construction, schema serialization, and page framing add severe latency and allocation cost at $N = 1$.
+3. **Partition neglect:** Storing columnar files without partitioning by common filter keys (such as event date or tenant) forces full-table scans despite columnar layout.
+4. **Conflating Arrow and Parquet:** Treating Arrow IPC as a long-term compressed archive or Parquet as an in-memory compute representation misallocates CPU and storage budgets.
 
 ---
 
-## Failure modes
+## Mapping to This Benchmark Suite
 
-| Mistake | Consequence |
-|---------|-------------|
-| **Protobuf lake** | Tiny files, no column pruning, operations nightmare |
-| **Parquet RPC** | Catastrophic per-call overhead and the wrong mutability story |
-| **One format to rule them all** | Either analytics or services becomes second-class |
-| **Ignoring partition design** | Columnar storage without partitions or predicates still scans the world |
-| **Confusing Arrow with Parquet** | Arrow is mainly in-memory interchange; Parquet is mainly on-disk columnar—related jobs, not identical ones |
+This suite keeps row-oriented and columnar measurements on distinct data types so that workloads are never ranked across incompatible tasks:
 
-For example, storing years of events as millions of tiny Protobuf files is expensive. Every analytical query must open and fully parse records. Many of those records contain fields the query does not need.
+- **Suite row data types (`all@all`, `all@1`, `all@100`):** Cover the five operational message shapes (`message`, `document`, `telemetry`, `strings`, `event`).
+- **Columnar data set (`table`, `table_project`, `nested_table`, `signal`):** Defined in [Test data configuration](../../analysis/test_data_configuration.md) and configured in [`config/library/columnar.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml). On `table_project`, every measured implementation writes the full table or row set and reads only the single projected column `f_float_0`, directly demonstrating column-pruning economics.
+- **SBE (Simple Binary Encoding):**[^4] Measured on `signal`, `table`, and `table_project` (not `nested_table`) for fixed-stride message comparisons. SBE is a **schema-driven row layout** where each record spans a fixed stride (plus optional variable-length data)—it is *not* a columnar lake format like Parquet or ORC.
+
+Always filter the [Dashboard](../../dashboard/index.html) to a single language, standard, data set, and data type; never rank `arrow-ipc` on `table_project` against a JSON codec on `message`. See [Columnar formats in this suite](../../analysis/columnar.md) and [3.9 Fair benchmarking and implementation variance](using-this-suite.md).
 
 ---
 
-## Real-world sketch
+## Empirical Evaluation Protocol
 
-A metrics pipeline ingests events as Protobuf. That is a good row-oriented, low-latency choice. Analysts then dump the same Protobuf messages as the lake format. Queries that need two fields open every message fully.
+To validate a row-versus-columnar boundary for a real workload:
 
-A better design keeps the **serving path** on Protobuf. It adds a **batch compact job** that writes Parquet partitions by day. Scan cost drops without changing the real-time contract. The suite may show excellent Protobuf decode rates. That does not make Protobuf a lake format.
+1. **Measure selectivity and batch size:** Record the fraction of columns touched ($k / C$), typical rows scanned per query ($N$), and latency target (interactive $p_{99}$ vs. batch scan time).
+2. **Benchmark representative queries on actual data:** Load a realistic multi-gigabyte sample both as row records (e.g., compressed JSON Lines or Protobuf files) and as partitioned Parquet/ORC files. Measure **bytes scanned**, **query wall time**, and **storage footprint**.
+3. **Benchmark the operational serving hop separately:** Evaluate row codecs on the serving path using the Dashboard slice for your runtime and record shape, followed by a service-level load test.
+4. **Design the compaction bridge:** When both paths exist, ingest with row events on the message bus and run a scheduled or streaming compaction job that writes properly sized, partitioned columnar files (typically tens to hundreds of megabytes per file) registered in a table catalog.
 
----
-
-## In this suite
-
-| Resource | Role |
-|----------|------|
-| Language benchmark runners | `all@all` stays the five Suite types. `table`, `table_project`, `nested_table`, and `signal` are their own Dashboard data types |
-| [Test Data](../../analysis/test_data_configuration.md) | Those nine type ids |
-| [Columnar run config](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/columnar.yaml) | The four columnar types. Timed for the new serializers and a short peer list |
-| [Families](../../analysis/families.md) | Columnar is its own teaching family. SBE stays schema-driven. Its data set is Columnar. Its standard is SBE. |
-| [Using this suite](using-this-suite.md) | How to read Dashboard numbers. Compare inside one language, one standard, one data set, and one data type. |
-
-**Important:** `all@all`, `all@1`, and `all@100` stay the five Suite types (`message`, `document`, `telemetry`, `strings`, `event`). The four Columnar types are separate data types. Their groups come from a `columnar.yaml` run appended by `dashboard/scripts/splice-columnar-stats.py`. The five-type groups are the earlier published snapshot and were not recomputed.
-
-SBE (Simple Binary Encoding) is measured on `signal`, `table`, and `table_project`. Each record is one stride: the bytes from the start of that record to the start of the next. Variable-length fields change that distance. SBE is not a columnar file format like Parquet. On `table_project`, every codec in this comparison writes the full row and reads only `f_float_0`.
-
-Spliced columnar serializers (peers measured in that same run also appear on those data types):
-
-| Language | Columnar serializers in the snapshot |
-|----------|--------------------------------------|
-| Python (50 repetitions; the run hit the 600s cap) | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed` |
-| C++ | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
-| Rust | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `sbe` |
-| Go | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `sbe` |
-| Java | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
-| C# | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
-| JavaScript | `arrow-ipc`, `parquet`, `parquet-uncompressed` |
-| Kotlin | `arrow-ipc`, `parquet`, `parquet-uncompressed`, `orc`, `orc-uncompressed`, `sbe` |
-
-C++, Rust, Go, Java, C#, JavaScript, and Kotlin used 100 repetitions. Do not rank `arrow-ipc` on `table_project` against a JSON row on `message`. A language missing from the table is not in this snapshot. That absence does not mean the format is irrelevant for lakes.
+**Limits of this benchmark suite:** Single-node codec measurements cannot capture object-storage request latency, warehouse query-planner pushdown, Iceberg/Delta Lake metadata overhead, compaction scheduling, or sub-byte packed tensor storage (see [2.2 Bit width is not bus width](../201/bit-width-and-bus-width.md)).
 
 ---
 
-## Experiments
+## Exercises
 
-**Question:** Is this path **row/RPC-shaped** or **analytical/columnar**, and are we using the wrong codec class for the system?
+1. **Column-pruning cost model:** A telemetry table contains $10^7$ rows and 80 fixed-width 8-byte columns (640 bytes/row raw). An analytical query aggregates 4 columns without indexes. Ignoring compression and headers, compare the minimum raw bytes read under a row-oriented layout versus a columnar layout.
 
-### Setup
+??? note "Solution"
+    - **Row-oriented:** Must read all 80 columns of all $10^7$ rows: $10^7 \times 640\text{ B} = 6.4\text{ GB}$.
+    - **Columnar:** Reads only the 4 projected columns: $10^7 \times (4 \times 8\text{ B}) = 320\text{ MB}$ — a $20\times$ reduction in raw I/O before dictionary, RLE, or page compression is even applied.
 
-1. Describe the access pattern. Mark point lookups and RPC versus scan aggregates over many rows.
-2. Estimate selectivity. Note few columns versus wide rows. Estimate data volume.
-3. List candidate stacks. Include row JSON, Protobuf, and Avro. Include Parquet, ORC, and Arrow-class.
+2. **Two-hop architecture:** A telemetry pipeline ingests 50,000 events/second from edge devices into Kafka, where a fraud detector scores each event within 20 ms while data scientists run daily aggregations across 12 months of history. Propose the serialization architecture across both paths.
 
-### Procedure
+??? note "Solution"
+    Use a schema-driven **row format** (Protobuf or Avro with a registry) on Kafka so the fraud consumer decodes individual events in microseconds with strict evolution checks. Run a dedicated streaming or micro-batch **compaction job** that buffers events and writes date-partitioned **Parquet** files into object storage registered in a table catalog for analytical queries.
 
-1. Classify the primary workload using the decision frame.
-2. If the path is analytical, prototype scan time and compression on a columnar layout. Compare that with dumping RPC rows.
-3. If the path is RPC, measure per-message latency with row codecs. Do not put lake formats on the code path that runs on every request under load.
-4. Treat `all@all` as the five Suite types. Read `table`, `table_project`, `nested_table`, and `signal` for Arrow, Parquet, and ORC. Read `signal`, `table`, and `table_project` for SBE. SBE has no `nested_table` row. Do not rank a Columnar row against a Suite codec on `message`. On `table_project`, deserialize reads only `f_float_0`.
-5. Document a two-hop design if both patterns exist. Use row events on the bus. Use columnar data in the lake.
+3. **Benchmark cell validity:** Why is comparing `parquet` on `table_project` against `orjson` on `message` an invalid basis for choosing an HTTP API codec?
 
-### Decision rule
-
-- Scan-heavy lake path means a columnar system format. RPC suite winners are irrelevant.
-- Hot RPC means a row message or a schema-driven message layout. Columnar files such as Parquet are not substitutes. SBE can still be a message layout. It is not a lake file.
+??? note "Solution"
+    The two measurements differ in **both standard and data type** (and workload shape): `table_project` measures batch columnar projection of one column (`f_float_0`) over a table, whereas `message` measures whole-record operational serialization. A format that excels at projected batch scans incurs unacceptable per-request overhead on small single-record HTTP responses.
 
 ---
 
-## Metrics
+## References
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Query shape** (point versus scan; columns touched) | **Primary** classifier |
-| Scan time and bytes read for the analytical job | Columnar effectiveness |
-| RPC 99th-percentile latency (*p99*) per message | Row-path reliability target |
-| Compression ratio on lake files | Storage economics |
-| Suite `total_median_ns` and `median_size_bytes` | Row-codec orientation on a row data type. Columnar orientation on `table`, `table_project`, `nested_table`, and `signal` |
-| Cross-paradigm “winner” charts | Misleading for this decision |
-
-**Conclusion style:** “Ingest RPC uses Protobuf rows; the lake uses Parquet; we do not dual-use one codec for both jobs.”
-
----
-
-## What this suite cannot tell you
-
-- Scan cost of Parquet versus ORC on your warehouse.
-- Arrow zero-copy handoff between two specific engines.
-- Optimal partition and layout design for your lake.
-- Whether micro-batch columnar encoding of events is worth the complexity.
-- Columns whose values use fewer than eight bits, such as model weights stored that way, and whether a wider hardware bus changes the cost of encoding. See [Bit width is not bus width](../201/bit-width-and-bus-width.md).
-
----
-
-## Common mistakes
-
-- Citing message-codec Dashboard numbers to justify a lake format choice.
-- Forcing analytics to query an operational RPC log format forever.
-- Using columnar “because compression” on chatty, ultra-small RPCs.
-
----
-
-## Key takeaways
-
-- **Access pattern** chooses row versus columnar more than fashion.
-- Services want row messages. Lakes and analytics want columnar storage. Use deliberate bridges between them.
-- Dashboard `all@all` informs message codec choice inside a language. Arrow, Parquet, and ORC on the Columnar data types inform scan layouts. SBE on those types is still one record per stride. None of those rows designs lake architecture.
-- Dual paths are normal. Use row for serve and columnar for analyze. That is not a design failure.
+[^1]: Abadi, D., Boncz, P., Harizopoulos, S., Idreos, S., & Madden, S. (2013). *The Design and Implementation of Modern Column-Oriented Database Systems*. Foundations and Trends in Databases, 5(3), 197–280.
+[^2]: Apache Software Foundation. *Apache Arrow Columnar Format Specification*. <https://arrow.apache.org/docs/format/Columnar.html>
+[^3]: Apache Software Foundation. *Apache Parquet Format Specification*. <https://parquet.apache.org/docs/file-format/>
+[^4]: FIX Trading Community. *Simple Binary Encoding (SBE) Technical Specification*. <https://www.fixtrading.org/standards/sbe/>
