@@ -1,116 +1,61 @@
-# Case study: “we need it faster” postmortem
+# Case 6: "We Need It Faster" Postmortem
 
-> Latency regressions trigger a codec swap. What should have been checked before the rewrite?
-
-A **postmortem** is a structured review after an incident or failed change. It asks what happened. It asks what was wrong in the diagnosis. It asks what process change prevents a repeat. This case study teaches diagnostic discipline when someone says “we need it faster” and points at a benchmark chart.
+> **Design brief:** Following a traffic increase, a Go service's $p_{99}$ latency degrades. Citing an unfiltered benchmark chart, an engineer proposes a multi-week wire-format rewrite from JSON to a binary standard. What diagnostic sequence should precede any format change?
 
 ---
 
-## Context and goals
+## Scenario and Hard Constraints
 
-**Setting:** After a traffic ramp, 99th-percentile latency (*p99*: 99% of requests are faster than this) of a Go service climbs. A popular post claims “switch to X binary format for 10×.” An engineer opens the Dashboard. The engineer picks the top name on a mixed chart. The engineer plans a week-long rewrite.
-
-**Goals of this postmortem:** Separate **wrong benchmark**, **wrong paradigm**, and **wrong payload**. The next fix should be targeted.
-
-In other words, the first job is diagnosis. Format rewrites are expensive. They should follow evidence, not slogans. The serializer that matters in production is the one that does not page the person on call. A benchmark score is not that person.
-
----
-
-## Non-goals and hard constraints
-
-- This is not a greenfield architecture.
-- Customer reliability targets (*service-level objectives*) cannot be ignored while rewriting.
+- **Incident:** Production $p_{99}$ latency breaches its SLO after traffic doubles on an existing Go service speaking JSON to multiple consumers.
+- **Proposed intervention:** Replace JSON with the top-ranked binary format seen on an unfiltered Dashboard chart.
+- **Hard constraints:**
+  - This is a live multi-consumer production service, not a greenfield system; wire-format changes impose coordinated client migrations and dual-read windows.
+  - Diagnostic effort must follow **cost of learning**—falsifying cheap, localized hypotheses before paying high migration risk.
 
 ---
 
-## Options on the table (retrospective)
+## Competing Hypotheses and Diagnostic Order
 
-| Hypothesis | Investigation |
-|------------|---------------|
-| **H1. Wrong library on the same standard** | Compare libraries on that standard only, for example JSON with JSON ([implementation variance](implementation-variance.md)) |
-| **H2. Wrong paradigm for the hop** | Revisit public versus internal, trust, and evolution ([capstones](case-public-rest-api.md)) |
-| **H3. Payload shape and allocations** | Profile; deep graphs versus dense structs ([latency tails](latency-tails-and-gc.md), 201 encode cost) |
-| **H4. Not serialization** | Database, lock, downstream round-trip time, GC from other code |
-| **H5. Compression and network** | Size versus round-trip time ([compression as system choice](compression-as-system-choice.md)) |
-
-A **hypothesis** here is a testable explanation. You should falsify cheap hypotheses before expensive rewrites.
+| Hypothesis | Diagnostic Check | Relative Cost & Risk |
+|---|---|---|
+| **H4. Not serialization** | Production CPU/wall-time flame graph and trace spans (DB, locks, downstream RTT, unrelated GC) | Fastest, zero risk |
+| **H1. Slow library within the same standard** | Controlled Go Dashboard slice on Standard `JSON` ([3.9 Implementation variance](using-this-suite.md#implementation-variance)) | Fast, low risk (drop-in swap) |
+| **H3. Payload bloat & allocation pressure** | Allocation profiler (`pprof -alloc_objects`), GC pause metrics, DTO depth/size audit ([3.10 Latency tails](latency-tails-and-gc.md)) | Fast–medium, low–medium risk |
+| **H5. Network / compression misplacement** | Wire size vs. RTT, `gzip`/`zstd` CPU share on small frames ([3.10 System compression](latency-tails-and-gc.md#compression-as-system-choice)) | Fast, low risk |
+| **H2. Wrong wire standard for the hop** | Re-evaluate trust, client base, and evolution constraints only after H1/H3/H4/H5 are exhausted | Slowest, highest migration risk |
 
 ---
 
-## Trade-off matrix (response cost)
+## Recommended Diagnostic Protocol
 
-| Action | Speed of learning | Risk |
-|--------|-------------------|------|
-| Profile plus a fair Dashboard slice | Fast | Low |
-| Swap library on the same standard | Medium | Low to medium |
-| Change the wire format | Slow | High (clients) |
-| Rewrite business logic | Slow | High |
+Execute checks strictly in ascending order of operational risk:
 
-This matters because the order of investigation should match cost. Learn fast and cheap first.
+1. **Attribute latency via profiling (H4):** Confirm that serialization/deserialization actually consumes a material fraction of critical-path $p_{99}$ latency before touching any codec.
+2. **Audit the benchmark claim (H1):** Re-open the [Dashboard](../../dashboard/index.html) using a single controlled cell `(Go, JSON, Suite, matching data type)` ([3.9 Fair benchmarking](using-this-suite.md)). Test whether swapping to a faster, spec-compliant Go JSON library resolves the bottleneck without breaking any client contract.
+3. **Profile allocations and DTO shape (H3):** Inspect temporary object allocations per request and GC pause correlation. Flattening deeply nested DTOs, trimming unused fields ([3.7 RPC and messaging](rpc-and-messaging.md)), or reusing buffers frequently recovers $p_{99}$ without altering the wire standard.
+4. **Audit compression placement (H5):** Confirm that blanket HTTP/RPC gzip on small frames is not saturating CPU.
+5. **Migrate wire formats last (H2):** Only when profiling proves the *standard itself* cannot satisfy the SLO after library and shape fixes—and only on hops where clients can adopt the new contract—plan a versioned migration ([3.4 Versioning](public-api-contracts.md#versioning-strategies)).
 
----
-
-## Recommendation (under these constraints)
-
-**Before any format rewrite:** (1) confirm serialization is on the critical path via profiling; (2) re-read the Dashboard with [using this suite](using-this-suite.md) discipline (same language, standard, data set, data type, and metric); (3) try the best library on that standard, and the payload fixes; (4) only then consider a different standard, with an explicit contract migration.
-
-In the composite postmortem, the root cause was **unbounded JSON allocations on a deep graph** plus a **slow library**. The root cause was not “JSON is impossible.” Switching libraries and flattening the data-transfer object restored the reliability target. A cross-stack Protobuf migration was not required.
-
-A **data-transfer object (DTO)** is a structure used to carry data across a boundary. Flattening it means reducing nested graphs that allocate many temporary objects during decode.
+In the composite incident behind this postmortem, profiling revealed **unbounded allocations decoding a deeply nested JSON DTO with a reflection-heavy parser** (H1 + H3). Flattening the DTO and pinning a faster Go JSON library restored $p_{99}$ compliance in two days, avoiding an unnecessary multi-service Protobuf migration.
 
 ---
 
-## Experiments
+## Verification Plan and Suite Limits
 
-**Question:** What actually caused the latency regression? Was it the wrong library, the wrong paradigm, the wrong payload or allocations, or something that is not serialization?
-
-### Setup
-
-1. Production profile or a reproduction under load.
-2. Current standard and library pin. A family is only the teaching cut that led you there.
-3. Fair suite access for that same cell: one language, one standard, one data set, and one data type.
-
-### Procedure
-
-1. Profile. Confirm serialize and deserialize is on the critical path (H4).
-2. Fair Dashboard numbers on the same language, standard, data set, and data type (H1). See [using this suite](using-this-suite.md).
-3. Inspect payload shape and allocations (H3). See [latency tails](latency-tails-and-gc.md).
-4. Only if that standard cannot meet the reliability target, revisit the family (H2).
-5. Check compression and network (H5) before rewrite.
-6. Write the postmortem with evidence for the winning hypothesis.
-
-### Decision rule
-
-- Act on the first hypothesis that both explains p99 and is cheap to validate.
-- Format rewrite is last, not first.
+- **Within this suite:** Restrict lookups to the same-language, same-standard cell (`Go`, `JSON`, matching payload shape) to quantify realistic intra-standard library gains.
+- **Outside this suite:** Capture before/after production CPU and allocation profiles, concurrent $p_{99}$ latency under load, GC pause time, and error rate across the rollout.
+- **What would change the answer:** If profiling proves that >50% of critical-path CPU on a stable internal service-to-service hop remains inside optimal JSON parsing even after DTO trimming, migrating that internal hop to Protocol Buffers ([Case 2](case-internal-rpc.md)) becomes well-justified.
 
 ---
 
-## Metrics
+## Discussion Prompts
 
-| Metric / signal | Role |
-|-----------------|------|
-| **p99 before and after** | **Primary** success |
-| Profile percent time in serialize/deserialize | Attribution |
-| Allocation rate and GC pauses | H3 evidence |
-| Suite same-family deserialize median | H1 evidence |
-| Size, round-trip time, and compress CPU | H5 evidence |
-| Error rate during change | Safety |
+1. An engineer runs a single-threaded Go microbenchmark showing that Format X decodes $4\times$ faster than JSON on a 200-byte struct, and estimates service $p_{99}$ will drop by 75%. What flaw invalidates that estimate?
 
-**Conclusion style:** Root cause tagged H1–H5 with metrics. The fix matches the tag.
+??? note "Guidance"
+    Two flaws: (1) **Amdahl's law**—unless JSON decoding currently accounts for nearly 100% of request latency (ignoring DB queries, network RTT, TLS, and queueing), a $4\times$ codec speedup yields a much smaller end-to-end gain; (2) **microbenchmark averages omit concurrency tails**—if $p_{99}$ spikes are driven by unrelated heap allocations or lock contention, swapping the codec may barely move $p_{99}$.
 
----
+2. Why is switching from Go `encoding/json` to a faster compliant Go JSON library categorically safer than migrating from JSON to MessagePack?
 
-## What would change the answer
-
-- Profiling shows more than 50% time in encode of a stable internal hop. A paradigm change may be justified. See [internal RPC](case-internal-rpc.md).
-- A public API with integrators cannot silently go binary. See [public REST](case-public-rest-api.md).
-
----
-
-## Key takeaways
-
-- “Need it faster” is a **diagnosis** problem first.
-- A wrong chart produces a wrong rewrite.
-- Prefer a same-standard library change, and a shape fix, before a multi-week format migration.
-- The suite is evidence only inside a disciplined question.
+??? note "Guidance"
+    A same-standard library swap keeps the wire format and external contract unchanged, so zero downstream clients require updates and rollback is a single-service deploy. Switching to MessagePack requires dual-format negotiation, client library upgrades across every consumer, new incident-debugging tools, and a coordinated deprecation schedule.

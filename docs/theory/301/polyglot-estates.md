@@ -1,162 +1,90 @@
-# Multi-language systems (polyglot estates)
+# 3.6 Multi-Language Systems
 
-## Problem
+## Problem Statement
 
-Real organizations run many systems and clients in **C#**, **Python**, **Go**, **Rust**, **JavaScript**, and more against shared data. A **polyglot estate** is that set of systems: more than one programming language in production, expected to interoperate. *Polyglot* means multi-language.
+Production organizations rarely operate in a single programming language; a typical platform spans Go or Rust core services, Python data and machine-learning pipelines, Java or C# enterprise backends, and TypeScript clients. Without a boundary-level interoperability policy, each team selects the fastest serializer visible on its local language chart—one service emits MessagePack with string keys, another uses Protocol Buffers, and a third writes Python `pickle` into Redis.
 
-Each language has a “fastest” library on some chart. Without a multi-language (*polyglot*) policy, every team picks a local optimum. One service speaks MessagePack with string keys. Another speaks Protobuf. A third pickles values into Redis.
-
-Integration cost appears later. It shows up as translation layers, dual-write windows, and incidents that only reproduce at language boundaries. This page teaches the policy that prevents that drift.
+The resulting fragmentation produces translation proxies, dual-write migrations, and type-conversion defects that manifest exclusively at language boundaries.
 
 ---
 
-## Short answer
+## One Portable Contract per Boundary
 
-For each **boundary**, pick **one portable contract**. Boundaries include public API, internal RPC, async event, cache, and file. Implement that contract in every language that crosses the boundary. Prefer formats with **mature multi-language implementations**. Prefer formats with an explicit evolution story. See [two schema cultures](two-schema-cultures.md).
+!!! note "Definition: Cross-Language Logical Equivalence"
+    A serialization contract satisfies **cross-language logical equivalence** across languages $\{L_1, \dots, L_m\}$ if, for every valid schema instance $x$ and every ordered pair $(L_i, L_j)$, encoding $x$ in $L_i$ and decoding the resulting bytes in $L_j$ yields a value logically equal to $x$ under the contract's type semantics (including numeric precision, timestamps, nullability, empty collections, and Unicode normalization).
 
-A **contract** here means the shared rules for field identity, types, and allowed evolution. It is not merely “we both somehow use JSON.”
+Architecture policy in a multi-language (**polyglot**) estate follows three rules:
 
-Use this suite to compare **libraries inside one language, one standard, one data set, and one data type**. Do not use it to elect a global winner across languages. Dual contracts are allowed at **edges**. One example is JSON on the public surface and Protobuf internally. That is fine when translation is owned and tested. It is not fine as accidental drift.
+1. **Standardize per boundary, not per team:** Every cross-process boundary—public HTTP API, internal RPC mesh, event backbone, shared cache, or data lake—has **one portable standard** and **one schema/evolution process**.
+2. **Choose libraries locally after fixing the contract:** Once the boundary standard is fixed, each language team selects and pins the best-performing, well-maintained *implementation* of that standard using the per-language [Dashboard](../../dashboard/index.html) slice (see [3.9 Fair benchmarking and implementation variance](using-this-suite.md)).
+3. **Permit owned edge translation, forbid accidental drift:** Using JSON on a public HTTP gateway and Protocol Buffers on the internal service mesh is sound when translation is explicit, versioned, and tested at the gateway. Ad hoc format dialects inside the same internal tier create $O(m^2)$ translation debt across $m$ languages.
 
-This page assumes [trust boundaries](trust-boundaries.md). Language-native interchange is not allowed. It also assumes [using this suite](using-this-suite.md).
-
----
-
-## Constraints that matter
-
-| Constraint | Implication |
-|------------|-------------|
-| **Languages in the critical path** | The contract must have libraries or code generation in each of them |
-| **Human debuggability** | Public and partner edges often keep JSON even when internal traffic is binary |
-| **Evolution ownership** | One IDL, registry, or process—not N ad hoc JSON dialects |
-| **Team skill** | Exotic codecs that only one expert understands do not survive staff changes |
-| **Cross-language agreement** | Types such as decimals, timestamps, and maps must match after encode in one language and decode in another |
-| **Operations tooling** | Can on-call engineers inspect payloads during incidents? |
-
-**Cross-language agreement** means that after encode in language A and decode in language B, the logical values still match. Without that agreement, “we all speak Protobuf” is a slogan. The suite’s `mean_fidelity` is narrower. One language writes a fixture and reads it back. A passing score is not proof that the library follows the published specification, and it is not a cross-language test.
+| Boundary | Standard Polyglot Default | Governance Requirement |
+|---|---|---|
+| Public HTTP API | JSON + OpenAPI / JSON Schema | Automated contract checks; versioned error shapes |
+| Internal synchronous RPC | Protocol Buffers (or gRPC) across compiled and dynamic services | Shared `.proto` repository + CI breaking-change gate |
+| Asynchronous event bus | Avro or Protocol Buffers + Schema Registry | Enforced compatibility mode ([3.3 Schema cultures](two-schema-cultures.md)) |
+| Shared cache or task queue | Portable binary or schema-documented JSON | Never language-native (`pickle`, Java serialization) |
+| Analytical data lake | Parquet or ORC + table catalog | Compaction pipeline from operational events ([3.5 Row vs. columnar](row-vs-columnar.md)) |
 
 ---
 
-## Decision frame
+## Constraints and Failure Modes
 
-| Boundary | Common multi-language (polyglot) choice | Notes |
-|----------|------------------------|-------|
-| Public HTTP API | JSON plus OpenAPI or JSON Schema | Dual Protobuf is optional for selected clients |
-| Internal synchronous RPC | Protobuf/IDL or schemaless binary with validation | One choice per platform, not a different choice per service |
-| Async events | Avro or Protobuf plus a registry, **or** JSON with a strict schema process | Match your [schema culture](two-schema-cultures.md) |
-| Shared cache blob | Portable binary or JSON with a documented schema | Never use pickle as the cross-service default |
-| Data lake | Columnar formats or Avro—not whatever is fashionable for RPC | See [row vs columnar](row-vs-columnar.md) |
+Evaluating a candidate contract across a multi-language estate requires checking five operational constraints before consulting speed benchmarks:
 
-```text
-  List languages that must speak the boundary
-        → eliminate codecs without a multi-language story
-        → pick one standard (JSON, a schemaless binary contract, or a schema-driven contract)
-        → pick ONE evolution process
-        → implement and run tests that check every language implements the same contract
-        → use per-language Dashboard only to pick libraries
-```
+- **Ecosystem coverage:** Every language on the critical path (and foreseeable near-term consumers) must have an actively maintained, fuzzed implementation. A format with an exceptional Rust crate but an unmaintained Python binding is an integration hazard.
+- **Type-system edge cases:** 64-bit integers in JavaScript (IEEE 754 `Number` loses precision above $2^{53} - 1$), arbitrary-precision decimals, timezone-aware timestamps, unsigned integers, map key types, and NaN/Infinity floats diverge subtly across languages unless specified in the contract.
+- **Single source of schema truth:** Storing schemas inside one service's source repository forces other language teams to reverse-engineer production payloads.
+- **Operational debuggability:** On-call engineers must be able to inspect wire payloads during incidents using standard CLI decoders or descriptor-aware tools.
+- **Trust boundaries:** Language-native formats terminate at single-process, single-trust boundaries ([3.1 Trust boundaries](trust-boundaries.md)).
 
-This matters because a library that is excellent in one runtime is useless if another required language has no maintained implementation.
+### Common Failure Modes
+
+| Mistake | System Consequence |
+|---|---|
+| **Local leaderboard optimization** | Each service picks its fastest local library; no shared wire contract exists |
+| **Cross-language benchmark crowning** | Comparing a Rust codec against a Python codec to argue for rewriting a language stack or changing the wire standard |
+| **Single-language round-trip treated as interop** | Passing encode-then-decode inside one runtime hides cross-language defaults, packing, or signedness bugs |
+| **Undocumented JSON dialects** | Services silently disagree on camelCase vs. snake_case, integer-as-string encoding, or missing vs. `null` fields |
 
 ---
 
-## Failure modes
+## Interoperability Matrix Verification
 
-| Mistake | Consequence |
-|---------|-------------|
-| **Local leaderboard** | Each team’s fastest library; no shared byte format |
-| **Native “just for us”** | A second language cannot join the path |
-| **Undocumented JSON dialects** | Field renames break silently |
-| **Number of contracts grows with the number of teams** | A quadratic mess of translators |
-| **Cross-language rank from the suite** | “Rust won, rewrite the company” |
-| **Schema lives in only one repository** | Other languages reverse-engineer production traffic |
+This benchmark suite computes `mean_fidelity` by encoding and decoding a test payload **within one language runner**. That check confirms local round-trip correctness; it does **not** prove specification compliance (see [Compliance](../../dashboard/index.html#compliance)) and does **not** test interoperability between two different languages.
 
-For example, suppose every team invents its own JSON field names for the “same” event. You no longer have one shared set of systems. You have several products that only look related.
+Before tuning performance on any multi-language boundary, implement an **$m \times m$ interoperability matrix** in CI (detailed for Protocol Buffers in [4.7 Cross-language fidelity](../401/protobuf-cross-language-fidelity.md)):
 
----
+1. **Freeze canonical test vectors:** Author shared golden logical records covering boundary values (zero/empty defaults, large 64-bit integers, non-ASCII UTF-8 strings, optional/null fields, nested maps, and enums).
+2. **Run the full $m \times m$ matrix:** Encode every vector in each language $L_i$ and decode the raw bytes in every language $L_j$ ($1 \le i, j \le m$). Assert **logical equality** on every cell.
+3. **Specify bit-identity only when needed:** Assert byte-for-byte identity only when payloads are cryptographically signed or content-addressed (note that most formats—including Protocol Buffers and JSON—are not canonical without explicit deterministic rules).[^1]
+4. **Pin concrete library versions:** Once the matrix passes, consult the per-language Dashboard under the fixed standard to shortlist and pin implementations in each language's lockfile.
 
-## Real-world sketch
-
-Platform engineering standardizes **internal RPC on Protobuf**. It standardizes **public HTTP on JSON**. Python, Go, and TypeScript services generate stubs from the same protos. Public gateways map JSON to Protobuf at the edge with explicit field tests.
-
-A team proposes MessagePack everywhere because it looked strong on one language Dashboard slice. Review asks hard questions. Do all six languages have maintained libraries? Is there a single evolution story? Is there a debug story? Without that, MessagePack becomes another dialect. The suite still helps each language pick **which Protobuf or JSON library** to use.
+**Limits of this benchmark suite:** Single-language benchmark runners do not measure organizational costs of maintaining a shared IDL repository, gateway translation ownership, or full cross-language type-edge compliance.
 
 ---
 
-## In this suite
+## Exercises
 
-| Resource | Role |
-|----------|------|
-| Multi-language Dashboard | Evidence for **library choice per language** under one family |
-| [Families](../../analysis/families.md) | Shared family vocabulary |
-| Shared `schemas/` (for example `.proto` files) where present | Example of one contract, many benchmark runners |
-| [Using this suite](using-this-suite.md) | Never crown cross-language winners |
+1. **Precision mismatch across runtimes:** A Go service serializes 64-bit snowflake order IDs (`int64`) as JSON numbers and sends them to a TypeScript browser client using `JSON.parse`. What failure occurs, and how should the cross-language contract prevent it?
 
-A format that appears in **many** language overviews is a candidate for multi-language (polyglot) adoption. Absence in one language is an **integration risk**. It is not a moral failing of that language.
+??? note "Solution"
+    JavaScript's IEEE 754 double-precision `Number` represents integers exactly only up to $2^{53} - 1$ (`9007199254740991`). Larger 64-bit IDs silently round to the nearest representable float, corrupting order lookups. The cross-language contract must encode 64-bit identifiers as **JSON strings** (following the Proto3 JSON mapping specification[^2]) and validate the pattern in the OpenAPI/JSON Schema and the Go $\leftrightarrow$ TypeScript interop matrix.
 
----
+2. **Local round-trip vs. cross-language matrix:** Both a Python serializer and a Rust serializer achieve `mean_fidelity = 1.0` in this benchmark suite on MessagePack. Why is that insufficient to guarantee they interoperate in production?
 
-## Experiments
+??? note "Solution"
+    `mean_fidelity = 1.0` verifies only that Python decodes Python's output and Rust decodes Rust's output. The two libraries may still disagree on wire conventions—for example, encoding structs as positional arrays vs. string-keyed maps, representing timestamps as extension types vs. epoch integers, or distinguishing `bin` from `str`—causing cross-language decode failures unless an explicit $2 \times 2$ interop matrix tests them together.
 
-**Question:** Can one **product contract** interoperate across the languages we ship? Where does cross-language agreement break?
+3. **Gateway boundary design:** An organization has external mobile/web clients plus internal Go, Rust, and Python services. Should it standardize on one format everywhere or run two formats? Justify the boundary placement.
 
-### Setup
-
-1. List languages on the boundary. List the candidate contract. One example is Protobuf plus a shared `.proto`.
-2. Prepare shared golden fixtures with logical values.
-3. Plan an encode and decode matrix. See [401 cross-language fidelity](../401/protobuf-cross-language-fidelity.md) if you use Protobuf.
-
-### Procedure
-
-1. Freeze the schema and fixture values.
-2. Encode in each language. Decode in every other. Assert **logical** equality.
-3. Optionally assert bit-identity. Document whether you require it.
-4. Run per-language suite fidelity for benchmark runner round-trip. That check is local only.
-5. Record footguns. Examples include defaults, packed repeated fields, and renames.
-
-### Decision rule
-
-- Any required language pair that fails logical interoperability needs a fix. Fix the contract or the implementation before performance tuning.
-- The product choice of family stays fixed. Suite multi-language speed ranks do **not** pick the contract for the set of systems the organization runs.
+??? note "Solution"
+    Run **two deliberately owned contracts** separated at the API gateway: **JSON + OpenAPI** on the external edge (for browser/partner ergonomics and `curl` debuggability) and **Protocol Buffers + shared `.proto` repository** on the internal Go/Rust/Python mesh (for strict typing, density, and automated breaking-change checks). Because translation occurs in one tested gateway layer rather than ad hoc between internal services, complexity remains bounded at $O(1)$ edge translators instead of $O(m^2)$.
 
 ---
 
-## Metrics
+## References
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Matrix pass rate** (encode in A, decode in B) | **Primary** |
-| Logical field equality | The fields you care about match after a cross-language decode |
-| Bit-identical encode (optional) | Relevant only for caching or signing |
-| Per-language `mean_fidelity` | One-language fixture round trip. Not specification compliance. |
-| Schema and version alignment | Drift detector |
-| Per-language latency (Dashboard) | Capacity planning **after** interop works |
-
-**Conclusion style:** “Protobuf contract is green on the Python/Go/Rust matrix; pin `prost` and `protobuf` versions.”
-
----
-
-## What this suite cannot tell you
-
-- The political cost of mandating one shared IDL code repository for many projects.
-- Whether your gateway team can own JSON-to-binary translation.
-- The full matrix of field agreement across all languages. You must design tests that check every language implements the same contract. A one-language fixture round trip does not do that, and it does not prove specification compliance.
-- Vendor lock-in and staffing cost for exotic codecs.
-
----
-
-## Common mistakes
-
-- Saying “we’ll translate later” without an owner.
-- Using different field names per language for the “same” event.
-- Treating suite cross-language plots as architecture mandates. Those plots may not exist, and they still would not be mandates.
-
----
-
-## Key takeaways
-
-- Multi-language (polyglot) systems need **one contract per boundary**. They do not need one library for the whole company.
-- Portable formats, a multi-language ecosystem, and an evolution process beat single-language speed.
-- The suite picks implementations **inside** a language after the contract is fixed.
-- Dual stacks at edges are fine when **owned**. Accidental dual stacks are debt.
-- Native codecs stop at the trust boundary. See [trust boundaries](trust-boundaries.md).
+[^1]: Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 4 (*Encoding and Evolution*). O'Reilly Media.
+[^2]: Protocol Buffers Documentation. *Proto3 JSON Mapping*. <https://protobuf.dev/programming-guides/json/>

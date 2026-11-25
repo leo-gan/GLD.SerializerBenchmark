@@ -1,166 +1,92 @@
-# Untrusted input and parser risk
+# 3.2 Untrusted Input, Parser Risk, and Payload Surfaces
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/untrusted_input.ipynb)
 
-## Problem
+## Problem Statement
 
-Every public or multi-tenant deserialize path accepts **attacker-controlled bytes**. In plain language: if someone outside your process can choose what you parse, you should assume those bytes may be hostile.
+Any deserialization path reachable by external clients, partners, or multi-tenant workloads processes **attacker-controlled bytes**. Switching away from language-native serializers ([3.1 Trust boundaries](trust-boundaries.md)) eliminates arbitrary object-instantiation code execution, yet leaves two serious production risk classes:
 
-The classic failures are not “the codec was a bit slow.” They are:
-
-- **Remote code execution** through native deserializers. That means running attacker code on your machine.
-- **Resource exhaustion** through nested or huge payloads. That means using up memory or CPU until the service fails.
-- **Logic bugs** from unvalidated schemaless data. That means accepting a shape that your business code never expected.
-
-Teams often discover these risks after an incident. They then retrofit limits that should have been part of the original boundary design. This page is the operational playbook. The goal is that retrofit is not your first lesson.
+1. **Parser resource exhaustion and logic bugs:** Hostile portable payloads can trigger stack overflow, memory exhaustion, CPU algorithmic worst cases, or type-confusion bugs before business validation ever executes.
+2. **Cleartext payload leakage across secondary surfaces:** Transport encryption (TLS) protects bytes only in flight. Once serialized or logged, sensitive credentials and personally identifiable information (PII) routinely leak into application logs, APM traces, dead-letter queues (DLQs), and crash dumps.
 
 ---
 
-## Short answer
+## Defensive Parsing Controls
 
-Assume untrusted input is **hostile**. Prefer **portable pure-data formats** with explicit validation at the trust boundary. See [trust boundaries](trust-boundaries.md). A **portable pure-data format** encodes values and structure. It does not have the power to reconstruct arbitrary program types. It also does not run code during parse.
+!!! note "Definition: Pure-Data Portable Format"
+    A **pure-data portable format** encodes values and nested containers without invoking runtime constructors, class loaders, or virtual-machine opcodes during decode. Even pure-data parsers remain attack surfaces requiring explicit resource bounds.
 
-Enforce **maximum body size, nesting depth, and collection cardinality** before or during parse. In other words, refuse messages that are too large. Refuse messages that are nested too deep. Refuse messages that contain enormous arrays or maps.
+Enforce resource limits **prior to or streaming during parse**—rejecting an oversized message only after allocating a full object graph still pays the denial-of-service cost.[^1]
 
-Never run language-native deserialize on untrusted bytes. That ban covers pickle, Java serialization, unsafe YAML load, and legacy binary formatters. For zero-copy layouts, **verify** the buffer before field access. See 201 [zero-copy](../201/zero-copy.md). Suite speed numbers do not measure adversarial robustness.
+| Threat Vector | Typical Mechanism | Required Control |
+|---|---|---|
+| **Code execution (RCE)** | `pickle`, Java `ObjectInputStream`, unsafe YAML `load`, legacy `.NET BinaryFormatter` | Ban native deserializers on untrusted or multi-tenant paths; use safe loaders (`safe_load`) |
+| **Expansion / decompression bombs** | XML DTD entity expansion (*billion laughs*); compressed payloads expanding to gigabytes | Disable XML DTD/external entities; cap **decompressed** byte length during streaming inflate |
+| **Deep nesting / stack overflow** | Thousands of nested `[` or `{` tokens in JSON, CBOR, or MessagePack; nested Protobuf submessages | Configure strict maximum recursion/nesting depth (e.g., 32–64 levels) |
+| **Allocation storms** | Millions of tiny keys/elements or hash-collision keys inside a single valid body | Cap total body size, collection cardinality, and string length; use collision-resistant hash tables |
+| **Type confusion / duplicate keys** | Ambiguous JSON duplicate keys (`{"role":"user","role":"admin"}`), numeric-vs-string coercion | Enforce strict schema validation at ingress; reject duplicate object keys where parsers diverge[^2] |
+| **Unverified zero-copy offsets** | Crafted relative offsets in FlatBuffers / Cap'n Proto buffers | Execute the format's structural verifier (`VerifyBuffer`) unconditionally before field access[^3] |
 
-This page assumes the security notes from the 101 engineering lens. Here we own the **operational playbook**.
-
----
-
-## Constraints that matter
-
-| Control | Why it matters |
-|---------|----------------|
-| **Who can send bytes?** | Internet clients, partners, internal multi-tenant callers, or only the same process |
-| **Deserializer power** | Can the format reconstruct arbitrary types and code, or only pure data? |
-| **Resource budget** | CPU, memory, and wall-clock time allowed per request |
-| **Validation layer** | Schema checks, typed models, allowlists of accepted shapes |
-| **Logging of payloads** | Captured bodies create cost and leak risk; see [payload surfaces](payload-surfaces.md) |
-
-This matters because the “who” question changes the whole design. A parser that is fine for trusted same-process checkpoints is not fine for a public HTTP body.
+Authentication alone does not remove parser risk: an authenticated user or compromised internal caller can still send malformed nesting bombs. Enforce size and depth limits at both the API gateway *and* the service parser so sidecars or internal admin routes cannot bypass edge guards.
 
 ---
 
-## Decision frame
+## Secrets, PII, and Payload Surfaces {#payload-surfaces}
 
-```text
-  Untrusted producer?
-    no  → still enforce size limits; the written security assumptions may be weaker
-    yes → portable format + hard limits + validation
-           never native deserialize
-```
+Every serialization step creates an artifact that downstream infrastructure can inspect, copy, or retain. Format choice (JSON vs. binary) changes casual readability, **not** data-protection obligations—binary traffic is routinely decoded into JSON by observability pipelines and error handlers.
 
-Even when the producer is trusted, size limits remain a good default. When the producer is untrusted, portable formats are mandatory. Hard resource caps are mandatory. Validation is mandatory.
+| Data Classification | Handling Policy Across Serialized Surfaces |
+|---|---|
+| **Credentials and secrets** (passwords, API keys, private keys) | Never embed in durable business events, logs, or caches; use short-lived scoped tokens at auth edges only |
+| **Regulated PII** (names, emails, government IDs, payment data) | Minimize fields in payloads; tokenize or encrypt sensitive attributes; enforce explicit retention TTLs |
+| **Internal domain identifiers** (order IDs, correlation IDs) | Safe for structured logs and tracing; prefer logging IDs and error codes over full message bodies |
+| **Diagnostic payload captures** | Disabled by default; require explicit opt-in sampling, field-level allowlist redaction, access control, and short TTL |
 
-| Risk class | Typical vectors | Mitigations |
-|------------|-----------------|-------------|
-| **Code execution** | pickle, Java serialization, gadget chains, unsafe YAML | Ban these on the boundary; accept pure data only |
-| **Expansion and denial of service (DoS)** | Entity expansion, nested bombs, huge arrays | Disable dangerous features; enforce depth and size caps |
-| **Allocation storms** | Many small objects created from one message | Caps; streaming parsers where appropriate |
-| **Type confusion** | JSON number versus string; duplicate keys | Schema or typed decode; strict parsers |
-| **Unverified zero-copy** | Crafted offsets into a buffer | Run a verifier before use |
+### Common Secondary Leakage Sinks
 
-**Denial of service (DoS)** means making a system unavailable by exhausting its resources. A nested “bomb” is a tiny message that expands into a huge structure during parse.
+- **Error-path logging:** Enabling "log full decoded payload on parse/validation failure" during debugging floods SIEM and log aggregators with PII whenever error rates spike.
+- **Dead-letter queues (DLQs) and support exports:** Poison messages quarantined for investigation retain raw bodies; restrict DLQ access controls and prohibit copying production payloads into tickets or git test suites.
+- **Metrics labels and APM breadcrumbs:** Embedding raw user identifiers or request bodies into telemetry tags bypasses body-level redaction filters.
 
 ---
 
-## Failure modes
+## Verification Checklist and Benchmark Limits
 
-| Mistake | Outcome |
-|---------|---------|
-| Treating “internal network” as fully trusted | Lateral movement inside the network becomes remote code execution |
-| Putting limits only at the gateway | A sidecar or admin path bypasses them |
-| Validating only after building full language objects in memory | You already paid the denial-of-service cost |
-| Never running fuzz tests | Edge cases ship straight to production |
-| Choosing a codec by Dashboard numbers alone | A fast but unsafe path wins the architecture decision record |
+Before optimizing codec speed on any external or multi-tenant boundary, verify five gates:
 
-For example, suppose validation runs only after you have already built a giant object tree in memory. A malicious payload has already hurt you. That is true even if you eventually reject it.
+1. **Format allowlist:** Confirm zero native deserializers or unsafe YAML/XML features are reachable.
+2. **Hard parser caps:** Confirm explicit maximum body size, nesting depth, array/map cardinality, and decompressed length are configured inside the service parser itself.
+3. **Adversarial rejection test:** Feed oversized, deeply nested, truncated, and duplicate-key inputs and verify fast, bounded-memory rejection (consider continuous fuzzing on C/C++ parsers).
+4. **Zero-copy verification:** If FlatBuffers or Cap'n Proto is used, verify that corrupt buffers fail closed in the verifier.
+5. **Sink redaction audit:** Trigger an intentional deserialization error and verify that logs, APM traces, metrics, and DLQ viewers emit correlation IDs rather than raw secrets or PII.
 
----
+### What This Benchmark Suite Cannot Answer
 
-## Real-world sketch
-
-An internal API accepts MessagePack from other services. Later it also accepts MessagePack from a partner VPN. There is no maximum nesting depth. A nested map bomb locks workers. Separately, a debug endpoint still accepts pickle “for support tools.”
-
-The pickle path is the incident class that ends careers. The depth bomb is the one that ends reliability targets (*service-level objectives*, or SLOs). One example is “99% of requests finish within 200 ms.” Both failures are **boundary design** failures. They are not “we picked the wrong MessagePack library.”
+The [Dashboard](../../dashboard/index.html) measures throughput and size on **benign, well-formed data types**. It does not run adversarial fuzz campaigns, track library CVE histories, verify WAF/gateway rules, or audit legal compliance regimes (GDPR, HIPAA, PCI-DSS). Use [Dashboard · Compliance](../../dashboard/index.html#compliance) to check how a library handles malformed edge cases defined in published specifications (such as duplicate JSON keys or truncated varints).
 
 ---
 
-## In this suite
+## Exercises
 
-| Resource | Role |
-|----------|------|
-| Language **Overview** | Notes on native codecs and fidelity—not security proofs |
-| **Dashboard** | Encode and decode cost under **benign** fixtures |
-| [Using this suite](using-this-suite.md) | Why you must not treat speed as safety |
-| [Trust boundaries](trust-boundaries.md) | Portable versus native policy |
+1. **Duplicate-key discrepancy:** An API gateway written in Go parses `{"amount": 100, "amount": 1}` using last-key-wins semantics and approves a \$1 purchase, while a downstream Python risk engine parses the same raw JSON body with first-key-wins behavior. Why does RFC 8259 fail to guarantee identical behavior here, and how should the gateway prevent this class of bug?
 
-This benchmark runner does **not** run adversarial fuzz campaigns. It does not claim parser security. **Fuzzing** means feeding large numbers of random or semi-random inputs to find crashes and edge cases.
+??? note "Solution"
+    RFC 8259 §4 states only that member names *should* be unique and explicitly notes that parser behavior on duplicate names is unpredictable.[^2] To eliminate parser differentials, configure the ingress gateway to reject duplicate keys strictly (or re-serialize the validated canonical struct before forwarding downstream so every internal service sees one unambiguous payload).
 
----
+2. **Post-parse validation flaw:** A service enforces a 10 MB HTTP body limit and validates decoded JSON against a JSON Schema, yet a 500 KB JSON payload consisting of `[[[[...` (200,000 nested arrays) crashes worker processes with a stack overflow. Why did the existing controls fail, and what single control fixes it?
 
-## Experiments
+??? note "Solution"
+    The body passed the 10 MB byte cap, and the JSON parser ran recursively *before* schema validation could execute. Enforcing a strict **maximum nesting depth** (e.g., depth $\le 64$) inside the JSON parser itself—or using an iterative parser with an explicit depth cap—terminates decoding in microseconds with bounded stack space.
 
-**Question:** For this deserialize path, are **hostile-payload controls** sufficient, and is the codec class acceptable?
+3. **Binary error-log leak:** After migrating internal billing RPCs from JSON to Protocol Buffers, a team adds a helper that converts failed protobuf messages to JSON and writes them to application logs for easier debugging. Why is this a security regression?
 
-### Setup
-
-1. Identify every public or multi-tenant parse entry point.
-2. Note the codec (JSON, Protobuf, native, and so on) and the maximum request size at the edge.
-3. Gather parser settings. Include depth limits and document size limits. Note known CVE posture. **CVE** means common vulnerabilities and exposures. Those are published security issues in software.
-
-### Procedure
-
-1. Walk a threat checklist. Cover code execution through native deserialize. Cover expansion bombs. Cover huge allocations. Cover deeply nested structures.
-2. Verify **hard limits** on body size, depth, and collection cardinality before or during parse.
-3. Confirm that native, pickle, and Java serialization paths are **banned** on untrusted routes.
-4. Optionally fuzz or inject adversarial fixtures. Watch process memory and time-to-failure.
-5. Use the Dashboard only for performance among **safe** portable codecs.
-
-### Decision rule
-
-- Any untrusted path with native deserialize is a **fail**. Any untrusted path with no size or depth limits is also a **fail**. Fix that before optimizing.
-- Among safe codecs, use the implementation-variance and latency experiments as usual.
+??? note "Solution"
+    TLS and binary wire encoding do not redact sensitive fields. Converting raw protobuf messages containing PII or payment tokens into cleartext error logs creates an unredacted secondary storage surface in the logging/SIEM pipeline. Log structured error codes, field tags, and correlation IDs instead, or apply an explicit field-level redaction allowlist.
 
 ---
 
-## Metrics
+## References
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Max body size enforced** | **Primary** control metric |
-| **Max depth and array size** | Expansion and stack risk |
-| **Time and memory to reject** huge or nested payloads | Denial-of-service resistance |
-| Parser error rate on fuzz inputs | Robustness signal |
-| CVE and advisory state of the library | Eligibility filter |
-| Suite speed and size | Secondary after the safety pass |
-| `mean_fidelity` | Fixture round trip is still required. Not a security proof or specification compliance. |
-
-**Conclusion style:** “The edge enforces 1 MB and depth 32; we use JSON library X; native deserialize is banned.”
-
----
-
-## What this suite cannot tell you
-
-- Whether a library is free of known CVEs.
-- The correct absolute limits for *your* memory budget.
-- How effective your WAF rules or service-mesh policies are. A **WAF** is a web application firewall. It is a filter in front of HTTP services.
-- Whether gadgets exist in *your* dependency graph.
-
----
-
-## Common mistakes
-
-- Enabling “convenient” native deserialize behind authentication only. Authentication answers “who are you?” It does not make hostile bytes safe to execute as code.
-- Logging full hostile bodies. That amplifies cost and leak risk.
-- Skipping verification on FlatBuffers-class buffers for speed.
-
----
-
-## Key takeaways
-
-- Deserialize is an **attack surface**. Design limits first.
-- Portable formats plus validation plus size and depth caps is the default for untrusted bytes.
-- Native deserialize is a special case of “trusted only.”
-- Dashboard numbers answer cost under honest fixtures. They do not answer adversarial hardness.
+[^1]: OWASP Foundation. *Deserialization Cheat Sheet* and *REST Security Cheat Sheet*. <https://cheatsheetseries.owasp.org/>
+[^2]: Bray, T. (Ed.). (2017). *The JavaScript Object Notation (JSON) Data Interchange Format* (§4 Objects — Duplicate Names). IETF RFC 8259. <https://www.rfc-editor.org/rfc/rfc8259#section-4>
+[^3]: Google. *FlatBuffers Security and Buffer Verification*. <https://flatbuffers.dev/internals/>

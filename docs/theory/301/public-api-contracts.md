@@ -1,141 +1,94 @@
-# Public API contracts (JSON + schema layers)
+# 3.4 Public API Contracts and Versioning
 
-## Problem
+## Problem Statement
 
-JSON’s flexibility is a gift for browsers and integrators. It is also a curse for accidental breakage. Fields appear without notice. Types drift. One example is `"1"` versus `1`. Renames ship without a version bump. Saying “we use JSON” is not a contract.
+Public HTTP APIs standardize on JSON because browsers, mobile SDKs, proxies, and external integrators can inspect and consume it with minimal friction. That wire flexibility creates an operational hazard: without a formal contract and versioning discipline, fields drift silently (`"1"` vs. `1`), breaking renames ship without notice, and external clients experience outages even while server unit tests remain green.
 
-A **contract** is a machine-checkable agreement about shapes, types, and allowed changes. Public APIs need an **external schema and process**. That process should be as strict as IDL cultures. The artifacts are different. In other words, text on the wire does not remove the need for governance.
-
----
-
-## Short answer
-
-For public or cross-organization HTTP APIs, pair JSON with a **published contract**. Use OpenAPI and/or JSON Schema, or an equivalent. Add server-side validation. Add consumer-driven or contract tests. Add a versioning policy. See [versioning in the wild](versioning-in-the-wild.md).
-
-- **OpenAPI** is a widely used document format. It describes HTTP endpoints, parameters, and body shapes.
-- **JSON Schema** is a vocabulary for describing what a JSON document is allowed to contain.
-- **Server-side validation** means the server rejects illegal bodies early. That happens before business logic runs.
-
-Choose JSON libraries for performance and correctness. See [implementation variance](implementation-variance.md). Do not skip the contract layer because the bytes happen to be text. A binary dual stack is optional. It must be earned. See [case: public REST](case-public-rest-api.md).
+"Using JSON" specifies only syntax—not a product contract. External APIs require an **explicit machine-readable specification**, **runtime enforcement**, and a **versioned migration playbook** whenever non-additive changes become unavoidable.
 
 ---
 
-## Constraints that matter
+## Hardening a Public JSON Contract
 
-| Layer | Job |
-|-------|-----|
-| **Wire** | JSON bodies (or dual content types when a second encoding exists) |
-| **Contract document** | OpenAPI, JSON Schema, or Protobuf if you offer a dual stack |
-| **Runtime validation** | Reject illegal bodies early, before business logic runs |
-| **Tests** | Provider checks and consumer-driven checks |
-| **Process** | Review, deprecation windows, and a changelog |
+A durable public contract combines five independent layers:
 
-This matters because a beautiful OpenAPI file that no one validates against is documentation theater. It is not a contract.
+| Layer | Responsibility | Failure Mode if Omitted |
+|---|---|---|
+| **Specification** | Machine-readable OpenAPI 3 / JSON Schema document[^1][^2] | Documentation drifts from reality; clients guess field types and nullability |
+| **Runtime validation** | Validate incoming requests (and optionally contract-test responses) before business logic runs | Invalid shapes trigger downstream crashes or silent type coercion |
+| **Contract tests in CI** | Automated provider/consumer tests and breaking-change linters (e.g., OpenAPI diff) | Accidental field removals or type changes merge undetected |
+| **Client generation** | Generate typed SDKs or shared types directly from the specification | Per-client drift across web, iOS, Android, and partner integrations |
+| **Lifecycle policy** | Published deprecation windows, changelogs, and explicit versioning surface | Surprise partner outages and permanent legacy maintenance debt |
 
----
-
-## Decision frame
-
-| Need | Action |
-|------|--------|
-| Third-party integrators | Publish OpenAPI; keep URLs stable; write a deprecation policy |
-| Type-safe clients | Generate clients from OpenAPI, or offer dual Protobuf for selected clients |
-| Rapid internal-only iteration | Still validate; shorter deprecation windows may be acceptable |
-| “Schemaless for agility” | Accept silent client breakage—or stop claiming the API is stable |
-
-For example, suppose partner companies build against your API. A field rename without a version is an outage for them. That is true even if your server still “works.”
+Keep wire contract governance cleanly separated from library selection: once the JSON schema is enforced in CI, you can swap server-side JSON implementations (guided by the language's JSON [Dashboard](../../dashboard/index.html) slice) without breaking external clients. Offering a dual binary content type (such as optional Protocol Buffers via `Accept` negotiation) is an additive product commitment—never a substitute for JSON contract governance ([Case 1: Public REST API](case-public-rest-api.md)).
 
 ---
 
-## Failure modes
+## Versioning Strategies in Production {#versioning-strategies}
 
-| Mistake | Outcome |
-|---------|---------|
-| OpenAPI goes stale relative to the server | Documentation lies; clients fail in surprising ways |
-| Validation only in one gateway | Alternate entry points drift from the contract |
-| Everything is optional | There is no real contract |
-| Breaking change without a version | Integrator outages |
-| PII in documentation examples | Documentation becomes a leak surface ([payload surfaces](payload-surfaces.md)) |
+Prefer **additive, backward-compatible evolution** (new optional fields with documented defaults; consumers ignoring unknown keys) for all routine changes. When a breaking change is unavoidable—such as altering a field's type (`amount` float → `amount_cents` integer) or changing domain semantics—apply an **expand/contract** migration rather than an atomic cutover.[^3]
 
----
+!!! note "Definition: Expand/Contract and Kill Criteria"
+    - **Expand/contract** executes a breaking change across three distinct releases: *(1)* **expand** the schema and server to support both old and new representations, *(2)* **migrate** clients/data via dual-read or dual-write, and *(3)* **contract** by retiring the old representation.
+    - **Kill criteria** are measurable telemetry thresholds that authorize deleting the legacy path (for example, *"v1 traffic below 0.5% for 14 consecutive days with zero active enterprise callers"*).
 
-## Real-world sketch
+### Choosing the Right Migration Tactic
 
-A fintech publishes OpenAPI 3. It generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using the Dashboard. That work does not touch the public contract at all.
+| Change Class | Recommended Playbook | Key Operational Cost |
+|---|---|---|
+| **Field rename** | Dual-write both keys; readers prefer new key; remove old key after kill criteria pass | Temporary payload bloat and dual-write consistency logic |
+| **Type change** (e.g., float → integer cents) | Introduce a new field name/number (`amount_cents`); never overload the existing key | Must ensure idempotent merge rules if both fields can be updated |
+| **Semantic break across a resource** | Explicit version surface: **URL path** (`/v2/orders`) or **media-type header** (`Accept: application/vnd.example.v2+json`)[^4] | Maintaining parallel handlers and documentation during deprecation |
+| **Event-stream breaking change** | Parallel topic/subject (`orders.v2`) with dual-publish bridge until consumer lag drains | Temporary storage and consumer cutover coordination |
+| **Field removal** | Mark deprecated in OpenAPI/changelog, observe client telemetry, gate removal in CI | Breaking unmonitored long-tail mobile or partner versions |
 
-In other words, the contract stayed stable while the implementation improved. That is the separation you want.
+### Common Operational Pitfalls
 
----
-
-## In this suite
-
-| Resource | Role |
-|----------|------|
-| JSON-family **Dashboard** slice | Pick implementations per language |
-| [Families](../../analysis/families.md) | JSON versus other families |
-| [Using this suite](using-this-suite.md) | Fair comparisons inside a family |
+1. **Documentation theater:** Maintaining an OpenAPI file manually without validating server payloads or running CI diff checks against it.
+2. **Dual-write without kill criteria:** Shipping a migration bridge with no usage telemetry or sunset date turns temporary compatibility code into permanent schema debt.
+3. **Dropping `v1` while mobile binaries remain live:** Native mobile clients upgrade over months, not hours; deprecation windows must match real client upgrade curves.
+4. **Inconsistent error surfaces:** Failing to keep error response schemas versioned and redacted ([3.2 Untrusted input and payload surfaces](untrusted-input.md#payload-surfaces)).
 
 ---
 
-## Experiments
+## Contract Audit Checklist and Benchmark Limits
 
-**Question:** Is the public wire **contract** hard enough (schema, OpenAPI, or JSON Schema), and what breaks if we only “use JSON”?
+Before shipping a public API change or swapping a server JSON library:
 
-### Setup
+1. **Verify schema coverage:** Confirm every public endpoint and error body is defined in OpenAPI / JSON Schema and validated at ingress.
+2. **Gate breaking changes in CI:** Run automated schema diffing on pull requests; verify that additive changes pass against archived `v1` client test payloads.
+3. **Instrument legacy traffic before migrating:** For any breaking change, define explicit **version traffic metrics**, **rollback procedure**, and **kill criteria** before starting dual-write.
+4. **Select JSON library within the contract:** Compare RFC 8259-compliant JSON libraries for your server language on the [Dashboard](../../dashboard/index.html) (`Standard: json`) and verify strict edge-case behavior in [Dashboard · Compliance](../../dashboard/index.html#compliance).
 
-1. Collect public endpoints and current docs. Those may be OpenAPI or ad hoc examples.
-2. List client languages and critical fields.
-3. Prepare one proposed additive change and one breaking change.
-
-### Procedure
-
-1. Validate production samples against the published schema. They should pass.
-2. Ship the additive change. Confirm old clients still work.
-3. Attempt the breaking change behind a new version or content type. Confirm the old route is unchanged.
-4. Check error bodies for accidental internal leakage. See [payload surfaces](payload-surfaces.md).
-5. Optionally compare JSON libraries for the server language. Do this **after** the contract exists.
-
-### Decision rule
-
-- No machine-readable contract plus multi-party clients is insufficient. Add a schema before optimizing codecs.
-- Run performance experiments only among codecs that honor the published contract.
+**Limits of this benchmark suite:** The benchmark runner measures codec throughput and size on fixed shapes—it cannot model your client upgrade curve, partner SLA negotiations, or OpenAPI governance workflow.
 
 ---
 
-## Metrics
+## Exercises
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Schema coverage** (percentage of endpoints with a formal schema) | **Primary** |
-| Contract-test pass rate in CI | Enforcement quality |
-| Breaking-change escape rate | Process quality |
-| Client SDK regenerate success | Contract usability |
-| Suite JSON `deser_median_ns` and size | Secondary server cost |
-| `mean_fidelity` | Fixture round trip. Not specification compliance. |
+1. **Float-to-cents migration:** A public billing REST API currently returns `"amount": 19.99` (JSON number) and must migrate to exact integer minor units (`"amount_cents": 1999`, `"currency": "USD"`). Outline an expand/contract plan with concrete kill criteria that avoids breaking existing third-party integrators.
 
-**Conclusion style:** “OpenAPI and JSON Schema are required; breaking changes use content-type versioning.”
+??? note "Solution"
+    1. **Expand:** Add optional `"amount_cents"` and `"currency"` alongside `"amount"` in OpenAPI and server responses (dual-write); accept either form on requests (dual-read) with strict consistency validation if both are provided.
+    2. **Migrate:** Publish deprecation headers (`Deprecation` / `Sunset`) and a changelog notifying integrators; instrument per-client metrics tracking requests still omitting `"amount_cents"` or pinning `v1`.
+    3. **Contract:** Once kill criteria are met (e.g., 0% requests relying on float `"amount"` for 30 days after the announced sunset date, or cutover to `/v2/charges`), retire the legacy `"amount"` field.
 
----
+2. **URL vs. media-type versioning:** Compare `/v2/orders` URL versioning against `Accept: application/vnd.api.v2+json` header versioning for a third-party developer API. What is one advantage and one drawback of each?
 
-## What this suite cannot tell you
+??? note "Solution"
+    - **URL versioning (`/v2/orders`):** *Advantage:* Immediately visible in logs, browser address bars, caching proxies, and simple `curl` calls. *Drawback:* Breaks strict URI permanence when the same underlying resource changes URL across versions.
+    - **Media-type versioning (`Accept` header):** *Advantage:* Preserves canonical resource URIs and supports per-representation negotiation (including optional binary formats). *Drawback:* Harder to inspect casually, easier for misconfigured CDNs/caches to ignore without proper `Vary: Accept` headers, and higher friction for basic clients.
 
-- OpenAPI style-guide politics inside your organization.
-- Whether to use URL versioning versus header versioning.
-- Partner communication reliability agreements (*service-level agreements*).
+3. **Contract vs. implementation separation:** A Python FastAPI service switches its JSON serializer from stdlib `json` to `orjson` while keeping its OpenAPI 3 schema unchanged. Does this require bumping the public API version? What edge cases should still be checked?
 
----
-
-## Common mistakes
-
-- Treating JSON Schema as optional documentation only.
-- Generating OpenAPI from code without review. That creates noise and accidental breaks.
-- Different field names in Android versus web clients “by accident.”
+??? note "Solution"
+    No API version bump is required because the external RFC 8259 JSON contract has not changed. However, verify subtle serializer differences before deployment—such as `NaN`/`Infinity` handling (`orjson` rejects non-standard `NaN` whereas Python `json` allows it by default), datetime/UUID formatting, and float precision—using contract tests and [Dashboard · Compliance](../../dashboard/index.html#compliance).
 
 ---
 
-## Key takeaways
+## References
 
-- Public JSON needs a **hard contract process**. Good intentions are not enough.
-- Validation and tests enforce what prose promises.
-- The suite helps you choose JSON **libraries**. It does not decide whether a contract exists.
-- Dual binary APIs are additive products. They are not a substitute for JSON governance.
+[^1]: OpenAPI Initiative. *OpenAPI Specification (OAS 3.1)*. <https://spec.openapis.org/oas/latest.html>
+[^2]: Wright, A., Andrews, H., Hutton, B., & Dennis, G. (2022). *JSON Schema: A Media Type for Describing JSON Documents*. <https://json-schema.org/specification>
+[^3]: Kleppmann, M. (2017). *Designing Data-Intensive Applications*, Chapter 4. O'Reilly Media.
+[^4]: Fielding, R., Nottingham, M., & Reschke, J. (2022). *HTTP Semantics (§12 Content Negotiation)*. IETF RFC 9110. <https://www.rfc-editor.org/rfc/rfc9110#section-12>

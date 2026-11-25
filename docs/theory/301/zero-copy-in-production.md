@@ -1,144 +1,100 @@
-# Zero-copy in production
+# 3.8 Zero-Copy in Production
 
-## Problem
+## Problem Statement
 
-Marketing claims “no deserialize.” Microbenchmarks look excellent for large, mostly-read messages. **Zero-copy** is also called random-access layout. It means the reader can use fields by interpreting offsets inside a buffer. The reader does not build a full object tree first. Serialization 201 explains the mechanism. This page asks whether the **operations** story is strong enough to ship.
+Microbenchmarks frequently highlight zero-copy (random-access) formats such as FlatBuffers, Cap'n Proto, and `rkyv` with near-zero "deserialization" times because the reader interprets fields directly through byte offsets inside a buffer rather than allocating an object graph (see [2.7 Zero-copy layouts](../201/zero-copy.md)).
 
-Production then hits real friction. Verifiers may be missing. Updates may be painful. Language and tooling may have gaps. Debugging may be hard. The 201 mechanism is sound. Operations decides whether zero-copy ships.
-
----
-
-## Short answer
-
-Use zero-copy layouts when messages are **large or partially read**. Prefer them when messages are mostly **immutable** after they are built. Prefer them when you are willing to pay for **schema tooling plus verification** on untrusted paths. Avoid them for tiny chatty RPCs. Avoid them for heavily mutated documents. Avoid them for teams that require universal text debugging without investment.
-
-Always verify untrusted buffers. A **verifier** checks that offsets and sizes inside the buffer are safe. You must trust that check before you trust field access. Measure with realistic access patterns. Do not measure only competitors that build full language objects in memory on cold data.
-
-This page assumes 201 [zero-copy](../201/zero-copy.md).
+In production, however, the wire mechanism is rarely the deciding factor. Teams encounter mandatory buffer-verification costs on untrusted inputs, awkward bottom-up builder APIs for mutable documents, async buffer-lifetime hazards, and uneven multi-language tooling. Adopting zero-copy is therefore an **operational trade-off**, not a universal upgrade over classic parsing.
 
 ---
 
-## Constraints that matter
+## When Zero-Copy Pays Off: A Cost Model
 
-| Factor | Favors zero-copy | Argues against |
-|--------|------------------|----------------|
-| Message size and sparse reads | Large messages with partial field use | Tiny messages that are fully read |
-| Mutation | Rare rebuilds | Frequent field edits |
-| Languages | Strong code-generation support | Missing or immature bindings |
-| Trust | Verifier runs in the path | “Skip verify for speed” |
-| Debug | Willingness to invest in tools | Must `curl` everything as JSON |
-| Team skill | Comfortable with offsets and builders | Only JSON experience |
+Let a payload contain $F$ total fields, of which a reader inspects only $k \le F$ fields. Compare classic deserialization against a verified zero-copy layout:
 
-In other words, zero-copy is a layout plus a tooling commitment. It is not a free lunch that removes all CPU work.
+$$
+T_{\text{classic}} \approx T_{\text{parse}}(F) + T_{\text{alloc}}(F)
+\qquad\text{vs.}\qquad
+T_{\text{zero-copy}} \approx T_{\text{verify}}(B) + k \cdot T_{\text{offset}}
+$$
 
----
+where $T_{\text{verify}}(B)$ is the cost of validating offsets, bounds, alignment, and recursion depth across a buffer of size $B$, and $T_{\text{offset}}$ is the per-field pointer/vtable lookup cost.
 
-## Decision frame
+- **Sparse reads on large buffers ($k \ll F$, large $B$):** Zero-copy eliminates $T_{\text{alloc}}(F)$ and avoids decoding untouched fields. If the buffer originates inside a verified trust domain (e.g., an immutable memory-mapped asset built offline), $T_{\text{verify}}$ is paid once at load time rather than per read.
+- **Dense reads on small messages ($k \approx F$, small $B$):** If every field is read and copied into application domain objects anyway, $T_{\text{verify}}(B)$ plus vtable indirections often equals or exceeds a fast classic binary decoder (such as `prost` or `speedy`) while sacrificing ergonomic structs and wire compactness.
 
-```text
-  Mostly read-only large messages, and multi-language (polyglot) code generation is OK?
-    yes → evaluate FlatBuffers/Cap’n Proto-class layouts
-    no  → classical schema-driven or JSON/schemaless binary
-  Untrusted input?
-    → verifier is mandatory (non-negotiable)
-```
-
-This matters because skipping verification to “match the blog benchmark” is dangerous. It turns an untrusted buffer into a memory-safety risk.
+| Operational Factor | Favors Zero-Copy | Argues for Classic Decode |
+|---|---|---|
+| **Message size & selectivity** | Large messages ($\ge$ tens of KB) with sparse field reads | Small RPC records where almost all fields are read |
+| **Mutability** | Build once, read many times (config blobs, game state, mmap indexes) | Frequent field edits (CRUD APIs, stateful workflows) |
+| **Trust posture** | Trusted offline artifacts, or budget explicitly includes verifier cost | Untrusted inputs where verifier overhead erases the speed gain |
+| **Cross-language estate** | Mature bindings and verifiers in every participating language | Mixed runtimes with missing or immature bindings |
+| **Buffer ownership** | Clear, synchronous buffer lifetime (mmap, arena, ref-counted slice) | Async handlers holding field references across `.await` or pool reuse |
 
 ---
 
-## Failure modes
+## Non-Negotiable Production Safeguards
 
-| Mistake | Outcome |
-|---------|---------|
-| Skip the verifier | Memory-safety bugs and crashes |
-| Hold views past buffer lifetime | Use-after-free and corruption |
-| Benchmark without verification | Lied-about speed |
-| Force zero-copy for CRUD APIs | Builder pain for no gain |
-| Compare against unvalidated peers | Invalid ranking |
+### 1. Mandatory Verification on Untrusted Boundaries
 
-**CRUD** means create, read, update, delete. Those are typical business APIs that mutate fields often. Those paths often prefer ordinary schemas over offset builders.
+!!! warning "Security Invariant: Never Skip the Verifier"
+    A zero-copy accessor interprets **untrusted integers as memory offsets**. Without a bounds, alignment, and traversal-limit verifier, a crafted payload can trigger out-of-bounds reads, infinite pointer cycles (aliasing attacks), or CPU amplification bombs.[^1][^2]
 
----
+Benchmarking an unverified zero-copy reader against a validating classic parser produces a **category error**: the comparison drops safety from one side of the equation. On any network, queue, or shared-cache boundary, verification time $T_{\text{verify}}$ must be included in both latency budgets and load tests.
 
-## Real-world sketch
+### 2. Buffer Lifetime and Aliasing Discipline
 
-A game-state blob of 100KB or more is read by many services. Each request needs only a few fields. FlatBuffers with verification cuts allocations compared with full JSON trees. An admin API that mutates ten fields per call stays on Protobuf. Both coexist at different boundaries. See [multi-language systems (polyglot estates)](polyglot-estates.md).
+Zero-copy views borrow directly from the backing byte slice:
 
----
+- **No dangling views:** In C/C++ (or unsafe bindings), returning a zero-copy view after a pooled network buffer is recycled causes use-after-free corruption. In Rust, borrow-checker lifetimes prevent dangling pointers statically, often requiring reference-counted buffers (`Bytes` / `Arc<[u8]>`) across async tasks.
+- **Alignment guarantees:** Formats like `rkyv` and Cap'n Proto require aligned backing buffers (e.g., 8- or 16-byte alignment). Reading directly from an unaligned network socket buffer without alignment checks causes undefined behavior or hardware faults on strict-alignment architectures.[^3]
 
-## In this suite
+### 3. Operational Failure Modes
 
-| Resource | Role |
-|----------|------|
-| Language **Overview** | Whether FlatBuffers-class entries are registered |
-| **Dashboard** | Same-language comparison; note validation settings if documented |
-| [Using this suite](using-this-suite.md) | Fair reads on one language, standard, data set, and data type |
-
-Absence from a language benchmark runner means “not measured.” It does not mean “bad technology.”
+| Mistake | Operational Consequence |
+|---|---|
+| **Skipping verification on an "internal" network** | Memory-safety crashes or RCE upon lateral movement or corrupt producer bytes |
+| **Forcing zero-copy onto CRUD APIs** | Complex bottom-up builders and full-buffer rebuilds on every minor field update |
+| **Timing materialization instead of field access** | Copying the entire zero-copy buffer into native structs negates the zero-copy advantage (see [4.10 Rust rkyv vs. speedy](../401/rust-rkyv-vs-speedy.md)) |
+| **Unbounded traversal of overlapping offsets** | DAG-shaped offset aliasing turns a 1 KB FlatBuffer or Cap'n Proto message into gigabytes of logical reads unless traversal limits are enforced[^2] |
 
 ---
 
-## Experiments
+## Evaluation Protocol and Benchmark Limits
 
-**Question:** Does a **zero-copy / random-access** layout pay off in *our* read path after verification cost? Can operations verify safely?
+Before adopting a zero-copy layout in production:
 
-### Setup
+1. **Benchmark the real access pattern:** Measure time-to-first-field or sparse-read latency ($k$ fields read), *not* full object-tree materialization, against a classic decoder baseline.
+2. **Include verification in every untrusted path:** Measure $T_{\text{verify}} + k \cdot T_{\text{offset}}$ with the library's verifier enabled (`FlatBuffers::Verifier`, `bytecheck` for `rkyv`, or Cap'n Proto traversal limits).
+3. **Fault-inject hostile buffers:** Fuzz truncated buffers, out-of-range offsets, misaligned headers, and cyclic/aliased tables; confirm the verifier fails closed with bounded CPU and memory.
+4. **Check suite caveats:** In this benchmark suite, standard decode benchmarks materialize the full payload to verify `mean_fidelity`. Read each language Overview and [4.10 Rust rkyv vs. speedy](../401/rust-rkyv-vs-speedy.md) carefully before interpreting zero-copy rows on the [Dashboard](../../dashboard/index.html).
 
-1. Describe the workload. Mark building full language objects in memory versus field touches or memory-mapped reads.
-2. List candidates. Include classic deserialize. Include FlatBuffers and Cap’n Proto-style layouts. See the language Overview.
-3. Ensure you can run a verifier. Ensure you can fault-inject truncated or corrupt buffers.
-
-### Procedure
-
-1. Measure end-to-end time for the **actual access pattern**. Do not measure only full parse.
-2. Include **verify** step cost on untrusted or untrusted-adjacent paths.
-3. Compare relevant serializers on the Dashboard. Read Overview caveats for fidelity and access patterns.
-4. Chaos-test. Corrupt a buffer and ensure the verifier fails closed.
-5. Decide whether to adopt zero-copy or stick with ordinary deserialize.
-
-### Decision rule
-
-- Adopt only if the access-pattern benchmark wins **including verification**. Operations must also be able to version the schema.
-- Untrusted input without a verifier means do not adopt.
+**Limits of this benchmark suite:** Full round-trip timing penalizes zero-copy layouts that excel at sparse reads on memory-mapped buffers, while single-language runners do not measure builder ergonomics, async buffer-pooling complexity, or cross-language verifier parity.
 
 ---
 
-## Metrics
+## Exercises
 
-| Metric / signal | Role |
-|-----------------|------|
-| **Time-to-first-field / access path latency** | **Primary** benefit metric |
-| Full `deser_median_ns` (classic deserialize) | Baseline |
-| Verify time and fail rate on corrupt input | Safety |
-| `median_size_bytes` | Density tradeoff |
-| Schema rollout complexity | Operations cost |
-| Suite `mean_fidelity` | Fixture round trip under the benchmark runner. Not specification compliance. |
-| Planned `time_access_ns` (if available) | Direct suite support when present |
+1. **Selectivity break-even:** A 120 KB configuration blob contains 500 fields. Classic JSON parsing takes $480\ \mu\text{s}$ and allocates 1,200 heap objects. Verified FlatBuffers access takes $T_{\text{verify}} = 35\ \mu\text{s}$ plus $0.5\ \mu\text{s}$ per accessed field. If each request reads $k = 6$ fields, what is the latency reduction? Would zero-copy still win if the service cached the parsed JSON object once at startup and served 100,000 requests/second from RAM?
 
-**Conclusion style:** “The flat layout wins on field touches with verification OK; adopt it for the cache blob, not the public API.”
+??? note "Solution"
+    - **Per-request read:** Verified FlatBuffers takes $35 + 6 \times 0.5 = 38\ \mu\text{s}$ versus $480\ \mu\text{s}$ ($12.6\times$ faster, zero per-request heap churn).
+    - **Cached once at startup:** If the configuration is parsed once into an immutable in-memory struct and reused for 100,000 req/s, the $480\ \mu\text{s}$ startup parse cost amortizes to zero—ordinary native structs in RAM are faster, simpler, and avoid vtable indirection altogether. Zero-copy wins when buffers arrive or change frequently relative to reads (e.g., per-request blobs or multi-gigabyte memory-mapped assets that exceed process RAM budgets).
 
----
+2. **Aliasing (amplification) attack:** Explain how a 2 KB FlatBuffers or Cap'n Proto buffer can cause a reader that traverses all logical elements to visit gigabytes of data without exceeding buffer bounds, and name the defense.
 
-## What this suite cannot tell you
+??? note "Solution"
+    Because offsets can point to the **same** subtable repeatedly, a short chain of tables where each table stores two offsets to the next table forms a directed acyclic graph (DAG) with $2^d$ logical paths in $O(d)$ bytes. Simple bounds checks pass because every offset lies inside the 2 KB buffer. The defense is a **traversal limit** (counting total visited bytes/tables during verification or reading, as built into Cap'n Proto's `ReaderOptions` and FlatBuffers' verifier table-count cap) that rejects messages exceeding a budget.
 
-- Builder day-to-day ease of use for developers for *your* schema.
-- Cross-language binding maturity beyond what is registered in the suite.
-- Correct buffer ownership rules in *your* async runtime.
+3. **Benchmark interpretation:** On the Rust Dashboard, a benchmark runner decodes `rkyv` by checking the buffer and calling `.deserialize()` into an owned `struct` to verify round-trip fidelity. Why does that timing misrepresent `rkyv`'s intended production advantage?
+
+??? note "Solution"
+    Calling `.deserialize()` forces full heap allocation and copying of every field—eliminating the zero-copy benefit while retaining `rkyv`'s alignment and byte-check overhead. Zero-copy layouts are meant to be read directly via archived references (`&ArchivedT`) without materializing owned copies.
 
 ---
 
-## Common mistakes
+## References
 
-- Equating zero-copy with “no CPU work.”
-- Using suite means without matching the access pattern. Full scan and sparse reads are different.
-- Shipping without a verifier because the network is “internal.”
-
----
-
-## Key takeaways
-
-- Zero-copy is a **layout plus operations** choice. It is not a free lunch.
-- Always verify untrusted data.
-- Prefer zero-copy for large, immutable, sparse-read paths.
-- The mechanism lives in Serialization 201. Production fit lives here.
+[^1]: FlatBuffers Documentation. *Use in C++ / Buffer Verification (`flatbuffers::Verifier`)*. <https://flatbuffers.dev/>
+[^2]: Varda, K. *Cap'n Proto: Security & Amplification Attacks (Traversal Limit)*. <https://capnproto.org/encoding.html>
+[^3]: Koloski, D. *rkyv Architecture and ByteCheck Validation*. <https://rkyv.org/>

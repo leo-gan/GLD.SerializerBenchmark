@@ -1,159 +1,108 @@
-# Latency tails, allocations, and GC
+# 3.10 Latency Tails, GC, and System Compression
 
-## Problem
+## Problem Statement
 
-Mean serialize time looks fine while **p99** collapses under load. **p99** is the 99th-percentile latency. It is the time below which 99% of requests finish. Managed runtimes pay for **allocation rate** with **garbage-collection (GC)** pauses. Native heaps pay with allocator contention and cache misses.
+Two operational surprises recur after teams optimize serialization using microbenchmark averages alone:
 
-**Garbage collection** is automatic reclaiming of memory that a program no longer uses. When the collector runs, application threads may pause. That shows up as rare but large latency spikes. Those spikes are the **tail** of the distribution.
+1. **Tail-latency collapse under concurrency:** A serializer with competitive mean encode/decode latency allocates thousands of short-lived objects per message. Under concurrent production traffic, allocation rate drives garbage-collection (GC) pause clustering in managed runtimes (JVM, .NET, Go, Python, Node.js) or allocator lock contention in native runtimes, violating $p_{99}$ and $p_{99.9}$ service-level objectives (SLOs).
+2. **Blanket compression regressions:** Responding to bandwidth alerts by enabling gzip globally slows down small, low-latency RPCs, wastes CPU double-compressing already compressed media, and masks poorly designed payload shapes.
 
-Codecs that “win” microbenchmarks by allocating per field can lose the reliability target (*service-level objective*; for example, 99% of requests finish within 200 ms). Charts that show only means hide the failure mode. This page teaches you to treat tails and allocations as first-class evidence.
-
----
-
-## Short answer
-
-The average is how the chart stays cheerful. The 99th percentile is how the meeting ends. Treat **allocation and copy behavior** as first-class when choosing among implementations of one standard. See [implementation variance](implementation-variance.md). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point. Validate under concurrency with **your** runtime GC settings and payload shape. See 201 [encode/decode cost](../201/encode-decode-cost.md). Format brand does not determine GC pressure. Implementation and shape do.
-
-In other words: a library that is slightly slower on the mean but allocates far less can win the production latency budget.
+Both failures stem from optimizing an isolated micro-metric—mean codec time or raw payload bytes—instead of modeling **end-to-end system latency and resource budgets**.
 
 ---
 
-## Constraints that matter
+## Tail Latency, Allocations, and GC Pressure
 
-| Factor | Effect on tails |
-|--------|-----------------|
-| Allocations per message | GC work or allocator work |
-| Payload shape | Deep graphs create many objects |
-| Concurrency | Parallel allocate can cluster pauses |
-| Buffer reuse | Lowers steady-state pressure |
-| Native versus managed | Different pause mechanics, same lesson: do not thrash the allocator |
+In distributed services, rare latency spikes dominate user-visible behavior because fan-out requests wait for the slowest sub-request. As Dean and Barroso formalize,[^1] if an individual service call exceeds its $p_{99}$ latency independently with probability $0.01$, then a parent request fanning out across $k$ parallel sub-calls experiences at least one $p_{99}$ tail event with probability:
 
-This matters because two JSON libraries can look similar on mean decode. They can diverge sharply on p99 once worker threads allocate in parallel.
+$$
+P(\text{at least one tail}) = 1 - (1 - 0.01)^k
+$$
 
----
+For $k = 100$ parallel sub-calls, $1 - 0.99^{100} \approx 63.4\%$ of end-user requests encounter a $p_{99}$ stall.
 
-## Decision frame
+Serialization drives tail latency primarily through **memory allocation rate** rather than raw arithmetic throughput (see [2.3 Encode and decode cost](../201/encode-decode-cost.md)):
 
-```text
-  Is the reliability target (SLO) p99 or p999 under load?
-    → inspect allocations, pooling, and streaming options
-    → load-test; do not stop at mean Dashboard numbers
-  Is this a mean-only nightly batch job?
-    → means may suffice; still watch the memory ceiling
-```
+| Mechanism | Managed Runtimes (Java, C#, Go, Python, JS) | Native Runtimes (C, C++, Rust, Zig) |
+|---|---|---|
+| **Per-field heap allocations** | Rapid young-generation fill; frequent minor GCs and promotion into major/stop-the-world pauses | `malloc`/`free` lock contention, heap fragmentation, and CPU cache-line thrashing |
+| **Deep nested object graphs** | Long pointer-chasing mark/sweep phases proportional to live object count | Pointer indirection stalls and poor spatial locality |
+| **Concurrent worker pools** | Synchronized allocation spikes trigger cluster-wide GC pauses | Arena/thread-local cache saturation across cores |
+| **Mitigation** | Typed structs over untyped maps, streaming decoders, reusable byte buffers (`sync.Pool`, `ArrayPool`), pre-sized builders | Arena allocators, borrowed slices (`&str`), fixed-capacity buffers, zero-copy views where appropriate |
 
-| Signal | Action |
-|--------|--------|
-| High allocations per operation in the profiler | Try an alternate library or object reuse |
-| GC pause correlates with traffic | Reduce how chatty decode is |
-| Size looks fine, latency looks bad | Suspect the CPU or allocation path, not the network |
+### Selecting for Tails Rather Than Means
 
-A **profiler** is a tool that shows where a program spends time and memory. Use one before you rewrite a format.
+- **Treat allocation rate as a primary metric:** Two libraries implementing the *same* standard (e.g., two JSON parsers in Go or Python; see [3.9 Implementation variance](using-this-suite.md#implementation-variance)) can show nearly identical mean latency while differing by $5\times$ in allocations per operation—and therefore sharply on $p_{99}$ under concurrency.
+- **Never disable GC in benchmarks:** Measuring managed-language serialization with garbage collection turned off hides the exact pause mechanism that determines production SLO compliance.[^2]
+- **Pool buffers carefully:** Reusing output or scratch buffers cuts allocation pressure, but pooling without strict ownership boundaries introduces data races and cross-request data leaks (serving bytes from request A into request B).
 
 ---
 
-## Failure modes
+## Compression as a System Tier {#compression-as-system-choice}
 
-| Mistake | Outcome |
-|---------|---------|
-| Optimizing mean only | p99 pages at peak traffic |
-| Ignoring payload shape | Microbenchmarks on tiny structs mislead |
-| Cross-language GC comparison | Invalid basis for format choice |
-| Disabling GC in the bench | Fantasy numbers |
-| Pooling without clear ownership | Use-after-free and data races |
+As established in [2.8 Compression is not a format](../201/compression-is-not-a-format.md), general-purpose compression (gzip, zstd, lz4, Brotli) reduces byte redundancy on opaque sequences without providing structure, typing, or schema evolution. In production systems, compression is a **placement and budget trade-off** between CPU and network/storage.
 
-For example, turning GC off in a microbenchmark can make a library look impossibly fast. It teaches nothing about production.
+### End-to-End Latency Trade-Off
 
----
+Compressing a payload of raw size $S$ down to $S' < S$ over a link of effective bandwidth $R$ changes single-hop latency by:
 
-## Real-world sketch
+$$
+\Delta T = T_{\text{comp}}(S) + T_{\text{decomp}}(S) - \frac{S - S'}{R}
+$$
 
-Two JSON libraries show similar mean decode on the Python Dashboard. Production p99 diverges. One builds full `dict` trees. Another binds into typed objects with fewer temporary strings. A load test with production-shaped payloads and workers decides the pin. The mean column alone does not.
+Compression lowers end-to-end latency only when transfer-time savings $(S - S')/R$ exceed the combined compression and decompression CPU time $T_{\text{comp}} + T_{\text{decomp}}$ without pushing either endpoint into CPU queuing saturation. On a fast intra-datacenter link (e.g., $R = 10\text{ Gbps}$), a 500-byte RPC takes less than $0.5\ \mu\text{s}$ to transmit raw—far less than the CPU cost of running gzip—so compressing small internal RPCs almost always *increases* latency. Conversely, compressing a 200 KB verbose JSON payload over a mobile WAN link or writing cold analytical partitions to object storage yields substantial net gains.
 
----
+| Scenario | Recommended Compression Placement | Rationale |
+|---|---|---|
+| **Public HTTP API with large JSON ($\ge 1$–$2\text{ KB}$)** | HTTP `Content-Encoding` (zstd or gzip/Brotli via reverse proxy/CDN) | Saves WAN transfer time; skips tiny responses via minimum-size threshold |
+| **High-QPS internal RPC ($\le 1\text{ KB}$)** | Usually **none**; fix DTO shape or use a compact binary format first | LAN bandwidth is cheap; CPU latency dominates small frames |
+| **Durable event broker (Kafka)** | Batch-level compression (`zstd` or `lz4`) at producer/broker framing[^3] | Amortizes dictionary and header overhead across many events per batch |
+| **Analytical data lake (Parquet/ORC)** | Format-aware per-column dictionary/RLE + page-level `zstd`/`snappy` | Exploits column homogeneity far better than compressing row dumps |
+| **Already-compressed media (JPEG, PNG, MP4, encrypted blobs)** | **Never re-compress** | Incompressible high-entropy bytes waste CPU with near-zero size reduction |
 
-## In this suite
+### Layering Hazards
 
-| Resource | Role |
-|----------|------|
-| **Dashboard** means and ops | Orientation inside one language, standard, data set, and data type |
-| Methodology | Warmup and outliers—read before quoting |
-| Optional memory metrics | If present for a language, use them cautiously |
-| [Using this suite](using-this-suite.md) | Fair slice checklist |
-
-Many published tables emphasize central tendency. **You** still owe a concurrent validation.
+1. **Order with encryption:** Compress *before* encrypting only when security allows; note that compressing attacker-controlled secrets alongside predictable plaintext inside a shared TLS stream enables compression-ratio side-channel attacks (CRIME/BREACH).[^4]
+2. **Double compression:** Compressing at the application layer and again at the reverse proxy or broker burns CPU twice for negligible extra byte savings.
+3. **Suite size comparisons:** Dashboard `median_size_bytes` reflects the codec's native output (uncompressed unless the serializer specifically embeds compression, such as `parquet` vs. `parquet-uncompressed`). Never compare a gzipped JSON payload from production directly against an uncompressed Protobuf Dashboard column.
 
 ---
 
-## Experiments
+## Empirical Measurement Protocol
 
-**Question:** Under production-shaped load, is encode/decode **allocation pressure** (beyond mean time alone) driving p99 risk for candidate libraries on the same standard?
+Because single-threaded microbenchmarks cannot reproduce GC pause clustering or WAN transfer economics, validate production SLOs with a two-stage experiment:
 
-### Setup
+1. **Shortlist inside a fair Dashboard cell:** Use the [Dashboard](../../dashboard/index.html) on your exact `(Language, Standard, Data set, Data type)` to identify 2–3 faithful candidate implementations and check `mean_memory_peak_bytes` where available.
+2. **Profile allocations and concurrency tails:** Run a realistic load test at target QPS and worker concurrency using production-shaped payloads. Capture **$p_{50}$, $p_{95}$, $p_{99}$, and $p_{99.9}$ latency**, **allocations per operation**, and **GC pause time/frequency** (or native allocator CPU share).
+3. **Measure compression end-to-end:** If evaluating compression, sweep payload sizes and codec levels (e.g., `lz4`, `zstd` levels 1–3, `gzip`) while recording end-to-end latency, CPU utilization at both endpoints, and wire bytes saved—and compare against simply removing unused fields or switching to a denser binary standard without compression.
 
-1. Fix **one language**, **one standard**, and **one data type** close to production shape. One example is a deep graph versus dense `Telemetry`. See [using this suite](using-this-suite.md).
-2. Shortlist two or three implementations from the language **Dashboard** slice. Stay on that standard. Note versions.
-3. Confirm the benchmark runner reports useful signals. Or attach wall times yourself. Optionally attach `MemoryPeakBytes` or tracemalloc (Python). Also attach a **process profiler** for allocation rate and GC pauses outside pure means.
-4. Configure a load path that reuses your service concurrency model. Include workers and pool sizes. Do not rely only on single-threaded suite loops.
-
-### Procedure
-
-1. Run the suite slice for candidates. Record mean and median serialize, deserialize, and total time. Record size and fidelity.
-2. If available, record `mean_memory_peak_bytes` or peak allocation columns.
-3. Load-test or profile each candidate on the same fixture at target concurrency. Capture **p99/p999** latency and GC and allocation stats from the runtime.
-4. Optionally disable “fantasy” modes only as a diagnostic. One example is GC off. Do not use that as the decision number.
-5. Apply the decision rule below. Pin library and version.
-
-### Decision rule
-
-- Prefer the candidate that meets the **p99 reliability target** with acceptable allocation and GC behavior. That holds even if mean is slightly worse.
-- Reject candidates that win mean Dashboard ranks but show high allocations per operation. Also reject GC pause clustering under load.
-- Do **not** compare GC metrics across languages to choose a format brand.
+**Limits of this benchmark suite:** Published Dashboard metrics emphasize central tendency and single-runner execution; they do not capture your service's live heap occupancy, GC tuning flags, CDN behavior, TLS offload hardware, or cross-region WAN round-trip times.
 
 ---
 
-## Metrics
+## Exercises
 
-Primary signals for this page’s decision. See also [Metrics catalog](../../analysis/METRICS.md):
+1. **Fan-out tail amplification:** An aggregation service calls $k = 50$ independent shard services in parallel for every user page load. Each shard meets a $p_{99}$ latency of 15 ms, but occasional 120 ms GC pauses occur in the top 1% of requests. What fraction of user page loads will suffer a $\ge 120\text{ ms}$ pause?
 
-| Metric / signal | Where | Role |
-|-----------------|-------|------|
-| **p99 / p999 latency** (serialize, deserialize, or end-to-end) | Load test or APM | **Primary.** Tails are the reliability target. |
-| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Suite analysis | Orientation within language; not sufficient alone |
-| `total_mean_ns`, `avg_ops_per_sec` | Suite | Central tendency; easy to over-trust |
-| `total_p95_ns` / `total_p99_ns` (if computed) | Suite or full metrics profile | Bridge from benchmark runner to tails when available |
-| `total_std_ns` / CV / MAD | Suite | Dispersion hint; not production p99 |
-| `mean_memory_peak_bytes` / `MemoryPeakBytes` | Suite (optional) | Allocation-pressure proxy when present |
-| **Allocations per op / alloc rate** | Profiler | Explains GC pressure |
-| **GC pause time / frequency** | Runtime metrics | Direct tail mechanism on managed runtimes |
-| `median_size_bytes` | Suite | Separates “big payload” from “allocation-heavy codec” |
-| `mean_fidelity` | Suite | Drop a library whose fixture round trip fails. This is not a specification audit. |
+??? note "Solution"
+    Using $P(\text{tail}) = 1 - (1 - 0.01)^{50} = 1 - 0.99^{50} \approx 1 - 0.605 = 39.5\%$. Nearly **40% of user page loads** experience a 120 ms GC stall even though every individual shard satisfies its 99th-percentile target—demonstrating why allocation-induced tails must be controlled per shard.
 
-**Conclusion style:** “Choose library L because p99 and allocation rate under load meet the reliability target; mean Dashboard ranks only shortlisted L.”
+2. **Compression break-even calculation:** A microservice sends a 2 KB JSON response over an internal network with effective throughput $R = 1\text{ Gbps}$ ($125\text{ MB/s}$). Compressing with `gzip` shrinks the payload to 600 bytes ($S - S' = 1{,}400\text{ B}$), at a combined encode + decode CPU cost of $T_{\text{comp}} + T_{\text{decomp}} = 45\ \mu\text{s}$. Does `gzip` reduce or increase single-hop latency? Repeat the calculation for a mobile WAN link at $R = 5\text{ Mbps}$ ($625\text{ KB/s}$).
 
-**Not decision metrics here:** cross-language Dashboard ranks; format brand alone.
+??? note "Solution"
+    - **Internal 1 Gbps link:** Wire savings are $1{,}400\text{ B} / (125 \times 10^6\text{ B/s}) \approx 11.2\ \mu\text{s}$. Net latency change $\Delta T = 45 - 11.2 = +33.8\ \mu\text{s}$ (**slower** with gzip, plus extra CPU load).
+    - **Mobile 5 Mbps link:** Wire savings are $1{,}400\text{ B} / (625 \times 10^3\text{ B/s}) = 2{,}240\ \mu\text{s}$ ($2.24\text{ ms}$). Net latency change $\Delta T = 45 - 2{,}240 = -2{,}195\ \mu\text{s}$ (**$2.2\text{ ms}$ faster** with gzip).
+
+3. **Mean vs. allocation trade-off:** Library A has a decode median of $18\ \mu\text{s}$ and allocates 95 temporary heap objects per message; Library B (same language, same standard) has a decode median of $21\ \mu\text{s}$ and allocates 4 objects per message into a reusable buffer. Under high concurrency on a JVM service with a strict $p_{99}$ SLO, which library is the stronger candidate, and how would you verify?
+
+??? note "Solution"
+    **Library B** is the stronger candidate because $24\times$ fewer allocations per message dramatically lowers allocation rate and GC pause frequency at the cost of only $3\ \mu\text{s}$ on the median. Verify by load-testing both libraries at peak production QPS with realistic live heap occupancy and comparing $p_{99}/p_{99.9}$ latency, GC pause distribution, and CPU overhead.
 
 ---
 
-## What this suite cannot tell you
+## References
 
-- p99 under *your* framework and GC flags.
-- Interaction with other allocators on the host.
-- Whether pooling is safe in *your* concurrency model.
-
----
-
-## Common mistakes
-
-- Claiming “binary always means lower GC” without measuring.
-- Comparing C# and Python pause behavior to choose a format brand.
-- Shipping the fastest mean library that allocates unbounded on hostile input. See [untrusted input](untrusted-input.md).
-
----
-
-## Key takeaways
-
-- Tails track **allocations and shape**. They do not track slogans.
-- Means are necessary for latency reliability targets. They are not sufficient.
-- Pick implementations with runtime behavior in mind.
-- Confirm under load outside the benchmark runner.
+[^1]: Dean, J., & Barroso, L. A. (2013). *The Tail at Scale*. Communications of the ACM, 56(2), 74–80.
+[^2]: Gregg, B. (2020). *Systems Performance: Enterprise and the Cloud* (2nd ed.). Addison-Wesley.
+[^3]: Collet, Y., & Kucherawy, M. (2021). *Zstandard Compression and the `application/zstd` Media Type*. RFC 8878, IETF. <https://www.rfc-editor.org/rfc/rfc8878>
+[^4]: Gluck, Y., Harris, N., & Prado, A. (2013). *BREACH: Reviving the CRIME Attack*. Black Hat USA.

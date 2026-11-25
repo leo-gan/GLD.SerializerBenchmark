@@ -1,4 +1,4 @@
-# Trust Boundaries: Portable vs. Language-Native Formats
+# 3.1 Trust Boundaries: Portable vs. Language-Native Formats
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/trust_boundaries.ipynb)
 

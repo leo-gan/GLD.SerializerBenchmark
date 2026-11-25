@@ -1,124 +1,57 @@
-# Case study: public REST API
+# Case 1: Public REST API
 
-> A multi-client HTTP API must stay inspectable and stable while latency and payload size start to hurt. What serialization approach fits?
-
-This case study puts the earlier articles into one decision. You will practice recommending an approach under fixed constraints. You will name suite evidence you would collect. You will state what still must be measured outside the benchmark runner.
+> **Design brief:** A B2B HTTPS API serves browser applications, mobile apps, and third-party partner integrators with business documents (orders, accounts). Latency and payload size are rising, yet external contracts must remain human-inspectable and stable for years.
 
 ---
 
-## Context and goals
+## Scenario and Hard Constraints
 
-**Setting:** A business-to-business product exposes a versioned REST API over HTTPS. Clients include browser single-page applications, mobile apps, and third-party integrators. Payloads are mostly business documents such as orders and accounts. They are not multi-megabyte bulk extracts. On-call engineers debug production using logs and `curl`.
-
-**REST** here means a conventional HTTP API with resources and JSON-style bodies. Integrators expect that style. **HTTPS** is HTTP over TLS. Transport encryption is already in place.
-
-**Goals:**
-
-- Human-readable request and response bodies at the edge.
-- A stable contract for external integrators over years.
-- Acceptable p95 latency under expected load.
-- Validation of untrusted input.
+- **Clients:** Browser SPAs, iOS/Android apps, and external partner integrations outside the company's release cadence.
+- **Operations:** Support and on-call teams inspect traffic using `curl`, HTTP logs, and API documentation.
+- **Hard constraints:**
+  - External integrators cannot be required to install `protoc` or compile generated binary stubs.
+  - All requests cross an untrusted public boundary: language-native codecs are forbidden ([3.1 Trust boundaries](trust-boundaries.md)), and strict size, depth, and error-redaction controls apply ([3.2 Untrusted input and payload surfaces](untrusted-input.md)).
+  - Bulk historical exports are out of scope for transactional CRUD endpoints ([3.5 Row vs. columnar](row-vs-columnar.md)).
 
 ---
 
-## Non-goals and hard constraints
+## Candidate Options and Trade-Offs
 
-- This is not a private mesh-only RPC. See [internal RPC case](case-internal-rpc.md).
-- This is not an analytics lake. See [row vs columnar](row-vs-columnar.md).
-- You cannot require all clients to run `protoc`.
-- Language-native codecs are forbidden on this boundary. See [trust boundaries](trust-boundaries.md).
-
-In other words, the public surface must remain approachable for partners who only speak HTTP and JSON tooling.
-
----
-
-## Options on the table
-
-| Option | Sketch |
-|--------|--------|
-| **A. JSON only plus schema** | JSON bodies; OpenAPI or JSON Schema; pick strong JSON libraries per language |
-| **B. Dual stack** | JSON as the default; optional Protobuf (or similar) on the same resources via content negotiation |
-| **C. Binary-only public API** | Schema-driven binary or MessagePack as the only public encoding |
-
-**Content negotiation** means the client and server agree on a content type. That often uses `Accept` headers. The same resource can then be returned in more than one encoding.
+| Dimension | A. JSON + Hard Schema Contract | B. Dual Stack (JSON Default + Optional Binary via `Accept`) | C. Binary-Only Public API |
+|---|---|---|---|
+| **Integrator friction** | Lowest (universal tooling) | Medium (two encodings to document and test) | Highest (requires client SDKs/IDL) |
+| **Debugging & support** | Direct (`curl`, readable logs) | Good if JSON stays default | Requires specialized decoder tooling |
+| **Evolution governance** | OpenAPI / JSON Schema + CI diffing | Must version and verify *both* wire surfaces | IDL breaking-change CI |
+| **Performance headroom** | Bounded by server JSON library & payload shape | Binary escape hatch for heavy clients | Best raw size and CPU |
+| **Operational complexity** | Low | Medium (content negotiation, dual contract tests) | Medium–high (support burden) |
 
 ---
 
-## Trade-off matrix
+## Recommended Architecture
 
-| Axis | A. JSON + schema | B. Dual stack | C. Binary-only public |
-|------|------------------|---------------|------------------------|
-| Integrator friction | Lowest | Medium (two modes to support) | Highest |
-| Debug and support | Excellent | Good if JSON remains the default | Weak without specialized tools |
-| Evolution | Process plus schema docs | Two surfaces to version | IDL discipline |
-| Performance headroom | Limited by the JSON implementation | Binary path available for heavy clients | Best potential size and CPU |
-| Operations complexity | Low | Medium (transcoding and tests) | Medium to high |
-| Trust | Portable; still validate | Same | Portable; still validate |
-
-This matters because the “fastest” option on a suite chart is often the worst option for third-party integrators. Those integrators need `curl` and clear docs.
+1. **Default to Option A (JSON + OpenAPI / JSON Schema):** Publish a versioned schema contract enforced in CI ([3.4 Public API contracts and versioning](public-api-contracts.md)), add strict server-side input validation, and compress large responses ($\ge 1$–$2\text{ KB}$) via HTTP `Content-Encoding` ([3.10 System compression](latency-tails-and-gc.md#compression-as-system-choice)).
+2. **Optimize inside JSON first:** Audit DTO bloat and select the best-performing, spec-compliant JSON library for the server language using a controlled Dashboard cell ([3.9 Implementation variance](using-this-suite.md#implementation-variance)).
+3. **Earn Option B via evidence only:** Add `Accept: application/x-protobuf` negotiation *only* if profiling proves JSON serialization still breaks SLOs after library and DTO optimization *and* high-volume clients commit to adopting binary.
+4. **Reject Option C** for general third-party REST APIs.
 
 ---
 
-## Recommendation (under these constraints)
+## Verification Plan and Suite Limits
 
-**Prefer A (JSON plus a hard contract)** as the default public surface. Invest in OpenAPI or JSON Schema, or an equivalent. Invest in server-side validation. Invest in **per-language JSON library** selection using the Dashboard. See [implementation variance](implementation-variance.md).
-
-**Consider B** only when measured evidence shows JSON cannot meet reliability targets (*service-level objectives*) **after** library and payload-shape work. A non-trivial client set must also adopt binary. Own content-type negotiation and tests that check every language implements the same contract for both encodings.
-
-**Reject C** for this public multi-integrator setting. The exception is a product that is explicitly a binary protocol API rather than classic REST for third parties.
+- **Within this suite:** Filter the [Dashboard](../../dashboard/index.html) to `(Server language, JSON, Suite, document/message)` and check [Compliance](../../dashboard/index.html#compliance) to shortlist server JSON libraries.
+- **Outside this suite:** Run CI OpenAPI breaking-change diffs, verify error-response redaction, and load-test server $p_{99}$ latency with HTTP compression and realistic middleware enabled.
+- **What would change the answer:** First-party-only clients under your control reduce friction for Option B; multi-megabyte data exports should move to an asynchronous Parquet/CSV download endpoint rather than replacing the REST default.
 
 ---
 
-## Experiments
+## Discussion Prompts
 
-**Question:** For this public REST API, do we ship **JSON plus a hard contract** only, or a **dual** binary and JSON contract?
+1. Suppose profiling shows JSON encoding accounts for 6% of server CPU while database queries account for 70%. Would adopting Option B (dual-stack Protobuf) be justified?
 
-### Setup
+??? note "Guidance"
+    No. By Amdahl's law, eliminating serialization entirely could improve total CPU by at most 6%, while adding permanent dual-contract testing, content-negotiation routing, and versioning overhead. Optimize database access first.
 
-1. Restate the constraints from the case. Include public clients, versioning, and team skills.
-2. Draft OpenAPI or JSON Schema for the resource.
-3. Optionally name a second content-type candidate. One example is Protobuf. Do this only if clients demand it.
+2. A high-volume partner asks for a single `GET /orders/export` endpoint returning 500,000 orders as JSON. Should you switch the REST API to binary, or isolate that endpoint?
 
-### Procedure
-
-1. Contract-test JSON samples against the schema. Cover old clients and additive changes.
-2. Load-test JSON library options on the server language. See [implementation variance](implementation-variance.md).
-3. If a dual contract is proposed: build an interop matrix for the binary type and a versioning plan.
-4. Compare operations cost of one versus two contracts against the non-goals.
-5. Recommend under the case constraints.
-
-### Decision rule
-
-- Default to a single JSON contract with schema when public multi-language clients dominate.
-- Offer dual encoding only with explicit client need and versioning budget.
-
----
-
-## Metrics
-
-| Metric / signal | Role |
-|-----------------|------|
-| Schema and contract CI pass rate | **Primary** ship gate |
-| Public client break rate on additive changes | Evolution safety |
-| Server 99th-percentile latency (*p99*: 99% of requests are faster than this) on JSON encode and decode | Performance reliability target |
-| Suite JSON metrics (language of the server) | Library shortlist |
-| Dual-contract engineering cost | Go or no-go for a second type |
-| Payload leak checks on errors | Security |
-
-**Conclusion style:** Match the case **Recommendation**. The metrics must support it.
-
----
-
-## What would change the answer
-
-- First-party-only clients under your control make B or internal binary easier.
-- Huge bulk download endpoints want a separate export format. Prefer columnar files. Do not change the CRUD API default for that alone.
-- A regulatory need for non-JSON is a documented exception. Still avoid native codecs.
-
----
-
-## Key takeaways
-
-- Public REST defaults to **JSON plus an explicit contract**. It does not default to the fastest binary on a chart.
-- The suite helps choose **JSON libraries**. It does not decide whether to abandon HTTP JSON wholesale.
-- A dual stack is earned by measurement and client willingness. It is not earned by fashion.
+??? note "Guidance"
+    Isolate the bulk export into an asynchronous job that writes a compressed columnar (Parquet) or NDJSON file to object storage and returns a pre-signed URL. Do not complicate low-latency CRUD endpoints to accommodate batch analytics downloads.
