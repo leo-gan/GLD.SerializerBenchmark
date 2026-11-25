@@ -212,7 +212,7 @@ Vite `outDir` is `docs/dashboard`, not `dist`. A local preview must be rebuilt (
 | Course | Action |
 |--------|--------|
 | 101–301 | Language-agnostic. No roster change. |
-| **401** | Add at least one timed-call-site article (`docs/theory/401/<lang>-*.md`) that opens two adapters on **document** n=1. Link it from `docs/theory/401/index.md`, `mkdocs.yml`, and [TIMING_HONESTY](TIMING_HONESTY.md). |
+| **Call-site notes** | Add at least one timed-call-site note (`docs/analysis/call-sites/<lang>-*.md`) that opens two adapters on **document** $n = 1$. Link it from `docs/analysis/call-sites/index.md`, `mkdocs.yml`, and [TIMING_HONESTY](TIMING_HONESTY.md). |
 
 The first article usually compares the speed or size leader to the next interesting row (same bytes, two libraries; or same library, two encodings). Quote an L1 Dashboard slice; do not invent a ranking.
 

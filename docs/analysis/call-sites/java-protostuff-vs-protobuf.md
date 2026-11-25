@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **Protostuff** and **protobuf-java** write the **same number of bytes** (155). Protostuff still finishes more encode-and-decode cycles per second. When two libraries emit the same size, the gap cannot be “a more compact encoding.” It has to be the object they build and the path they take to build it.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **Protostuff** and **protobuf-java** write the **same number of bytes** (155). Protostuff still finishes more encode-and-decode cycles per second. When two libraries emit the same size, the gap cannot be “a more compact encoding.” It has to be the object they build and the path they take to build it.
 
 This page compares the two timed wrappers and the write/parse loops they call.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=java&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protostuff&ser=protostuff&ser=protobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Java overview](../../java/index.md)
 
 ## Short answer
@@ -33,7 +33,7 @@ Protostuff has the higher total cycle rate because it never builds the generated
 | Timed encode input | Domain POJO | Domain POJO → generated message | Domain POJO |
 | Timed decode output | Domain POJO | Generated message → domain POJO | Domain POJO |
 
-jsoniter is second on this fixture because a generated JSON encoder is fast — and then it writes 440 bytes of names. It falls behind as the payload grows.
+jsoniter is second on this payload because a generated JSON encoder is fast — and then it writes 440 bytes of names. It falls behind as the payload grows.
 
 ## The two timed call sites
 
@@ -115,7 +115,7 @@ protobuf-java’s `parseFrom` constructs generated types. Those types track pres
 
 ## What you give up
 
-Protostuff’s runtime schema follows Java declaration order. A `.proto` that numbers fields differently will not interoperate. The official Java runtime follows the `.proto` file and the published evolution rules. If the bytes leave this process, protobuf-java is the contract. If the bytes stay inside a JVM cache, Protostuff’s POJO path is why it is faster on this fixture.
+Protostuff’s runtime schema follows Java declaration order. A `.proto` that numbers fields differently will not interoperate. The official Java runtime follows the `.proto` file and the published evolution rules. If the bytes leave this process, protobuf-java is the contract. If the bytes stay inside a JVM cache, Protostuff’s POJO path is why it is faster on this payload.
 
 ## Self-check
 

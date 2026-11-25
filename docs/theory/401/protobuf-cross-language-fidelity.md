@@ -1,194 +1,99 @@
-# Same bytes, three runtimes
+# 4.7 Cross-Language Interoperability and Fidelity
 
-## Why this article exists
+## Problem Statement
 
-Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads. It also does not guarantee that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-benchmark runner mapping. They do not hide in the marketing name of the format.
+Sharing a `.proto` file across Python, Rust, and C does not automatically prove that three services interoperate cleanly in production—nor does it imply that all three runtimes emit identical bytes. Subtle interoperability failures arise from proto3 default-value omission, packed vs. unpacked repeated fields, unknown enum policies, strict vs. lenient UTF-8 checks, timestamp units, and domain-model conversion bugs.
 
-In this article you will learn a disciplined way to prove that three runtimes interoperate. After reading it, you should be able to design a small encode/decode matrix. You should be able to state when bit-identity is required. You should also avoid treating suite speed tables as fidelity proofs.
+This lecture formalizes four distinct correctness claims that engineers routinely conflate and specifies a minimal $m \times m$ cross-language interoperability matrix.
 
-## Short answer
+---
 
-Keep three checks apart. The suite’s **fidelity** score means one language writes a fixture and reads it back. That round trip is not specification compliance, and it is not a cross-language test. **Cross-language agreement** means bytes produced in language A decode to the same logical fields in language B. **Specification compliance** means the library follows the Protocol Buffers rules for that schema, which this score does not prove by itself.
+## Four Distinct Correctness Claims
 
-Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s benchmark runners are **per-language**. They do not automatically prove cross-runtime byte identity. [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) is about product contract choice. This page is about **byte and logic discipline**.
+| Claim | Formal Meaning | Required by Protobuf Spec? | Verified by This Suite's `mean_fidelity`? |
+|---|---|---|---|
+| **Local round-trip fidelity** | $\text{decode}_A(\text{encode}_A(x)) \equiv x$ inside one language $A$ | Necessary baseline | **Yes** (single-runner check only) |
+| **Cross-language interoperability** | $\forall A, B:\ \text{decode}_B(\text{encode}_A(x)) \equiv x$ (logical equality) | **Yes** (primary contract goal) | **No** (must test across runtimes) |
+| **Bit-identical (canonical) encode** | $\text{encode}_A(x) = \text{encode}_B(x)$ byte-for-byte | **No**[^1] | **No** |
+| **Specification conformance** | Library passes upstream spec edge-case suite across all features | Standard-defined | **Separately** on [Compliance](../../dashboard/index.html#compliance) |
 
-This article assumes the [wire format](protobuf-wire-format.md) article and at least one language path ([Python](protobuf-python.md), [Rust](protobuf-rust-prost.md), [C](protobuf-c-protobuf-c.md)).
+!!! note "Theorem (Non-Uniqueness of Protobuf Wire Encodings)"
+    The Protocol Buffers binary format is **many-to-one**: multiple distinct byte sequences decode to the same logical message. Valid encoders may vary field order, omit or explicitly emit default values (under explicit presence), order map entries differently, or choose packed vs. unpacked encoding for repeated scalars.
 
-This shared code repository already has Python, Rust, and C Protocol Buffers entries. Use them when available. Outside the suite, the same discipline applies with any three official runtimes.
+Consequently, **logical interoperability** is the mandatory requirement across services; **bit-identity** is an optional constraint required only when raw wire bytes are hashed as cache keys or passed directly into cryptographic signatures (where deterministic serialization or canonical signing wrappers must be enforced explicitly).
 
-## Prerequisites
+---
 
-- Shared schema discipline (`schemas/v2/protobuf/benchmark_v2.proto` in this repo, or a tiny shared `mini.proto`).
-- Soft: [301 using this suite](../301/using-this-suite.md)—do not use Dashboard numbers as fidelity proofs.
-
-## Mental model
-
-Start from one logical value and two encoders. Then ask two separate questions. Do the decoders recover the logical value? Do the encoders emit exactly the same bytes?
-
-```text
-  logical value  ──A.encode──►  bytes₁
-  logical value  ──B.encode──►  bytes₂
-
-  bytes₁ ──B.decode──► logical'   must equal logical (for agreed fields)
-  bytes₂ ──A.decode──► logical''
-
-  bytes₁ == bytes₂ ?   nice when true; NOT required by the Protobuf spec
-```
-
-Protocol Buffers requires **semantic** compatibility. A decoder must understand what an encoder wrote. It does **not** require that two encoders emit the same field order. It also does not require the same omission pattern for default values.
-
-## What “same bytes” can mean (be precise)
-
-Students often collapse several different claims into the phrase “same bytes.” Keep the following distinctions clear.
-
-| Claim | Meaning | Required by spec? |
-|-------|---------|-------------------|
-| **Interoperable** | A’s bytes decode in B to the same logical fields | **Yes** (for the schema subset you use) |
-| **Bit-identical encode** | A and B produce equal `bytes` for one value | **No** |
-| **Benchmark runner fidelity** | Serialize then deserialize in **one** language matches the fixture compare | Suite-local only |
-| **Canonical encode** | Deterministic field order / map order | Optional (`deterministic` in some APIs) |
-
-Serializer developers should chase **interoperability** first and **bit-identity** second. Bit-identity is useful for debugging, signing, and caches.
-
-## Step-by-step fidelity discipline
-
-### 1. Freeze the schema
-
-Without a shared schema, cross-language tests are meaningless. Do the following first:
-
-- Use one `.proto` file (or generated sources from one commit).
-- Do not renumber fields silently.
-- Document packed versus unpacked repeated fields if generator versions differ.
-
-### 2. Freeze the logical fixture
-
-Define values in a language-neutral way:
-
-- Integers and bools are exact.
-- Strings are defined by Unicode code points (not “whatever my editor saved”).
-- Timestamps use an explicit unit (this suite often uses milliseconds—see benchmark runner notes).
-- Floats and doubles: prefer values with exact binary representations when asserting bit-identity. Otherwise assert with tolerances only where the product allows it.
-- Nested and repeated fields: specify the full structure, including empty versus omitted.
-
-### 3. Encode matrix
-
-The table below is the skeleton of a matrix test. Each cell asserts that decoding recovers the fixture’s logical fields.
-
-| Encoder \ Decoder | Python | Rust | C (protobuf-c) |
-|-------------------|--------|------|----------------|
-| Python | A→A round-trip (logical assert) | A→B cross-decode (logical assert) | A→B cross-decode (logical assert) |
-| Rust | A→B cross-decode | A→A round-trip | A→B cross-decode |
-| C | A→B cross-decode | A→B cross-decode | A→A round-trip |
-
-Every cell asserts `logical_equal(fixture, decode(encode(fixture)))`. The diagonal is same-language round-trip. Off-diagonal cells are cross-language interop. A minimum useful set is **all round-trips** plus **each encoder once into each other decoder**.
-
-### 4. Assert logical equality, not only `memcmp`
+## Designing an $m \times m$ Interoperability Matrix
 
 ```text
-for each pair (enc_lang, dec_lang):
-  bytes = encode_lang(fixture)
-  out = decode_lang(bytes)
-  assert logical_equal(fixture, out)  # field-wise
+  Canonical logical record x (frozen schema + frozen test vectors)
+       ├──► Python encode ──► b_py  ──► decode in {Python, Rust, C} ──► assert logical_eq
+       ├──► Rust encode   ──► b_rs  ──► decode in {Python, Rust, C} ──► assert logical_eq
+       └──► C encode      ──► b_c   ──► decode in {Python, Rust, C} ──► assert logical_eq
 ```
 
-Optionally:
+| Encoder $\backslash$ Decoder | Python (`google.protobuf`) | Rust (`prost`) | C (`protobuf-c`) |
+|---|---|---|---|
+| **Python** | Local round-trip | Cross-decode ($L_{\text{py}} \to L_{\text{rs}}$) | Cross-decode ($L_{\text{py}} \to L_{\text{c}}$) |
+| **Rust** | Cross-decode ($L_{\text{rs}} \to L_{\text{py}}$) | Local round-trip | Cross-decode ($L_{\text{rs}} \to L_{\text{c}}$) |
+| **C** | Cross-decode ($L_{\text{c}} \to L_{\text{py}}$) | Cross-decode ($L_{\text{c}} \to L_{\text{rs}}$) | Local round-trip |
 
-```text
-assert encode_python(fixture) == encode_rust(fixture)  # bit-identity (strict)
-```
+### Protocol Steps
 
-If bit-identity fails but logical cross-decode works, document **why** (field order, default omission, map order). That documentation is itself a useful artifact. It shows you understand the format, not only the test harness.
+1. **Freeze one schema commit:** Compile Python (`protoc --python_out`), Rust (`prost-build`), and C (`protoc --c_out`) from the exact same `.proto` revision. Never hand-edit generated files in one language.
+2. **Author language-neutral edge-case vectors:** Define explicit logical inputs covering:
+   - Default/zero scalars (`0`, `""`, `false`) vs. non-default values,
+   - Multi-byte UTF-8 code points (beyond ASCII),
+   - Large 64-bit signed/unsigned boundary values,
+   - Empty vs. populated nested submessages and repeated fields,
+   - Floating-point tolerances (exact binary floats for strict checks; explicit policy for `NaN` / `-0.0`).
+3. **Run all $m^2$ cells and assert logical field equality:** Every off-diagonal pair $(A \to B)$ must recover the identical logical record.
+4. **Test forward compatibility (unknown-field skip):** Append an unknown field such as `28 63` (field 5, `VARINT`, value 99) to bytes produced by each encoder and verify that all decoders recover known fields without error.
+5. **Document bit-identity diffs separately:** Compare `b_py == b_rs == b_c`. When bytes differ yet cross-decode cleanly, record the exact cause (e.g., packed vs. unpacked repeated tags, map iteration order, or explicit defaults).
 
-### 5. Golden vectors for the subset you hand-rolled
+### Minimal `MiniUser` Runbook
 
-Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C. Then decode in the other two runtimes. That is the cheapest way to prove that your three implementations encode and decode the same Protocol Buffers bytes.
+Using `mini.proto` from [4.2 Lab](lab-mini-protobuf-encoder.md) with `G1` (`MiniUser { id = 1, name = "Ada" }`, golden hex `08 01 12 03 41 64 61`) and `G5` (`manager = { id = 2 }`, golden hex `1a 02 08 02`):
 
-### 6. Track known semantic footguns
+1. Encode `G1` and `G5` in Python (`SerializeToString`), Rust (`encode_to_vec`), and C (`protobuf_c_message_pack`).
+2. Feed each runtime's bytes into the other two decoders and assert `id == 1 && name == "Ada"` (and `manager.id == 2`).
+3. Append `28 63` to each encoded `G1` buffer and verify all three decoders skip field 5 cleanly.
 
-| Footgun | What breaks |
-|---------|-------------|
-| proto3 default omission | One side sets `0` or `""` explicitly; the other omits the field; both encodings can be valid |
-| Enum unknown values | Preservation versus error differs by runtime and settings |
-| UTF-8 validation | Strict versus lenient string decode |
-| `int64` in JSON mapping | Not wire binary—but dual APIs confuse tests |
-| Float ordering / NaN | Equality and bit patterns |
-| Field name vs number | Codegen renames (`FirstName` vs `first_name`)—the wire carries numbers only |
-| Benchmark runner mapping | Suite `prepare` converts domain objects—bugs can look like codec bugs |
+---
 
-### 7. Separate the benchmark runner round trip from cross-language agreement
+## Common Cross-Language Failure Modes
 
-This suite may:
+| Failure Source | Typical Symptom | Mitigation |
+|---|---|---|
+| **Proto3 default vs. optional presence** | Explicit `0` emitted by one runtime, omitted by another | Assert logical field equality, or declare `optional` explicitly when presence matters |
+| **Unknown enum values** | Open proto3 enums preserve unknown integers in some runtimes while strict parsers reject them | Standardize enum-evolution policy across runtimes |
+| **Strict UTF-8 validation** | Lenient C decoder accepts non-UTF-8 bytes in `string`; Python/Rust reject with `DecodeError` | Use `bytes` for non-UTF-8 payloads; validate UTF-8 at ingress |
+| **Static caps (`nanopb`) vs. heap (`protobuf-c`)** | Valid message rejected by MCU | Document `max_size`/`max_count` in the shared contract ([4.6 `nanopb` vs. `protobuf-c`](protobuf-c-nanopb-compare.md)) |
+| **Adapter mapping bugs** | Suite `prepare` drops or rounds a field (e.g., timestamp ms vs. ns) | Unit-test domain-to-proto adapters independently of wire decode |
 
-- Convert fixtures to native messages **outside** timed paths.
-- Apply language-specific compare callbacks (in C, the per-serializer compare function is often named something like `fidelity_fx`—a **suite-local round-trip check**, not multi-language proof).
-- Exclude fixtures that a given language schema does not define.
+---
 
-Passing suite fidelity means **that language entry** round-trips under **that** compare function. It does not mean that three languages share the same bytes.
+## Exercises
 
-## MiniUser matrix runbook (~10 minutes)
+1. **Signing raw wire bytes:** Service A (Python) encodes a `PaymentOrder` Protobuf message, computes an HMAC-SHA256 over the serialized bytes, and sends both to Service B (Rust). Service B decodes the message, re-encodes it with `prost`, and verifies the HMAC over its re-encoded bytes—and verification fails intermittently when a `map<string, string>` field is present. Why, and what is the correct design?
 
-Teaching schema only—create `mini.proto` (same as the [lab](lab-mini-protobuf-encoder.md)). It is **not** the suite `schemas/v2/protobuf/benchmark_v2.proto`.
+??? note "Solution"
+    Protobuf binary encoding is **not canonical**: map iteration order (and field/default emission across runtimes) is unspecified, so Service B's re-encoded bytes need not match Service A's original bytes even for identical logical data.[^1] Service B must verify the HMAC over the **exact raw bytes received on the wire** *before* decoding (or wrap the serialized payload inside an envelope `{ bytes payload = 1; bytes signature = 2; }`).
 
-**Logical fixture:** `MiniUser { id = 1, name = "Ada" }`  
-**Golden:** `08 01 12 03 41 64 61`
+2. **Matrix size vs. local fidelity:** An organization runs 5 languages on a shared internal RPC boundary. How many cells exist in the full $5 \times 5$ interoperability matrix, and how many of those cells are actually tested by running per-language local round-trip fidelity checks?
 
-| Step | Action |
-|------|--------|
-| 1 | Write `mini.proto` with MiniUser fields 1–4 as in the lab. |
-| 2 | **Python:** `protoc --python_out=. mini.proto` → `mini_pb2.MiniUser`, set fields, call `SerializeToString()`, assert hex equals the golden (or logical equality after parse). |
-| 3 | **Rust:** `prost-build` on `mini.proto` (or a temporary `build.rs`), call `encode_to_vec()`, same asserts. |
-| 4 | **C:** `protoc --c_out=. mini.proto`, pack with protobuf-c (or label nanopb separately—**do not mix libraries mid-matrix without labeling**). |
-| 5 | Cross-decode: feed each language’s bytes into the other two decoders; check `id==1` and `name=="Ada"`. |
-| 6 | Record whether the three encodes are bit-identical (`memcmp` or `==` on bytes). |
-| 7 | Append the unknown field `28 63` to the Python bytes; confirm Rust and C still yield id and name (skip-unknown). |
+??? note "Solution"
+    The full matrix has $5^2 = 25$ cells. Per-language round-trip checks test only the **5 diagonal cells** ($L_i \to L_i$), leaving **20 cross-language cells** ($L_i \to L_j,\ i \ne j$) completely untested.
 
-Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN confidence.
+3. **Distinguishing compliance from interop:** Why might a $3 \times 3$ matrix over `MiniUser` pass 100% while one of the three libraries still fails the upstream Protobuf Conformance Test Suite?
 
-## Worked mini protocol (summary)
+??? note "Solution"
+    `MiniUser` exercises only `uint32`, `string`, nested messages, and unpacked repeated `uint32`. It never tests maps, `oneof` last-one-wins merging, packed-vs-unpacked merging, ZigZag negatives, `sint64` boundaries, or invalid UTF-8 rejection—all of which are verified only by the comprehensive upstream conformance suite.[^2]
 
-1. Take the lab message `MiniUser { id=1, name="Ada" }`.
-2. Encode with Python `SerializeToString`, Rust `encode_to_vec`, and C `protobuf_c_message_pack` (or nanopb if that is your C choice—label it).
-3. Decode each blob with the other two runtimes.
-4. Record whether the encodes are bit-identical.
-5. Append the unknown field `28 63` and confirm logical id and name still round-trip where skip-unknown works.
+---
 
-## Decision frame: when bit-identity matters
+## References
 
-| Need | Practice |
-|------|----------|
-| Cache key = hash(bytes) | Force one encoder, or use a canonical deterministic mode |
-| Digital signature over payload | Same—canonicalize, or sign logical fields instead of raw bytes |
-| Multi-language microservices | Interoperability matrix; bit-identity is optional |
-| Debugging “who is wrong?” | Golden vector plus one reference implementation |
-
-## In this suite
-
-| Asset | Fidelity role |
-|-------|----------------|
-| `schemas/v2/protobuf/benchmark_v2.proto` | Shared field numbers for suite types |
-| Python `protobuf` / Rust `prost` / C Google `protobuf` (+ C helper rows) | Separate encode paths (pins and honesty notes are on the language articles / [C Overview](../../c/index.md)) |
-| Per-language fidelity hooks | Local round-trip checks only |
-| Dashboard / ops | **Not** interoperability proofs |
-| [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes and logic** |
-
-## Common mistakes
-
-- Declaring victory from three green language Dashboard charts.
-- Testing only A→A round-trips.
-- Comparing floats with `==` across languages without a policy.
-- Mixing nanopb static limits with “full” protobuf-c fixtures and calling the mismatch a wire bug.
-- Editing generated code in one language only (schema drift).
-- Using suite fixtures for a first matrix when MiniUser goldens are enough.
-
-## What this article is not
-
-- A full suite of tests that check every language implements the same contract (use upstream Protocol Buffers conformance tests for serious work).
-- Product advice on JSON versus Protocol Buffers ([301](../301/index.md)).
-- Engine deep-dives (see the language-path articles).
-
-## Key takeaways
-
-- Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.
-- Prove cross-language agreement with **matrix tests and goldens**, not with benchmark ranks.
-- Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.
-- Suite fidelity is a one-language write-then-read. It is not cross-language agreement, and it is not specification compliance. Bridge languages with explicit tests you own.
+[^1]: Google Protocol Buffers Documentation. *Encoding — Implications (Serialization Is Not Deterministic)*. <https://protobuf.dev/programming-guides/encoding/#implications>
+[^2]: Protocol Buffers Repository. *Conformance Test Suite*. <https://github.com/protocolbuffers/protobuf/tree/main/conformance>

@@ -4,10 +4,10 @@
 
 Zig’s interesting property in this suite is **comptime reflection**. `std.json.parseFromSlice` and **serde.zig** both walk `@typeInfo` at compile time. They are not Java-style runtime reflection and they are not Rust derive macros. They are still two libraries, two call sites, and two decode strategies.
 
-This page opens the two timed JSON wrappers on the suite **document** fixture (one shop order). After you have a published Zig Dashboard slice, quote those numbers here. Until then, treat the table as a **call-site map**, not a ranking.
+This page opens the two timed JSON wrappers on the suite **document** payload (one shop order). Live measurements appear on the Zig Dashboard slice below; this note documents the two timed call sites and their decoding semantics.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=zig&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=std.json&ser=std.json&ser=serde.json#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Zig overview](../../zig/index.md)
 
 ## The two timed call sites
@@ -28,9 +28,9 @@ try serde.json.toWriter(&aw.writer, payload);
 const value = try serde.json.fromSlice(Document, allocator, bytes);
 ```
 
-Both rows write named JSON fields through a writer the harness owns and reuses, so both are `text_on_stream`. serde.zig's `toSlice` is `toWriter` into an `Allocating` writer, so calling `toWriter` on the harness buffer is the same field walk with one fewer allocation, copy and free per call — the shape of the call site, not a different encoder.
+Both rows write named JSON fields through a writer the benchmark runner owns and reuses, so both are `text_on_stream`. serde.zig's `toSlice` is `toWriter` into an `Allocating` writer, so calling `toWriter` on the runner buffer is the same field walk with one fewer allocation, copy and free per call — the shape of the call site, not a different encoder.
 
-Two further rows keep the same stringify path and change only the decode. `std.json.scanner` decodes with `std.json.Scanner` + `parseFromTokenSource`. The `.borrowed` rows decode strings as views into the input instead of copying them: `serde.json.fromSliceBorrowed` and `std.json.parseFromSliceLeaky` with `alloc_if_needed`. The two libraries do not draw that line in the same place — serde.zig's borrowed decode is strictly a view and rejects any escaped string, while `alloc_if_needed` allocates to unescape one — so the rows are comparable on this suite because its fixtures are unescaped, and not in general.
+Two further rows keep the same stringify path and change only the decode. `std.json.scanner` decodes with `std.json.Scanner` + `parseFromTokenSource`. The `.borrowed` rows decode strings as views into the input instead of copying them: `serde.json.fromSliceBorrowed` and `std.json.parseFromSliceLeaky` with `alloc_if_needed`. The two libraries do not draw that line in the same place — serde.zig's borrowed decode is strictly a view and rejects any escaped string, while `alloc_if_needed` allocates to unescape one — so the rows are comparable on this suite because its test records are unescaped, and not in general.
 
 ## What to look at on the Dashboard
 

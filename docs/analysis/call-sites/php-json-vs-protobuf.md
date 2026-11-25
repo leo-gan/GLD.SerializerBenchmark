@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **stdlib JSON** finishes more encode-and-decode cycles per second than official **google/protobuf**, even though JSON is 454 bytes and Protocol Buffers is 160. Smaller is not faster. The JSON path is a native C engine inside the interpreter. The Protocol Buffers path, on this machine, is the official **userland** PHP runtime walking generated message objects.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **stdlib JSON** finishes more encode-and-decode cycles per second than official **google/protobuf**, even though JSON is 454 bytes and Protocol Buffers is 160. Smaller is not faster. The JSON path is a native C engine inside the interpreter. The Protocol Buffers path, on this machine, is the official **userland** PHP runtime walking generated message objects.
 
 This page compares the two timed wrappers. After reading it you should be able to say why `json_encode` / `json_decode` beat a real protobuf encode and decode here, why the 160-byte message does not win on this document, and what would change if `ext-protobuf` were loaded.
 
@@ -11,7 +11,7 @@ from a local PHP `all-single` run. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=php&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=json&ser=protobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [PHP overview](../../php/index.md)
 
 ## Short answer
@@ -68,7 +68,7 @@ public function deserializeBytes(string $data): mixed
 
 ## Why 454 bytes versus 160
 
-JSON writes field names as UTF-8 text. Protocol Buffers writes field numbers and variable-length integers. The information is the same shop order. The 160-byte image is the compact layout taught in the [Protocol Buffers wire format](protobuf-wire-format.md) article.
+JSON writes field names as UTF-8 text. Protocol Buffers writes field numbers and variable-length integers. The information is the same shop order. The 160-byte image is the compact layout taught in the [Protocol Buffers wire format](../../theory/401/protobuf-wire-format.md) article.
 
 ## What you give up
 

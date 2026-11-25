@@ -1,42 +1,31 @@
-# Python: why msgspec-msgpack outruns orjson on Document
+# 4.8 Case Study: Typed Positional vs. Dynamic Maps (Python)
 
-## Why this article exists
+## Problem Statement
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **msgspec-msgpack** finishes slightly more encode-and-decode cycles per second than **orjson**, and it writes a message about **3.5 times smaller**. Both libraries are native extensions (C and Rust). Both leave the Python interpreter for the inner loop. A results table therefore cannot tell you *which lines of code* create the gap.
+On this suite's `document` payload ($n = 1$, in-memory `bytes` mode), **`msgspec-msgpack`** completes more encode+decode cycles per second than **`orjson`** and produces a wire payload roughly $3.5\times$ smaller—even though both libraries execute their hot loops in native compiled code (C and Rust respectively), and **`orjson` actually encodes faster** than `msgspec-msgpack`. Meanwhile, the standard PyPI **`msgpack`** package (also implemented in C) trails `msgspec-msgpack` by more than $2\times$ despite emitting MessagePack bytes.
 
-This page compares the two timed call sites in this repository and the layouts they emit. After reading it you should be able to say why orjson can still *encode* faster, why msgspec-msgpack *decodes* faster, and why the PyPI `msgpack` package is far slower even though it writes MessagePack as well.
+Inspecting the actual timed call sites explains all three observations from first principles: **wire layout (positional typed slots vs. string-keyed maps)** dominates decode allocation cost.
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+> **Illustrative L1 snapshot (`document`, $n = 1$, `bytes` mode):** Live authoritative numbers belong to the [Python Dashboard comparison](../../dashboard/index.html?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=orjson&ser=msgspec-msgpack&ser=orjson#compare) ([Claims L1](../../analysis/CLAIMS_AND_REPLICATION.md) · [Python Overview](../../python/index.md)).
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=orjson&ser=msgspec-msgpack&ser=orjson#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
-· [Python overview](../../python/index.md)
+| Metric (Quoted L1 Snapshot) | `msgspec-msgpack` 0.21.1 | `orjson` 3.11.9 | PyPI `msgpack` 1.2.1 |
+|---|---:|---:|---:|
+| Throughput (encode + decode) | **272k ops/s** | 242k ops/s | 113k ops/s |
+| Encode latency | 1.73 µs | **1.62 µs** | 4.17 µs |
+| Decode latency | **1.95 µs** | 2.50 µs | 4.72 µs |
+| Encoded wire size | **129 B** | 448 B | 325 B |
 
-## Short answer
+---
 
-msgspec-msgpack completes more encode-and-decode cycles per second than orjson (272 thousand versus 242 thousand). We can see that in the table. It is faster on the total because it encodes a **typed, positional record**, not a dictionary of named fields.
+## Source-Level Call Sites
 
-1. In untimed `prepare_data`, the runner converts the shared dataclass into a `msgspec.Struct` built with `array_like=True`. Encode then writes a MessagePack **array** of values. Field names never appear.
-2. orjson is given a **plain Python dictionary**. Encode writes a JSON **object**. Every key (`"id"`, `"sku"`, `"price_minor"`, …) is copied on every message. Decode allocates nested dictionaries.
-3. orjson’s Rust encoder is so fast that it still *writes* 448 bytes of JSON in less time than msgspec writes 129 bytes of MessagePack. msgspec is faster on **decode** and smaller on **size**, and therefore faster on total cycles.
+All three adapters keep domain-model conversion in untimed `prepare_data`, timing only encode and decode of the library's native Python representation ([Timing honesty](../../analysis/TIMING_HONESTY.md)):
 
-| | msgspec-msgpack 0.21.1 | orjson 3.11.9 | PyPI msgpack 1.2.1 |
-|--|------------------------|---------------|---------------------|
-| Mean encode + decode, document, *n* = 1 | **272 thousand / s** | 242 thousand / s | 113 thousand / s |
-| Encode | 1.73 µs | **1.62 µs** | 4.17 µs |
-| Decode | **1.95 µs** | 2.50 µs | 4.72 µs |
-| Encoded size | **129 B** | 448 B | 325 B |
+### 1. `msgspec-msgpack` (`python/src/benchmark/serializers/json_msgspec.py`)
 
-orjson has the shorter encode time. msgspec-msgpack has the smaller message and the shorter total time.
-
-## The two timed call sites
-
-**msgspec-msgpack** (`python/src/benchmark/serializers/json_msgspec.py`) builds one encoder and one typed decoder. Conversion to a Struct is untimed `prepare_data`:
+`prepare_data` maps the suite dataclass into a C-backed `msgspec.Struct` generated with **`array_like=True`** (positional fields):[^1]
 
 ```python
-# Struct types are generated once, with array_like=True (positional).
 _STRUCT_TYPES[cls] = msgspec.defstruct(
     f"Msgspec{cls.__name__}",
     struct_fields,
@@ -48,29 +37,14 @@ def serialize_bytes(self, obj: Any) -> bytes:
     return self._encoder.encode(obj)
 
 def deserialize_bytes(self, data: bytes) -> Any:
-    return self._decoder.decode(data)
+    return self._decoder.decode(data)   # Decoder(type=MsgspecDocument)
 ```
 
-The MessagePack subclass only swaps the encoder class:
+### 2. `orjson` (`python/src/benchmark/serializers/json_orjson.py`)
+
+`prepare_data` converts the record to plain nested Python `dict` objects, and the timed path calls Rust `orjson.dumps` / `orjson.loads`:[^2]
 
 ```python
-class MsgspecMessagePackSerializer(_MsgspecStructSerializer):
-    codec_name = "msgspec-msgpack"
-
-    def _make_encoder(self) -> msgspec.msgpack.Encoder:
-        return msgspec.msgpack.Encoder()
-
-    def _make_decoder(self, typ: Any) -> msgspec.msgpack.Decoder:
-        return msgspec.msgpack.Decoder(type=typ)
-```
-
-**orjson** converts the dataclass to a dictionary (untimed) and then calls the Rust extension:
-
-```python
-# python/src/benchmark/serializers/json_orjson.py
-def prepare_data(self, obj, test_data_name, test_data_type):
-    return to_dict(obj)
-
 def serialize_bytes(self, obj):
     return orjson.dumps(obj)
 
@@ -78,102 +52,68 @@ def deserialize_bytes(self, data):
     return orjson.loads(data)
 ```
 
-So the timed calls do **not** include “dataclass to Struct” or “dataclass to dict.” They include only encode and decode of the library-native value.
+### 3. PyPI `msgpack` (`python/src/benchmark/serializers/binary_msgpack.py`)
 
-## What the bytes look like
-
-A document in this suite is an identifier, a status, a small metadata record, and eight line items (`children: 8` in the catalog). Conceptually:
-
-```text
-Document
-  id, status
-  meta: { region, version }
-  items: [ { sku, qty, price_minor }, … eight times ]
-```
-
-**orjson** emits a JSON object. Every name is text:
-
-```text
-{"id":"…","status":1,"meta":{"region":"…","version":1},
- "items":[{"sku":"…","qty":2,"price_minor":300}, …]}
-```
-
-448 bytes. The letters of `"price_minor"` appear eight times.
-
-**msgspec-msgpack** with `array_like=True` emits a MessagePack array in field order:
-
-```text
-[ id, status, [ region, version ], [ [ sku, qty, price_minor ], … ] ]
-```
-
-129 bytes. The names live in the Struct type, which the decoder already has.
-
-That is the same *idea* as Protocol Buffers field numbers and Avro schema order, taught in [self-describing versus schema-dependent](../201/self-describing-vs-schema-dependent.md). Jim Crist-Harif’s **msgspec** (early 2020s) applied it to Python by generating a compact C type whose fields are slots, not a hash table.
-
-**orjson** (ijl, late 2010s) applied the other idea: keep JSON, but write and parse it in Rust, examining many characters at once. That is the simdjson tradition of Geoff Langdale and Daniel Lemire (2018–2019), brought into CPython as a single `dumps` / `loads` pair.
-
-## Why orjson can encode faster
-
-Writing 448 bytes of JSON in 1.62 µs, versus 129 bytes of MessagePack in 1.73 µs, looks surprising until you look at the inner loop.
-
-orjson’s `dumps` is a Rust function that walks a Python dictionary and writes UTF-8 into a byte buffer. There is no intermediate Python `str`. The standard library, by contrast, builds a Unicode string and then encodes it:
+Operates on plain nested `dict` objects as well—writing string-keyed MessagePack maps rather than positional arrays:
 
 ```python
-# python/src/benchmark/serializers/json_stdlib.py (not the faster library — the baseline)
-return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+return self._packer.pack(obj)
+return msgpack.unpackb(data, ...)
 ```
 
-That extra `str` plus a new encoder object is why stdlib JSON sits near 47 thousand cycles per second on the same fixture.
+---
 
-msgspec still has to walk eight nested Structs and emit MessagePack type codes. The C core (`msgspec._core`) is fast. It is not faster *per byte written* than orjson’s JSON writer on this small document. Encode is therefore a near tie, with orjson slightly ahead.
+## Mechanistic Analysis
 
-## Why msgspec-msgpack decodes faster
+The `document` record contains top-level metadata plus eight line items (`sku`, `qty`, `price_minor`).
 
-Decode is where the typed layout pays.
+### Wire Layout Divergence
 
-msgspec’s `Decoder(type=MsgspecDocument)` already knows there are four slots, that slot 3 is a list of items, and that each item has three slots. The C decoder fills those slots. It does not hash `"sku"`. It does not allocate a Python `dict` per line item.
+- **`orjson` (448 B):** Emits self-describing JSON objects (`{"id":...,"items":[{"sku":...,"qty":2,"price_minor":300},...]}`). The key string `"price_minor"` is serialized eight times.
+- **PyPI `msgpack` (325 B):** Replaces JSON punctuation and decimal numbers with binary type tags, but still emits string-keyed maps—repeating every field name eight times on the wire.
+- **`msgspec-msgpack` with `array_like=True` (129 B):** Emits nested positional MessagePack arrays (`[id, status, [region, version], [[sku, qty, price_minor], ...]]`). Field names never touch the wire; they live strictly in the compiled `MsgspecDocument` type definition ([2.4 Self-describing vs. schema-dependent](../201/self-describing-vs-schema-dependent.md)).
 
-orjson’s `loads` has no schema. It must:
+### Why `orjson` Wins Encode While `msgspec-msgpack` Wins Decode
 
-1. scan 448 bytes of JSON;
-2. allocate a dictionary for the document, one for `meta`, and one per item;
-3. intern and hash every key.
+1. **Encode (`1.62 µs` vs. `1.73 µs`):** `orjson.dumps` walks CPython `dict` internals directly from Rust and streams UTF-8 straight into a single output `bytes` buffer—avoiding the intermediate Python `str` that slows stdlib `json.dumps(...).encode("utf-8")` down to ~47k ops/s (see [Python: `orjson` vs. `json`](../../analysis/call-sites/python-orjson-vs-json.md)). On a 448-byte document, streaming raw UTF-8 bytes from SIMD-tuned Rust slightly beats walking eight nested structs to emit MessagePack headers.
+2. **Decode (`1.95 µs` vs. `2.50 µs` vs. `4.72 µs`):** Decoding reveals the structural cost of dynamic maps. `msgspec.msgpack.Decoder(type=MsgspecDocument)` knows the exact field count and slot offsets ahead of time: its C loop allocates compact fixed-slot C structs and populates each slot directly—**zero key hashing and zero `dict` allocations**. By contrast, `orjson.loads` must scan 448 bytes, allocate ten separate Python `dict` objects (document + `meta` + 8 items), and look up/hash every key (mitigated partially by `orjson`'s key cache). PyPI `msgpack` pays generic C unpacking *plus* string-keyed map hashing and ten `dict` allocations.
 
-A key cache in orjson keeps the third step cheap. It cannot avoid the dictionaries. That is the 2.50 µs versus 1.95 µs.
+*(To isolate the wire encoding from the library, see the companion control study [Python: `msgspec` JSON vs. MessagePack](../../analysis/call-sites/python-msgspec-json-vs-msgpack.md).)*
 
-## Why PyPI msgpack is not in the same race
+---
 
-The `msgpack` wrapper also converts to a dictionary and then calls a C packer:
+## Trade-Off Summary
 
-```python
-# python/src/benchmark/serializers/binary_msgpack.py
-return self._packer.pack(obj)          # encode a dict
-return msgpack.unpackb(data, ...)      # decode to a dict
-```
+| Dimension | `msgspec-msgpack` (`array_like=True`) | `orjson` (JSON `dict`) |
+|---|---|---|
+| **Wire inspectability** | Binary, positional (requires schema to read) | Self-describing UTF-8 JSON |
+| **Schema evolution coupling** | Positional field order must remain synchronized across peers | Field names allow arbitrary ordering and ad hoc inspection |
+| **Decode allocations** | Compact fixed-slot C structs (no per-object hash tables) | Nested Python `dict` objects |
+| **Model assumption** | Application uses typed `msgspec.Struct` models | Application operates on plain dictionaries |
 
-The encoding is MessagePack, but the **layout** is a map with string keys (325 bytes), not a positional array (129 bytes). Decode is generic. You pay binary type codes *and* key hashing, and you still allocate dictionaries. That is why this MessagePack row is 2.4 times slower than msgspec-msgpack on this fixture.
+---
 
-## What you give up
+## Exercises
 
-| Axis | msgspec-msgpack as timed here | orjson as timed here |
-|------|-------------------------------|----------------------|
-| Public readability | No | Yes (JSON) |
-| Need a shared field order | Yes | No |
-| Encode of this document | Slightly slower | Slightly faster |
-| Decode of this document | Faster (typed slots) | Slower (dictionaries) |
-| Size | 129 B | 448 B |
-| Other languages | MessagePack arrays are readable if they share the order | JSON is universal |
+1. **Isolating layout vs. wire syntax:** On this same payload, `msgspec` configured for **JSON** (`array_like=True`) writes 192 bytes—less than half of `orjson`'s 448 bytes, yet larger than `msgspec-msgpack`'s 129 bytes. Explain both gaps precisely.
 
-The wrapper is honest about the model: it measures “an application written with msgspec Structs,” not “msgspec encoding a dataclass.” If your service only has dictionaries, orjson is the closer comparison, and JSON size is the price of that flexibility.
+??? note "Solution"
+    - **192 B vs. 448 B:** Both are valid JSON, but `msgspec` (`array_like=True`) emits positional JSON **arrays** (omitting all repeated field-name keys like `"price_minor"`), whereas `orjson` emits named JSON **objects**.
+    - **192 B vs. 129 B:** Both omit field names, so the remaining 63-byte difference is pure **text vs. binary encoding overhead** (ASCII decimal digits, commas, brackets, and quotes vs. compact MessagePack binary integers and headers).
 
-## History, in one paragraph
+2. **Benchmark validity audit:** Suppose a contributor moved `to_dict(obj)` inside `orjson`'s timed `serialize_bytes` while leaving dataclass-to-`Struct` conversion inside `msgspec`'s untimed `prepare_data`. Why would that invalidate the comparison?
 
-JSON became the web default because [Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford) extracted an encoding browsers already used (early 2000s). MessagePack ([Sadayuki Furuhashi](https://en.wikipedia.org/wiki/Sadayuki_Furuhashi), 2008) kept that data model and dropped decimal text. msgspec’s `array_like` step is older still: it is the packed record — names in the contract, values on the wire — that [Serialization 101](../101/historical_perspective.md) traces from COBOL through Protocol Buffers and Avro. orjson is the other historical thread: keep the popular encoding, spend engineering on the implementation.
+??? note "Solution"
+    It would violate [Timing honesty](../../analysis/TIMING_HONESTY.md) by timing model-conversion overhead on `orjson` alone while pre-converting `msgspec`'s input off the clock—measuring Python `dataclass` traversal rather than `orjson.dumps`.
 
-Related control experiments: [msgspec JSON versus MessagePack](python-msgspec-json-vs-msgpack.md) (same library, two encodings) and [orjson versus stdlib json](python-orjson-vs-json.md) (same JSON, two libraries).
+3. **Why beating PyPI `msgpack` is not purely "C speed":** Explain why the $2.4\times$ gap between `msgspec-msgpack` and PyPI `msgpack` does not prove `msgspec`'s C compiler output is $2.4\times$ faster than `msgpack`'s C extension.
 
-## Self-check
+??? note "Solution"
+    The two adapters solve different problems: `msgspec-msgpack` decodes a 129-byte **positional array** into pre-typed fixed-slot structs, whereas PyPI `msgpack` decodes a 325-byte **string-keyed map** into dynamically allocated Python `dict` objects with hash-table insertions on every key.
 
-1. Why is msgspec *JSON* (192 B, 247 thousand / s on this fixture) smaller than orjson but larger than msgspec-msgpack?
-2. Name one change to the orjson wrapper that would *not* be a fair comparison (hint: moving `to_dict` into the timed `serialize` call).
-3. Why does beating PyPI msgpack not prove that “msgspec’s C is 2.4 times faster than msgpack’s C”?
+---
+
+## References
+
+[^1]: Crist-Harif, J. *`msgspec` Documentation: Structs and `array_like` Encoding*. <https://jcristharif.com/msgspec/structs.html>
+[^2]: `orjson` Contributors. *`orjson`: Fast, Correct Python JSON Library*. <https://github.com/ijl/orjson>

@@ -87,6 +87,24 @@ plugins:
         'theory/301/caching-and-queues.md': 'theory/301/rpc-and-messaging.md'
         'theory/301/implementation-variance.md': 'theory/301/using-this-suite.md'
         'theory/301/compression-as-system-choice.md': 'theory/301/latency-tails-and-gc.md'
+        # Relocated per-language call-site notes from Serialization 401 to Benchmarks.
+        'theory/401/c-custom-binary-vs-ubj.md': 'analysis/call-sites/c-custom-binary-vs-ubj.md'
+        'theory/401/cpp-bitsery-vs-yas.md': 'analysis/call-sites/cpp-bitsery-vs-yas.md'
+        'theory/401/csharp-binarypack-vs-bond.md': 'analysis/call-sites/csharp-binarypack-vs-bond.md'
+        'theory/401/fortran-json-fortran-vs-rojff.md': 'analysis/call-sites/fortran-json-fortran-vs-rojff.md'
+        'theory/401/go-kelindar-vs-avro.md': 'analysis/call-sites/go-kelindar-vs-avro.md'
+        'theory/401/java-protostuff-vs-protobuf.md': 'analysis/call-sites/java-protostuff-vs-protobuf.md'
+        'theory/401/javascript-json-vs-protobuf.md': 'analysis/call-sites/javascript-json-vs-protobuf.md'
+        'theory/401/kotlin-flatbuffers-vs-protobuf.md': 'analysis/call-sites/kotlin-flatbuffers-vs-protobuf.md'
+        'theory/401/kotlin-kotlinx-json-vs-moshi.md': 'analysis/call-sites/kotlin-kotlinx-json-vs-moshi.md'
+        'theory/401/kotlin-protostuff-vs-protobuf.md': 'analysis/call-sites/kotlin-protostuff-vs-protobuf.md'
+        'theory/401/mojo-emberjson-vs-avro.md': 'analysis/call-sites/mojo-emberjson-vs-avro.md'
+        'theory/401/php-json-vs-protobuf.md': 'analysis/call-sites/php-json-vs-protobuf.md'
+        'theory/401/python-msgspec-json-vs-msgpack.md': 'analysis/call-sites/python-msgspec-json-vs-msgpack.md'
+        'theory/401/python-orjson-vs-json.md': 'analysis/call-sites/python-orjson-vs-json.md'
+        'theory/401/rust-speedy-vs-postcard.md': 'analysis/call-sites/rust-speedy-vs-postcard.md'
+        'theory/401/swift-flatbuffers-vs-protobuf.md': 'analysis/call-sites/swift-flatbuffers-vs-protobuf.md'
+        'theory/401/zig-std-json-vs-serde-json.md': 'analysis/call-sites/zig-std-json-vs-serde-json.md'
 
 markdown_extensions:
   - attr_list
@@ -161,42 +179,20 @@ nav:
               - "Case 6: Faster postmortem": theory/301/case-faster-postmortem.md
       - "401: Internals":
           - theory/401/index.md
-          - Protocol Buffers:
-              - Protobuf wire format: theory/401/protobuf-wire-format.md
-              - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
-              - "Python: google.protobuf": theory/401/protobuf-python.md
-              - "Rust: prost": theory/401/protobuf-rust-prost.md
-              - "C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
-              - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
-              - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
-          - Python:
-              - "Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
-              - "Python: msgspec JSON vs MessagePack": theory/401/python-msgspec-json-vs-msgpack.md
-              - "Python: orjson vs json": theory/401/python-orjson-vs-json.md
-          - Rust:
-              - "Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
-              - "Rust: Speedy vs Postcard": theory/401/rust-speedy-vs-postcard.md
-              - "Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
-          - C and C++:
-              - "C: custom-binary vs ubj": theory/401/c-custom-binary-vs-ubj.md
-              - "C++: Bitsery vs YAS": theory/401/cpp-bitsery-vs-yas.md
-              - "C++: the simdjson row": theory/401/cpp-simdjson-wrapper.md
-          - Java and Kotlin:
-              - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
-              - "Kotlin: Protostuff vs protobuf": theory/401/kotlin-protostuff-vs-protobuf.md
-              - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
-              - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
-          - JavaScript:
-              - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
-              - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
-          - Other languages:
-              - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
-              - "Fortran: json-fortran vs rojff": theory/401/fortran-json-fortran-vs-rojff.md
-              - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
-              - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
-              - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
-              - "Mojo: EmberJson vs mojo-avro": theory/401/mojo-emberjson-vs-avro.md
-              - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
+          - "Part A: Protocol Buffers":
+              - "4.1 Protobuf wire format": theory/401/protobuf-wire-format.md
+              - "4.2 Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
+              - "4.3 Python: google.protobuf": theory/401/protobuf-python.md
+              - "4.4 Rust: prost": theory/401/protobuf-rust-prost.md
+              - "4.5 C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
+              - "4.6 C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
+              - "4.7 Cross-language fidelity": theory/401/protobuf-cross-language-fidelity.md
+          - "Part B: Comparative Case Studies":
+              - "4.8 Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
+              - "4.9 Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
+              - "4.10 Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
+              - "4.11 JavaScript: three Protobufs": theory/401/javascript-three-protobufs.md
+              - "4.12 C++: the simdjson wrapper": theory/401/cpp-simdjson-wrapper.md
       - Lab notebooks: theory/notebooks/README.md
   - Languages:
       # Alphabetical by display name. One-child nest so languages-nav.js
@@ -243,6 +239,25 @@ nav:
       - Families: analysis/families.md
       - Architecture: analysis/architecture.md
       - Timing honesty: analysis/TIMING_HONESTY.md
+      - Call-site notes:
+          - analysis/call-sites/index.md
+          - "C: custom-binary vs ubj": analysis/call-sites/c-custom-binary-vs-ubj.md
+          - "C#: BinaryPack vs Bond": analysis/call-sites/csharp-binarypack-vs-bond.md
+          - "C++: Bitsery vs YAS": analysis/call-sites/cpp-bitsery-vs-yas.md
+          - "Fortran: json-fortran vs rojff": analysis/call-sites/fortran-json-fortran-vs-rojff.md
+          - "Go: kelindar vs Avro": analysis/call-sites/go-kelindar-vs-avro.md
+          - "Java: Protostuff vs protobuf": analysis/call-sites/java-protostuff-vs-protobuf.md
+          - "JavaScript: JSON vs protobuf": analysis/call-sites/javascript-json-vs-protobuf.md
+          - "Kotlin: FlatBuffers vs protobuf": analysis/call-sites/kotlin-flatbuffers-vs-protobuf.md
+          - "Kotlin: kotlinx-json vs Moshi": analysis/call-sites/kotlin-kotlinx-json-vs-moshi.md
+          - "Kotlin: Protostuff vs protobuf": analysis/call-sites/kotlin-protostuff-vs-protobuf.md
+          - "Mojo: EmberJson vs mojo-avro": analysis/call-sites/mojo-emberjson-vs-avro.md
+          - "PHP: JSON vs protobuf": analysis/call-sites/php-json-vs-protobuf.md
+          - "Python: msgspec JSON vs MessagePack": analysis/call-sites/python-msgspec-json-vs-msgpack.md
+          - "Python: orjson vs json": analysis/call-sites/python-orjson-vs-json.md
+          - "Rust: Speedy vs Postcard": analysis/call-sites/rust-speedy-vs-postcard.md
+          - "Swift: FlatBuffers vs protobuf": analysis/call-sites/swift-flatbuffers-vs-protobuf.md
+          - "Zig: std.json vs serde.json": analysis/call-sites/zig-std-json-vs-serde-json.md
       - Modes: analysis/modes.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md

@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, the C entry named **custom-binary** finishes about **1.4 times** as many encode-and-decode cycles per second as **ubj**, and it writes 37 fewer bytes. Both paths are ordinary C. There is no garbage collector and no visitor framework. The gap is visible in a few dozen lines.
+On this suite’s **document** payload, one instance, in-memory buffer mode, the C entry named **custom-binary** finishes about **1.4 times** as many encode-and-decode cycles per second as **ubj**, and it writes 37 fewer bytes. Both paths are ordinary C. There is no garbage collector and no visitor framework. The gap is visible in a few dozen lines.
 
 This page places those lines side by side. After reading it you should be able to say what extra stores the UBJSON wrapper performs, and why that wrapper exists at all.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [C overview](../../c/index.md)
 
 ## Short answer
@@ -69,7 +69,7 @@ An `i32` is four host bytes:
 
 Decode is the inverse into a `document_t` that already contains a fixed array of items (`items[V2_MAX_CHILDREN]`). There is no heap allocation on this path.
 
-**History.** This is the packed record of [Serialization 101](../101/historical_perspective.md): declare the order and the widths, then copy. Sun’s XDR (1987) did the same with big-endian integers and alignment. The C baseline here uses host byte order and two-byte lengths because the runner and the reader are the same process. It is a measurement baseline, not a public contract.
+**History.** This is the packed record of [Serialization 101](../../theory/101/historical_perspective.md): declare the order and the widths, then copy. Sun’s XDR (1987) did the same with big-endian integers and alignment. The C baseline here uses host byte order and two-byte lengths because the runner and the reader are the same process. It is a measurement baseline, not a public contract.
 
 ## The ubj encode: the same bytes, then an envelope
 
@@ -123,7 +123,7 @@ custom-binary is **not** an interchange format. Another language, or another C c
 
 ubj, even in this minimal form, is closer to a document: a reader can see that a map contains `kind` and `payload`. [UBJSON](https://ubjson.org/) (late 2000s, a binary cousin of JSON) was designed for that inspectability. The suite’s wrapper is a teaching envelope, not a full UBJSON implementation of the document fields.
 
-If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as C libraries in [nanopb versus protobuf-c](protobuf-c-nanopb-compare.md). They are slower than custom-binary because they write field numbers and variable-length integers instead of host `memcpy`. They are the better contract.
+If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as C libraries in [nanopb versus protobuf-c](../../theory/401/protobuf-c-nanopb-compare.md). They are slower than custom-binary because they write field numbers and variable-length integers instead of host `memcpy`. They are the better contract.
 
 ## Self-check
 

@@ -2,16 +2,16 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **Protostuff**, **protobuf-java**, and **protobuf-kotlin** write the **same number of bytes** (155). Protostuff still finishes more encode-and-decode cycles per second. When three libraries emit the same size, the gap cannot be “a more compact encoding.” It has to be the object they build and the path they take to build it.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **Protostuff**, **protobuf-java**, and **protobuf-kotlin** write the **same number of bytes** (155). Protostuff still finishes more encode-and-decode cycles per second. When three libraries emit the same size, the gap cannot be “a more compact encoding.” It has to be the object they build and the path they take to build it.
 
-This page compares the timed wrappers on the Kotlin harness. The Java pair of the same two libraries is [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md).
+This page compares the timed wrappers in the Kotlin benchmark runner. The Java pair of the same two libraries is [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md).
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=kotlin&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protostuff&ser=protostuff&ser=protobuf&ser=protobuf-kotlin#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Kotlin overview](../../kotlin/index.md)
 
 ## Short answer
@@ -77,7 +77,7 @@ private fun toDocument(d: Document) =
     }
 ```
 
-The Kotlin DSL is a different way to *build* the generated message. `toByteArray()` and `parseFrom` are still the official Java runtime. That is why protobuf-kotlin and protobuf-java sit together on this fixture.
+The Kotlin DSL is a different way to *build* the generated message. `toByteArray()` and `parseFrom` are still the official Java runtime. That is why protobuf-kotlin and protobuf-java sit together on this payload.
 
 ## Why the sizes match
 
@@ -85,10 +85,10 @@ The suite `.proto` numbers document fields `id = 1`, `status = 2`, `meta = 3`, `
 
 ## What you give up
 
-Protostuff’s runtime schema follows declaration order. A `.proto` that numbers fields differently will not interoperate. The official Java/Kotlin runtime follows the `.proto` file and the published evolution rules. If the bytes leave this process, protobuf-java or protobuf-kotlin is the contract. If the bytes stay inside a JVM cache, Protostuff’s data-class path is why it is faster on this fixture.
+Protostuff’s runtime schema follows declaration order. A `.proto` that numbers fields differently will not interoperate. The official Java/Kotlin runtime follows the `.proto` file and the published evolution rules. If the bytes leave this process, protobuf-java or protobuf-kotlin is the contract. If the bytes stay inside a JVM cache, Protostuff’s data-class path is why it is faster on this payload.
 
 ## Self-check
 
 1. Why is equal size evidence that the encoding is not the speed story?
 2. What extra objects do the official protobuf rows still build that Protostuff does not?
-3. Why do protobuf-java and protobuf-kotlin land so close to each other on this fixture?
+3. Why do protobuf-java and protobuf-kotlin land so close to each other on this payload?

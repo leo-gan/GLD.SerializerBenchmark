@@ -1,51 +1,38 @@
-# Rust: why rkyv does not beat Speedy when you rebuild a `Document`
+# 4.10 Case Study: Zero-Copy Layouts Under Materialization (Rust)
 
-## Why this article exists
+## Problem Statement
 
-rkyv is designed so a reader can use the received buffer **in place**. People call that zero-copy. On this suite’s **document** fixture, one instance, **Speedy** is still faster, and rkyv’s message is **larger**. The Rust overview already notes that timed rkyv decode **materializes owned values**. This page opens those two call sites and the library functions they invoke, so the note becomes something you can see in code.
+**`rkyv`** is designed for zero-copy deserialization: a reader validates an aligned byte buffer and accesses `&ArchivedT` directly through relative offsets without allocating an owned object tree (see [2.7 Zero-copy layouts](../201/zero-copy.md) and [3.8 Zero-copy in production](../301/zero-copy-in-production.md)). Yet on this suite's `document` payload ($n = 1$, `bytes` mode), **`Speedy`** outperforms `rkyv` on both encode and decode while emitting a smaller buffer (214 B vs. 272 B).
 
-After reading it you should be able to say what `rkyv::from_bytes` does that `rkyv::access` would not, and why an in-place layout can be slower when the runner demands an owned `Document`.
+Inspecting the Rust runner reveals why: **zero-copy is a calling pattern (`rkyv::access`), not a property automatically conferred by importing a crate.** When a benchmark runner calls `rkyv::from_bytes` to materialize an owned `Document` for full field-by-field fidelity checking, `rkyv` pays archive construction, alignment padding, validation, *and* full heap allocation.
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+> **Illustrative L1 snapshot (`document`, $n = 1$, `bytes` mode):** Live authoritative numbers belong to the [Rust Dashboard comparison](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=rkyv&ser=speedy#compare) ([Claims L1](../../analysis/CLAIMS_AND_REPLICATION.md) · [Rust Overview](../../rust/index.md)).
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=rkyv&ser=speedy#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
-· [Rust overview](../../rust/index.md)
+| Metric (Quoted L1 Snapshot) | `Speedy` 0.8.7 | `rkyv` 0.8.17 (Materialized) |
+|---|---:|---:|
+| Throughput (encode + decode) | **2.84M ops/s** | 1.64M ops/s |
+| Encode latency | **88 ns** | 314 ns |
+| Decode latency | **264 ns** | 296 ns |
+| Encoded wire size | **214 B** | 272 B |
 
-## Short answer
+---
 
-Speedy is faster than rkyv on this slice (2.84 million versus 1.64 million cycles per second) and writes a smaller message (214 B versus 272 B). We can see that in the table.
+## Source-Level Call Sites
 
-In-place access is a way of calling the library. Choosing the crate does not turn the timed path into that call. This runner asks both libraries for an owned `Document`. Speedy reads a packed image into that struct. rkyv first builds an archived layout (alignment, relative pointers), then **deserializes that archive into a second owned `Document`**. You pay construction and you pay a classical copy. Decode is not faster. Encode is much slower. Size grows because of padding.
-
-| | Speedy 0.8.7 | rkyv 0.8.17 (as timed) |
-|--|--------------|------------------------|
-| Mean encode + decode, document, *n* = 1 | **2.84 million / s** | 1.64 million / s |
-| Encode | **88 ns** | 314 ns |
-| Decode | **264 ns** | 296 ns |
-| Encoded size | **214 B** | 272 B |
-
-A production reader that only needed `status` could call `rkyv::access` and load one integer from the buffer. This suite does not time that path. It would be faster, and it would not produce a `Document` the fidelity check can compare field by field.
-
-## The two timed call sites
-
-**Speedy** writes the concrete struct into the runner’s `Vec<u8>` (`rust/src/serializers/direct.rs`):
+Both adapters live in `rust/src/serializers/direct.rs`:
 
 ```rust
+// Speedy: direct fixed-width pack/unpack
 fn speedy_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
     let Fixture::Document(v) = fx else { bail!("speedy: expected Document"); };
     v.write_to_stream(&mut *out)?;
     Ok(())
 }
-// decode:
-Document::read_from_buffer(d)
+// decode: Document::read_from_buffer(d)
 ```
 
-**rkyv** allocates an aligned buffer, copies it into the runner’s vector, then on decode builds an owned value:
-
 ```rust
+// rkyv: archive build + copy on encode; validate + owned materialization on decode
 fn rkyv_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
     let Fixture::Document(v) = fx else { bail!("rkyv: expected Document"); };
     let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v)?;
@@ -57,43 +44,57 @@ fn rkyv_de_document(data: &[u8]) -> Result<Document> {
 }
 ```
 
-`from_bytes` is not “view the buffer.” In rkyv 0.8 it is access **plus** deserialize into `T` (`rkyv` `src/api/high/mod.rs` / `from_bytes`): validate the archive, then allocate strings and vectors that the `Document` owns.
+---
 
-The path this crate advertises for in-place reads is `access` / `access_unchecked`, which returns `&ArchivedDocument` into the byte slice. The runner does not call it, because the suite’s fidelity check compares owned domain values.
+## Mechanistic Analysis
 
-## What Speedy stores
+### Why `rkyv` Encode Is Slower and Larger (314 ns / 272 B vs. 88 ns / 214 B)
 
-Speedy’s derived `write_to` is a straight sequence of fixed-width stores: a `u32` length, then bytes; an `i32` as four bytes; an `i64` as eight. Details are on [Speedy versus Bincode](rust-speedy-vs-bincode.md). Decode is the inverse: read known widths into a `Document`. There is no archived twin type.
+`rkyv` serializes values into a **relocatable memory image** (an archive) rather than a packed byte stream:[^1]
 
-## What rkyv stores
+1. Every string and `Vec` requires writing child payloads first, computing **relative pointers** (`RelPtr`) back to those locations, and inserting **alignment padding** (4- and 8-byte boundaries) so archived references satisfy Rust's hardware alignment invariants.
+2. In the runner above, `rkyv::to_bytes` allocates an `AlignedVec` internally, and `out.extend_from_slice` copies those 272 bytes into the runner's output `Vec<u8>`.
 
-rkyv (David Koloski, early 2020s) builds an **archive**: the on-the-wire layout *is* a relocatable image of the value. Strings and vectors become relative pointers and lengths, placed so that a later load from the buffer is a valid Rust reference after validation. `to_bytes` must:
+The 58 extra bytes relative to `Speedy` are not field names—they are relative-pointer metadata and alignment padding required to make zero-copy field access legal later.
 
-1. walk the `Document`;
-2. write those relative pointers and the pointed-to bytes;
-3. satisfy alignment (often four or eight bytes), which inserts padding.
+### Why `rkyv` Decode Loses Under `from_bytes` (296 ns vs. 264 ns)
 
-That is why encode is 314 ns rather than 88, and why the image is 272 bytes rather than 214. The extra bytes are not field names. They are the directory and padding that make in-place loads legal.
+In `rkyv` 0.8, `rkyv::from_bytes::<Document, _>(data)` executes **two** phases:
 
-**History.** The idea is the same pressure that produced Cap’n Proto (Kenton Varda, 2013) and FlatBuffers (Wouter van Oortmerssen, 2014): do not build a second object tree if the program will only read a few fields. See [201 in-place access](../201/zero-copy.md) and the [historical perspective](../101/historical_perspective.md). rkyv brings that idea into Rust’s type system. It only helps if the timed path *stops* at the archived view.
+1. **ByteCheck validation (`rkyv::access`):** Verifies buffer alignment, UTF-8 validity, enum discriminants, and relative-pointer bounds to obtain `&ArchivedDocument`.
+2. **Owned deserialization (`rkyv::deserialize`):** Walks `&ArchivedDocument`, allocating owned `String` and `Vec` buffers on the heap to construct a brand-new `Document`.
 
-## Side-by-side: what the timed calls include
+Because the suite's round-trip fidelity check compares owned `Document` values, the runner calls `from_bytes` instead of stopping at `rkyv::access(data)`. That keeps `rkyv` on an identical owned-value boundary as `Speedy` ([Timing honesty](../../analysis/TIMING_HONESTY.md)), while illustrating that **materializing a zero-copy archive discards its primary architectural advantage**:
 
-| Step | Speedy (timed) | rkyv as timed here | rkyv `access` (not timed) |
-|------|----------------|--------------------|---------------------------|
-| Encode | store fields into `out` | build aligned archive, then `extend_from_slice` | same archive |
-| Decode | fill a `Document` | validate + fill a `Document` | return `&ArchivedDocument` |
-| Read `status` | already in the struct | already in the struct | load four bytes at an offset |
-| Fidelity check | compares two `Document`s | compares two `Document`s | would need a different check |
+| Pipeline Stage | `Speedy` (Timed) | `rkyv::from_bytes` (Timed) | `rkyv::access` (Not Timed) |
+|---|---|---|---|
+| **Encode** | Packed fixed-width write into `out` | Build aligned archive + copy to `out` | Same aligned archive |
+| **Decode** | Read packed bytes $\to$ owned `Document` | Validate archive + allocate owned `Document` | Validate archive $\to$ `&ArchivedDocument` (zero heap alloc) |
+| **Read `doc.status`** | Field load from owned struct | Field load from owned struct | Direct 4-byte offset load from buffer |
 
-Decode times are close (264 ns versus 296 ns) because **both fill a `Document`**. rkyv’s extra work is validation and a less dense layout, not a free read.
+*(The same materialization principle applies to FlatBuffers wrappers that copy every field into native objects; see [Swift: FlatBuffers vs. SwiftProtobuf](../../analysis/call-sites/swift-flatbuffers-vs-protobuf.md).)*
 
-## What you give up either way
+---
 
-If you use `access`, you must keep the buffer alive, you must validate untrusted bytes, and you must write the rest of the program against archived types. If you use `from_bytes`, you have an ordinary `Document` and you have paid Speedy’s kind of decode, plus archive construction. This suite chose the second path so that rkyv can sit on the same fidelity table as Speedy and Bincode. That is honest for comparison and unfair to rkyv’s advertised read path.
+## Exercises
 
-## Self-check
+1. **Identifying the zero-copy entry point:** In `rust/src/serializers/direct.rs`, which function does the runner call on decode, and what API would a zero-copy production reader call instead?
 
-1. Quote the two rkyv calls in `direct.rs`. Which one is the in-place API, and which one does the runner use?
-2. Why can rkyv be both larger and slower than Speedy *and* still be the right crate for a catalogue that is read field-by-field?
-3. The [Swift FlatBuffers page](swift-flatbuffers-vs-protobuf.md) times a domain copy. How is that the same lesson as this page?
+??? note "Solution"
+    The runner calls **`rkyv::from_bytes::<Document, _>(data)`**, which validates *and* allocates an owned `Document`. A zero-copy reader calls **`rkyv::access::<ArchivedDocument, _>(data)`** (or `access_unchecked` only on already-verified trusted memory) to borrow `&ArchivedDocument` directly from the aligned byte buffer with zero heap allocations.
+
+2. **When `rkyv` wins despite higher encode cost:** Explain why a read-heavy lookup table (written once offline and memory-mapped by 1,000 worker processes reading 2 fields per query) benefits strongly from `rkyv` even though `rkyv` is slower and larger than `Speedy` on `document` ($n = 1$).
+
+??? note "Solution"
+    Offline encoding amortizes `rkyv`'s 314 ns build cost to zero at serving time. Via `mmap` + `rkyv::access`, workers read the 2 required fields directly from page-cached memory without allocating a single object or touching the remaining untouched fields—whereas `Speedy` would have to parse and allocate the entire catalog into RAM.
+
+3. **Alignment pitfall:** If a network socket hands your Rust service an unaligned `&[u8]` slice (`addr % 8 != 0`), what happens when calling `rkyv::access::<ArchivedDocument, _>(slice)`?
+
+??? note "Solution"
+    `ByteCheck` rejects the unaligned slice with an alignment error (preventing undefined behavior from misaligned Rust references). Callers reading from unaligned network buffers must first copy into an aligned buffer such as `rkyv::util::AlignedVec`—re-introducing a copy that must be counted in latency budgets ([3.8 Zero-copy in production](../301/zero-copy-in-production.md)).
+
+---
+
+## References
+
+[^1]: Koloski, D. *`rkyv` 0.8 Documentation: Architecture, `access`, and `from_bytes`*. <https://rkyv.org/>

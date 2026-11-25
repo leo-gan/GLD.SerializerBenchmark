@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-[Speedy versus Bincode](rust-speedy-vs-bincode.md) showed that leaving Serde and writing fixed-width integers makes encode fast and messages **larger**. A student can fairly ask whether compactness requires leaving Serde. **Postcard** stays on Serde, writes variable-length integers, and on this suite’s **document** fixture it is both smaller than Bincode and faster than Bincode. It is still slower than Speedy.
+[Speedy versus Bincode](../../theory/401/rust-speedy-vs-bincode.md) showed that leaving Serde and writing fixed-width integers makes encode fast and messages **larger**. A student can fairly ask whether compactness requires leaving Serde. **Postcard** stays on Serde, writes variable-length integers, and on this suite’s **document** payload it is both smaller than Bincode and faster than Bincode. It is still slower than Speedy.
 
 This page holds “no field names” still and compares two compact binaries: Speedy’s native `Writable` with four- and eight-byte integers, versus Postcard’s Serde encoder with postcard-varints.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Rust overview](../../rust/index.md)
 
 ## Short answer
@@ -82,7 +82,7 @@ The Serde serializer calls that helper for `u16`/`u32`/`u64`, for string lengths
 
 Decode walks the same varints in reverse (`try_take_varint_u32`). Each integer is a short loop rather than a four-byte load. That is the 414 ns versus 264 ns.
 
-**History.** Variable-length integers are an old density trick: ASN.1 length octets, then Protocol Buffers varints (Google, 2000s), then Avro zigzag, then Postcard for microcontrollers. Speedy’s fixed widths are the other old trick: XDR and packed records. This pair is those two bets on the same Rust `Document`. See [Historical perspective](../101/historical_perspective.md).
+**History.** Variable-length integers are an old density trick: ASN.1 length octets, then Protocol Buffers varints (Google, 2000s), then Avro zigzag, then Postcard for microcontrollers. Speedy’s fixed widths are the other old trick: XDR and packed records. This pair is those two bets on the same Rust `Document`. See [Historical perspective](../../theory/101/historical_perspective.md).
 
 ## Side-by-side: one small `i32`
 
@@ -105,7 +105,7 @@ Postcard is still faster than Bincode because its Serde encoder is thinner (no `
 | Embedded / `no_std` | Possible, not the design centre | The design centre |
 | Evolution | Reorder breaks readers | Reorder breaks readers (no field numbers) |
 
-Neither library is a multi-language service contract. For that, this suite’s `prost` row (155 B, 841 thousand / s on this fixture) is the Protocol Buffers answer. Postcard versus Speedy is a lesson about **width**, not about schemas.
+Neither library is a multi-language service contract. For that, this suite’s `prost` row (155 B, 841 thousand / s on this payload) is the Protocol Buffers answer. Postcard versus Speedy is a lesson about **width**, not about schemas.
 
 ## Self-check
 

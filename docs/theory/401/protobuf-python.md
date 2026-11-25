@@ -1,283 +1,120 @@
-# Python: google.protobuf encode/decode path
+# 4.3 Python: `google.protobuf` Runtime Path
 
-## Why this article exists
+## Problem Statement
 
-Python services often “use Protocol Buffers” through generated `*_pb2.py` modules. Many developers still lack a clear picture of several important details. What is timed in a benchmark? Who owns the output bytes? Which runtime backend runs under the hood? How does that backend turn a message into wire tags? Reading only client call sites does not train serializer developers.
+Most Python developers interact with Protocol Buffers only through generated `*_pb2.py` classes, leaving three implementation questions opaque: which runtime backend actually executes serialization (`upb` vs. pure Python), how descriptor metadata maps Python attributes to wire tags, and who owns the resulting `bytes` and input buffers.
 
-In this article you will follow the path from a `.proto` file through code generation, backend selection, and the public encode/decode APIs. After reading it, you should be able to explain who allocates the output `bytes` object. You should also explain what happens when `ParseFromString` differs from `MergeFromString`.
+This chapter traces the full path from `.proto` compilation through `SerializeToString` and `ParseFromString` in `google.protobuf` (pinned at `protobuf>=7.34.1,<8` in `python/pyproject.toml`).[^1]
 
-## Short answer
+---
 
-With the `google.protobuf` package, **`protoc`** (the Protocol Buffers compiler) generates message classes that implement the `Message` API. Those methods include `SerializeToString` and `ParseFromString`.
-
-At import time the library selects an **implementation backend**. By default that backend is **upb**, a fast native core. Otherwise it falls back to pure Python. A legacy **cpp** extension still exists, but it is no longer what PyPI ships for ordinary installs.
-
-Serialize walks the message’s fields using **descriptors**. Descriptors are metadata that record field numbers and types. The walk emits standard Protocol Buffers binary. Parse consumes tags and fills a message instance.
-
-In this benchmark suite, converting a domain object into a Message is untimed **`prepare_data`**. Timed work is only serialize and parse of the Message. This matters because Dashboard numbers are meant to compare codec work, not model-mapping work.
-
-This article assumes the [wire format](protobuf-wire-format.md) article. Package: `protobuf` ([Python tutorial](https://protobuf.dev/getting-started/pythontutorial/), [encoding guide](https://protobuf.dev/programming-guides/encoding/), [python/README backends](https://github.com/protocolbuffers/protobuf/blob/main/python/README.md)).
-
-**Suite pin (this shared code repository for many projects):** `protobuf>=7.34.1,<8` in `python/pyproject.toml`. Patterns below track that line. Always re-check your installed version.
-
-## Prerequisites
-
-- Serialization 201: schema-dependent encoding.
-- Ability to read generated Python modules.
-- Soft: [301 trust](../301/trust-boundaries.md) and [untrusted input](../301/untrusted-input.md).
-
-## Mental model
-
-**Codegen** (code generation) is the step that turns a `.proto` schema into language source files. In Python that produces modules whose names end in `_pb2.py`.
+## Architecture: Codegen, Descriptors, and Runtime Backends
 
 ```text
-  .proto
-    │ protoc --python_out
-    ▼
-  *_pb2.py  (classes + DESCRIPTOR metadata)
-    │
-    │  runtime selects backend: upb  >  (legacy cpp)  >  pure python
-    ▼
-  Message instance  ──SerializeToString──►  bytes   (wire tags)
-  Message instance  ◄─ParseFromString────  bytes
+  .proto ──protoc --python_out──► *_pb2.py (classes + serialized FileDescriptorProto)
+                                       │
+                        import-time backend resolution:
+                         upb (default C core)  >  pure Python
+                                       │
+                  Message ──SerializeToString()──► immutable bytes (caller-owned)
+                  Message ◄─ParseFromString()──── bytes / memoryview
 ```
 
-## Client path (what you write)
+At import time, `google.protobuf` selects one implementation backend:[^2]
 
-### 1. Codegen
+| Backend | Implementation | Typical Role |
+|---|---|---|
+| **`upb`** (default) | Native C library (`upb` mini-tables and arena allocator) shipped in modern PyPI wheels | Production and steady-state benchmarks |
+| **`python`** | Pure-Python reflection loops in `google.protobuf.internal` | Portable fallback when native extensions cannot load |
+| **`cpp`** *(legacy)* | Older C++ wrapper extension | No longer shipped in standard PyPI wheels |
 
-In this step you run the Protocol Buffers compiler so it emits Python modules from your schema.
+Force a specific backend for reproducible debugging or benchmarking via `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb` (or `python`).
+
+---
+
+## Client Path and API Semantics
+
+Compile a schema into generated Python classes:
 
 ```bash
 protoc -I schemas --python_out=python/generated schemas/v2/protobuf/benchmark_v2.proto
 ```
 
-Generated modules define message classes whose field numbers come from the `.proto` file. Python attribute names are language bindings. **Wire identity is the field number**, not the Python name. In other words, renaming a field in the `.proto` without changing its number does not change the wire layout.
-
-### 2. Build a message (generated class)
-
-```python
-import benchmark_v2_pb2 as pb2  # illustrative import
-
-msg = pb2.Message()  # any generated message class
-msg.f_string = "Ada"
-msg.f_int32 = 36
-msg.f_bool = True
-```
-
-In proto3, unset scalars that still hold their default values are typically **omitted** on the wire. For example, an integer that is still zero often does not appear as a tag at all.
-
-### 3. Teaching MiniUser (not suite codegen)
-
-`MiniUser` is the teaching message from the [wire](protobuf-wire-format.md) and [lab](lab-mini-protobuf-encoder.md) articles. It is **not** part of the suite wire schema. Generate it from a local `mini.proto`:
-
-```bash
-protoc --python_out=. mini.proto   # defines message MiniUser
-```
+Python attribute names are purely language bindings; wire identity remains the integer field numbers embedded in each class's `DESCRIPTOR`. On the standalone teaching schema `mini.proto` ([4.2 Lab](lab-mini-protobuf-encoder.md)):
 
 ```python
 import mini_pb2
 
-msg = mini_pb2.MiniUser()
-msg.id = 1
-msg.name = "Ada"
-data = msg.SerializeToString()   # b'\x08\x01\x12\x03Ada'
+msg = mini_pb2.MiniUser(id=1, name="Ada")
+raw: bytes = msg.SerializeToString()          # b'\x08\x01\x12\x03Ada'
+
+out = mini_pb2.MiniUser.FromString(raw)       # construct fresh + parse
 ```
 
-### 4. Encode / decode (API)
+### Replace vs. Merge Semantics
 
-The same APIs work on any generated message (including teaching MiniUser):
+Three decoding methods look similar but carry distinct state-mutation semantics:
 
-```python
-data: bytes = msg.SerializeToString()
+| Method | Semantics | Hazard if Misused |
+|---|---|---|
+| `msg.ParseFromString(data)` | **Replace:** clears `msg`, then parses `data` | Safe on reused objects; returns bytes parsed |
+| `Cls.FromString(data)` | **Construct + Parse:** allocates fresh message | Safest default; prevents stale-field bleed |
+| `msg.MergeFromString(data)` | **Merge:** preserves existing fields, appends repeated items, merges submessages | Silently duplicates repeated entries if called on a reused instance expecting replacement |
 
-# Replace semantics: clear message, then parse
-out = pb2.Message()  # illustrative
-out.ParseFromString(data)
+Pass `deterministic=True` to `SerializeToString(deterministic=True)` when deterministic map-key ordering is desired (note that full canonical byte-identity across library versions is still not guaranteed by the Protobuf specification).
 
-# Or construct fresh:
-out = type(msg).FromString(data)
+---
 
-# True merge into an existing message (does not clear first):
-# out.MergeFromString(data)
-```
+## Internal Execution Trace
 
-Public API documentation: [Message.SerializeToString / ParseFromString](https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html). The optional `deterministic=True` argument on serialize requests stable map-key ordering when maps are present.
+### Serialization (`SerializeToString`)
 
-## How the package implements serialization (step-by-step)
+1. **Backend dispatch:** Python delegates to the resolved `upb` C extension (or pure-Python encoder).
+2. **Descriptor-driven field walk:** The runtime iterates present fields via compiled descriptor metadata (`upb` mini-tables), skipping proto3 default scalars.
+3. **Tag + payload emission:** Emits `[key][payload]` per [4.1 Protocol Buffers wire format](protobuf-wire-format.md)—varints for integers/enums/bools, 4/8-byte little-endian fixed values, and staged `LEN` frames for strings, bytes, packed arrays, and nested submessages.
+4. **Immutable output materialization:** Copies the serialized arena buffer into a new Python `bytes` object owned by the caller (no reference to `msg` is retained).
 
-The logical flow is the same across backends. The package turns a populated message into wire bytes using **descriptors**. Descriptors are tables of field numbers, types, and labels that code generation baked in.
+### Deserialization (`ParseFromString`)
 
-### S1 — Resolve backend
+1. **Buffer view entry:** `upb` reads directly from the input `bytes` or `memoryview` buffer without an upfront input copy.
+2. **Tag loop and descriptor lookup:** Reads each key varint, splits `(field_number, wire_type)`, looks up the field descriptor, decodes known payloads (enforcing UTF-8 validity on `string` fields and a recursion-depth cap on nested messages), and skips or retains unknown fields by wire type.
+3. **Python object realization:** While `upb` stores scalar fields inside compact C message structs, accessing strings, lists, and submessages from Python allocates CPython wrapper objects (`str`, sequence/message proxies). That CPython boundary cost is an inherent component of Python Protobuf latency, distinct from raw wire scanning.
+4. **Error handling:** Truncated varints, invalid wire types, malformed UTF-8, or recursion overflows raise `google.protobuf.message.DecodeError`. Always enforce an upfront payload byte cap before invoking `ParseFromString` ([3.2 Untrusted input](../301/untrusted-input.md)).
 
-At import time the library selects an **implementation backend**:
+---
 
-- **upb** is the default in modern PyPI wheels. It is a native (C) implementation of Protocol Buffers that Python calls into.
-- **pure Python** is the portable fallback when no native extension is available.
-- A legacy **cpp** extension exists, but it is no longer what `pip install protobuf` ships for ordinary use.
+## Buffer Ownership and Suite Integration
 
-You usually do not choose this explicitly. Set `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` (or `upb`) to force one backend for debugging or reproducible benchmarks.
+| Object | Owner & Lifetime |
+|---|---|
+| Generated `Message` | Python garbage collector (C `upb` arena freed when the Python wrapper is collected) |
+| Returned `bytes` | Immutable, caller-owned |
+| Input `bytes` / `memoryview` | Caller must keep mutable backing buffers alive for the duration of `ParseFromString` |
 
-### S2 — Field walk (descriptor-driven)
+In this benchmark suite (`python/src/benchmark/serializers/schema_protobuf.py`, log name `protobuf`), converting the suite's dataclass record into a generated Protobuf `Message` runs inside untimed `prepare_data`, while `serialize_bytes` and `deserialize_bytes` time only `SerializeToString` and `ParseFromString`. Inspect live measurements on the [Python Protocol Buffers Dashboard slice](../../dashboard/index.html?lang=python&standard=protobuf&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf&ser=protobuf#detailed-analytics), keeping comparisons strictly within Python ([3.9 Fair benchmarking](../301/using-this-suite.md)).
 
-`SerializeToString()` iterates the message’s **present fields** using descriptor metadata (field numbers, types, labels). For each field it emits a **key** (field number plus wire type) followed by the payload. This is the same tag-plus-payload layout you saw in the wire format article.
+---
 
-### S3 — Emit tag + payload
+## Exercises
 
-Each field becomes exactly the tag-plus-payload pair described in the [wire format article](protobuf-wire-format.md):
+1. **Merge-bug diagnosis:** A worker reuses one module-level `msg = mini_pb2.MiniUser()` across requests to avoid allocation and calls `msg.MergeFromString(req_bytes)` on every request. After two requests with `tags = [1]` and `tags = [2]`, what does `msg.tags` contain, and what is the correct fix?
 
-- Varint types (integers, bool, enum) → key plus varint encoding.
-- Fixed32/64 → key plus 4 or 8 little-endian bytes.
-- String/bytes → key plus length varint plus raw data.
-- Nested message → key plus length varint plus a recursive serialize of the submessage.
+??? note "Solution"
+    `msg.tags` contains **`[1, 2]`** (concatenating state across unrelated requests, a severe cross-request data leak!). Call `msg.ParseFromString(req_bytes)` (which clears `msg` first) or, even safer, construct a fresh message via `mini_pb2.MiniUser.FromString(req_bytes)`.
 
-### S4 — Produce output bytes
+2. **Benchmark reproducibility:** Two engineers run the same Python Protobuf benchmark on identical hardware and observe a $10\times$ speed difference. What environment check immediately explains the discrepancy?
 
-The result is a new **immutable `bytes` object**. The **caller owns it**. No reference to the original message is retained inside that output. The garbage collector will reclaim the `bytes` object when nothing else refers to it.
+??? note "Solution"
+    Inspect `google.protobuf.internal.api_implementation.Type()` (or `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION`). One environment fell back to the **`python`** pure-Python backend while the other ran the native **`upb`** C backend.
 
-```text
-  Message fields
-       │
-       ▼
-  S1  resolve backend (upb / pure Python)
-       │
-       ▼
-  S2  descriptor walk (by field number)
-       │
-       ▼
-  S3  emit key (varint) + payload (varint / fixed / LEN)
-       │
-       ▼
-  S4  bytes (immutable, caller-owned)
-```
+3. **Timing boundary discipline:** Why does `schema_protobuf.py` place dataclass-to-`Message` conversion in untimed `prepare_data` rather than inside `serialize_bytes`?
 
-### Decision frame: which backend matters?
+??? note "Solution"
+    Production services using Protocol Buffers natively populate generated `Message` objects directly rather than first constructing intermediate dataclasses. Keeping domain conversion outside the timer isolates codec serialization cost from runner-specific adapter mapping (see [Timing honesty](../../analysis/TIMING_HONESTY.md)).
 
-| Situation | Practical note |
-|-----------|----------------|
-| You care about speed on code that runs on every request under load | upb (the default) is usually best |
-| You need zero-copy sharing with C++ | Legacy cpp extension (rare now) |
-| You must run without any native extension | `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` |
-| Benchmarking or debugging | Pin the backend via the environment variable for reproducibility |
+---
 
-## How the package implements deserialization (step-by-step)
+## References
 
-### D1 — `ParseFromString` / `MergeFromString` / `FromString`
-
-These three APIs look similar but mean different things. Choose carefully.
-
-| API | Behavior |
-|-----|----------|
-| **`ParseFromString(data)`** | **Replace:** clears `self`, then parses `data` into it |
-| **`MergeFromString(data)`** | **Merge:** does not clear; merges fields into the existing state |
-| **`FromString(data)`** | Constructs a **new** message, then parses (replace into empty) |
-
-1. The backend receives a pointer or view of the input buffer. For upb, the raw read can be zero-copy into C when possible. Python objects for field values are still allocated as needed.
-2. Prefer `FromString` or a fresh instance plus `ParseFromString` when you want replace semantics. Use `MergeFromString` only when merge is intentional.
-
-### D2 — Tag loop
-
-While input remains:
-
-1. Read the **key** varint and split it into `field_number` and `wire_type`.
-2. Look up `field_number` in the message **descriptor**.
-3. If the field is **known**, decode the payload for that field’s type and set or merge it into the message.
-4. If the field is **unknown**, **skip** the payload using `wire_type`. Unknown fields are often retained for round-trip, depending on backend and version.
-
-This matches the decode loop in the wire article.
-
-### D3 — Type-specific decode
-
-| Wire/content | Action |
-|--------------|--------|
-| Varint field | Decode varint → store as int, bool, or enum |
-| Fixed32/64 | Read 4 or 8 little-endian bytes |
-| String | Read length plus UTF-8 → Python `str` |
-| Bytes | Read length plus raw data → `bytes` |
-| Nested message | Read a length-delimited slice → recursive parse into a submessage |
-| Repeated | Append an element (or unpack a packed block into multiple elements) |
-| Map | Decode as repeated entry messages → Python map |
-
-### D4 — Merge semantics (when merging)
-
-When you use **`MergeFromString`** (or merge paths inside nested updates), repeated fields append, singular scalars overwrite, and submessages merge field-by-field. That is why “parse into an already-filled message” with merge APIs can surprise you. Use `ParseFromString` or a fresh instance when you want replace.
-
-### D5 — Allocate Python-visible structure
-
-Even with upb, exposing fields to Python often builds full Python objects in memory (`str`, list wrappers, submessage proxies). That cost is part of “Python Protocol Buffers,” not pure wire CPU time.
-
-### D6 — Errors
-
-Truncated input, illegal varints, or invalid UTF-8 (where checked) raise parse errors. Always bound untrusted input size **before** parse ([301 untrusted input](../301/untrusted-input.md)).
-
-```text
-  bytes  →  tag loop  →  descriptor lookup  →  set fields / skip unknown  →  Message
-```
-
-## Pure Python vs upb (what changes)
-
-| Stage | Pure Python | upb (default wheel) |
-|-------|-------------|---------------------|
-| Field walk | Python loops in `internal` | Native C |
-| Varint/tag | Python integer operations | Native |
-| Nested | Recursive Python | Native plus a recursion limit |
-| API | Same `Message` methods | Same |
-
-The two backends are functionally interchangeable for ordinary use. Performance and some edge behaviors differ. Pin via `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` (or `upb`) and document the backend when you publish benchmarks.
-
-## Buffers and ownership (simple diagram)
-
-**Ownership** here means three things: who allocated this object, who is responsible for freeing it (or letting the garbage collector take it), and how long a buffer must stay valid.
-
-```text
-Python Message object
-     │
-     ▼ SerializeToString
-new bytes (immutable, you own it)
-     ▲
-     │ ParseFromString
-input bytes (or memoryview — underlying buffer must remain valid for the call)
-```
-
-| Object | Owner |
-|--------|--------|
-| Generated Message | Python garbage collector |
-| `bytes` from serialize | Immutable; caller-owned |
-| Parse input | Caller; ordinary `bytes` are fine; if you pass a view into a mutable buffer, keep that buffer alive for the call |
-| Unknown fields | Held on the message when the backend retains them |
-
-## In this suite
-
-| Location | Role |
-|----------|------|
-| `python/src/benchmark/serializers/schema_protobuf.py` | `prepare_data` builds a Message; `serialize_bytes` calls `SerializeToString` |
-| suite generated `*_pb2.py` modules | Generated suite messages—not MiniUser |
-| Log name | `protobuf` |
-| Pin | `protobuf>=7.34.1,<8` |
-| [Open this slice on the Dashboard](../../dashboard/index.html?lang=python&standard=protobuf&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf&ser=protobuf#detailed-analytics) | Standard Protocol Buffers, cost under whatever backend the environment selected |
-
-The benchmark runner keeps domain-to-Message conversion **out** of the timed path so Dashboard numbers compare codec work, not model mapping. Do not rank Python against Rust or C from the Dashboard alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
-
-## Common mistakes
-
-- Timing `prepare_data` and serialize together.
-- Assuming pure-Python behavior while upb is active (or the reverse).
-- Using `MergeFromString` when you meant replace (`ParseFromString` or a fresh message).
-- Mutating a message while another thread serializes it.
-- Parsing untrusted bytes without size limits.
-- Hand-editing `*_pb2.py`.
-- Expecting `MiniUser` in suite-generated modules (it is a teaching schema only).
-
-## What this article is not
-
-- A line-by-line tour of the upb C sources.
-- gRPC Python stubs.
-- A from-scratch encoder (see the [lab](lab-mini-protobuf-encoder.md)).
-
-## Key takeaways
-
-- Client API path: **codegen → Message → SerializeToString / ParseFromString**.
-- **ParseFromString** replaces (clear, then parse). **MergeFromString** merges.
-- Implementation: a **backend** plus a **descriptor-driven** field walk produces wire tags.
-- The default backend is **upb**. Pure Python remains the portable fallback.
-- Parallel articles: [Rust prost](protobuf-rust-prost.md), [C protobuf-c](protobuf-c-protobuf-c.md).
+[^1]: Google Protocol Buffers Documentation. *Python Generated Code Guide and `Message` API*. <https://protobuf.dev/reference/python/python-generated/>
+[^2]: Protocol Buffers Repository. *Python Runtime Backends (`upb` vs. Pure Python)*. <https://github.com/protocolbuffers/protobuf/blob/main/python/README.md>

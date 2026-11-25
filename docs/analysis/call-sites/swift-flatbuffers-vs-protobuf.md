@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **FlatBuffers** finishes more encode-and-decode cycles per second than **SwiftProtobuf**, while writing a **larger** message (440 bytes versus 155). Smaller is not faster. The two libraries are optimizing different moments: FlatBuffers arranges the buffer so a field is an offset plus a load; SwiftProtobuf writes a compact tag stream and must parse that stream to recover a field.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **FlatBuffers** finishes more encode-and-decode cycles per second than **SwiftProtobuf**, while writing a **larger** message (440 bytes versus 155). Smaller is not faster. The two libraries are optimizing different moments: FlatBuffers arranges the buffer so a field is an offset plus a load; SwiftProtobuf writes a compact tag stream and must parse that stream to recover a field.
 
 This page compares the two timed wrappers and the generated code they call.
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=swift&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=FlatBuffers&ser=FlatBuffers&ser=SwiftProtobuf#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Swift overview](../../swift/index.md)
 
 ## Short answer
@@ -99,11 +99,11 @@ The information is the same. The layout is not.
 | Four-byte offsets to strings, vectors, and nested tables | A variable-length length plus UTF-8 |
 | `Int32` / `Int64` stored at full width, with alignment padding | Variable-length integers (a small `status` is one byte) |
 | A vector of eight item *offsets* (32 bytes) plus eight item tables | Eight tagged nested messages |
-| An extra 11-slot `FixtureRoot` so one buffer can hold any fixture kind | The root *is* the `Document` |
+| An extra 11-slot `FixtureRoot` so one buffer can hold any data-type kind | The root *is* the `Document` |
 
-440 bytes is close to JSON’s 448 on this fixture because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact Protocol Buffers layout taught in the [Protocol Buffers wire format](protobuf-wire-format.md) article.
+440 bytes is close to JSON’s 448 on this payload because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact Protocol Buffers layout taught in the [Protocol Buffers wire format](../../theory/401/protobuf-wire-format.md) article.
 
-**History.** [Wouter van Oortmerssen](https://en.wikipedia.org/wiki/Wouter_van_Oortmerssen) released FlatBuffers at Google around 2014 so that games and mobile clients could read a field without building a parallel object tree. Kenton Varda’s Cap’n Proto (2013) is the sibling idea. Protocol Buffers (open-sourced 2008) optimized the opposite moment: many small service messages, density, and skip-based evolution. See [201 in-place access](../201/zero-copy.md) and the [historical perspective](../101/historical_perspective.md).
+**History.** [Wouter van Oortmerssen](https://en.wikipedia.org/wiki/Wouter_van_Oortmerssen) released FlatBuffers at Google around 2014 so that games and mobile clients could read a field without building a parallel object tree. Kenton Varda’s Cap’n Proto (2013) is the sibling idea. Protocol Buffers (open-sourced 2008) optimized the opposite moment: many small service messages, density, and skip-based evolution. See [201 in-place access](../../theory/201/zero-copy.md) and the [historical perspective](../../theory/101/historical_perspective.md).
 
 ## Why FlatBuffers is still faster here
 
@@ -127,7 +127,7 @@ This suite does **not** stop at a FlatBuffers view. `documentDomain` copies stri
 
 | Axis | FlatBuffers | SwiftProtobuf |
 |------|-------------|---------------|
-| Size on this fixture | Larger (vtables, padding, root wrapper) | Smaller (field numbers, varints) |
+| Size on this payload | Larger (vtables, padding, root wrapper) | Smaller (field numbers, varints) |
 | Read one field | Offset + load | Must parse up to that field (or the whole message, as timed) |
 | Evolution | Schema + vtable slots | Field numbers, skip unknowns |
 | Mutation | Rebuild the buffer | Rebuild the message and encode |

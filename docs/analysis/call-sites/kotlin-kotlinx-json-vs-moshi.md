@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, in-memory buffer mode, **moshi-codegen** and **kotlinx-json** emit the **same 440 bytes** of named JSON. Moshi still finishes more encode-and-decode cycles per second. When two libraries write the same text, the gap cannot be “a denser encoding.” It has to be how each library walks the data class and how it hands bytes back to the caller.
+On this suite’s **document** payload, one instance, in-memory buffer mode, **moshi-codegen** and **kotlinx-json** emit the **same 440 bytes** of named JSON. Moshi still finishes more encode-and-decode cycles per second. When two libraries write the same text, the gap cannot be “a denser encoding.” It has to be how each library walks the data class and how it hands bytes back to the caller.
 
 This page holds the format still (JSON with field names) and changes only the library. The Python pair of that question is [orjson vs json](python-orjson-vs-json.md).
 
@@ -11,7 +11,7 @@ from this suite’s packed Dashboard data. They illustrate the gap; they are
 not a universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/index.html?lang=kotlin&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
-· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION.md)
+· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
 · [Kotlin overview](../../kotlin/index.md)
 
 ## Short answer
@@ -75,7 +75,7 @@ Encode is closer (29 µs versus 24 µs) because both paths already know the fiel
 
 ## What you give up
 
-kotlinx.serialization can write several formats from the same `@Serializable` types. Those formats include JSON, CBOR, ProtoBuf, Properties, and HOCON. That is a library feature. It is not the teaching cut this course calls a family. Moshi is JVM JSON. If the product must share one type definition across formats, kotlinx-json is why that library exists. If the product is a JVM service that only speaks JSON, Moshi’s generated adapter is why it is faster on this fixture.
+kotlinx.serialization can write several formats from the same `@Serializable` types. Those formats include JSON, CBOR, ProtoBuf, Properties, and HOCON. That is a library feature. It is not the teaching cut this course calls a family. Moshi is JVM JSON. If the product must share one type definition across formats, kotlinx-json is why that library exists. If the product is a JVM service that only speaks JSON, Moshi’s generated adapter is why it is faster on this payload.
 
 moshi-reflect is slightly faster than moshi-codegen on this one-instance document. Do not read that as “never generate adapters.” The reflection factory is still Moshi. The pair on this page is kotlinx versus Moshi, not codegen versus reflection.
 
@@ -83,4 +83,4 @@ moshi-reflect is slightly faster than moshi-codegen on this one-instance documen
 
 1. Why is equal size evidence that the encoding is not the speed story?
 2. Which timed call still walks a format-level `KSerializer`, and which one calls a generated `JsonAdapter`?
-3. Why is the decode gap larger than the encode gap on this fixture?
+3. Why is the decode gap larger than the encode gap on this payload?
