@@ -132,14 +132,19 @@ pub fn prepare(ctx: *anyopaque, _: std.mem.Allocator, fixtures: []const data.Fix
         if (Tag.of(fx) != tag) return error.MixedFixtures;
     }
     const batch = fixtures.len > 1;
+    self.tag = tag;
+    self.batch = batch;
+    if (directSuite(tag)) {
+        self.direct = true;
+        self.fixtures = fixtures;
+        return;
+    }
     const schema = try schemaFor(self, tag, batch);
     var root = if (batch)
         try buildList(self.gpa, fixtures)
     else
         try buildOne(self.gpa, fixtures[0]);
     errdefer root.deinit(self.gpa);
-    self.tag = tag;
-    self.batch = batch;
     self.active = schema;
     self.root = root;
     self.has_root = true;
@@ -150,9 +155,16 @@ pub fn beginEncode(ctx: *anyopaque) void {
     self.enc_i = 0;
 }
 
-pub fn serialize(ctx: *anyopaque, _: data.Fixture, out: *buf_mod.Buf) !void {
+pub fn serialize(ctx: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
     const self: *State = @ptrCast(@alignCast(ctx));
-    if (!self.ready or !self.has_root or self.batch or self.active == null) return error.KilnNotPrepared;
+    if (!self.ready) return error.KilnNotPrepared;
+    if (self.direct) {
+        if (self.batch or self.enc_i != 0) return error.KilnNotPrepared;
+        self.enc_i += 1;
+        try writeDirectFixture(fx, out);
+        return;
+    }
+    if (!self.has_root or self.batch or self.active == null) return error.KilnNotPrepared;
     if (self.enc_i != 0) return error.KilnNotPrepared;
     self.enc_i += 1;
     const raw = try kiln.encodeReuse(&self.writer, self.gpa, self.active.?, self.root);
@@ -162,7 +174,12 @@ pub fn serialize(ctx: *anyopaque, _: data.Fixture, out: *buf_mod.Buf) !void {
 /// One list of the prepared structs. The runner calls this when N>1.
 pub fn encodeBatch(ctx: *anyopaque, fixtures: []const data.Fixture, out: *buf_mod.Buf) !void {
     const self: *State = @ptrCast(@alignCast(ctx));
-    if (!self.ready or !self.has_root or !self.batch or self.active == null) return error.KilnNotPrepared;
+    if (!self.ready or !self.batch) return error.KilnNotPrepared;
+    if (self.direct) {
+        try writeDirectBatch(self.tag, fixtures, out);
+        return;
+    }
+    if (!self.has_root or self.active == null) return error.KilnNotPrepared;
     const n: usize = switch (self.root) {
         .list => |items| items.len,
         else => return error.KilnNotPrepared,
@@ -177,13 +194,16 @@ pub fn deserialize(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     self.ensure();
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
     const view = std.mem.eql(u8, type_id, "tensor_view");
-    // Suite records are positional. Read them with the cursor instead of a
-    // FieldValue node per field. Tensors still use the value decoder.
+    // Suite records use the comptime typed codec directly without a Value tree.
     if (!view and directSuite(tag)) {
-        var reader = kiln.Reader.init(bytes, .{});
-        const fx = try readDirect(&reader, allocator, tag);
-        try reader.finish();
-        return fx;
+        return switch (tag) {
+            .message => .{ .message = try kiln.decodeTyped(data.Message, allocator, bytes, .{}) },
+            .document => .{ .document = try kiln.decodeTyped(data.Document, allocator, bytes, .{}) },
+            .telemetry => .{ .telemetry = try kiln.decodeTyped(data.Telemetry, allocator, bytes, .{}) },
+            .strings => .{ .strings = try kiln.decodeTyped(data.Strings, allocator, bytes, .{}) },
+            .event => .{ .event = try kiln.decodeTyped(data.Event, allocator, bytes, .{}) },
+            else => unreachable,
+        };
     }
     const schema = try schemaFor(self, tag, false);
     const opts: kiln.Options = if (view) .{} else .{ .reuse = &self.reuse };
@@ -199,9 +219,34 @@ pub fn decodeBatch(ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []con
     const tag = tagFromId(type_id) orelse return error.UnknownTypeId;
     if (directSuite(tag)) {
         var reader = kiln.Reader.init(bytes, .{});
-        const n: usize = @intCast(try reader.listHeader(1));
+        const each: u64 = switch (tag) {
+            .message => comptime kiln.minWireSize(data.Message),
+            .document => comptime kiln.minWireSize(data.Document),
+            .telemetry => comptime kiln.minWireSize(data.Telemetry),
+            .strings => comptime kiln.minWireSize(data.Strings),
+            .event => comptime kiln.minWireSize(data.Event),
+            else => unreachable,
+        };
+        const n: usize = @intCast(try reader.listHeader(each));
         const out = try allocator.alloc(data.Fixture, n);
-        for (out) |*slot| slot.* = try readDirect(&reader, allocator, tag);
+        switch (tag) {
+            .message => for (out) |*slot| {
+                slot.* = .{ .message = try kiln.readTyped(data.Message, &reader, allocator) };
+            },
+            .document => for (out) |*slot| {
+                slot.* = .{ .document = try kiln.readTyped(data.Document, &reader, allocator) };
+            },
+            .telemetry => for (out) |*slot| {
+                slot.* = .{ .telemetry = try kiln.readTyped(data.Telemetry, &reader, allocator) };
+            },
+            .strings => for (out) |*slot| {
+                slot.* = .{ .strings = try kiln.readTyped(data.Strings, &reader, allocator) };
+            },
+            .event => for (out) |*slot| {
+                slot.* = .{ .event = try kiln.readTyped(data.Event, &reader, allocator) };
+            },
+            else => unreachable,
+        }
         try reader.finish();
         return out;
     }
@@ -224,95 +269,69 @@ fn directSuite(tag: Tag) bool {
     };
 }
 
-fn readOwned(r: *kiln.Reader, allocator: std.mem.Allocator) ![]u8 {
-    return dupe(allocator, try r.str());
-}
-
-fn readDirect(r: *kiln.Reader, allocator: std.mem.Allocator, tag: Tag) !data.Fixture {
-    return switch (tag) {
-        .message => .{ .message = try readMessage(r, allocator) },
-        .document => .{ .document = try readDocument(r, allocator) },
-        .telemetry => .{ .telemetry = try readTelemetry(r, allocator) },
-        .strings => .{ .strings = try readStrings(r, allocator) },
-        .event => .{ .event = try readEvent(r, allocator) },
-        else => error.KilnType,
-    };
-}
-
-fn readMessage(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Message {
-    return .{
-        .f_bool = try r.boolean(),
-        .f_int32 = try r.int(i32),
-        .f_int64 = try r.int(i64),
-        .f_float64 = try r.float64(),
-        .f_string = try readOwned(r, allocator),
-        .f_bool_2 = try r.boolean(),
-        .f_int32_2 = try r.int(i32),
-        .f_string_2 = try readOwned(r, allocator),
-    };
-}
-
-fn readDocument(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Document {
-    const id = try readOwned(r, allocator);
-    const status = try r.int(i32);
-    const region = try readOwned(r, allocator);
-    const meta_version = try r.int(i32);
-    const n: usize = @intCast(try r.listHeader(1));
-    const items = try allocator.alloc(data.DocumentItem, n);
-    for (items) |*it| {
-        it.* = .{
-            .sku = try readOwned(r, allocator),
-            .qty = try r.int(i32),
-            .price_minor = try r.int(i64),
-        };
+fn writeDirectFixture(fx: data.Fixture, out: *buf_mod.Buf) !void {
+    switch (fx) {
+        .message => |v| try writeTypedToBuf(v, out),
+        .document => |v| try writeTypedToBuf(v, out),
+        .telemetry => |v| try writeTypedToBuf(v, out),
+        .strings => |v| try writeTypedToBuf(v, out),
+        .event => |v| try writeTypedToBuf(v, out),
+        else => return error.KilnType,
     }
-    return .{
-        .id = id,
-        .status = status,
-        .meta = .{ .region = region, .version = meta_version },
-        .items = items,
-    };
 }
 
-fn readTelemetry(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Telemetry {
-    const source = try readOwned(r, allocator);
-    const ts = try r.int(i64);
-    const nt: usize = @intCast(try r.listHeader(1));
-    const tags = try allocator.alloc([]const u8, nt);
-    for (tags) |*s| s.* = try readOwned(r, allocator);
-    const nv: usize = @intCast(try r.listHeader(8));
-    const values = try allocator.alloc(f64, nv);
-    try r.pod(f64, values);
-    return .{ .source = source, .ts = ts, .tags = tags, .values = values };
+fn writeTypedToBuf(value: anytype, out: *buf_mod.Buf) !void {
+    const need = try kiln.encodedSize(value, kiln.default_cap);
+    try out.ensure(out.len + need);
+    _ = kiln.writeTypedUnchecked(out.data[out.len..][0..need], value);
+    out.len += need;
 }
 
-fn readStrings(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Strings {
-    const n: usize = @intCast(try r.listHeader(1));
-    const items = try allocator.alloc([]const u8, n);
-    for (items) |*s| s.* = try readOwned(r, allocator);
-    return .{ .items = items };
-}
-
-fn readEvent(r: *kiln.Reader, allocator: std.mem.Allocator) !data.Event {
-    const event_id = try readOwned(r, allocator);
-    const event_type = try readOwned(r, allocator);
-    const occurred_at = try r.int(i64);
-    const producer = try readOwned(r, allocator);
-    const n: usize = @intCast(try r.listHeader(1));
-    const attrs = try allocator.alloc(data.EventAttr, n);
-    for (attrs) |*a| {
-        a.* = .{
-            .key = try readOwned(r, allocator),
-            .value = try readOwned(r, allocator),
-        };
+fn writeDirectBatch(tag: Tag, fixtures: []const data.Fixture, out: *buf_mod.Buf) !void {
+    if (fixtures.len > kiln.default_cap) return error.LIMIT;
+    const count = std.math.cast(u32, fixtures.len) orelse return error.LIMIT;
+    var total: usize = 4;
+    switch (tag) {
+        .message => for (fixtures) |fx| {
+            total += try kiln.encodedSize(fx.message, kiln.default_cap);
+        },
+        .document => for (fixtures) |fx| {
+            total += try kiln.encodedSize(fx.document, kiln.default_cap);
+        },
+        .telemetry => for (fixtures) |fx| {
+            total += try kiln.encodedSize(fx.telemetry, kiln.default_cap);
+        },
+        .strings => for (fixtures) |fx| {
+            total += try kiln.encodedSize(fx.strings, kiln.default_cap);
+        },
+        .event => for (fixtures) |fx| {
+            total += try kiln.encodedSize(fx.event, kiln.default_cap);
+        },
+        else => return error.KilnType,
     }
-    return .{
-        .event_id = event_id,
-        .event_type = event_type,
-        .occurred_at = occurred_at,
-        .producer = producer,
-        .attrs = attrs,
-    };
+    try out.ensure(out.len + total);
+    var pos = out.len;
+    std.mem.writeInt(u32, out.data[pos..][0..4], count, .little);
+    pos += 4;
+    switch (tag) {
+        .message => for (fixtures) |fx| {
+            pos += kiln.writeTypedUnchecked(out.data[pos..], fx.message);
+        },
+        .document => for (fixtures) |fx| {
+            pos += kiln.writeTypedUnchecked(out.data[pos..], fx.document);
+        },
+        .telemetry => for (fixtures) |fx| {
+            pos += kiln.writeTypedUnchecked(out.data[pos..], fx.telemetry);
+        },
+        .strings => for (fixtures) |fx| {
+            pos += kiln.writeTypedUnchecked(out.data[pos..], fx.strings);
+        },
+        .event => for (fixtures) |fx| {
+            pos += kiln.writeTypedUnchecked(out.data[pos..], fx.event);
+        },
+        else => unreachable,
+    }
+    out.len = pos;
 }
 
 fn schemaFor(self: *State, tag: Tag, batch: bool) !*const kiln.Schema {
@@ -752,7 +771,7 @@ test "gld-kiln round-trips suite structs and a batch list" {
     defer arena.deinit();
     const aa = arena.allocator();
     try std.testing.expect(!supports("graph"));
-    try std.testing.expectEqualStrings("0.2.0", version);
+    try std.testing.expectEqualStrings("0.2.1", version);
     const kinds = [_][]const u8{ "message", "document", "telemetry", "strings", "event" };
     for (kinds) |tid| {
         const fx = try data.makeOne(aa, tid, 42, 0, .{});
