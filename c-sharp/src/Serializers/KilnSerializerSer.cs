@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using GLD.SerializerBenchmark.TestData.V2;
 using Kiln;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -263,6 +265,8 @@ namespace GLD.SerializerBenchmark.Serializers
         Bound[] _fields;
         bool _batch;
         bool _borrow;
+        bool _directSuite;
+        string _suiteKey;
         PropertyInfo _itemsProp;
         Type _elemType;
         object _native;
@@ -278,6 +282,9 @@ namespace GLD.SerializerBenchmark.Serializers
             testDataName is "message" or "document" or "telemetry" or "strings" or "event"
                 or "tensor" or "tensor_view" or "prompt" or "shard" or "request";
 
+        static bool IsSuiteKey(string key) =>
+            key is "message" or "document" or "telemetry" or "strings" or "event";
+
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {
             base.Initialize(serializablePrimaryType, serializableSecondaryTypes);
@@ -286,6 +293,8 @@ namespace GLD.SerializerBenchmark.Serializers
             if (!StructByName.ContainsKey(key) || !NodesByName.TryGetValue(key, out var nodes))
                 throw new InvalidOperationException("gld-kiln: unsupported type " + serializablePrimaryType.Name);
             _batch = IsBatch(serializablePrimaryType);
+            _directSuite = IsSuiteKey(key);
+            _suiteKey = key;
             _schema = _batch ? ListByName[key] : StructByName[key];
             if (_batch)
             {
@@ -308,6 +317,11 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             if (_schema == null)
                 throw new InvalidOperationException("gld-kiln Initialize was not called");
+            if (_directSuite)
+            {
+                _native = data;
+                return;
+            }
             _native = _batch ? BatchTo(data) : ToStruct(data, _fields);
         }
 
@@ -315,8 +329,8 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             if (_schema == null)
                 throw new InvalidOperationException("gld-kiln Initialize was not called");
-            // tensor_view stays a slice of the wire bytes (no float copy).
-            if (_borrow)
+            // Direct suite decodes already return domain objects; tensor_view stays a slice of wire bytes.
+            if (_directSuite || _borrow)
                 return decoded;
             return _batch ? BatchFrom(decoded) : FromStruct(_elemType, decoded, _fields);
         }
@@ -358,6 +372,12 @@ namespace GLD.SerializerBenchmark.Serializers
             if (_schema == null || _native == null)
                 throw new InvalidOperationException(
                     "gld-kiln prepare was not called for " + (serializable == null ? "?" : serializable.GetType().Name));
+            if (_directSuite)
+            {
+                _writer.Reset();
+                WriteDirectSuite(_writer, _suiteKey, _batch, _native);
+                return _writer.Written;
+            }
             return _writer.Encode(_schema, _native);
         }
 
@@ -365,9 +385,272 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             if (_schema == null)
                 throw new InvalidOperationException("gld-kiln prepare was not called");
+            if (_directSuite)
+            {
+                var reader = new Reader(bytes.Span);
+                var result = ReadDirectSuite(ref reader, _suiteKey, _batch);
+                reader.Finish();
+                return result;
+            }
             if (_borrow)
                 return BorrowMatrix(bytes);
             return KilnCodec.Decode(_schema, bytes);
+        }
+
+        static void WriteDirectSuite(Writer w, string key, bool batch, object value)
+        {
+            if (batch)
+            {
+                switch (key)
+                {
+                    case "message":
+                    {
+                        var items = ((BatchMessage)value).Items;
+                        w.WriteCount(items.Count);
+                        for (var i = 0; i < items.Count; i++) WriteMessage(w, items[i]);
+                        return;
+                    }
+                    case "document":
+                    {
+                        var items = ((BatchDocument)value).Items;
+                        w.WriteCount(items.Count);
+                        for (var i = 0; i < items.Count; i++) WriteDocument(w, items[i]);
+                        return;
+                    }
+                    case "telemetry":
+                    {
+                        var items = ((BatchTelemetry)value).Items;
+                        w.WriteCount(items.Count);
+                        for (var i = 0; i < items.Count; i++) WriteTelemetry(w, items[i]);
+                        return;
+                    }
+                    case "strings":
+                    {
+                        var items = ((BatchStrings)value).Items;
+                        w.WriteCount(items.Count);
+                        for (var i = 0; i < items.Count; i++) WriteStrings(w, items[i]);
+                        return;
+                    }
+                    case "event":
+                    {
+                        var items = ((BatchEvent)value).Items;
+                        w.WriteCount(items.Count);
+                        for (var i = 0; i < items.Count; i++) WriteEvent(w, items[i]);
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                switch (key)
+                {
+                    case "message": WriteMessage(w, (Message)value); return;
+                    case "document": WriteDocument(w, (Document)value); return;
+                    case "telemetry": WriteTelemetry(w, (Telemetry)value); return;
+                    case "strings": WriteStrings(w, (Strings)value); return;
+                    case "event": WriteEvent(w, (Event)value); return;
+                }
+            }
+            throw new InvalidOperationException("gld-kiln: unknown suite key " + key);
+        }
+
+        static void WriteMessage(Writer w, Message m)
+        {
+            w.WriteBool(m.FBool);
+            w.WriteI32(m.FInt32);
+            w.WriteI64(m.FInt64);
+            w.WriteF64(m.FFloat64);
+            w.WriteString(m.FString ?? "");
+            w.WriteBool(m.FBool2);
+            w.WriteI32(m.FInt322);
+            w.WriteString(m.FString2 ?? "");
+        }
+
+        static void WriteDocument(Writer w, Document d)
+        {
+            w.WriteString(d.Id ?? "");
+            w.WriteI32(d.Status);
+            w.WriteString(d.Meta.Region ?? "");
+            w.WriteI32(d.Meta.Version);
+            var items = d.Items;
+            var n = items == null ? 0 : items.Count;
+            w.WriteCount(n);
+            for (var i = 0; i < n; i++)
+            {
+                var it = items[i];
+                w.WriteString(it.Sku ?? "");
+                w.WriteI32(it.Qty);
+                w.WriteI64(it.PriceMinor);
+            }
+        }
+
+        static void WriteTelemetry(Writer w, Telemetry t)
+        {
+            w.WriteString(t.Source ?? "");
+            w.WriteI64(t.Ts);
+            var tags = t.Tags;
+            var nt = tags == null ? 0 : tags.Count;
+            w.WriteCount(nt);
+            for (var i = 0; i < nt; i++)
+                w.WriteString(tags[i] ?? "");
+            w.WriteF64s(CollectionsMarshal.AsSpan(t.Values));
+        }
+
+        static void WriteStrings(Writer w, Strings s)
+        {
+            var items = s.Items;
+            var n = items == null ? 0 : items.Count;
+            w.WriteCount(n);
+            for (var i = 0; i < n; i++)
+                w.WriteString(items[i] ?? "");
+        }
+
+        static void WriteEvent(Writer w, Event e)
+        {
+            w.WriteString(e.EventId ?? "");
+            w.WriteString(e.EventType ?? "");
+            w.WriteI64(e.OccurredAt);
+            w.WriteString(e.Producer ?? "");
+            var attrs = e.Attrs;
+            var n = attrs == null ? 0 : attrs.Count;
+            w.WriteCount(n);
+            for (var i = 0; i < n; i++)
+            {
+                var a = attrs[i];
+                w.WriteString(a.Key ?? "");
+                w.WriteString(a.Value ?? "");
+            }
+        }
+
+        static object ReadDirectSuite(ref Reader r, string key, bool batch)
+        {
+            if (batch)
+            {
+                switch (key)
+                {
+                    case "message":
+                    {
+                        var n = r.ReadCount(34);
+                        var items = new List<Message>(n);
+                        for (var i = 0; i < n; i++) items.Add(ReadMessage(ref r));
+                        return new BatchMessage { Items = items };
+                    }
+                    case "document":
+                    {
+                        var n = r.ReadCount(20);
+                        var items = new List<Document>(n);
+                        for (var i = 0; i < n; i++) items.Add(ReadDocument(ref r));
+                        return new BatchDocument { Items = items };
+                    }
+                    case "telemetry":
+                    {
+                        var n = r.ReadCount(20);
+                        var items = new List<Telemetry>(n);
+                        for (var i = 0; i < n; i++) items.Add(ReadTelemetry(ref r));
+                        return new BatchTelemetry { Items = items };
+                    }
+                    case "strings":
+                    {
+                        var n = r.ReadCount(4);
+                        var items = new List<Strings>(n);
+                        for (var i = 0; i < n; i++) items.Add(ReadStrings(ref r));
+                        return new BatchStrings { Items = items };
+                    }
+                    case "event":
+                    {
+                        var n = r.ReadCount(24);
+                        var items = new List<Event>(n);
+                        for (var i = 0; i < n; i++) items.Add(ReadEvent(ref r));
+                        return new BatchEvent { Items = items };
+                    }
+                }
+            }
+            else
+            {
+                switch (key)
+                {
+                    case "message": return ReadMessage(ref r);
+                    case "document": return ReadDocument(ref r);
+                    case "telemetry": return ReadTelemetry(ref r);
+                    case "strings": return ReadStrings(ref r);
+                    case "event": return ReadEvent(ref r);
+                }
+            }
+            throw new InvalidOperationException("gld-kiln: unknown suite key " + key);
+        }
+
+        static Message ReadMessage(ref Reader r) => new Message
+        {
+            FBool = r.ReadBool(),
+            FInt32 = r.ReadI32(),
+            FInt64 = r.ReadI64(),
+            FFloat64 = r.ReadF64(),
+            FString = r.ReadString(),
+            FBool2 = r.ReadBool(),
+            FInt322 = r.ReadI32(),
+            FString2 = r.ReadString(),
+        };
+
+        static Document ReadDocument(ref Reader r)
+        {
+            var id = r.ReadString();
+            var status = r.ReadI32();
+            var meta = new DocumentMeta { Region = r.ReadString(), Version = r.ReadI32() };
+            var n = r.ReadCount(16);
+            var items = new List<DocumentItem>(n);
+            for (var i = 0; i < n; i++)
+            {
+                items.Add(new DocumentItem
+                {
+                    Sku = r.ReadString(),
+                    Qty = r.ReadI32(),
+                    PriceMinor = r.ReadI64(),
+                });
+            }
+            return new Document { Id = id, Status = status, Meta = meta, Items = items };
+        }
+
+        static Telemetry ReadTelemetry(ref Reader r)
+        {
+            var source = r.ReadString();
+            var ts = r.ReadI64();
+            var nt = r.ReadCount(4);
+            var tags = new List<string>(nt);
+            for (var i = 0; i < nt; i++)
+                tags.Add(r.ReadString());
+            var values = r.ReadF64List();
+            return new Telemetry { Source = source, Ts = ts, Tags = tags, Values = values };
+        }
+
+        static Strings ReadStrings(ref Reader r)
+        {
+            var n = r.ReadCount(4);
+            var items = new List<string>(n);
+            for (var i = 0; i < n; i++)
+                items.Add(r.ReadString());
+            return new Strings { Items = items };
+        }
+
+        static Event ReadEvent(ref Reader r)
+        {
+            var eventId = r.ReadString();
+            var eventType = r.ReadString();
+            var occurredAt = r.ReadI64();
+            var producer = r.ReadString();
+            var n = r.ReadCount(8);
+            var attrs = new List<EventAttr>(n);
+            for (var i = 0; i < n; i++)
+            {
+                attrs.Add(new EventAttr { Key = r.ReadString(), Value = r.ReadString() });
+            }
+            return new Event
+            {
+                EventId = eventId,
+                EventType = eventType,
+                OccurredAt = occurredAt,
+                Producer = producer,
+                Attrs = attrs,
+            };
         }
 
         /// <summary>
