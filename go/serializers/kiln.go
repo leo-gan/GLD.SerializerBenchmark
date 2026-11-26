@@ -23,6 +23,10 @@ type gldKiln struct {
 	schema *kiln.Schema
 	native any
 	buf    []byte
+	writer *kiln.Writer
+	encFn  func() ([]byte, error)
+	decFn  func([]byte) (any, error)
+	direct bool
 	proto  any
 	fxName string
 	batch  bool
@@ -36,12 +40,11 @@ type tensorView struct {
 	Payload []byte
 }
 
-func newGldKiln() *gldKiln { return &gldKiln{} }
+func newGldKiln() *gldKiln { return &gldKiln{writer: kiln.NewWriter(4096)} }
 
 func (s *gldKiln) Name() string { return "gld-kiln" }
 
-// Version is the Git tag. The tag is 0.2.0, not v0.2.0, so build info is a pseudo-version.
-func (s *gldKiln) Version() string        { return "0.2.0" }
+func (s *gldKiln) Version() string        { return kiln.Version }
 func (s *gldKiln) StreamMode() StreamMode { return StreamAdapted }
 func (s *gldKiln) NativeKind() NativeKind { return NativeSchema }
 func (s *gldKiln) Supports(n string) bool {
@@ -59,6 +62,16 @@ func (s *gldKiln) Prepare(fx model.Fixture) error {
 	s.fxName = fx.Name
 	s.batch = isSlice(fx.Value)
 	s.borrow = !s.batch && fx.Name == "tensor_view"
+	s.direct = false
+	s.encFn = nil
+	s.decFn = nil
+	if s.writer == nil {
+		s.writer = kiln.NewWriter(4096)
+	}
+	if s.bindDirectSuite(fx) {
+		s.direct = true
+		return nil
+	}
 	sch := kilnSchemaFor(fx.Name, s.batch)
 	if sch == nil {
 		return fmt.Errorf("gld-kiln: no schema for %s", fx.Name)
@@ -76,6 +89,9 @@ func (s *gldKiln) Prepare(fx model.Fixture) error {
 }
 
 func (s *gldKiln) SerializeBytes(_ model.Fixture) ([]byte, error) {
+	if s.direct {
+		return s.encFn()
+	}
 	var err error
 	s.buf, err = kiln.Append(s.buf[:0], s.schema, s.native)
 	if err != nil {
@@ -85,6 +101,9 @@ func (s *gldKiln) SerializeBytes(_ model.Fixture) ([]byte, error) {
 }
 
 func (s *gldKiln) DeserializeBytes(buf []byte) (any, error) {
+	if s.direct {
+		return s.decFn(buf)
+	}
 	if s.borrow {
 		return borrowTensor(buf)
 	}
@@ -92,7 +111,523 @@ func (s *gldKiln) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *gldKiln) ToDomain(decoded any) (any, error) {
+	if s.direct {
+		return decoded, nil
+	}
 	return fromKilnNative(s.fxName, s.batch, decoded, s.proto)
+}
+
+func (s *gldKiln) bindDirectSuite(fx model.Fixture) bool {
+	w := s.writer
+	switch v := fx.Value.(type) {
+	case modelv2.Message:
+		row := v
+		s.encFn = func() ([]byte, error) {
+			w.Reset(34 + len(row.FString) + len(row.FString2))
+			if err := writeKilnMessage(w, &row); err != nil {
+				return nil, err
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			var out modelv2.Message
+			if err := readKilnMessage(&r, &out); err != nil {
+				return nil, err
+			}
+			return out, r.Finish()
+		}
+		return true
+	case []modelv2.Message:
+		rows := v
+		s.encFn = func() ([]byte, error) {
+			need := 4
+			for i := range rows {
+				need += 34 + len(rows[i].FString) + len(rows[i].FString2)
+			}
+			w.Reset(need)
+			if err := w.PutCount(len(rows)); err != nil {
+				return nil, err
+			}
+			for i := range rows {
+				if err := writeKilnMessage(w, &rows[i]); err != nil {
+					return nil, err
+				}
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			n, err := r.Count(34)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]modelv2.Message, n)
+			for i := range out {
+				if err := readKilnMessage(&r, &out[i]); err != nil {
+					return nil, err
+				}
+			}
+			return out, r.Finish()
+		}
+		return true
+	case modelv2.Document:
+		row := v
+		s.encFn = func() ([]byte, error) {
+			w.Reset(sizeKilnDocument(&row))
+			if err := writeKilnDocument(w, &row); err != nil {
+				return nil, err
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			var out modelv2.Document
+			if err := readKilnDocument(&r, &out); err != nil {
+				return nil, err
+			}
+			return out, r.Finish()
+		}
+		return true
+	case []modelv2.Document:
+		rows := v
+		s.encFn = func() ([]byte, error) {
+			need := 4
+			for i := range rows {
+				need += sizeKilnDocument(&rows[i])
+			}
+			w.Reset(need)
+			if err := w.PutCount(len(rows)); err != nil {
+				return nil, err
+			}
+			for i := range rows {
+				if err := writeKilnDocument(w, &rows[i]); err != nil {
+					return nil, err
+				}
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			n, err := r.Count(20)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]modelv2.Document, n)
+			for i := range out {
+				if err := readKilnDocument(&r, &out[i]); err != nil {
+					return nil, err
+				}
+			}
+			return out, r.Finish()
+		}
+		return true
+	case modelv2.Telemetry:
+		row := v
+		s.encFn = func() ([]byte, error) {
+			w.Reset(sizeKilnTelemetry(&row))
+			if err := writeKilnTelemetry(w, &row); err != nil {
+				return nil, err
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			var out modelv2.Telemetry
+			if err := readKilnTelemetry(&r, &out); err != nil {
+				return nil, err
+			}
+			return out, r.Finish()
+		}
+		return true
+	case []modelv2.Telemetry:
+		rows := v
+		s.encFn = func() ([]byte, error) {
+			need := 4
+			for i := range rows {
+				need += sizeKilnTelemetry(&rows[i])
+			}
+			w.Reset(need)
+			if err := w.PutCount(len(rows)); err != nil {
+				return nil, err
+			}
+			for i := range rows {
+				if err := writeKilnTelemetry(w, &rows[i]); err != nil {
+					return nil, err
+				}
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			n, err := r.Count(20)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]modelv2.Telemetry, n)
+			for i := range out {
+				if err := readKilnTelemetry(&r, &out[i]); err != nil {
+					return nil, err
+				}
+			}
+			return out, r.Finish()
+		}
+		return true
+	case modelv2.Strings:
+		row := v
+		s.encFn = func() ([]byte, error) {
+			w.Reset(sizeKilnStrings(&row))
+			if err := writeKilnStrings(w, &row); err != nil {
+				return nil, err
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			var out modelv2.Strings
+			if err := readKilnStrings(&r, &out); err != nil {
+				return nil, err
+			}
+			return out, r.Finish()
+		}
+		return true
+	case []modelv2.Strings:
+		rows := v
+		s.encFn = func() ([]byte, error) {
+			need := 4
+			for i := range rows {
+				need += sizeKilnStrings(&rows[i])
+			}
+			w.Reset(need)
+			if err := w.PutCount(len(rows)); err != nil {
+				return nil, err
+			}
+			for i := range rows {
+				if err := writeKilnStrings(w, &rows[i]); err != nil {
+					return nil, err
+				}
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			n, err := r.Count(4)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]modelv2.Strings, n)
+			for i := range out {
+				if err := readKilnStrings(&r, &out[i]); err != nil {
+					return nil, err
+				}
+			}
+			return out, r.Finish()
+		}
+		return true
+	case modelv2.Event:
+		row := v
+		s.encFn = func() ([]byte, error) {
+			w.Reset(sizeKilnEvent(&row))
+			if err := writeKilnEvent(w, &row); err != nil {
+				return nil, err
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			var out modelv2.Event
+			if err := readKilnEvent(&r, &out); err != nil {
+				return nil, err
+			}
+			return out, r.Finish()
+		}
+		return true
+	case []modelv2.Event:
+		rows := v
+		s.encFn = func() ([]byte, error) {
+			need := 4
+			for i := range rows {
+				need += sizeKilnEvent(&rows[i])
+			}
+			w.Reset(need)
+			if err := w.PutCount(len(rows)); err != nil {
+				return nil, err
+			}
+			for i := range rows {
+				if err := writeKilnEvent(w, &rows[i]); err != nil {
+					return nil, err
+				}
+			}
+			return w.Bytes(), nil
+		}
+		s.decFn = func(buf []byte) (any, error) {
+			r := kiln.NewReader(buf, kiln.Options{})
+			n, err := r.Count(24)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]modelv2.Event, n)
+			for i := range out {
+				if err := readKilnEvent(&r, &out[i]); err != nil {
+					return nil, err
+				}
+			}
+			return out, r.Finish()
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+func sizeKilnDocument(d *modelv2.Document) int {
+	n := 20 + len(d.ID) + len(d.Meta.Region)
+	for i := range d.Items {
+		n += 16 + len(d.Items[i].SKU)
+	}
+	return n
+}
+
+func sizeKilnTelemetry(t *modelv2.Telemetry) int {
+	n := 20 + len(t.Source) + len(t.Values)*8
+	for i := range t.Tags {
+		n += 4 + len(t.Tags[i])
+	}
+	return n
+}
+
+func sizeKilnStrings(s *modelv2.Strings) int {
+	n := 4
+	for i := range s.Items {
+		n += 4 + len(s.Items[i])
+	}
+	return n
+}
+
+func sizeKilnEvent(e *modelv2.Event) int {
+	n := 24 + len(e.EventID) + len(e.EventType) + len(e.Producer)
+	for i := range e.Attrs {
+		n += 8 + len(e.Attrs[i].Key) + len(e.Attrs[i].Value)
+	}
+	return n
+}
+
+func writeKilnMessage(w *kiln.Writer, m *modelv2.Message) error {
+	w.PutBool(m.FBool)
+	w.PutI32(m.FInt32)
+	w.PutI64(m.FInt64)
+	w.PutF64(m.FFloat64)
+	if err := w.PutString(m.FString); err != nil {
+		return err
+	}
+	w.PutBool(m.FBool2)
+	w.PutI32(m.FInt32_2)
+	return w.PutString(m.FString2)
+}
+
+func readKilnMessage(r *kiln.Reader, out *modelv2.Message) error {
+	var err error
+	if out.FBool, err = r.Bool(); err != nil {
+		return err
+	}
+	if out.FInt32, err = r.I32(); err != nil {
+		return err
+	}
+	if out.FInt64, err = r.I64(); err != nil {
+		return err
+	}
+	if out.FFloat64, err = r.F64(); err != nil {
+		return err
+	}
+	if out.FString, err = r.String(); err != nil {
+		return err
+	}
+	if out.FBool2, err = r.Bool(); err != nil {
+		return err
+	}
+	if out.FInt32_2, err = r.I32(); err != nil {
+		return err
+	}
+	out.FString2, err = r.String()
+	return err
+}
+
+func writeKilnDocument(w *kiln.Writer, d *modelv2.Document) error {
+	if err := w.PutString(d.ID); err != nil {
+		return err
+	}
+	w.PutI32(d.Status)
+	if err := w.PutString(d.Meta.Region); err != nil {
+		return err
+	}
+	w.PutI32(d.Meta.Version)
+	if err := w.PutCount(len(d.Items)); err != nil {
+		return err
+	}
+	for i := range d.Items {
+		if err := w.PutString(d.Items[i].SKU); err != nil {
+			return err
+		}
+		w.PutI32(d.Items[i].Qty)
+		w.PutI64(d.Items[i].PriceMinor)
+	}
+	return nil
+}
+
+func readKilnDocument(r *kiln.Reader, out *modelv2.Document) error {
+	var err error
+	if out.ID, err = r.String(); err != nil {
+		return err
+	}
+	if out.Status, err = r.I32(); err != nil {
+		return err
+	}
+	if out.Meta.Region, err = r.String(); err != nil {
+		return err
+	}
+	if out.Meta.Version, err = r.I32(); err != nil {
+		return err
+	}
+	n, err := r.Count(16)
+	if err != nil {
+		return err
+	}
+	items := make([]modelv2.DocumentItem, n)
+	for i := range items {
+		if items[i].SKU, err = r.String(); err != nil {
+			return err
+		}
+		if items[i].Qty, err = r.I32(); err != nil {
+			return err
+		}
+		if items[i].PriceMinor, err = r.I64(); err != nil {
+			return err
+		}
+	}
+	out.Items = items
+	return nil
+}
+
+func writeKilnTelemetry(w *kiln.Writer, t *modelv2.Telemetry) error {
+	if err := w.PutString(t.Source); err != nil {
+		return err
+	}
+	w.PutI64(t.TS)
+	if err := w.PutCount(len(t.Tags)); err != nil {
+		return err
+	}
+	for i := range t.Tags {
+		if err := w.PutString(t.Tags[i]); err != nil {
+			return err
+		}
+	}
+	return w.PutF64s(t.Values)
+}
+
+func readKilnTelemetry(r *kiln.Reader, out *modelv2.Telemetry) error {
+	var err error
+	if out.Source, err = r.String(); err != nil {
+		return err
+	}
+	if out.TS, err = r.I64(); err != nil {
+		return err
+	}
+	nt, err := r.Count(4)
+	if err != nil {
+		return err
+	}
+	tags := make([]string, nt)
+	for i := range tags {
+		if tags[i], err = r.String(); err != nil {
+			return err
+		}
+	}
+	out.Tags = tags
+	out.Values, err = r.F64s()
+	return err
+}
+
+func writeKilnStrings(w *kiln.Writer, s *modelv2.Strings) error {
+	if err := w.PutCount(len(s.Items)); err != nil {
+		return err
+	}
+	for i := range s.Items {
+		if err := w.PutString(s.Items[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func readKilnStrings(r *kiln.Reader, out *modelv2.Strings) error {
+	n, err := r.Count(4)
+	if err != nil {
+		return err
+	}
+	items := make([]string, n)
+	for i := range items {
+		if items[i], err = r.String(); err != nil {
+			return err
+		}
+	}
+	out.Items = items
+	return nil
+}
+
+func writeKilnEvent(w *kiln.Writer, e *modelv2.Event) error {
+	if err := w.PutString(e.EventID); err != nil {
+		return err
+	}
+	if err := w.PutString(e.EventType); err != nil {
+		return err
+	}
+	w.PutI64(e.OccurredAt)
+	if err := w.PutString(e.Producer); err != nil {
+		return err
+	}
+	if err := w.PutCount(len(e.Attrs)); err != nil {
+		return err
+	}
+	for i := range e.Attrs {
+		if err := w.PutString(e.Attrs[i].Key); err != nil {
+			return err
+		}
+		if err := w.PutString(e.Attrs[i].Value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func readKilnEvent(r *kiln.Reader, out *modelv2.Event) error {
+	var err error
+	if out.EventID, err = r.String(); err != nil {
+		return err
+	}
+	if out.EventType, err = r.String(); err != nil {
+		return err
+	}
+	if out.OccurredAt, err = r.I64(); err != nil {
+		return err
+	}
+	if out.Producer, err = r.String(); err != nil {
+		return err
+	}
+	n, err := r.Count(8)
+	if err != nil {
+		return err
+	}
+	attrs := make([]modelv2.EventAttr, n)
+	for i := range attrs {
+		if attrs[i].Key, err = r.String(); err != nil {
+			return err
+		}
+		if attrs[i].Value, err = r.String(); err != nil {
+			return err
+		}
+	}
+	out.Attrs = attrs
+	return nil
 }
 
 func (s *gldKiln) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {

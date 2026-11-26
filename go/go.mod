@@ -27,7 +27,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19 // stay on this pin; v1.0.20 is a separate bump
 	github.com/klauspost/compress v1.20.3
-	github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4 // main c2c91fa; tag 0.2.0 has no v prefix
+	github.com/leo-gan/gld-kiln-go v0.0.0-20261126213433-7c00dafddb27 // main c2c91fa; tag 0.2.0 has no v prefix
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
