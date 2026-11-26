@@ -2,11 +2,14 @@
 """Lightweight documentation quality gate for MkDocs content.
 
 Checks public Markdown files under docs/ (excluding docs/internal/ and
-docs/dashboard/) plus mkdocs.yml navigation and redirect targets using only
-the Python standard library.
+docs/dashboard/), language roster parity against packed Dashboard stats,
+and mkdocs.yml navigation/redirect targets using only the Python standard
+library.
 """
 from __future__ import annotations
 
+import gzip
+import json
 import re
 import sys
 from pathlib import Path
@@ -14,12 +17,36 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 MKDOCS = ROOT / "mkdocs.yml"
+DASH_DATA = ROOT / "dashboard" / "public" / "data"
 
-PROHIBITED_PROSE_RE = re.compile(r"\b(fixtures?|harnesses?|first-year)\b", re.IGNORECASE)
+LANG_DIRS = {
+    "c": "c",
+    "c-sharp": "csharp",
+    "cpp": "cpp",
+    "fortran": "fortran",
+    "go": "go",
+    "java": "java",
+    "javascript": "javascript",
+    "kotlin": "kotlin",
+    "mojo": "mojo",
+    "php": "php",
+    "python": "python",
+    "rust": "rust",
+    "swift": "swift",
+    "zig": "zig",
+}
+
+PROHIBITED_PROSE_RE = re.compile(
+    r"\b(fixtures?|harnesses?|first-year|introductory computer science|homework assignment)\b",
+    re.IGNORECASE,
+)
 PROSE_EXEMPT = {Path("analysis/terminology.md")}
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S")
 FN_DEF_RE = re.compile(r"^\[\^([^\]]+)\]:", re.MULTILINE)
 FN_REF_RE = re.compile(r"\[\^([^\]]+)\](?!:)")
+REL_MD_LINK_RE = re.compile(r"\]\(([^)#\s]+\.md)(?:#[^)\s]*)?\)")
+STUB_RE = re.compile(r"is a registered serializer in the \w+ suite", re.IGNORECASE)
+WIKI_ENFORCED_ROOTS = set(LANG_DIRS) | {"analysis", "languages"}
 
 
 def iter_public_markdown() -> list[Path]:
@@ -52,6 +79,15 @@ def check_markdown(path: Path) -> list[str]:
     if "wikipedia.png" in text:
         errors.append(f"{rel}: contains hotlinked wikipedia.png")
 
+    if STUB_RE.search(text):
+        errors.append(f"{rel}: contains stub placeholder specifics text")
+
+    if "prepare(fixture)" in text:
+        errors.append(f"{rel}: contains deprecated 'prepare(fixture)' pseudocode")
+
+    if rel.parts[0] in WIKI_ENFORCED_ROOTS and "en.wikipedia.org" in text:
+        errors.append(f"{rel}: contains en.wikipedia.org link (use primary references)")
+
     if rel not in PROSE_EXEMPT:
         prose = strip_prose_noise(text)
         hits = sorted({m.group(1).lower() for m in PROHIBITED_PROSE_RE.finditer(prose)})
@@ -72,6 +108,15 @@ def check_markdown(path: Path) -> list[str]:
     if math_scan.count("$") % 2 != 0:
         errors.append(f"{rel}: unbalanced single '$' math delimiter")
 
+    # Verify relative internal .md links exist on disk
+    for m in REL_MD_LINK_RE.finditer(no_code):
+        href = m.group(1)
+        if href.startswith(("http://", "https://", "/")):
+            continue
+        target = (path.parent / href).resolve()
+        if not target.is_file():
+            errors.append(f"{rel}: broken relative link -> {href}")
+
     in_code = False
     prev_level = 0
     for lineno, line in enumerate(text.splitlines(), 1):
@@ -88,6 +133,33 @@ def check_markdown(path: Path) -> list[str]:
                     f"{rel}:{lineno}: heading level jumps from H{prev_level} to H{level}"
                 )
             prev_level = level
+
+    return errors
+
+
+def check_language_rosters() -> list[str]:
+    errors: list[str] = []
+    for doc_dir, lang_id in sorted(LANG_DIRS.items()):
+        page = DOCS / doc_dir / "index.md"
+        if not page.is_file():
+            errors.append(f"docs/{doc_dir}/index.md: missing language overview page")
+            continue
+        text = page.read_text(encoding="utf-8")
+
+        # Self-referential source URL check
+        if f"blob/master/docs/{doc_dir}/index.md" in text:
+            errors.append(f"{doc_dir}/index.md: serializer link self-references docs/{doc_dir}/index.md")
+
+        # Roster parity against live packed Dashboard stats
+        stats_path = DASH_DATA / f"stats_{lang_id}_latest.json.gz"
+        if not stats_path.is_file():
+            continue
+        payload = json.loads(gzip.open(stats_path).read())
+        published = {g["serializer"] for g in payload.get("groups") or [] if g.get("serializer")}
+        doc_names = set(re.findall(r"^\| \[([^\]]+)\]\(", text, re.M))
+        missing = sorted(published - doc_names)
+        if missing:
+            errors.append(f"{doc_dir}/index.md: published serializer(s) missing from table: {missing}")
 
     return errors
 
@@ -124,6 +196,7 @@ def main() -> int:
     errors: list[str] = []
     for p in files:
         errors.extend(check_markdown(p))
+    errors.extend(check_language_rosters())
     errors.extend(check_mkdocs_paths())
 
     if errors:
@@ -132,7 +205,7 @@ def main() -> int:
             print(f"  - {e}")
         return 1
 
-    print(f"check-docs: OK ({len(files)} public markdown files + mkdocs.yml verified)")
+    print(f"check-docs: OK ({len(files)} public markdown files + 14 language rosters + mkdocs.yml verified)")
     return 0
 
 

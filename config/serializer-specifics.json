@@ -3,12 +3,12 @@
     "c/jansson": "https://github.com/akheron/jansson",
     "c/msgpack-c": "https://github.com/msgpack/msgpack-c",
     "c/libbson": "https://github.com/mongodb/mongo-c-driver",
-    "c/ubj": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_ubj.c",
+    "c/ubj": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/serializers/ser_ubj.c",
     "c/avro-c": "https://github.com/apache/avro",
     "c/nanopb": "https://github.com/nanopb/nanopb",
     "c/protobuf": "https://github.com/protocolbuffers/protobuf",
-    "c/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_upb.c",
-    "c/custom-binary": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_custom_binary.c",
+    "c/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/serializers/ser_upb.c",
+    "c/custom-binary": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/serializers/ser_custom_binary.c",
     "fortran/custom-binary": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/fortran/src/custom_binary.f90",
     "c/libyaml": "https://github.com/yaml/libyaml",
     "python/fory": "https://github.com/apache/fory",
@@ -124,15 +124,15 @@
     "cpp/simdjson": "https://github.com/simdjson/simdjson",
     "cpp/arduinojson": "https://github.com/bblanchon/ArduinoJson",
     "cpp/protobuf": "https://github.com/protocolbuffers/protobuf",
-    "cpp/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp",
-    "cpp/avro": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
+    "cpp/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/serializers/ser_schema.cpp",
+    "cpp/avro": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/serializers/ser_avro.cpp",
     "cpp/avro_c": "https://github.com/apache/avro",
     "cpp/flatbuffers": "https://github.com/google/flatbuffers",
     "cpp/flexbuffers": "https://github.com/google/flatbuffers",
     "cpp/capnproto": "https://github.com/capnproto/capnproto",
     "cpp/thrift": "https://github.com/apache/thrift",
     "cpp/cereal": "https://github.com/USCiLab/cereal",
-    "cpp/custom_binary": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
+    "cpp/custom_binary": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/serializers/ser_binary.cpp",
     "cpp/boost_serialization": "https://github.com/boostorg/serialization",
     "cpp/yaml-cpp": "https://github.com/jbeder/yaml-cpp",
     "swift/fory": "https://github.com/apache/fory",
@@ -140,7 +140,6 @@
     "swift/Foundation.PropertyListEncoder": "https://github.com/apple/swift-foundation",
     "swift/FlatBuffers": "https://github.com/google/flatbuffers",
     "swift/CapnProto": "https://github.com/capnproto/capnproto",
-    "swift/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",
     "swift/SwiftAvroCore": "https://github.com/lynixliu/SwiftAvroCore",
     "swift/SwiftCbor": "https://github.com/nnabeyang/swift-cbor",
     "swift/BinaryCodable": "https://github.com/christophhagen/BinaryCodable",
@@ -168,58 +167,248 @@
     "zig/serde.xml": "https://github.com/OrlovEvgeny/serde.zig",
     "zig/zbor": "https://codeberg.org/r4gus/zbor",
     "zig/protobuf": "https://github.com/Arwalk/zig-protobuf",
-    "zig/protobuf-wire": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",
     "zig/flatbuffers": "https://github.com/nDimensional/zig-flatbuffers",
     "zig/capnproto": "https://github.com/capnproto/capnproto",
-    "zig/comptime-bin": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",
-    "mojo/EmberJson": "https://github.com/bgreni/EmberJson"
+    "zig/comptime-bin": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/zig/src/packed_bin.zig",
+    "mojo/EmberJson": "https://github.com/bgreni/EmberJson",
+    "javascript/amf-codec": "https://github.com/csimi/amf-codec",
+    "python/py3amf-amf0": "https://github.com/zhangxaochen/Py3AMF",
+    "python/py3amf-amf3": "https://github.com/zhangxaochen/Py3AMF",
+    "rust/scuffle-amf0": "https://github.com/scufflecloud/scuffle",
+    "zig/serde.json.borrowed": "https://github.com/OrlovEvgeny/serde.zig",
+    "zig/std.json.borrowed": "https://github.com/ziglang/zig"
   },
   "extra_rows": [
-    ["zig","jsonz","https://github.com/KercyDing/jsonz"],
-    ["php","simdjson","https://github.com/crazyxman/simdjson_php"],
-    ["php","igbinary","https://github.com/igbinary/igbinary"],
-    ["php","msgpack-pecl","https://github.com/msgpack/msgpack-php"],
-    ["php","bson","https://github.com/mongodb/mongo-php-driver"],
-    ["php","yaml-pecl","https://github.com/php/pecl-file_formats-yaml"],
-    ["go","shamaton/msgpack (array)","https://github.com/shamaton/msgpack"],
-    ["javascript","bebop","https://github.com/6over3/bebop"],
-    ["python","arrow-ipc","https://github.com/apache/arrow"],
-    ["python","parquet","https://github.com/apache/arrow"],
-    ["python","parquet-uncompressed","https://github.com/apache/arrow"],
-    ["python","orc","https://github.com/apache/arrow"],
-    ["python","orc-uncompressed","https://github.com/apache/arrow"],
-    ["go","arrow-ipc","https://github.com/apache/arrow-go"],
-    ["go","parquet","https://github.com/apache/arrow-go"],
-    ["go","parquet-uncompressed","https://github.com/apache/arrow-go"],
-    ["go","sbe","https://github.com/aeron-io/simple-binary-encoding"],
-    ["javascript","arrow-ipc","https://github.com/apache/arrow"],
-    ["javascript","parquet","https://github.com/hyparam/hyparquet-writer"],
-    ["javascript","parquet-uncompressed","https://github.com/hyparam/hyparquet-writer"],
-    ["cpp","arrow-ipc","https://github.com/apache/arrow"],
-    ["cpp","parquet","https://github.com/apache/arrow"],
-    ["cpp","parquet-uncompressed","https://github.com/apache/arrow"],
-    ["cpp","orc","https://github.com/apache/arrow"],
-    ["cpp","orc-uncompressed","https://github.com/apache/arrow"],
-    ["cpp","sbe","https://github.com/aeron-io/simple-binary-encoding"],
-    ["csharp","arrow-ipc","https://github.com/apache/arrow-dotnet"],
-    ["csharp","parquet","https://github.com/aloneguid/parquet-dotnet"],
-    ["csharp","parquet-uncompressed","https://github.com/aloneguid/parquet-dotnet"],
-    ["rust","arrow-ipc","https://github.com/apache/arrow-rs"],
-    ["rust","parquet","https://github.com/apache/arrow-rs"],
-    ["rust","parquet-uncompressed","https://github.com/apache/arrow-rs"],
-    ["rust","sbe","https://github.com/aeron-io/simple-binary-encoding"],
-    ["java","arrow-ipc","https://github.com/apache/arrow-java"],
-    ["java","parquet","https://github.com/apache/parquet-java"],
-    ["java","parquet-uncompressed","https://github.com/apache/parquet-java"],
-    ["java","orc","https://github.com/apache/orc"],
-    ["java","orc-uncompressed","https://github.com/apache/orc"],
-    ["java","sbe","https://github.com/aeron-io/simple-binary-encoding"],
-    ["kotlin","arrow-ipc","https://github.com/apache/arrow-java"],
-    ["kotlin","parquet","https://github.com/apache/parquet-java"],
-    ["kotlin","parquet-uncompressed","https://github.com/apache/parquet-java"],
-    ["kotlin","orc","https://github.com/apache/orc"],
-    ["kotlin","orc-uncompressed","https://github.com/apache/orc"],
-    ["kotlin","sbe","https://github.com/aeron-io/simple-binary-encoding"]
+    [
+      "zig",
+      "jsonz",
+      "https://github.com/KercyDing/jsonz"
+    ],
+    [
+      "php",
+      "simdjson",
+      "https://github.com/crazyxman/simdjson_php"
+    ],
+    [
+      "php",
+      "igbinary",
+      "https://github.com/igbinary/igbinary"
+    ],
+    [
+      "php",
+      "msgpack-pecl",
+      "https://github.com/msgpack/msgpack-php"
+    ],
+    [
+      "php",
+      "bson",
+      "https://github.com/mongodb/mongo-php-driver"
+    ],
+    [
+      "php",
+      "yaml-pecl",
+      "https://github.com/php/pecl-file_formats-yaml"
+    ],
+    [
+      "go",
+      "shamaton/msgpack (array)",
+      "https://github.com/shamaton/msgpack"
+    ],
+    [
+      "javascript",
+      "bebop",
+      "https://github.com/6over3/bebop"
+    ],
+    [
+      "python",
+      "arrow-ipc",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "python",
+      "parquet",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "python",
+      "parquet-uncompressed",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "python",
+      "orc",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "python",
+      "orc-uncompressed",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "go",
+      "arrow-ipc",
+      "https://github.com/apache/arrow-go"
+    ],
+    [
+      "go",
+      "parquet",
+      "https://github.com/apache/arrow-go"
+    ],
+    [
+      "go",
+      "parquet-uncompressed",
+      "https://github.com/apache/arrow-go"
+    ],
+    [
+      "go",
+      "sbe",
+      "https://github.com/aeron-io/simple-binary-encoding"
+    ],
+    [
+      "javascript",
+      "arrow-ipc",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "javascript",
+      "parquet",
+      "https://github.com/hyparam/hyparquet-writer"
+    ],
+    [
+      "javascript",
+      "parquet-uncompressed",
+      "https://github.com/hyparam/hyparquet-writer"
+    ],
+    [
+      "cpp",
+      "arrow-ipc",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "cpp",
+      "parquet",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "cpp",
+      "parquet-uncompressed",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "cpp",
+      "orc",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "cpp",
+      "orc-uncompressed",
+      "https://github.com/apache/arrow"
+    ],
+    [
+      "cpp",
+      "sbe",
+      "https://github.com/aeron-io/simple-binary-encoding"
+    ],
+    [
+      "csharp",
+      "arrow-ipc",
+      "https://github.com/apache/arrow-dotnet"
+    ],
+    [
+      "csharp",
+      "parquet",
+      "https://github.com/aloneguid/parquet-dotnet"
+    ],
+    [
+      "csharp",
+      "parquet-uncompressed",
+      "https://github.com/aloneguid/parquet-dotnet"
+    ],
+    [
+      "rust",
+      "arrow-ipc",
+      "https://github.com/apache/arrow-rs"
+    ],
+    [
+      "rust",
+      "parquet",
+      "https://github.com/apache/arrow-rs"
+    ],
+    [
+      "rust",
+      "parquet-uncompressed",
+      "https://github.com/apache/arrow-rs"
+    ],
+    [
+      "rust",
+      "sbe",
+      "https://github.com/aeron-io/simple-binary-encoding"
+    ],
+    [
+      "java",
+      "arrow-ipc",
+      "https://github.com/apache/arrow-java"
+    ],
+    [
+      "java",
+      "parquet",
+      "https://github.com/apache/parquet-java"
+    ],
+    [
+      "java",
+      "parquet-uncompressed",
+      "https://github.com/apache/parquet-java"
+    ],
+    [
+      "java",
+      "orc",
+      "https://github.com/apache/orc"
+    ],
+    [
+      "java",
+      "orc-uncompressed",
+      "https://github.com/apache/orc"
+    ],
+    [
+      "java",
+      "sbe",
+      "https://github.com/aeron-io/simple-binary-encoding"
+    ],
+    [
+      "kotlin",
+      "arrow-ipc",
+      "https://github.com/apache/arrow-java"
+    ],
+    [
+      "kotlin",
+      "parquet",
+      "https://github.com/apache/parquet-java"
+    ],
+    [
+      "kotlin",
+      "parquet-uncompressed",
+      "https://github.com/apache/parquet-java"
+    ],
+    [
+      "kotlin",
+      "orc",
+      "https://github.com/apache/orc"
+    ],
+    [
+      "kotlin",
+      "orc-uncompressed",
+      "https://github.com/apache/orc"
+    ],
+    [
+      "kotlin",
+      "sbe",
+      "https://github.com/aeron-io/simple-binary-encoding"
+    ],
+    [
+      "java",
+      "fory-json",
+      "https://fory.apache.org/docs/json/getting-started"
+    ]
   ],
   "spec_key": {
     "c/cJSON": "cjson",
@@ -623,7 +812,43 @@
     "fortran/custom-binary": "custom-binary",
     "fortran/hdf5-fortran": "hdf5-fortran",
     "fortran/netcdf-fortran": "netcdf-fortran",
-    "fortran/adios2": "adios2"
+    "fortran/adios2": "adios2",
+    "zig/serde.json.borrowed": "serde-zig",
+    "zig/std.json.borrowed": "std-json-zig",
+    "python/py3amf-amf0": "py3amf",
+    "python/py3amf-amf3": "py3amf",
+    "csharp/Corvus.Toon": "corvus-toon",
+    "csharp/Toon.Format": "toon-format-csharp",
+    "csharp/ToonNet": "toonnet",
+    "go/gamf-amf0": "gamf-amf0",
+    "go/go-amf0": "go-amf0",
+    "go/toon-go": "toon-go",
+    "java/fory-json": "fory-json-java",
+    "java/json-io": "json-io-toon",
+    "java/jtoon": "jtoon",
+    "javascript/amf-codec": "amf-codec-js",
+    "javascript/biorate-amf": "biorate-amf-js",
+    "javascript/toon": "toon-js",
+    "kotlin/ktoon": "ktoon",
+    "php/toon": "toon-php",
+    "python/ctoon": "ctoon-python",
+    "python/toon-format": "toon-format-python",
+    "python/toons": "toons-python",
+    "rust/ctoon": "ctoon-rust",
+    "rust/scuffle-amf0": "scuffle-amf0",
+    "rust/toon-format": "toon-format-rust",
+    "rust/tru": "tru-rust",
+    "swift/ToonFormat": "toon-format-swift",
+    "fortran/gld-arrow": "gld-arrow-fortran",
+    "kotlin/gld-ion": "gld-ion-kotlin",
+    "mojo/gld-netcdf": "gld-netcdf-mojo",
+    "mojo/gld-adios2": "gld-adios2-mojo",
+    "php/gld-arrow": "gld-arrow-php",
+    "php/gld-ion": "gld-ion-php",
+    "swift/gld-avro": "gld-avro-swift",
+    "swift/gld-ion": "gld-ion-swift",
+    "zig/gld-avro": "gld-avro-zig",
+    "zig/gld-arrow": "gld-arrow-zig"
   },
   "specifics": {
     "cjson": "cJSON was written as an ultralightweight JSON parser in ANSI C for embedded and application code that could not afford a heavy toolkit. The problem was that existing C JSON stacks pulled large dependencies or a C++ runtime. cJSON solves that with a single-file DOM: parse to a tree of `cJSON` nodes, mutate, and print.",
@@ -841,7 +1066,7 @@
     "s2s": "s2s (struct to stream) is a Zig-only binary encoder that writes structs to a stream. It was created as a simple native binary path, not a public interchange standard.",
     "zig-protobuf": "Arwalk/zig-protobuf generates Zig from `.proto` files. Protocol Buffers exist as a language-neutral IDL. This package is the Zig implementation this suite uses.",
     "zig-flatbuffers": "nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers exists so readers can use data without unpacking. This is the Zig codegen this suite times.",
-    "comptime-bin": "comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers).",
+    "comptime-bin": "comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live struct value is not a valid encoding (slices are pointers).",
     "emberjson": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API.",
     "ehsanmok-json": "ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk.",
     "gld-json": "gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types.",
@@ -900,7 +1125,41 @@
     "rojff": "rojff (Return of JSON for Fortran) is a pure Fortran JSON value tree. It was written to construct JSON faster than earlier Fortran JSON libraries, with functional constructors and a move API. This row times to_compact_string and parse_json_from_string. Its integer kind is the compiler's default integer, int32 here. Values outside that range are written as JSON numbers so the integer reader does not overflow, and are read back with nint.",
     "toml-f": "TOML Fortran is a TOML 1.0 parser and serializer for Fortran. It exists so Fortran projects can load and save configuration as TOML. This row times toml_serialize and toml_loads. A batch of more than one record is a table with a records array, because TOML has no bare array at the root. The JSON rows use the same envelope so one reader serves both.",
     "fortran-messagepack": "fortran-messagepack is a pure Fortran MessagePack library. MessagePack exists as a compact binary form of JSON-like values. This row times pack_alloc and unpack. Integers are MessagePack integers, including int64 epoch milliseconds.",
-    "sbe-kotlin": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java flyweight inside serialize. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder."
+    "sbe-kotlin": "SBE (Simple Binary Encoding) was created for word-aligned financial messages: a fixed block, then repeating groups, then variable-length data. The problem was tag/length codecs that touch every field on the hot path. This Kotlin row fills the sbe-tool 1.40.2 Java flyweight inside serialize. Agrona is the runtime. The generator jar is sbe-all, copied from Maven at build time. It encodes table, table_project, and signal. nested_table is not an SBE body. The signal wire order is fixed fields, then the legs group, then symbol and venue. No compliance decoder.",
+    "ubj-c": "This row is the suite's in-tree UBJSON marker codec around the V2 binary payload. UBJSON was created as a binary cousin of JSON with explicit types. The benchmark runner implements the markers so C has a UBJSON size/speed point without a third-party dependency.",
+    "py3amf": "Py3AMF is a Python 3 fork of PyAMF implementing Adobe Action Message Format (AMF0/AMF3) over Python dictionaries via `pyamf.encode` and `pyamf.decode`.",
+    "corvus-toon": "Corvus.Toon.SystemTextJson converts JSON text and TOON text. The timed path includes that System.Text.Json pass. The Size column is the UTF-8 byte length.",
+    "toon-format-csharp": "Toon.Format is the official .NET codec for TOON specification 4.4. EncodeToBytes and Decode of a type are bound once. EncodeToStream and Decode from a stream are the library text stream API. The Size column is the UTF-8 byte length.",
+    "toonnet": "ToonNet.Core serializes a .NET type to TOON text. Serialize and Deserialize of that type are bound once. The stream path writes the UTF-8 buffer. The Size column is the byte length.",
+    "gamf-amf0": "gamf is a Go AMF0 codec. AMF0 is the command encoding inside RTMP. The timed path is Marshal, shaped like encoding/json. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row.",
+    "go-amf0": "go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an Encoder and calls Encode on the suite struct. The library does not implement AMF0 references, so a graph is skipped.",
+    "toon-go": "toon-go is the official Go codec for TOON. Struct fields use a toon tag and fall back to the json tag. The timed path reuses an Encoder and calls Marshal and Unmarshal. The stream path writes that buffer. The Size column is the UTF-8 byte length.",
+    "fory-json-java": "Apache Fory JSON is the JSON module (org.apache.fory:fory-json), separate from the binary fory row. This row times ForyJson.toJsonBytes and fromJson on the suite types. The stream path writes the same UTF-8 document.",
+    "json-io-toon": "json-io writes TOON with toToon and reads it with fromToon. This row turns strictToon on. The untimed toDomain step turns the decoded tree into the suite type. The Size column is the UTF-8 byte length.",
+    "jtoon": "jtoon is the official Java codec for TOON. JToon.encode writes the text. JToon.decode returns a JSON tree, and the untimed toDomain step turns that tree into the suite type. The Size column is the UTF-8 byte length.",
+    "amf-codec-js": "amf-codec is a small AMF0 encoder and decoder for Node. AMF0 is the command encoding inside RTMP. The timed path is toAMF and fromAMF on one plain object. It does not write AMF3.",
+    "biorate-amf-js": "@biorate/amf is an AMF3 encoder and decoder for JavaScript. AMF3 adds a short integer and shared strings. The timed path is encode and decode on one plain object. It is a separate row from amf-codec because that library writes AMF0.",
+    "toon-js": "@toon-format/toon is the official TypeScript codec and the reference for TOON specification 4.4. The timed path is encode and decode of UTF-8 text. The Size column is that byte length. A token count is not part of the measurement.",
+    "ktoon": "ktoon is a community Kotlin Multiplatform TOON codec on kotlinx.serialization. There is no official Kotlin port. The timed path is encodeToString and decodeFromString. The Size column is the UTF-8 byte length.",
+    "toon-php": "helgesverre/toon encodes and decodes TOON in PHP. The package default wire version is 3.3. This row selects specification 4.4. The timed path is Toon::encode and Toon::decode. The Size column is the UTF-8 byte length.",
+    "ctoon-python": "ctoon is a C99 TOON core. This row is the Python binding. The timed path is dumps and loads. The Size column is the UTF-8 byte length.",
+    "toon-format-python": "toon-format is the official Python codec for TOON, a text encoding of the JSON data model made so prompts can carry the same values in fewer tokens. The timed path is encode and decode. The Size column is the UTF-8 byte length. A token count is a separate measure and is not timed.",
+    "toons-python": "toons is a Python TOON codec whose core is Rust. It speaks the same JSON data model through loads and dumps. The timed path is that text. The Size column is the UTF-8 byte length, not a token count.",
+    "ctoon-rust": "ctoon is the Rust binding over the C99 TOON core. The crate has no Serde layer. The timed path builds that value tree and calls dumps and loads. The Size column is the UTF-8 byte length.",
+    "scuffle-amf0": "scuffle-amf0 is a pure-Rust AMF0 encoder and decoder from the Scuffle RTMP stack. AMF0 is the command encoding inside RTMP. The timed path is to_bytes and from_slice through Serde. The crate does not write object references.",
+    "toon-format-rust": "toon-format is the official Rust codec for TOON, with Serde. The timed path is encode_default and decode_default of the suite value. The stream path writes that UTF-8 buffer. The Size column is the byte length, not a token count.",
+    "tru-rust": "tru is the published crate for Dicklesworthstone's TOON codec. The library name is toon. The timed path is encode and try_decode of the JSON value. The Size column is the UTF-8 byte length.",
+    "toon-format-swift": "ToonFormat is the official Swift codec. Release 0.5 targets TOON specification 4.1. The timed path is TOONEncoder and TOONDecoder on the suite Codable value. The Size column is the UTF-8 byte length.",
+    "gld-arrow-fortran": "gld-arrow-fortran (leo-gan) implements the Apache Arrow C Data Interface in pure Fortran for contiguous float64 buffers on the `array` data set; `grid_window` slices after import.",
+    "gld-ion-kotlin": "gld-ion-kotlin (leo-gan) is a vendored, from-scratch Amazon Ion 1.0 binary encoder and decoder for Kotlin, timing `ion.encode` and `ion.decode` on the five suite types.",
+    "gld-netcdf-mojo": "gld-netcdf (leo-gan, bundled in `gld-hdf5`) is a pure-Mojo NetCDF-4 writer and reader using distinct dimension and variable names for float64 datasets on the suite types.",
+    "gld-adios2-mojo": "gld-adios2 (leo-gan, bundled in `gld-hdf5`) is a pure-Mojo ADIOS2 BP5 directory encoder and decoder framed into in-memory bytes for float64 variables on the suite types.",
+    "gld-arrow-php": "gld-arrow-php (leo-gan) is a pure-PHP Apache Arrow IPC stream encoder and decoder supporting the five suite data types.",
+    "gld-ion-php": "gld-ion-php (leo-gan) is a pure-PHP Amazon Ion 1.0 binary encoder and decoder supporting the five suite data types.",
+    "gld-avro-swift": "gld-avro-swift (leo-gan) is a pure-Swift Apache Avro binary codec that parses `.avsc` schemas in `prepare` and times `encodeGeneric` and `decodeGeneric`.",
+    "gld-ion-swift": "gld-ion-swift (leo-gan) is a pure-Swift Amazon Ion 1.0 binary encoder and decoder timing `encode` and `decodeBinary`.",
+    "gld-avro-zig": "gld-avro-zig (leo-gan) is a pure-Zig Apache Avro binary codec that parses `.avsc` schemas once in `prepare` and times `Datum.encodeTo` and `decodeBin`.",
+    "gld-arrow-zig": "gld-arrow-zig (leo-gan) is a pure-Zig Apache Arrow IPC stream codec supporting the five suite data types, decoding back via `rowsFromBatch`."
   },
   "extra": {
     "python/fory": "This row uses pyfory in native mode on registered dataclasses.",
@@ -914,7 +1173,6 @@
     "python/msgspec-msgpack": "This row times the MessagePack encoder/decoder on the same Struct types.",
     "c/libcbor-stream": "This row times libcbor's streaming `cbor_encode_*` API, not the DOM `cbor_load` decoder.",
     "c/cbor-encode": "Older log name for the TinyCBOR encode path; same Intel TinyCBOR library.",
-    "javascript/simdjson-parse+JSON.stringify": "Only deserialize uses SIMD; serialize is stdlib `JSON.stringify`.",
     "go/shamaton/msgpack (array)": "This row uses struct-as-array (no field-name keys) and the matching stream helpers.",
     "go/ugorji/json": "This row times the JsonHandle.",
     "go/ugorji/cbor": "This row times the CborHandle.",
@@ -935,7 +1193,7 @@
     "csharp/ShapeShift.Json": "String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.",
     "csharp/ShapeShift.MsgPack": "String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.",
     "csharp/ShapeShift.Protobuf": "String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API.",
-    "csharp/ShapeShift.Taml": "The package has no streaming text API, so the stream row adapts its complete string output. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized.",
+    "csharp/ShapeShift.Taml": "The package has no streaming text API, so the stream row adapts its complete string output. The `strings` data type is unsupported because its N=100 batch cannot be deserialized.",
     "csharp/ShapeShift.Toml": "The package has no streaming text API, so the stream row adapts its complete string output.",
     "csharp/ShapeShift.Yaml": "The package has no streaming text API, so the stream row adapts its complete string output.",
     "cpp/nlohmann_cbor": "This row times `to_cbor` / `from_cbor`.",
@@ -992,6 +1250,10 @@
     "java/gld-kiln": "On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.",
     "swift/gld-kiln": "On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.",
     "zig/gld-kiln": "On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.",
-    "csharp/gld-kiln": "On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix."
+    "csharp/gld-kiln": "On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.",
+    "zig/serde.json.borrowed": "Uses borrowed string views (`fromSliceBorrowed`) on decode instead of copying unescaped strings; encode uses the same comptime `toWriter` path as `serde.json`.",
+    "zig/std.json.borrowed": "Uses `parseFromSliceLeaky` with `.allocate = .alloc_if_needed` so unescaped strings are decoded as borrowed slices into the input buffer rather than copied; encode matches `std.json`.",
+    "python/py3amf-amf0": "Uses AMF0 (RTMP command encoding), where every number is written as an IEEE 754 double.",
+    "python/py3amf-amf3": "Uses AMF3, which encodes small integers compactly and supports reference sharing for repeated strings and objects."
   }
 }

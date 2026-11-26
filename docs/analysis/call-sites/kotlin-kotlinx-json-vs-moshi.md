@@ -1,43 +1,22 @@
-# Kotlin: why Moshi outruns kotlinx-json on the same JSON
+# Kotlin: `kotlinx-json` vs. `Moshi`
 
-## Why this article exists
+This note compares `kotlinx-json`, `moshi-codegen`, and `moshi-reflect` on the `document` ($n = 1$, `bytes` mode) payload. All three serialize the same Kotlin `Document` data class into an identical **440-byte** compact UTF-8 JSON document, isolating pure implementation cost between a multi-format plugin architecture and a JSON-dedicated adapter.
 
-On this suite’s **document** payload, one instance, in-memory buffer mode, **moshi-codegen** and **kotlinx-json** emit the **same 440 bytes** of named JSON. Moshi still finishes more encode-and-decode cycles per second. When two libraries write the same text, the gap cannot be “a denser encoding.” It has to be how each library walks the data class and how it hands bytes back to the caller.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=kotlin&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare) · [Kotlin overview](../../kotlin/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page holds the format still (JSON with field names) and changes only the library. The Python pair of that question is [orjson vs json](python-orjson-vs-json.md).
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+| Property | `kotlinx-json` | `moshi-codegen` | `moshi-reflect` |
+|---|---|---|---|
+| Standard | `json` | `json` | `json` |
+| Encoded size (`document`, $n = 1$) | **440 B** | **440 B** | **440 B** |
+| Timed boundary | `Document` ↔ UTF-8 `ByteArray` | `Document` ↔ UTF-8 `ByteArray` | `Document` ↔ UTF-8 `ByteArray` |
+| Binding mechanism | Compiler-generated `KSerializer` + format encoder/decoder | KSP-generated `DocumentJsonAdapter` over Okio `Buffer` | `KotlinJsonAdapterFactory` reflection over Okio `Buffer` |
+| Multi-format support | Yes (JSON, CBOR, ProtoBuf, HOCON, Properties) | JSON only | JSON only |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=kotlin&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=moshi-codegen&ser=moshi-codegen&ser=kotlinx-json&ser=moshi-reflect#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Kotlin overview](../../kotlin/index.md)
+## Timed Call Sites
 
-## Short answer
-
-Moshi’s generated adapter completes more encode-and-decode cycles per second than kotlinx.serialization JSON on this slice (about 21 thousand versus 12 thousand). Both write 440 bytes, so size cannot explain the difference.
-
-Both adapters time the same work: suite `Document` in, UTF-8 JSON out, suite `Document` back.
-
-**Encode:** kotlinx-json calls `Json.encodeToStream` on a reused `ByteArrayOutputStream`. Moshi calls a KSP-generated `JsonAdapter.toJson` into an Okio `Buffer`.
-
-**Decode:** kotlinx-json calls `Json.decodeFromStream` on a `ByteArrayInputStream`. That path walks JSON tokens through the kotlinx decoder and builds the data class. Moshi’s generated adapter reads tokens and assigns fields. Decode is where most of the gap sits (about 52 µs versus 24 µs).
-
-moshi-reflect sits with moshi-codegen on this one-instance document. Reflection is not the story here. The story is Moshi’s adapter versus kotlinx’s format decoder.
-
-| | moshi-codegen | kotlinx-json | moshi-reflect |
-|--|---------------|--------------|---------------|
-| Mean encode + decode, document, *n* = 1 | **21 thousand / s** | 12 thousand / s | 23 thousand / s |
-| Encode | **24 µs** | 29 µs | 20 µs |
-| Decode | **24 µs** | 52 µs | 22 µs |
-| Encoded size | **440 B** | **440 B** | **440 B** |
-
-Equal size is the teaching fact. The speed difference is implementation, not a different encoding.
-
-## The two timed call sites
-
-**kotlinx-json** (`kotlin/src/main/kotlin/benchmark/serializers/KotlinxJsonSer.kt`) reuses a `Json` instance and a `ByteArrayOutputStream`:
+**`kotlinx-json`** (`kotlin/src/main/kotlin/benchmark/serializers/KotlinxJsonSer.kt`) reuses a `Json` instance and `ByteArrayOutputStream`, encoding and decoding through the compiler-generated `KSerializer`:
 
 ```kotlin
 override fun serializeBytes(fx: Fixture): ByteArray {
@@ -49,9 +28,7 @@ override fun deserializeBytes(data: ByteArray): Any =
     json.decodeFromStream(serializer, ByteArrayInputStream(data))
 ```
 
-`encodeToStream` / `decodeFromStream` are the official kotlinx.serialization JSON APIs. The compiler generated a `KSerializer` for `Document`. The timed path still walks that serializer: each property is a format-level encode or decode, then a stream write or read.
-
-**moshi-codegen** (`kotlin/src/main/kotlin/benchmark/serializers/MoshiCodegenSer.kt`) caches the generated adapter in `prepare` and times only `toJson` / `fromJson`:
+**`moshi-codegen`** (`kotlin/src/main/kotlin/benchmark/serializers/MoshiCodegenSer.kt`) caches the KSP-generated `JsonAdapter` in `prepare` and streams through an Okio `Buffer`:
 
 ```kotlin
 override fun serializeBytes(fx: Fixture): ByteArray {
@@ -63,24 +40,8 @@ override fun deserializeBytes(data: ByteArray): Any =
     adapter.fromJson(Buffer().write(data)) ?: throw IllegalStateException("moshi-codegen null")
 ```
 
-The adapter comes from `@JsonClass(generateAdapter = true)` on the suite data classes. KSP writes a `DocumentJsonAdapter` that knows the property names and types. There is no format-level serializer graph on the timed path.
+## Mechanistic Analysis and Scope Limits
 
-## Why decode favours Moshi
-
-kotlinx-json decode is a **format decoder plus a serializer**. `decodeFromStream` reads tokens, then the generated `KSerializer` maps those tokens onto `Document`. That extra hop is real work on every field, including the eight line items.
-
-Moshi decode is **one generated adapter**. The adapter reads `"id"`, `"status"`, `"meta"`, `"items"` and assigns them. Nested `DocumentMeta` and `DocumentItem` have their own generated adapters. There is no second framework between the token and the field.
-
-Encode is closer (29 µs versus 24 µs) because both paths already know the field list. Decode is where the kotlinx format layer shows up.
-
-## What you give up
-
-kotlinx.serialization can write several formats from the same `@Serializable` types. Those formats include JSON, CBOR, ProtoBuf, Properties, and HOCON. That is a library feature. It is not the teaching cut this course calls a family. Moshi is JVM JSON. If the product must share one type definition across formats, kotlinx-json is why that library exists. If the product is a JVM service that only speaks JSON, Moshi’s generated adapter is why it is faster on this payload.
-
-moshi-reflect is slightly faster than moshi-codegen on this one-instance document. Do not read that as “never generate adapters.” The reflection factory is still Moshi. The pair on this page is kotlinx versus Moshi, not codegen versus reflection.
-
-## Self-check
-
-1. Why is equal size evidence that the encoding is not the speed story?
-2. Which timed call still walks a format-level `KSerializer`, and which one calls a generated `JsonAdapter`?
-3. Why is the decode gap larger than the encode gap on this payload?
+1. **Controlled equal-size comparison (440 B):** Because wire bytes are identical across all three rows, throughput differences arise strictly from parser/encoder dispatch and allocation rather than format density (the JVM parallel to [Python: `orjson` vs. stdlib `json`](python-orjson-vs-json.md)).
+2. **Format-abstraction layer on decode:** `kotlinx.serialization` decouples data-class structure (`KSerializer`) from wire syntax (`CompositeDecoder` / `JsonDecoder`), adding an abstraction hop per field and nested list item during decode. Moshi's `JsonAdapter` couples Okio JSON token reading directly to property assignment with no intermediate format layer.
+3. **Architecture trade-off:** `kotlinx.serialization` supports Kotlin Multiplatform and multiple wire formats from one `@Serializable` model; Moshi targets JVM/Android JSON exclusively. On this small single-instance document, `moshi-reflect` closely tracks `moshi-codegen` because both share Moshi's Okio token reader and JIT inlines the small class structure.

@@ -1,157 +1,109 @@
-# What the timer is allowed to measure
+# Timing Contract
 
-This page is the suite’s **timing contract**. Every language runner and every serializer adapter must follow it. [Architecture](architecture.md) describes the loop. This page says **which work** belongs in each step.
+This document defines the suite's **timing honesty contract**: precisely which computational work belongs inside timed `serialize` and `deserialize` calls, and which setup or conversion work must stay outside the clock. Runner lifecycle and scheduling live in [Benchmark architecture](architecture.md).
 
-If two adapters on the same Dashboard slice time different work, the rank is not a library comparison. The google-protobuf JavaScript row once encoded in `prepare` and timed a `Buffer` copy. That was a contract violation, not a fast encoder.
+Comparisons are valid only when competing adapters on the same Dashboard slice time commensurate work. Historically, an early JavaScript `google-protobuf` adapter encoded bytes inside `prepare` and timed only a `Buffer` copy—an implementation defect rather than encoder performance. Every adapter in this repository is audited against the rules below.
 
-## The three steps
-
-The runner calls three methods. Only two are timed.
-
-| Step | When | Timed? | Allowed work | Forbidden work |
-|------|------|--------|--------------|----------------|
-| **prepare** | Once per cell, before the loop | **No** | Load a schema. Build or compile an encoder. Bind a type-specific function. Convert the suite value into the **library’s in-memory message** (a struct, a generated protobuf object, a `Document` DOM). Allocate reusable buffers. | Write the **output bytes**. Cache a finished encoding and hand it back later. |
-| **serialize** | Every repetition | **Yes** | Walk that in-memory message and **emit bytes** (or the language’s in-memory equivalent). | Return a copy of bytes written in `prepare`. Rebuild the schema. Re-bind the type. |
-| **deserialize** | Every repetition | **Yes** | Read those bytes and rebuild the library’s in-memory message. | Skip the library and parse with a second library “for convenience,” then ignore the first result. |
-
-Fidelity (does the value still mean the same thing?) runs **after** deserialize. It is not timed.
+## Timed vs. Untimed Boundaries
 
 ```text
   suite value
        │
        ▼
-  prepare          untimed     suite value → library message
+  prepare          [untimed]   compile schemas, bind codecs, convert suite value → library model, allocate buffers
        │
        ▼
-  serialize        TIMED       library message → bytes
+  serialize        [TIMED]     encode library model → wire bytes
        │
        ▼
-  deserialize      TIMED       bytes → library message
+  deserialize      [TIMED]     decode wire bytes → library model
        │
        ▼
-  to-domain        untimed     library message → suite value  (when the runner has this hook)
+  to-domain        [untimed]   convert library model → suite value (when supported by runner)
        │
        ▼
-  fidelity         untimed     compare suite values
+  fidelity         [untimed]   verify semantic equality against expected suite value
 ```
 
-## One sentence
+| Stage | Frequency | Timed | Permitted Work | Prohibited Work |
+|---|---|---|---|---|
+| **prepare** | Once per cell | No | Schema loading/compilation, encoder/decoder instantiation, type binding, converting suite data to the library's native in-memory model (e.g., generated `Message`, DOM `Document`, `msgspec.Struct`, plain dict), reusable buffer allocation. | Generating output wire bytes or caching pre-encoded payloads. |
+| **serialize** | Every repetition | **Yes** | Traversing the prepared in-memory value and emitting encoded bytes (or language-native equivalent). | Returning cached bytes from `prepare`; recompiling schemas or rebuilding encoders when reuse is supported. |
+| **deserialize** | Every repetition | **Yes** | Parsing wire bytes and reconstructing the library's native in-memory value. | Substituting a different parser or bypassing decode. |
 
-**The timer measures encode and decode. It does not measure setup. It does not measure a copy of work that already finished.**
+## Normative Rules
 
-## What “library message” means
+1. **Never cache wire output in `prepare`:** Timed `serialize` must perform actual encoding, not `memcpy`. Parse-only libraries (`simdjson`, `simd-json`) must time a documented companion JSON writer during `serialize` and disclose that split on the language page and in the row label where applicable.
+2. **Never time one-time schema or reflection setup:** Schema parsing, `ClassCache` construction, `MakeGenericMethod`, and encoder instantiation belong in `prepare`.
+3. **Keep domain–native mapping untimed when supported, and symmetric across paired audits:** Most runners map back to suite domain objects after timing (`to-domain`). Where one library operates directly on suite domain structs (`Protostuff`, `FlatBuffers` in Java/Kotlin/Swift), both adapters in a paired comparison must share the same end-to-end suite boundary (`suite → bytes → suite`).
+4. **Match batch cardinality $N$:** A cell with `DataTypeInstanceCount = N` must encode and decode all $N$ instances (or one documented batch frame of $N$).
+5. **Enforce stream honesty:** Stream rows must call a genuine stream API (`native` or `text_on_stream`) or be explicitly tagged `adapted`; label-only aliases of `bytes` must not be emitted ([I/O & run modes](modes.md#three-levels-of-stream-honesty)).
+6. **Align row names with timed code:** Row labels must reflect what runs on the clock; any fallback encoder or envelope wrapper must be documented on the language page.
+7. **Rule 8 — Columnar and SBE layout construction stays timed:** For `table`, `table_project`, `nested_table`, and `signal`, constructing an Arrow `RecordBatch`, Parquet/ORC columns, or SBE flyweight from suite rows is intrinsic to the format and stays inside timed `serialize` (schema objects and writer properties stay in `prepare`). On `table_project`, timed `deserialize` returns `f_float_0` only; row codecs that decode all columns before slicing keep that full decode on the clock.
+8. **Rule 9 — Array and Tensor file/view rules:** For `grid` and `grid_window`, allocating host arrays stays in `prepare`; creating, writing, and reading the file or window are timed. `grid_window` must use native partial selection (HDF5 hyperslab, NetCDF `start`/`count`, ADIOS selection)—a full read plus host slice is invalid except where explicitly caveated (`gld-hdf5`). For `tensor_view`, timed `deserialize` must borrow from the encoded buffer without copying the 4 MiB matrix.
 
-The library’s normal in-memory type:
+## Documented Contract Exceptions
 
-- Protocol Buffers: a generated `Message`, a protobufjs message, a `BinaryWriter` input object already built
-- JSON with a DOM library: a `Document` / `JsonDocument` / `nlohmann::json` object
-- JSON with `JSON.stringify`: the plain JavaScript object (there is no other native type)
-- Speedy / Bitsery / custom-binary: the language struct itself
+| Exception | Rationale | Required Disclosure |
+|---|---|---|
+| Parse-only JSON libraries (`simdjson`, `simd-json`) | Upstream library ships no encoder. | Encode calls a named JSON writer on the clock; disclosed on language page and in [4.12 C++: `simdjson`](../theory/401/cpp-simdjson-wrapper.md). |
+| Columnar / SBE conversion (Rule 8) | Row-to-column shredding or flyweight packing is core format cost. | Schema setup in `prepare`; layout conversion in `serialize`. |
+| Teaching envelopes (C `ubj`, `flatcc`, `avro-c`) | Measures framing overhead around in-tree binary baseline. | Disclosed on [C overview](../c/index.md) and [C: `custom-binary` vs. `ubj`](call-sites/c-custom-binary-vs-ubj.md). |
+| Eager materialization of zero-copy archives (`rkyv`) | Required for uniform round-trip fidelity verification. | Disclosed on [Rust overview](../rust/index.md) and [4.10 Rust: `rkyv` vs. `Speedy`](../theory/401/rust-rkyv-vs-speedy.md). |
+| Symmetric suite-boundary pairs | Comparing a POJO codec (`Protostuff`) with a generated-message codec (`protobuf-java`). | Both adapters time `suite → bytes → suite`. |
 
-Building that object is **prepare**. Writing it out is **serialize**.
+## Adapter Review Checklist
 
-## Hard rules
+Before publishing results for any new or modified adapter, verify four invariants:
 
-1. **Do not cache output bytes in `prepare`.**  
-   If `serialize` only copies a `string`, `Vec<u8>`, or `Buffer` that `prepare` already filled, the encode column is a memcpy. That is a bug. Parse-only libraries (simdjson has no encoder) must still **write JSON during `serialize`**, or the row must not report an encode time as if it were that library.
+1. `prepare` terminates before invoking any function that emits encoded bytes.
+2. Timed `serialize` invokes the library's encode/write/marshal entry point (or documented stand-in).
+3. Timed `deserialize` invokes the library's decode/parse/unmarshal entry point.
+4. Any paired comparison in a [401 case study](../theory/401/index.md) or [call-site note](call-sites/index.md) uses matching boundaries on both sides (or documents the asymmetry explicitly).
 
-2. **Do not time schema compile, type registration, or `MakeGenericMethod`.**  
-   Those belong in `prepare`. If the first timed call still builds the serializer, the first repetition is warmup (dropped) but later reps must not rebuild it.
+## Audit Summary
 
-3. **Domain ↔ library maps are untimed when the runner can do it — except a 401 pair that must share one end-to-end path.**  
-   C#, Go, and most Java/Swift rows convert back to the suite value **after** the timer. The Java Protostuff / protobuf-java pair and the Swift FlatBuffers / SwiftProtobuf pair time suite value → bytes → suite value on both sides, because one library’s native type *is* the suite object.
+### Course 401 Case Studies (`docs/theory/401/`)
 
-4. **Both adapters in one 401 comparison must time the same kind of work.**  
-   Those two pairs now share the suite-value path. Do not revert one adapter to “prepared native only” without changing the other.
+| Case Study | Timed Work Audited | Status |
+|---|---|---|
+| [4.8 Python: `msgspec-msgpack` vs. `orjson`](../theory/401/python-msgspec-vs-orjson.md) | Typed `Struct` vs. `dict` JSON; domain conversion untimed on both | Honest (different layouts, same boundary) |
+| [4.9 Rust: `Speedy` vs. `Bincode`](../theory/401/rust-speedy-vs-bincode.md) | Direct `Document` vs. `Serde` `Fixture` enum wrapper | Documented wrapper asymmetry |
+| [4.10 Rust: `rkyv` vs. `Speedy`](../theory/401/rust-rkyv-vs-speedy.md) | Both materialize owned `Document`; `rkyv` does not time zero-copy `access` | Honest (eager decode disclosed) |
+| [4.11 JavaScript: three Protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize` and decode to native message; `toDomain` untimed | Honest |
+| [4.12 C++: `simdjson` wrapper](../theory/401/cpp-simdjson-wrapper.md) | Encode is `nlohmann::json::dump`; decode is `simdjson` parse + DOM walk | Honest (encode stand-in disclosed) |
 
-5. **Encode N instances when the cell says N.**  
-   `DataTypeInstanceCount=100` means the timed call encodes 100 values (or one documented batch frame of 100). Encoding one value and writing `100` is a critical bug.
+### Call-Site Reference Notes (`docs/analysis/call-sites/`)
 
-6. **Stream mode must be a different API, or it must be labelled `adapted`.**  
-   Bytes-then-`write` is not a native stream path.
+| Call-Site Note | Timed Work Audited | Status |
+|---|---|---|
+| [C: `custom-binary` vs. `ubj`](call-sites/c-custom-binary-vs-ubj.md) | `ubj` encodes `custom-binary` plus UBJSON envelope | Honest (envelope disclosed) |
+| [C#: `BinaryPack` vs. `MS Bond Fast`](call-sites/csharp-binarypack-vs-bond.md) | Both time native `bytes` encode/decode on domain POCOs | Honest |
+| [C++: `Bitsery` vs. `YAS`](call-sites/cpp-bitsery-vs-yas.md) | Both serialize C++ domain structs | Honest |
+| [Fortran: `json-fortran` vs. `rojff`](call-sites/fortran-json-fortran-vs-rojff.md) | Both time suite document ↔ compact JSON text | Honest |
+| [Go: `kelindar/binary` vs. `hamba/avro`](call-sites/go-kelindar-vs-avro.md) | Both encode/decode Go domain structs | Honest |
+| [Java: `Protostuff` vs. `protobuf-java`](call-sites/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Honest (symmetric suite boundary) |
+| [JavaScript: `JSON.stringify` vs. `google-protobuf`](call-sites/javascript-json-vs-protobuf.md) | Both encode and decode on the clock (post-copy-bug fix) | Honest |
+| [Kotlin: `FlatBuffers` vs. `protobuf`](call-sites/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Honest (symmetric suite boundary) |
+| [Kotlin: `kotlinx-json` vs. `Moshi`](call-sites/kotlin-kotlinx-json-vs-moshi.md) | Both encode/decode suite `Document` as named JSON | Honest |
+| [Kotlin: `Protostuff` vs. `protobuf`](call-sites/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Honest (symmetric suite boundary) |
+| [Mojo: `EmberJson` vs. `mojo-avro`](call-sites/mojo-emberjson-vs-avro.md) | Both time suite `Document` (`serialize`/`deserialize` vs. `AvroDatum`) | Honest |
+| [PHP: `json` vs. `protobuf`](call-sites/php-json-vs-protobuf.md) | Both time suite arrays ↔ bytes (`protobuf` maps message internally) | Honest (symmetric suite boundary) |
+| [Python: `msgspec` JSON vs. MessagePack](call-sites/python-msgspec-json-vs-msgpack.md) | Same `msgspec.Struct`, two wire encoders | Honest |
+| [Python: `orjson` vs. stdlib `json`](call-sites/python-orjson-vs-json.md) | Both dump/load prepared `dict` (stdlib note flags uncached `JSONEncoder`) | Honest (caveat disclosed) |
+| [Rust: `Speedy` vs. `Postcard`](call-sites/rust-speedy-vs-postcard.md) | Direct `Document` vs. `Serde` `Fixture` enum wrapper | Documented wrapper asymmetry |
+| [Swift: `FlatBuffers` vs. `SwiftProtobuf`](call-sites/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Honest (symmetric suite boundary) |
+| [Zig: `std.json` vs. `serde.json`](call-sites/zig-std-json-vs-serde-json.md) | Both time suite structs ↔ compact JSON into reused buffer | Honest |
 
-7. **The row name must match the timed functions.**  
-   A row named `simdjson` may use simdjson on decode. If encode is `nlohmann::json::dump`, the article and the inventory must say so. A row named `google-protobuf` must call that library’s writer on the timed encode.
+### Standalone Adapter Audits & Open Contract Gaps
 
-8. **Columnar layouts and SBE keep row-to-layout conversion on the clock.**  
-   For `table`, `table_project`, `nested_table`, and `signal`, building an Arrow record batch, Parquet or ORC columns, or an SBE flyweight from suite rows is **serialize** work. Schema objects, writer properties, and SBE codegen stay in `prepare` or in the build. Pre-building the batch in `prepare` and timing a byte copy hides the cost this family measures. This overrides rule 3 for these four type ids only.  
-   `TimeDeser` for `table`, `nested_table`, and `signal` materializes domain rows. `TimeDeser` for `table_project` materializes `f_float_0` only. Row peers may fully decode and then slice that column. That decode stays on the clock.
+- **Audited schema rows:** Zig `protobuf`, `flatbuffers`, and `capnproto` (C++ bridge), C++ `capnproto`, and `dagr-*` across seven languages keep schema/native preparation outside the clock (except Mojo and Swift Dagr, where builder/arena conversion is disclosed as timed on their language pages).
+- **Known remaining gaps (disclosed, not silent):**
+  - **C `protobuf`:** Runs `to_proto` / `from_proto` inside timed calls because the C runner lacks a `prepare_many` hook for $N > 1$ (Rust `prost` uses untimed `prepare_many`).
+  - **C `nanopb` / `protobuf-c` / `protobuf-wire`:** Share one in-tree `fixture_pb_v2.h` wire helper rather than linking full upstream codegen runtimes.
+  - **C `avro-c` / `flatcc` / `ubj`:** Wrap `custom-binary` inside format envelopes.
+  - **C# legacy XML/JSON constructors:** `DataContract` and `XmlSerializer` perform lazy initialization on repetition 0 (excluded by warmup).
 
-9. **Array types time the file, not the source fill.**  
-   For `grid` and `grid_window`, building the float64 array is prepare. Creating the file, writing the whole array, and reading either the whole array or the window are timed. Declaring the ADIOS IO and selecting the BP5 engine is prepare. `grid_window` deserialize is a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection. A full read plus a host-side slice is not a `grid_window` result. The size column is the full file.
+## Related Pages
 
-   For `tensor`, `prompt`, `shard`, and `request`, building the host arrays is prepare. Writing the file or buffer and reading it back are timed. `tensor_view` uses the same write. Its read must borrow the payload from the encoded buffer. A copy, including a copy followed by a view of the copy, is not a `tensor_view` result. Arrow record-batch conversion stays on the columnar types. A tensor row uses the library's tensor or numeric-array API.
-
-## Allowed exceptions (must be labelled)
-
-| Exception | Why it exists | How to label it |
-|-----------|---------------|-----------------|
-| Parse-only library (no public encoder) | simdjson is a parser | Encode is another JSON writer, timed. Decode is the parser. The 401 simdjson page is the model. |
-| Columnar and SBE layout conversion | Shredding rows into columns, or packing an SBE body, is the format | Rule 8. Schema compile stays in `prepare`. The conversion stays in `serialize`. `table_project` deserialize returns one column. |
-| Envelope / teaching wrapper | C `ubj` wraps custom-binary | The 401 page must say the envelope is the measured extra work. |
-| In-place layout used as a classical decoder | rkyv `from_bytes` builds an owned struct | The 401 rkyv page must say `access` is not timed. |
-| 401 pair whose other library has no separate native type | Protostuff and FlatBuffers encode the suite object | Both sides time suite value → bytes → suite value. |
-
-If you need a new exception, write it on the language Overview **and** next to the Dashboard claim. Do not invent a silent one.
-
-## How to check one adapter
-
-Open the adapter. Answer four questions. All four must be yes, or the row is dishonest.
-
-1. Does `prepare` stop before any function that **returns the encoded payload**?
-2. Does timed `serialize` call the library’s **encode / dump / write / toBinary / SerializeToArray** (or the documented stand-in)?
-3. Does timed `deserialize` call the library’s **decode / parse / read / fromBinary / ParseFromArray**?
-4. If this adapter is compared with another in a 401 article, do both time the same kind of object (suite value vs prepared native message) on both encode and decode?
-
-## Audit of the 401 labs and call-site notes
-
-Checked against the adapters in this repository after the google-protobuf encode fix.
-
-| Article | What the two timed paths actually do | Contract |
-|---------|--------------------------------------|----------|
-| [Python: orjson vs json](call-sites/python-orjson-vs-json.md) | Both dump/load a prepared dict | Same work. Honest. |
-| [Python: msgspec-msgpack vs orjson](../theory/401/python-msgspec-vs-orjson.md) | Struct encode vs dict JSON; maps untimed | Different layouts, same clock rule. Honest. |
-| [Python: msgspec JSON vs MessagePack](call-sites/python-msgspec-json-vs-msgpack.md) | Same Struct, two encoders | Same work. Honest. |
-| [Rust: Speedy vs Bincode](../theory/401/rust-speedy-vs-bincode.md) | Speedy writes a `Document`. Bincode writes a `Fixture` enum through Serde | **Wrapper asymmetry**, already stated in the article. |
-| [Rust: Speedy vs Postcard](call-sites/rust-speedy-vs-postcard.md) | Same asymmetry as above | Documented. |
-| [Rust: rkyv vs Speedy](../theory/401/rust-rkyv-vs-speedy.md) | Both fill an owned `Document`; rkyv does not use `access` | Documented. Honest for that choice. |
-| [C: custom-binary vs ubj](call-sites/c-custom-binary-vs-ubj.md) | ubj encodes custom-binary, then an envelope | Documented. Honest for that choice. |
-| [C++: Bitsery vs YAS](call-sites/cpp-bitsery-vs-yas.md) | Both encode the C++ value | Same work. Honest. |
-| [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode is nlohmann `dump` of a prepared object. Decode is simdjson parse, then a DOM walk | Encode is **not** simdjson. Must stay labelled. |
-| [C#: BinaryPack vs Bond Fast](call-sites/csharp-binarypack-vs-bond.md) | Both encode the library byte payload. The published table on that page still includes a shared Base64 step | Same extra work in that table. Honest **within C#**. |
-| [Go: kelindar vs Avro](call-sites/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
-| [Java: Protostuff vs protobuf-java](call-sites/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
-| [Kotlin: Protostuff vs protobuf](call-sites/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |
-| [Kotlin: kotlinx-json vs Moshi](call-sites/kotlin-kotlinx-json-vs-moshi.md) | Both dump/load a suite `Document` as named JSON | Same work. Honest. |
-| [Kotlin: FlatBuffers vs protobuf](call-sites/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
-| [PHP: JSON vs protobuf](call-sites/php-json-vs-protobuf.md) | Both time suite arrays → bytes → suite arrays. protobuf still builds a generated message in the middle | Same work at the suite boundary. |
-| [Fortran: json-fortran vs rojff](call-sites/fortran-json-fortran-vs-rojff.md) | Both time a suite document → compact JSON text → suite document | Same named JSON. Integers outside int32 are JSON numbers on both rows. |
-| [Zig: std.json vs serde.json](call-sites/zig-std-json-vs-serde-json.md) | Both time suite structs → JSON bytes → suite structs | Same comptime `@typeInfo` idea, two libraries. |
-| [Mojo: EmberJson vs mojo-avro](call-sites/mojo-emberjson-vs-avro.md) | EmberJson times `serialize` / `deserialize`. Avro times `encode` / `decode` on `AvroDatum`. | Same suite `Document`; JSON text vs Avro binary. |
-| Zig `protobuf` (Arwalk/zig-protobuf) | Prepare copies suite → generated message. Timed path is `encode` / `decode`. Domain copy-back is after decode (same shape as Rust `prost`) | Honest schema row. |
-| Zig `flatbuffers` | Prepare stores test records. Timed path is `Builder.writeTable` / `decodeRoot` | Honest schema row. |
-| Zig `capnproto` | Prepare fills C structs. Timed path is official C++ `MallocMessageBuilder` / `FlatArrayMessageReader` | Honest schema row (C++ runtime, same as Swift). |
-| C++ `capnproto` | Prepare fills `MallocMessageBuilder`. Timed path is `messageToFlatArray` / `writeMessage` and `FlatArrayMessageReader` / `InputStreamMessageReader`. `to_domain` walks fields | Honest schema row (same split as C++ `protobuf`). |
-| Dagr, seven languages | Prepare builds the direct-builder value or the arena. Timed serialize is `direct::build`, `Arena::serialize`, or `to_bytes` (every field is written). Timed deserialize materializes the suite value. N=1 to N=100 size ratio is about 100, and the same layout has the same size across languages | Honest schema row. A latency win for `dagr-frozen-packed` on `message` is that packed encode, not a buffer cached in prepare. |
-| [JavaScript: JSON vs google-protobuf](call-sites/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
-| [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
-| [Swift: FlatBuffers vs SwiftProtobuf](call-sites/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
-
-## Remaining contract gaps (not 401 pairs)
-
-These rows violate the contract or mix two contracts. They are listed so a later change can close them. They are **not** silent.
-
-| Gap | Where | What is wrong |
-|-----|--------|----------------|
-| Domain map on the clock | C `protobuf` `to_proto` / `from_proto` on every timed call | The C runner passes a distinct test record per instance, so convert-in-prepare cannot cover N>1 without a `prepare_many` hook. Rust `prost` now converts every instance in untimed `prepare_many`. |
-| Wrapper enum vs inner struct | Rust Serde rows vs Speedy / rkyv / minicbor | Same as the 401 Speedy articles. Documented, not a silent bug. |
-| Envelope instead of native model | C avro-c, flatcc, ubj | Timed path wraps custom-binary. Teaching rows; see the C 401 article. |
-| C nanopb / protobuf-c / protobuf-wire | C schema rows | Same in-tree `pb_v2_encode` body under three names. Wiring the real libraries is a separate implementation task. |
-| Some C# XML/JSON ctors still lazy | DataContract XML, XmlSerializer | Warmup drops rep 0. Bond now builds in `Initialize`. |
-
-## Related pages
-
-- [Architecture — what we measure](architecture.md#measurement-model)
-- [Adding a serializer — timing honesty](ADDING_A_SERIALIZER.md#timing-honesty)
-- [Modes](modes.md)
-- [Serialization 401](../theory/401/index.md)
+- [Benchmark architecture](architecture.md#measurement-model) · [Adding a serializer](ADDING_A_SERIALIZER.md#timing-honesty) · [I/O & run modes](modes.md) · [Call-site notes](call-sites/index.md)

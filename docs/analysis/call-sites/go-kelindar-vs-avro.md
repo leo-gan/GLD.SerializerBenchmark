@@ -1,37 +1,23 @@
-# Go: why kelindar/binary edges hamba/avro on Document
+# Go: `kelindar/binary` vs. `hamba/avro`
 
-## Why this article exists
+This note inspects the Go `kelindar/binary` and `hamba/avro` adapters on the `document` ($n = 1$, `bytes` mode) payload. Both omit field names, encode integers with zigzag variable-length encoding, and cache reflection-derived field encoders at runtime (neither uses source-code generation).
 
-On this suite’s **document** payload, one instance, in-memory buffer mode, **kelindar/binary** and **hamba/avro** finish within about **10 percent** of each other. Their messages are almost the same size (113 bytes versus 116). Both omit field names. Both cache a per-type encode plan. This pair is useful because the *idea* is the same and the remaining difference is visible in the walk each library performs.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=go&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=kelindar/binary&ser=kelindar/binary&ser=hamba/avro#compare) · [Go overview](../../go/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page compares the two timed wrappers and the library code they invoke.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+| Property | `kelindar/binary` | `hamba/avro` |
+|---|---|---|
+| Standard | `custom` (Go-only binary) | `avro` (Apache Avro binary datum) |
+| Encoded size (`document`, $n = 1$) | **113 B** | **116 B** (+3 B) |
+| Wire framing | Positional struct order; zigzag varints; `uvarint` lengths | Positional schema order; Avro zigzag varints; array block framing |
+| Dispatch mechanism | Cached `reflect` codec slice (`sync.Map`) | Cached `reflect2` unsafe field encoders keyed by `(schema.Fingerprint(), rtype)` |
+| Output allocation | Reused `bytes.Buffer` + copy to fresh `[]byte` | Pooled writer (`api.Marshal`) + copy to fresh `[]byte` |
+| Cross-language & evolution | Go-only; no schema evolution | Cross-language Avro spec with writer/reader schema resolution |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=go&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=kelindar/binary&ser=kelindar/binary&ser=hamba/avro#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Go overview](../../go/index.md)
+## Timed Call Sites
 
-## Short answer
-
-kelindar/binary is slightly faster than hamba/avro (476 thousand versus 436 thousand cycles per second). The messages are almost the same size (113 bytes versus 116). We can see that in the table.
-
-Both libraries write **values in a fixed order** with variable-length integers. kelindar/binary walks a cached list of field codecs. hamba/avro walks a cached list of field encoders that is *keyed by an Avro schema* as well as by the Go type. The extra schema match, and Avro’s rules for defaults, are the small time gap. The extra Avro metadata that is *not* on the wire is why the sizes stay within three bytes.
-
-| | kelindar/binary | hamba/avro |
-|--|-----------------|------------|
-| Mean encode + decode, document, *n* = 1 | **476 thousand / s** | 436 thousand / s |
-| Encoded size | **113 B** | 116 B |
-| Plan | Cached `reflect` codecs | Cached `reflect2` encoders + schema |
-| Names on the wire | No | No |
-
-Neither path generates Go source. “Code generation” in the 201 sense is not what these two packages do.
-
-## The two timed call sites
-
-**kelindar/binary** (`go/serializers/kelindar_binary.go`) reuses an `Encoder` and a `bytes.Buffer`. Timed encode resets both, writes `fx.Value`, then copies the bytes out:
+**`kelindar/binary`** (`go/serializers/kelindar_binary.go`) resets a reused `Encoder` and `bytes.Buffer`, encodes `fx.Value`, and copies out a returned slice:
 
 ```go
 func (s *kelindarBinary) SerializeBytes(fx model.Fixture) ([]byte, error) {
@@ -46,7 +32,7 @@ func (s *kelindarBinary) SerializeBytes(fx model.Fixture) ([]byte, error) {
 }
 ```
 
-**hamba/avro** (`go/serializers/avro.go`) parses the schema once (untimed cache) and then:
+**`hamba/avro`** (`go/serializers/avro.go`) parses the Avro schema once during untimed setup, then marshals using the frozen API (which borrows a pooled writer internally):
 
 ```go
 func (s *hambaAvro) SerializeBytes(fx model.Fixture) ([]byte, error) {
@@ -54,65 +40,8 @@ func (s *hambaAvro) SerializeBytes(fx model.Fixture) ([]byte, error) {
 }
 ```
 
-`Marshal` borrows a writer from a pool, encodes, and copies the result out (hamba `config.go`). Both wrappers therefore pay one copy into a fresh `[]byte`. That cost is shared.
+## Mechanistic Analysis and Scope Limits
 
-## What kelindar walks
-
-[kelindar/binary](https://github.com/kelindar/binary) (Roman Atachiants) scans a Go type once into a `sync.Map` of codecs (`scanner.go`). A struct codec is a slice of field index plus child codec. Encode is a loop:
-
-```go
-// codecs.go — reflectStructCodec.EncodeTo
-func (c reflectStructCodec) EncodeTo(e *Encoder, rv reflect.Value) (err error) {
-	for _, i := range c {
-		if err = i.Codec.EncodeTo(e, rv.Field(i.Index)); err != nil {
-			return
-		}
-	}
-	return
-}
-```
-
-There is no field name and no field number. Integers are zigzag variable-length integers. Strings are `uvarint(length)` plus bytes. The README states the format is Go-only and has no versioning story.
-
-## What hamba walks
-
-[hamba/avro](https://github.com/hamba/avro) implements [Apache Avro](https://avro.apache.org/) (Doug Cutting and colleagues, 2009). The data bytes of a record are the fields in **schema** order. The schema itself lives beside the file or in a registry, not in every message.
-
-`Writer.WriteVal` looks up an encoder by **schema fingerprint and Go type**, compiling one on the first use:
-
-```go
-// codec.go
-func (w *Writer) WriteVal(schema Schema, val any) {
-	encoder := w.cfg.getEncoderFromCache(schema.Fingerprint(), reflect2.RTypeOf(val))
-	if encoder == nil {
-		encoder = w.cfg.EncoderOf(schema, reflect2.TypeOf(val))
-	}
-	encoder.Encode(reflect2.PtrOf(val), w)
-}
-```
-
-A record encoder is a fixed slice of unsafe field accessors. Integers are Avro zigzag varints, the same family kelindar uses. That is why 113 and 116 bytes sit together: both layouts are “values only, compact integers.” The three extra bytes are Avro’s slightly different integer and array-block rules, not field names.
-
-The extra *time* is the schema-shaped walk: fingerprint lookup, per-field Avro encoders, and the rules Avro needs so that a later reader can apply a *different* schema. kelindar has no such rules.
-
-## Side-by-side
-
-| Step | kelindar/binary | hamba/avro |
-|------|-----------------|------------|
-| First call | `scan(t)` into a codec list | `EncoderOf(schema, typ)` into a field list |
-| Later calls | `EncodeTo` on that list | `Encode` on that list |
-| Integer | Zigzag varint | Avro zigzag varint |
-| Who knows the field order | The Go struct | The Avro schema (must match the struct) |
-| Another language | No | Yes, if it has the schema |
-
-## What you give up
-
-kelindar/binary is the faster private dump. It is not a contract you can hand to Java or Python.
-
-hamba/avro is three percent larger and about ten percent slower on this payload, and it is an encoding with twenty years of data-platform use. If the document will sit in a log for years, Avro’s schema resolution is the reason to pay those nanoseconds. See [2.5 Schema evolution](../../theory/201/schema-evolution.md) and [3.3 Schema registries](../../theory/301/two-schema-cultures.md#schema-registries).
-
-## Self-check
-
-1. Why does “both omit names” predict similar sizes but not identical times?
-2. kelindar is sometimes described as “generated.” What does the source actually generate, and when?
-3. Which library would you pick if a Python reader must consume the same bytes next year?
+1. **Why wire sizes differ by only 3 bytes (113 B vs. 116 B):** Both formats omit field names and field tags entirely and use zigzag varints for signed integers. The 3-byte delta stems from Avro's array-block framing (count followed by a trailing `0` terminator) and minor integer encoding differences rather than metadata overhead.
+2. **Why throughput is closely matched:** Both adapters avoid per-call reflection scanning by caching compiled field plans (`kelindar`'s `reflectStructCodec` slice vs. `hamba`'s `reflect2` pointer-offset encoders) and both perform one final `[]byte` copy. Because `hamba/avro` uses `reflect2` unsafe pointers while `kelindar/binary` traverses `reflect.Value` fields, minor Go toolchain or library updates can narrow or reverse the latency difference—check the live Dashboard CI overlap before declaring a winner.
+3. **Interchange trade-off:** `kelindar/binary` is tied to Go struct field order with no versioning mechanism, whereas `hamba/avro` achieves comparable compactness and throughput while preserving cross-language Apache Avro interoperability and schema-registry evolution ([2.5 Schema evolution](../../theory/201/schema-evolution.md), [3.3 Schema cultures & registries](../../theory/301/two-schema-cultures.md)).

@@ -1,143 +1,62 @@
-# Claims and replication
+# Claims and Replication
 
-This page answers one practical question:
+Empirical benchmark statements must match the evidentiary scope of the underlying measurements.[^1] Every claim quoted from this project should state the controlled experimental cell—**language, standard, data set, data type, and batch size $N$**—together with its **claim level (L1, L2, or L3)**.
 
-> **After inspecting the Dashboard, what strength of claim does the evidence support?**
+## Evidentiary Hierarchy (L1 / L2 / L3)
 
-State the controlled cell explicitly: same language, same standard, same data set, same data type, and the claim level below.
+| Level | Replication Requirement | Valid Claim Scope | Suite Support |
+|---|---|---|---|
+| **L1 — Single session** | One completed run on one host. | *"On this host and session, under policy `iqr_1.5`, A outperformed B by X%."* | **Default Dashboard** (packed from `logs/<lang>/<ts>.csv` + sidecar via `sync-data.py`). |
+| **L2 — Multi-session (same host)** | $\ge 3$ independent timestamped sessions sharing one verified `machine_id`. | *"Across repeated sessions on this host, A consistently outperformed B."* | `analyze-benchmarks --multi-session` (`L2_multi_session_same_host`). |
+| **L2 — Host unverified** | $\ge 3$ sessions lacking `machine_id` sidecars. | *"Across repeated sessions (host identity unverified)..."* | `L2_multi_session_host_unknown`; missing sidecars never promote to L3. |
+| **L3 — Multi-machine** | $\ge 2$ distinct `machine_id` values across hosts. | *"Consistent across this set of tested machines."* (Still not universal across all hardware.) | `analyze-benchmarks --multi-session` across merged host logs (`L3_multi_machine`). |
 
-Different amounts of evidence support different claim strengths, classified as **L1**, **L2**, and **L3**.
+Published Dashboard bundles are **L1 single-session snapshots** and do not assert cross-machine generalization.
 
----
+### Host Identification (`machine_id`)
 
-## Everyday analogy
+Sidecars written beside each log (`logs/<lang>/YYYY-MM-DD-HHMMSS.configs.json`) record `environment.machine_id`: a non-cryptographic hash of CPU model, architecture, OS, logical core count, and host metadata, alongside optional Linux `cpu_governor` and `claim_level_hint`. This identifier distinguishes machines during multi-session merges without exposing sensitive host secrets.
 
-Imagine you want to know which car is fastest.
+## Appropriate vs. Invalid Uses of L1 Evidence
 
-| Evidence | Everyday claim you may make |
-|----------|-----------------------------|
-| **One race, one track, one day** | “On this track, today, car A finished first.” |
-| **Several races, same track** | “Across repeated races on this track, car A usually wins.” |
-| **Races on several tracks** | “Across this set of tracks, car A tends to win.” |
+- **Supported by L1:** Screening libraries within one language and standard on comparable hardware; detecting large structural gaps (e.g., $3\times$–$10\times$ speedups or wire-size reductions) corroborated by tight bootstrap CIs and large Cliff's $\delta$; guiding source-level call-site inspection.
+- **Not supported by L1:** Universal claims (*"fastest serializer across all hardware"*); resolving narrow ties within measurement noise without repeated sessions; ranking across different programming languages or different wire standards as a single implementation leaderboard.
 
-You still should **not** claim “fastest car in the world on every road forever.” That would need far more evidence than this suite produces.
+## Collecting L2 and L3 Evidence
 
----
+### L2 (Repeated Sessions on One Host)
 
-## Claim levels (L1 / L2 / L3)
-
-| Level | Evidence | Allowed claim language | What this suite ships by default |
-|-------|----------|------------------------|----------------------------------|
-| **L1 — single session** | One full (or smoke) run on **one host** | “On **this machine**, in **this session**…” | **Dashboard** Overview (run chrome + current Samples policy). Packed from `logs/<lang>/<ts>.csv` + sidecar via `dashboard/scripts/sync-data.py`. |
-| **L2 — multi-session, same host** | ≥ **3** timestamped runs with the **same** `machine_id` | “Stable across **repeated sessions on this host**…” | Optional: `analyze-benchmarks --multi-session …` |
-| **L3 — multi-machine** | ≥ **2** distinct `machine_id` values | “Consistent across **these machines**…” (still not “all hardware”) | Optional multi-session report with different hosts |
-
-Default Dashboard packed latest is claim level **L1**. It does **not** claim multi-machine generalization.
-
-### How `machine_id` works
-
-Each run can write a sidecar next to the CSV:
-
-```text
-logs/<lang>/YYYY-MM-DD-HHMMSS.csv
-logs/<lang>/YYYY-MM-DD-HHMMSS.configs.json
-```
-
-Inside `environment` the analysis package stores a short **`machine_id`** fingerprint (hash of CPU model, architecture, OS, core count, and hostname material). It is **not** a security identifier. It is only enough to tell “same host class / same box” apart when you merge sessions.
-
-You may also see `claim_level_hint: L1_single_session` on a single capture, and optional `cpu_governor` on Linux when `/sys` is readable.
-
----
-
-## What L1 is good for (and what it is not)
-
-**Good for:**
-
-- Choosing among libraries **inside one language** on hardware like yours.
-- Spotting huge gaps (for example 10× slower), not hair-thin ties.
-- Pairing with effect sizes and confidence intervals on **that** session.
-
-**Not good for:**
-
-- “Library X is the fastest serializer on Earth.”
-- Treating one CI runner’s numbers as eternal truth after a noisy day.
-- Cross-language absolute latency races (different runtimes and GCs).
-
----
-
-## How to collect L2 evidence (same host)
-
-1. Run a full matrix (or the language you care about) **three or more times**, on a quiet machine if you can:
-   ```bash
-   ./scripts/run-all-benchmarks.sh -m full -l python
-   # wait / cool down, then again…
-   ./scripts/run-all-benchmarks.sh -m full -l python
-   ./scripts/run-all-benchmarks.sh -m full -l python
-   ```
-2. List stems:
-   ```bash
-   analyze-benchmarks --list -l python
-   ```
-3. Aggregate:
-   ```bash
-   analyze-benchmarks --multi-session python:STEM1 --multi-session python:STEM2 --multi-session python:STEM3
-   # or commas / LANG=stem form:
-   analyze-benchmarks --multi-session python=STEM1,python=STEM2,python=STEM3
-   ```
-4. Read:
-   - `reports/multi_session_python.json` — machine ids, claim_level heuristic, per-group medians across sessions, rank stability
-   - `reports/multi_session_python.md` — short human summary
-
-The report’s `claim_level` field is a **heuristic**:
-
-- fewer than 3 sessions → `L1_single_session`
-- ≥3 sessions, **exactly one known** `machine_id` → `L2_multi_session_same_host`
-- ≥3 sessions, **no** machine ids in sidecars → `L2_multi_session_host_unknown` (repeat runs, host not verified)
-- ≥2 distinct machine ids → `L3_multi_machine`
-
-Missing sidecars never invent L3. Prefer re-running so each CSV has a `*.configs.json` with `machine_id`.
-
----
-
-## How to collect L3 evidence (several machines)
-
-Repeat full runs on **different hosts**, copy the CSVs + `*.configs.json` sidecars into one analysis machine (or point `--logs-root` at a shared tree), then run the same `--multi-session` command with stems from each host.
-
-Only then is language like “consistent across machines **in this set**” honest. It is still not a survey of all CPUs or cloud instance types.
-
----
-
-## Research-mode soft checks (optional)
-
-For publication-oriented L2/L3 work, prefer:
-
-- Linux CPU governor **performance** (when you control the host)
-- A quiet machine (no heavy parallel builds)
-- Fixed library versions (the CSV already records `SerializerVersion`)
-
-Set `BENCHMARK_RESEARCH=1` and run:
+Execute at least three independent `full` runs on an otherwise idle machine (allowing thermal cooldown between runs), list the generated stems, and aggregate them:
 
 ```bash
-./scripts/check-research-env.sh
+./scripts/run-all-benchmarks.sh -m full -l python   # repeat ≥ 3 times
+analyze-benchmarks --list -l python
+analyze-benchmarks \
+  --multi-session python:STEM1 \
+  --multi-session python:STEM2 \
+  --multi-session python:STEM3
 ```
 
-This script **warns**; it does **not** fail CI smokes. Isolation features like `isolcpus` are documented, not enforced.
+Aggregation writes `reports/multi_session_<lang>.json` and `.md` containing median-of-session-medians, cross-session IQR, rank stability (fraction of sessions in which each codec placed first), and the heuristic `claim_level`.
 
----
+### L3 (Multiple Machines)
 
-## Ranks on a single Dashboard slice
+Collect `full` CSV logs together with their `*.configs.json` sidecars on two or more distinct hosts, place them under a shared `--logs-root`, and run the same `--multi-session` command passing stems from each host.
 
-Even inside **one** L1 session, ranking many libraries is like grading many quizzes at once ([multiple comparisons](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem")). [Effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size") versus the fastest codec are **descriptive / exploratory**. [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")-adjusted tests only correct inside one (data type × batch size × I/O mode) group. Prefer pairwise A/B for confirmatory library-vs-library checks.
+### Host Environment Checks for Research Runs
 
-Details: [Analysis methodology — exploratory ranks](ANALYSIS_METHODOLOGY.md#exploratory-ranks).
+For publication-grade L2/L3 studies, pin library versions (logged in `SerializerVersion`), run on a quiet host with the Linux `performance` CPU governor when available, and run the advisory environment check:
 
----
+```bash
+BENCHMARK_RESEARCH=1 ./scripts/check-research-env.sh
+```
 
-## Related pages
+The script emits warnings only and does not gate CI smoke runs.
 
-| Page | Why |
-|------|-----|
-| [Analysis methodology](ANALYSIS_METHODOLOGY.md) | Warmup, outliers, CIs, ranks, multi-session command |
-| [Metrics](METRICS.md) | Column definitions including effect-vs-fastest fields |
-| [Modes](modes.md) | Smoke vs full vs research run presets |
-| [Dashboard](../dashboard/index.html) | Published L1 numbers (run chrome + Details / Compare) |
+## Multi-Way vs. Pairwise Inference
+
+Even within a single L1 session, testing every library against the sample winner across a large leaderboard is an exploratory multiple-comparisons procedure; within-group Holm–Bonferroni adjustment does not control family-wise error across the entire Dashboard. Use pairwise A/B analysis (`--compare-a` / `--compare-b`) for confirmatory two-library or two-version evaluations ([Analysis methodology](ANALYSIS_METHODOLOGY.md#exploratory-ranks)).
+
+## References
+
+[^1]: Georges, A., Buytaert, D., & Eeckhout, L. (2007). "Statistically Rigorous Java Performance Evaluation." *Proceedings of OOPSLA '07*, 57–76. <https://doi.org/10.1145/1297027.1297033>

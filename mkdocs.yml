@@ -206,8 +206,9 @@ nav:
               - "4.12 C++: the simdjson wrapper": theory/401/cpp-simdjson-wrapper.md
       - Lab notebooks: theory/notebooks/README.md
   - Languages:
+      - languages/index.md
       # Alphabetical by display name. One-child nest so languages-nav.js
-      # can inject a Dashboard sibling (flat items have no children).
+      # injects a compact "Lang · Dashboard" row.
       - C:
           - Overview: c/index.md
       - C#:
@@ -237,20 +238,26 @@ nav:
       - Zig:
           - Overview: zig/index.md
   - Benchmarks:
-      # Reading order: words, then what is measured, then how a number is produced.
+      # Reading order: protocol overview, experimental design, data sets, statistics, call-sites, contributor guides.
       - analysis/index.md
-      - Terminology: analysis/terminology.md
-      - Data sets:
+      - Experimental Design:
+          - Terminology: analysis/terminology.md
+          - Architecture & schedule: analysis/architecture.md
+          - Timing contract: analysis/TIMING_HONESTY.md
+          - I/O & run modes: analysis/modes.md
+          - Format families: analysis/families.md
+      - Data Sets:
           - analysis/test_data_configuration.md
           - Suite: analysis/suite.md
           - Columnar: analysis/columnar.md
           - Graph: analysis/graph.md
           - Array: analysis/array.md
           - Tensor: analysis/tensor.md
-      - Families: analysis/families.md
-      - Architecture: analysis/architecture.md
-      - Timing honesty: analysis/TIMING_HONESTY.md
-      - Call-site notes:
+      - Statistical Protocol:
+          - Methodology: analysis/ANALYSIS_METHODOLOGY.md
+          - Metrics catalog: analysis/METRICS.md
+          - Claims & replication: analysis/CLAIMS_AND_REPLICATION.md
+      - Call-Site Notes:
           - analysis/call-sites/index.md
           - "C: custom-binary vs ubj": analysis/call-sites/c-custom-binary-vs-ubj.md
           - "C#: BinaryPack vs Bond": analysis/call-sites/csharp-binarypack-vs-bond.md
@@ -269,12 +276,9 @@ nav:
           - "Rust: Speedy vs Postcard": analysis/call-sites/rust-speedy-vs-postcard.md
           - "Swift: FlatBuffers vs protobuf": analysis/call-sites/swift-flatbuffers-vs-protobuf.md
           - "Zig: std.json vs serde.json": analysis/call-sites/zig-std-json-vs-serde-json.md
-      - Modes: analysis/modes.md
-      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
-      - Metrics: analysis/METRICS.md
-      - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
-      - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
-      - Adding a Language: analysis/ADDING_A_LANGUAGE.md
+      - Extending the Suite:
+          - Adding a serializer: analysis/ADDING_A_SERIALIZER.md
+          - Adding a language: analysis/ADDING_A_LANGUAGE.md
   - Dashboard: dashboard/index.html
   - Experiments: experiments/index.md
   - Compliance:

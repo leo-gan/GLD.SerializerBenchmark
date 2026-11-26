@@ -1,41 +1,21 @@
-# JavaScript: why `JSON.stringify` is faster than google-protobuf on Document
+# JavaScript: `JSON.stringify` vs. `google-protobuf`
 
-## Why this article exists
+This note inspects the Node.js `JSON.stringify` and `google-protobuf` adapters on the `document` ($n = 1$, `bytes` mode) payload. Despite Protocol Buffers producing a nearly $3\times$ smaller wire payload (**155 B** vs. **448 B**), V8's built-in C++ JSON engine outruns userland JavaScript Protocol Buffers reader/writer loops on small documents.
 
-On this suite’s **document** payload, one instance, in-memory buffer mode, **`JSON.stringify`** finishes more encode-and-decode cycles per second than **google-protobuf**, even though JSON is 448 bytes and Protocol Buffers is 155. That result surprises people who have just read that binary encodings are smaller and therefore faster.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=JSON.stringify&ser=JSON.stringify&ser=google-protobuf#compare) · [JavaScript overview](../../javascript/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page looks at the actual timed functions. After reading it you should be able to say why `JSON.stringify` is faster than a real google-protobuf encode, why `JSON.parse` is faster than the JavaScript decoder, and why the smaller 155-byte message does not win on this document.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data, after google-protobuf encode was
-moved into timed `serialize`. They illustrate the gap; they are not a
-universal ranking.
+| Property | `JSON.stringify` | `google-protobuf` |
+|---|---|---|
+| Standard | `json` | `protobuf` |
+| Encoded size (`document`, $n = 1$) | **448 B** | **155 B** |
+| Execution tier | Native C++ inside V8 (`JSON.stringify` / `JSON.parse`) + UTF-8 `Buffer` | Userland JavaScript (`BinaryWriter` / `BinaryReader`) |
+| Decode allocations | Single C++ parse pass into V8 hidden-class objects | Per-nested-message `new BinaryReader(r.readBytes())` (10 readers for `document`) |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=JSON.stringify&ser=JSON.stringify&ser=google-protobuf#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [JavaScript overview](../../javascript/index.md)
+## Timed Call Sites
 
-## Short answer
-
-Two facts explain the table.
-
-1. **Timed protobuf encode is a real encode.** `serialize` calls `jspbEncode`, which writes the document with `BinaryWriter`. That takes 8.4 µs. `JSON.stringify` is native C++ inside V8. It takes 2.9 µs.
-2. **Timed protobuf decode is a JavaScript field loop.** It allocates a reader per nested message, reads each field number, and builds plain objects. `JSON.parse` is also native C++ inside V8. 3.6 µs of native parse is faster than 6.0 µs of JavaScript decode.
-
-JSON still writes every field name. That costs size (448 B versus 155 B). It does not cost enough *time*, on this small document, to lose to a JavaScript Protocol Buffers library.
-
-An earlier adapter encoded in `prepare` and timed only a `Buffer` copy (431 ns). That made google-protobuf look almost as fast as `JSON.stringify`. The table below is the fair comparison.
-
-| | `JSON.stringify` | google-protobuf | fast-json-stringify |
-|--|------------------|-----------------|---------------------|
-| Mean encode + decode, document, *n* = 1 | **154 thousand / s** | 70 thousand / s | 100 thousand / s |
-| Encode | **2.9 µs** | 8.4 µs | 6.2 µs |
-| Decode | **3.6 µs** (`JSON.parse`) | 6.0 µs (JS `BinaryReader`) | `JSON.parse` (same) |
-| Encoded size | 448 B | **155 B** | 448 B |
-
-## The two timed call sites
-
-**JSON** (`javascript/src/serializers/json.js`) is one native call each way, plus a UTF-8 `Buffer`:
+**`JSON.stringify`** (`javascript/src/serializers/json.js`) invokes V8's native C++ serializer and parser with a UTF-8 `Buffer` conversion:
 
 ```javascript
 serialize(value) {
@@ -46,15 +26,11 @@ deserialize(buf) {
 },
 ```
 
-**google-protobuf** (`javascript/src/serializers/modern.js`) stores the data type in `prepare` and encodes in `serialize`:
+**`google-protobuf`** (`javascript/src/serializers/modern.js`) records type metadata in untimed `prepare` and executes `jspbEncode` / `jspbDecode` (using `google-protobuf`'s `BinaryWriter` and `BinaryReader` primitives) inside the timed methods:
 
 ```javascript
-prepare(dataName, value) {
-  jspbDataName = dataName;
-  jspbIsBatch = Array.isArray(value);
-},
 serialize(value) {
-  const u8 = jspbEncode(jspbDataName, value);   // timed
+  const u8 = jspbEncode(jspbDataName, value);
   return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
 },
 deserialize(buf) {
@@ -63,62 +39,10 @@ deserialize(buf) {
 },
 ```
 
-The runner times `serialize` / `deserialize` after `prepare` (`javascript/src/runner_v2.js`). Generated `Document.serializeBinary` exists in `javascript/src/generated/google/js_fixtures_pb.cjs`. This wrapper uses the same `BinaryWriter` primitives as those generated stubs.
+On decode, every nested record (`meta` plus eight `items`) allocates a fresh `BinaryReader` over a copied byte slice and runs a JavaScript varint tag loop (`while (r.nextField())`).
 
-## What decode actually does
+## Mechanistic Analysis and Scope Limits
 
-`jspbReadDocument` builds a literal, then for every field calls `nextField()` and a typed read. Nested `meta` and each of the **eight** items allocate another `BinaryReader` over a copied slice:
-
-```javascript
-// javascript/src/serializers/modern.js — document decode (abbreviated)
-function jspbReadDocument(r) {
-  const o = { id: '', status: 0, meta: { region: '', version: 0 }, items: [] };
-  while (r.nextField()) {
-    switch (r.getFieldNumber()) {
-      case 1: o.id = r.readString(); break;
-      case 2: o.status = r.readInt32(); break;
-      case 3: {
-        const ir = new BinaryReader(r.readBytes());
-        while (ir.nextField()) { /* region, version */ }
-        break;
-      }
-      case 4: {
-        const ir = new BinaryReader(r.readBytes());
-        const it = { sku: '', qty: 0, price_minor: 0 };
-        while (ir.nextField()) { /* sku, qty, price_minor */ }
-        o.items.push(it);
-        break;
-      }
-    }
-  }
-  return o;
-}
-```
-
-`nextField` in `google-protobuf` is a JavaScript variable-length integer parse of `(field << 3) | wireType`. Ten reader loops and ten object allocations later, you have the same logical document that `JSON.parse` produced in C++.
-
-The official generated decoder is the same algorithm with setters (`deserializeBinaryFromReader`). Switching to it would not make decode native.
-
-## Why `JSON.stringify` is faster than `fast-json-stringify`
-
-`fast-json-stringify` compiles a JavaScript function in `prepare`, then concatenates strings in user land. Short strings even fall back to `JSON.stringify` for escaping. Decode is still `JSON.parse`. So this row measures **generated JavaScript encode versus V8’s C++ encode**, with the same parse. V8 is faster. That is implementation quality inside one encoding, the third idea on the [Rust comparison](../../theory/401/rust-speedy-vs-bincode.md) (specialize the path — here the specialized path is already inside V8).
-
-## History
-
-JSON is the web default because browsers already used it ([Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford), early 2000s). V8’s `JSON.parse` / `JSON.stringify` have been tuned for more than a decade. Protocol Buffers in JavaScript walks field numbers and payloads in ordinary JavaScript, in the same language that hosts that tuned parser. On a 448-byte document, the native parser is faster, even though it reads more bytes.
-
-[Serialization 201](../../theory/201/encode-decode-cost.md) warned that “binary versus text” is not one cost. This page is that warning in one language’s source.
-
-The same 155-byte encoding in **protobufjs** and **protobuf-es** is [three Protocol Buffers libraries](../../theory/401/javascript-three-protobufs.md).
-
-## Honesty
-
-1. Both columns are now real encode and real decode. JSON is still faster on this document because V8’s JSON functions are native C++ and the Protocol Buffers path is JavaScript.
-2. The 155-byte size is real. Field numbers and variable-length integers omit names.
-3. A larger document, or a native addon decoder, would change the rank. This page explains *this* runner.
-
-## Self-check
-
-1. Add the two protobuf times: 8.4 µs + 6.0 µs. Add the two JSON times: 2.9 µs + 3.6 µs. Which half of the protobuf total is now the larger cost?
-2. Why does `fast-json-stringify` sharing `JSON.parse` with `JSON.stringify` predict that it cannot win on decode?
-3. Why can JSON be both larger (448 B) and faster than Protocol Buffers (155 B) on this document?
+1. **Native C++ engine vs. userland JS loops:** V8's C++ `JSON.stringify` and `JSON.parse` have undergone over a decade of engine-level optimization (fast property tables, inline UTF-8 scanning). By contrast, `google-protobuf` parses base-128 varints and allocates ten `BinaryReader` instances in userland JavaScript, so reading 155 compact binary bytes costs more CPU time than scanning 448 text bytes in C++ ([2.3 Encode and decode cost](../../theory/201/encode-decode-cost.md)).
+2. **Why `fast-json-stringify` also trails on small records:** `fast-json-stringify` compiles JS string concatenation for encode (falling back to `JSON.stringify` for escaping) while sharing `JSON.parse` for decode, pitting userland JS string building against V8's C++ path.
+3. **Timing honesty history and scope:** An early adapter erroneously encoded inside `prepare` and timed a `Buffer` copy; the current adapter performs full encode and decode on the clock. Larger numeric payloads or a native C++ addon decoder alter the CPU/bandwidth trade-off. For a controlled comparison of three JS Protocol Buffers libraries (`google-protobuf`, `protobufjs`, `protobuf-es`) on the same 155-byte output, see [4.11 JavaScript: three Protobufs](../../theory/401/javascript-three-protobufs.md).

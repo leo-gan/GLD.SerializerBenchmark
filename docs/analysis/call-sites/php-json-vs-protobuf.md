@@ -1,42 +1,21 @@
-# PHP: why `json_encode` outruns protobuf on Document
+# PHP: `json` vs. `google/protobuf`
 
-## Why this article exists
+This note inspects PHP's built-in `ext-json` (`json`) and official `google/protobuf` (`protobuf`) adapters on the `document` ($n = 1$, `bytes` mode) payload. Both adapters time the symmetric suite-array boundary (`array` → bytes → `array`); the comparison illustrates how a compiled C engine inside Zend outruns a pure-PHP userland binary runtime even though JSON is nearly $3\times$ larger (**454 B** vs. **160 B**).
 
-On this suite’s **document** payload, one instance, in-memory buffer mode, **stdlib JSON** finishes more encode-and-decode cycles per second than official **google/protobuf**, even though JSON is 454 bytes and Protocol Buffers is 160. Smaller is not faster. The JSON path is a native C engine inside the interpreter. The Protocol Buffers path, on this machine, is the official **userland** PHP runtime walking generated message objects.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=php&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=json&ser=protobuf#compare) · [PHP overview](../../php/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page compares the two timed wrappers. After reading it you should be able to say why `json_encode` / `json_decode` beat a real protobuf encode and decode here, why the 160-byte message does not win on this document, and what would change if `ext-protobuf` were loaded.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from a local PHP `all-single` run. They illustrate the gap; they are
-not a universal ranking.
+| Property | `json` (`ext-json`) | `protobuf` (`google/protobuf+php`) |
+|---|---|---|
+| Standard | `json` | `protobuf` |
+| Encoded size (`document`, $n = 1$) | **454 B** | **160 B** |
+| Execution tier | Bundled C extension inside Zend (`json_encode` / `json_decode`) | Userland PHP runtime on static CLI host (reports `+ext` if C extension loaded) |
+| Timed boundary | PHP associative array ↔ UTF-8 JSON string | PHP array → `ProtoBridge::toProto()` generated objects → wire bytes → `fromProto()` |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=php&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=json&ser=protobuf#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [PHP overview](../../php/index.md)
+## Timed Call Sites
 
-## Short answer
-
-Two facts explain the table.
-
-1. **Timed JSON is C inside the engine.** `json_encode` / `json_decode` with `JSON_THROW_ON_ERROR` are native. Encode is about 1.9 µs; decode is about 4.3 µs.
-2. **Timed protobuf is generated PHP plus `serializeToString` / `mergeFromString`.** Encode first copies the suite array into a generated `Document` (`toProto`), then writes tags. Decode parses into a generated graph, then copies back to a suite array (`fromProto`). Both copies are on the clock. That is about 124 µs encode and 68 µs decode on this userland runtime.
-
-JSON still writes every field name (454 B versus 160 B). That costs size. It does not cost enough *time*, on this small document, to lose to userland Protocol Buffers.
-
-The version string is `google/protobuf+php` when the C extension is absent, and `…+ext` when `ext-protobuf` is loaded. This slice is `+php`.
-
-| | `json` | protobuf (userland) | serialize |
-|--|--------|---------------------|-----------|
-| Mean encode + decode, document, *n* = 1 | **162 thousand / s** | 5.2 thousand / s | 178 thousand / s |
-| Encode | **1.9 µs** | 124 µs | 2.1 µs |
-| Decode | **4.3 µs** | 68 µs | 3.5 µs |
-| Encoded size | 454 B | **160 B** | 738 B |
-
-`serialize` is slightly faster than JSON on this one-instance document and writes more bytes. It is PHP-only. The pair on this page is the portable formats.
-
-## The two timed call sites
-
-**JSON** (`php/src/Serializers/JsonSer.php`) is one native call each way:
+**`json`** (`php/src/Serializers/JsonSer.php`) calls Zend's bundled C functions directly:
 
 ```php
 public function serializeBytes(mixed $value): string
@@ -49,7 +28,7 @@ public function deserializeBytes(string $data): mixed
 }
 ```
 
-**protobuf** (`php/src/Serializers/ProtobufSer.php`) uses official generated types from `schemas/v2/protobuf/benchmark_v2.proto`:
+**`protobuf`** (`php/src/Serializers/ProtobufSer.php`) maps suite arrays into generated `benchmark_v2.proto` classes (`ProtoBridge.php`), encodes via `serializeToString()`, and reverses via `mergeFromString()` + `fromProto()`:
 
 ```php
 public function serializeBytes(mixed $value): string
@@ -64,20 +43,8 @@ public function deserializeBytes(string $data): mixed
 }
 ```
 
-`toProto` / `fromProto` (`php/src/ProtoBridge.php`) copy every field, including the eight line items, on the timed path. That is the same contract as the Kotlin/Java official protobuf rows: suite `Document` in, bytes, suite `Document` out.
+## Mechanistic Analysis and Scope Limits
 
-## Why 454 bytes versus 160
-
-JSON writes field names as UTF-8 text. Protocol Buffers writes field numbers and variable-length integers. The information is the same shop order. The 160-byte image is the compact layout taught in the [Protocol Buffers wire format](../../theory/401/protobuf-wire-format.md) article.
-
-## What you give up
-
-Userland `google/protobuf` is the official PHP API and the interop contract. It is not a C JSON engine. If the bytes leave this process, protobuf is the format other languages can share. If the job is a public JSON API, `json_encode` is why it is faster here.
-
-Loading `ext-protobuf` keeps the same generated classes and the same `serializeToString` / `mergeFromString` calls. The C extension replaces the userland walk. This article’s numbers are the userland path.
-
-## Self-check
-
-1. Why can JSON be both larger and faster on this document?
-2. Which extra objects does the protobuf row build that `json_decode` does not?
-3. What would you expect to change in the protobuf rank if `ext-protobuf` were loaded and the copies stayed on the clock?
+1. **C engine vs. Zend bytecode + object graph:** `json_encode` and `json_decode` operate directly on PHP HashTables in C without instantiating PHP classes. Under the default static PHP CLI (no `ext-protobuf`), `google/protobuf` executes varint encoding/decoding in Zend bytecode while constructing and copying ten generated PHP objects (`Document`, `DocumentMeta`, eight `DocumentItem`s) inside the timer.
+2. **Effect of `ext-protobuf`:** Loading the optional C `ext-protobuf` extension (reflected by `+ext` in `SerializerVersion`) replaces the userland wire loop with C while keeping the generated class API unchanged; the `toProto`/`fromProto` PHP object-mapping cost remains when converting from plain arrays.
+3. **Contract trade-off:** `json` is ideal for public text APIs, whereas `protobuf` provides the compact 160-byte cross-language schema contract ([4.1 Protobuf wire format](../../theory/401/protobuf-wire-format.md)). PHP's built-in `serialize` emits 738 B and is non-portable and unsafe on untrusted input.

@@ -1,32 +1,29 @@
-# Graph
+# Graph Data Set
 
-The **graph** data set has one data type, and that type is also named `graph`. `all@` does not include it. The run config is `config/library/graph.yaml` (N=1 and N=100, bytes, no compression). An empty serializer filter selects the serializers mapped to this set. Tree codecs are not in that map.
+The **`graph`** data set contains a single data type, also named `graph`, executed via `config/library/graph.yaml` ($N \in \{1, 100\}$, `bytes` mode, no post-compression). Only graph-capable serializers mapped under `serializer_data_sets` are evaluated; tree-only codecs (JSON, Protocol Buffers, MessagePack, FlatBuffers, etc.) return unsupported and are omitted without recording a fidelity failure.
 
-## Why this set
+## Motivation
 
-The graph set is one object network with shared nodes and a cycle. It exists because most codecs store trees, and a tree cannot represent two fields that point at the same object, or a pointer that comes back to its start. Those libraries are absent from this set. A missing row here is “this codec does not store a graph.” It is not a fidelity failure.
+Standard tree-oriented wire formats cannot express object identity (DAG sharing) or reference cycles: duplicating shared children alters graph topology, and cyclic references trigger infinite recursion or stack overflow. The `graph` workload exercises both hazards simultaneously—multiple `Order` instances sharing references to the same `Region` objects, alongside `Person` nodes linked in a directed cycle.
 
-The set has one data type because the question is that one network. The shape uses both failures at once. Several orders share one region object, and the people form a ring. An encoding that copies each child, or that unrolls the ring into a list, is a different value. Packed layouts inline a reference, so a cycle is not a legal packed graph, and those rows are absent too. Typical uses are object graphs inside one process, such as a document whose records share a child.
-
-The generator contract and the other sets are on [Data sets](test_data_configuration.md).
+## Schema and Deterministic Generation
 
 ```text
-Region { code: utf8, note: utf8, version: int32 }   // note is 64 characters
-Order  { sku: utf8, qty: int32, region: Region }    // reference, not a copy
-Person { name: utf8, next: Person }                 // reference
+Region { code: utf8_string, note: utf8_string, version: int32 }   // note length = 64
+Order  { sku: utf8_string, qty: int32, region: &Region }          // shared reference, not copy
+Person { name: utf8_string, next: &Person }                       // cyclic reference
 Book   { orders: Order[], people: Person[] }
 ```
 
-Default: `order_count: 32`, `region_count: 4`, `ring_size: 8`, `string_len: {min:8,max:16}`.
+**Default `type_config`:** `order_count: 32`, `region_count: 4`, `ring_size: 8`, `string_len: {min: 8, max: 16}`.
 
-Generator order, after the usual `(seed, type_id, instance_index)` mix:
+Generation proceeds deterministically after seeding with `(seed, type_id, instance_index)`:
 
-1. For each region: `code` from `string_len`, then `note` of length 64, then `version` in 1…10.
-2. For each order: `sku` from `string_len`, then `qty` in 1…100. Order `i` references region `i % region_count` (the same object, eight times when the defaults divide evenly).
-3. For each person: `name` from `string_len`. Then `people[i].next` is `people[(i+1) % ring_size]`.
+1. Create `region_count` distinct `Region` objects (`code` from `string_len`, 64-character `note`, `version` $\in [1, 10]$).
+2. Create `order_count` `Order` objects (`sku` from `string_len`, `qty` $\in [1, 100]$), referencing `regions[i % region_count]` by identity (each region shared by 8 orders under default knobs).
+3. Create `ring_size` `Person` objects (`name` from `string_len`) and link `people[i].next` to `people[(i + 1) % ring_size]`, forming a closed cycle of length 8.
 
-`region` and `next` are references. An inlined copy is a different graph. Tree codecs (JSON, Protocol Buffers, MessagePack, and the rest of the suite types) return unsupported and are skipped. They are not fidelity failures.
+## Fidelity and Format Constraints
 
-Fidelity is identity inside the restored graph, not `asdict` and not a walk that copies each child. The eight orders that name one region must point at one region object. Walking `next` eight times returns to the start, and `people[i].next` is the same object as `people[(i+1) % 8]`. A duplicated region or an unrolled ring scores 0. Field values still have to match. N>1 compares each graph on its own; nodes are not shared across the batch.
-
-Dagr emits this shape as `Book` from `schemas/v2/dagr/schema.py` for the regular and frozen layouts only. Packed and frozen+packed inline a node reference, so a `Person.next` cycle is not a legal packed graph. `dagr-packed` and `dagr-frozen-packed` do not support this data type. The timed path is still full materialize (`to_bytes` / `restore`).
+- **Topological identity check:** Fidelity verifies object identity inside each restored graph alongside field equality—all orders sharing a region must point to the **same** restored `Region` instance, and traversing `next` `ring_size` times must return to the starting `Person` object with `people[i].next is people[(i + 1) % ring_size]`. Duplicating shared regions or unrolling the ring into a flat list scores `0.0`. For $N > 1$, each graph instance is checked independently (no cross-batch sharing).
+- **Dagr layout restriction:** `schemas/v2/dagr/schema.py` emits `Book` for `dagr-regular` and `dagr-frozen` only. Packed layouts (`dagr-packed`, `dagr-frozen-packed`) inline child nodes and therefore cannot legally represent the `Person.next` cycle.

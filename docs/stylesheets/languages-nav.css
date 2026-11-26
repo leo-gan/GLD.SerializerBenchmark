@@ -18,8 +18,9 @@
   display: none !important;
 }
 
-/* Original nested Overview tree — hidden source of URLs only */
+/* Original nested Overview tree and indexed container — hidden source of URLs only */
 .md-sidebar--primary .lang-nav-row > .lang-nav-source,
+.md-sidebar--primary .lang-nav-row > .md-nav__container.lang-nav-source,
 .md-sidebar--primary .lang-nav-row > label.md-nav__link {
   display: none !important;
 }

@@ -1,47 +1,28 @@
-# C: why custom-binary outruns the UBJSON envelope on Document
+# C: `custom-binary` vs. `ubj`
 
-## Why this article exists
+This note inspects the C runner's `custom-binary` and `ubj` adapters on the `document` ($n = 1$, `bytes` mode) payload. Both execute in plain C11 with zero heap allocation and no garbage collector; the difference isolates the exact byte and copy cost of wrapping a packed binary record inside a minimal UBJSON envelope.
 
-On this suite’s **document** payload, one instance, in-memory buffer mode, the C entry named **custom-binary** finishes about **1.4 times** as many encode-and-decode cycles per second as **ubj**, and it writes 37 fewer bytes. Both paths are ordinary C. There is no garbage collector and no visitor framework. The gap is visible in a few dozen lines.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare) · [C overview](../../c/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page places those lines side by side. After reading it you should be able to say what extra stores the UBJSON wrapper performs, and why that wrapper exists at all.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+| Property | `custom-binary` | `ubj` |
+|---|---|---|
+| Standard | `custom` (in-tree baseline) | `ubjson` (minimal teaching envelope) |
+| Encoded size (`document`, $n = 1$) | **196 B** | **233 B** (+37 B envelope) |
+| Timed boundary | `document_t` → buffer → `document_t` | `document_t` → stack buffer → UBJSON envelope → `document_t` |
+| Endianness & lengths | Host little-endian `memcpy`; 2-byte LE string lengths | Big-endian 4-byte UBJSON integers for envelope metadata |
+| Heap allocations | 0 (fixed `items[V2_MAX_CHILDREN]` array) | 0 (64 KiB stack scratch buffer + output buffer) |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [C overview](../../c/index.md)
+## Timed Call Sites
 
-## Short answer
-
-custom-binary is faster than ubj (3.78 million versus 2.62 million cycles per second) and writes 37 fewer bytes. We can see that in the table.
-
-**ubj does not use a third-party UBJSON library.** It writes the *same* packed record that custom-binary writes, then wraps that record in a small UBJSON map with two keys, `"kind"` and `"payload"`. Custom-binary skips the wrap. That is the whole difference.
-
-| | custom-binary | ubj |
-|--|---------------|-----|
-| Mean encode + decode, document, *n* = 1 | **3.78 million / s** | 2.62 million / s |
-| Encode | **157 ns** | 239 ns |
-| Decode | **108 ns** | 143 ns |
-| Encoded size | **196 B** | 233 B |
-
-196 + 37 = 233. The 37 extra bytes are the envelope. The extra time is a second copy plus type letters and big-endian integers.
-
-## The custom-binary encode: copy fields in order
-
-`c/src/serializers/ser_custom_binary.c` is a one-function wrapper:
+**`custom-binary`** (`c/src/serializers/ser_custom_binary.c`, invoking `bin_write_fixture` in `c/src/ser_common.h`) writes a kind tag followed by fields in fixed declaration order with unaligned host-endian `memcpy`:
 
 ```c
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
     return bin_write_fixture(fx, buf, cap, ol);
 }
-```
 
-`bin_write_fixture` in `c/src/ser_common.h` writes a kind byte and then the document fields with `memcpy`. Strings carry a two-byte little-endian length. There are no field names.
-
-```c
 /* c/src/ser_common.h — document case (abbreviated) */
 case TD_DOCUMENT: {
     const document_t *d = &fx->document;
@@ -58,22 +39,7 @@ case TD_DOCUMENT: {
 }
 ```
 
-An `i32` is four host bytes:
-
-```c
-#define BIN_WR_I32(buf, cap, o, v) do { \
-    if (*(o) + 4 > (cap)) return -1; \
-    int32_t _v = (v); memcpy((buf) + *(o), &_v, 4); *(o) += 4; \
-} while (0)
-```
-
-Decode is the inverse into a `document_t` that already contains a fixed array of items (`items[V2_MAX_CHILDREN]`). There is no heap allocation on this path.
-
-**History.** This is the packed record of [Serialization 101](../../theory/101/historical_perspective.md): declare the order and the widths, then copy. Sun’s XDR (1987) did the same with big-endian integers and alignment. The C baseline here uses host byte order and two-byte lengths because the runner and the reader are the same process. It is a measurement baseline, not a public contract.
-
-## The ubj encode: the same bytes, then an envelope
-
-`c/src/serializers/ser_ubj.c` first calls that same function into a 64 KiB stack buffer, then writes a UBJSON object:
+**`ubj`** (`c/src/serializers/ser_ubj.c`) executes the **entire** `bin_write_fixture` pass into a 64 KiB stack buffer, then wraps those 196 bytes in a two-key UBJSON map (`"kind"` and `"payload"`):
 
 ```c
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
@@ -89,44 +55,8 @@ static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
 }
 ```
 
-A UBJSON integer is a type letter plus a **big-endian** four-byte value:
+## Mechanistic Analysis and Scope Limits
 
-```c
-static int w_i32(uint8_t **p, uint8_t *end, int32_t v) {
-    if (w_char(p, end, 'l')) return -1;   /* type letter: int32 */
-    uint32_t uv = (uint32_t)v;
-    (*p)[0] = (uint8_t)((uv >> 24) & 0xff);
-    (*p)[1] = (uint8_t)((uv >> 16) & 0xff);
-    (*p)[2] = (uint8_t)((uv >> 8) & 0xff);
-    (*p)[3] = (uint8_t)(uv & 0xff);
-    *p += 4;
-    return 0;
-}
-```
-
-A key is that integer (the length) plus the letters of the name. The payload is a typed byte array: `[ $ U #` plus a length plus the 196 inner bytes.
-
-## Side-by-side: where the 37 bytes and the extra nanoseconds go
-
-| Extra work in ubj | What the CPU does |
-|-------------------|-------------------|
-| First `bin_write_fixture` into `raw[65536]` | The *entire* custom-binary encode, before the envelope starts |
-| `{` `"kind"` integer `"payload"` array `}` | Type letters, two English keys, big-endian lengths |
-| `memcpy` of the 196-byte payload into the envelope | A second copy of every field |
-| Decode: scan keys with `strcmp`, then `bin_read_fixture` | The custom-binary decode, after a parse |
-
-On a little-endian host, custom-binary’s `memcpy` of an `i32` is one unaligned store. ubj’s `w_i32` is a type byte plus four shifts. It does that for every length in the envelope, not for the inner document fields — those were already written the fast way.
-
-## What you give up
-
-custom-binary is **not** an interchange format. Another language, or another C compiler with a different `int` width, cannot be assumed to read it. The kind byte is the only self-description.
-
-ubj, even in this minimal form, is closer to a document: a reader can see that a map contains `kind` and `payload`. [UBJSON](https://ubjson.org/) (late 2000s, a binary cousin of JSON) was designed for that inspectability. The suite’s wrapper is a teaching envelope, not a full UBJSON implementation of the document fields.
-
-If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as C libraries in [nanopb versus protobuf-c](../../theory/401/protobuf-c-nanopb-compare.md). They are slower than custom-binary because they write field numbers and variable-length integers instead of host `memcpy`. They are the better contract.
-
-## Self-check
-
-1. Count the envelope: `{` + key `kind` + int32 + key `payload` + typed array header + 196 payload bytes + `}`. Why is the total 233, not “196 plus a few”?
-2. Why would switching `w_i32` to `memcpy` of a little-endian value *not* close most of the gap?
-3. Name one reason a production service should still prefer nanopb to custom-binary.
+1. **Exact 37-byte overhead ($196 + 37 = 233\text{ B}$):** The UBJSON envelope adds delimiters (`{`, `}`), two length-prefixed ASCII keys (`"kind"`, `"payload"`), type markers (`'l'` for int32, `[ $ U #` for a strongly typed byte array), and big-endian 4-byte lengths (`w_i32` shifts four bytes explicitly).
+2. **Double pass on encode and decode:** `ubj` strictly performs `custom-binary` plus a second `memcpy` of the 196-byte payload into the output buffer on encode, and UBJSON key scanning (`strcmp`) prior to `bin_read_fixture` on decode.
+3. **Contract trade-off:** Neither adapter is a full production interchange implementation. `custom-binary` relies on host byte order and fixed field positions; `ubj` is an in-tree UBJSON framing wrapper rather than a field-by-field third-party UBJSON codec. For portable schema-driven C encoding, inspect `protobuf` (`libprotobuf`) and the runtime internals in [4.5 C: `protobuf-c`](../../theory/401/protobuf-c-protobuf-c.md) and [4.6 C: `nanopb` vs. `protobuf-c`](../../theory/401/protobuf-c-nanopb-compare.md).

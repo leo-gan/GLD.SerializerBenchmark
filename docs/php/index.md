@@ -3,163 +3,78 @@ title: "PHP"
 ---
 
 # PHP
-PHP’s suite rows cover **stdlib JSON**, **native `serialize`**, optional **PECL** binaries (igbinary, MessagePack, LibYAML, SIMDJSON, MongoDB BSON), **official google/protobuf**, **Symfony** and **JMS** JSON (plus Symfony XML), **Avro**, **CBOR**, and **pure-PHP MessagePack / YAML** as userland baselines.
 
-## Runtime
+PHP serialization contrasts built-in C extensions (`ext-json`, native `serialize`), optional PECL C extensions (`igbinary`, `ext-msgpack`, `ext-yaml`, `ext-simdjson`, `ext-mongodb`), and pure-PHP Composer packages (`google/protobuf`, `Symfony`, `JMS`, `Avro`, `CBOR`, `TOON`, and pure-PHP MessagePack/YAML/Arrow/Ion).
 
-### What it is
+## Runtime & Environment
 
-PHP is often described as a language for web pages. This suite runs the **CLI** (command-line) binary, not PHP-FPM or Apache. The engine is **Zend**. It compiles a script to opcodes, which are an intermediate instruction set, and then executes those opcodes. The short, request-scoped life cycle of a web page does not apply here. One process runs many timed repetitions.
+The PHP runner executes as a single long-lived **CLI** process on the Zend opcode virtual machine rather than request-scoped PHP-FPM or Apache workers. Memory is managed by the Zend allocator with reference counting plus a cyclic garbage collector. Because C extensions bypass opcode execution in the Zend VM, PECL rows typically outperform pure-PHP packages by an order of magnitude or more. Language semantics follow the [PHP Language Reference](https://www.php.net/manual/en/langref.php).
 
-PHP has no current formal specification. The definition this suite follows is the [language reference](https://www.php.net/manual/en/langref.php). A short overview is [PHP](https://en.wikipedia.org/wiki/PHP).
-
-| | This suite |
+| Property | Configuration |
 |---|---|
-| Language | PHP **8.2 or newer** (`composer.json`). The install script offers a static **8.3** CLI. |
-| Packages | Composer (`composer install`) |
-| Prepare | `./scripts/install-host-requirements.sh php` installs into `~/.local/php` |
-| Run | `php/scripts/run-benchmarks.sh` |
-| Memory | Zend allocator, plus a garbage collector for cyclic structures |
+| Language / spec | PHP 8.2+ (`composer.json`; install script provides static PHP 8.3 CLI) |
+| Build & toolchain | Composer (`composer install`); protobuf stubs via `php/scripts/generate-protobuf.sh` |
+| Memory model | Zend reference counting + cyclic garbage collector |
+| Runner & logs | `php/scripts/run-benchmarks.sh` → `logs/php/YYYY-MM-DD-HHMMSS.csv` (nanoseconds) |
+| Registration | [`php/src/Serializers/Registry.php`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/php/src/Serializers/Registry.php) |
+| Data sets | `suite` |
 
-### What this suite runs
+## Registered Serializers
 
-The install script’s static CLI is built **without PECL extensions**. PECL is the usual way to add C extensions such as `igbinary`, `msgpack`, `yaml`, `simdjson`, and `mongodb` to PHP. Those rows register only when the matching extension is actually loaded. A missing row on the Dashboard often means this PHP binary was built without that extension. It does not mean the library is slow.
+Optional PECL rows register only when their corresponding C extension is loaded in the host PHP binary.
 
-### What changes the numbers
+| Serializer | Standard | Data sets | Stream I/O | Timed call path & notes |
+|---|---|---|---|---|
+| [avro](https://github.com/flix-tech/avro-php) | `avro` | `suite` | `adapted` | `flix-tech/avro-php` binary datum (no object container file) |
+| [bson](https://github.com/mongodb/mongo-php-driver) | `bson` | `suite` (optional) | `adapted` | Official `ext-mongodb` BSON (PECL; skipped if unloaded) |
+| [cbor](https://github.com/Spomky-Labs/cbor-php) | `cbor` | `suite` | `adapted` | `spomky-labs/cbor-php` RFC 8949 encoder/decoder |
+| [gld-arrow](https://github.com/leo-gan/gld-arrow-php) | `arrow` | `suite` | `adapted` | `leo-gan/gld-arrow-php` 0.2.0 Arrow IPC stream |
+| [gld-ion](https://github.com/leo-gan/gld-ion-php) | `ion` | `suite` | `adapted` | `leo-gan/gld-ion-php` 0.2.0 Ion 1.0 binary encode/decode |
+| [igbinary](https://github.com/igbinary/igbinary) | `custom` | `suite` (optional) | `adapted` | `ext-igbinary` compact PHP binary (PECL; skipped if unloaded) |
+| [jms-json](https://github.com/schmittjoh/serializer) | `json` | `suite` | `text_on_stream` | `jms/serializer` annotation-driven JSON encoder |
+| [json](https://github.com/php/php-src/tree/master/ext/json) | `json` | `suite` | `text_on_stream` | Bundled C `ext-json` (`json_encode` / `json_decode`) |
+| [msgpack-pecl](https://github.com/msgpack/msgpack-php) | `msgpack` | `suite` (optional) | `adapted` | `ext-msgpack` C extension (PECL; skipped if unloaded) |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | `protobuf` | `suite` | `adapted` | Official `google/protobuf` generated messages; version reports `+ext` vs. `+php` |
+| [rybakit-msgpack](https://github.com/rybakit/msgpack.php) | `msgpack` | `suite` | `adapted` | Pure-PHP `rybakit/msgpack` userland baseline |
+| [serialize](https://github.com/php/php-src) | `custom` | `suite` | `adapted` | Bundled PHP `serialize` / `unserialize` (PHP-only; unsafe on untrusted input) |
+| [simdjson](https://github.com/crazyxman/simdjson_php) | `json` | `suite` (optional) | `text_on_stream` | `ext-simdjson` decode only; encode uses `json_encode` (PECL; skipped if unloaded) |
+| [symfony-json](https://github.com/symfony/serializer) | `json` | `suite` | `text_on_stream` | `symfony/serializer` JSON encoder |
+| [symfony-xml](https://github.com/symfony/serializer) | `custom` | `suite` | `text_on_stream` | `symfony/serializer` XML encoder |
+| [toon](https://github.com/HelgeSverre/toon-php) | `toon` | `suite` | `adapted` | `helgesverre/toon` configured for TOON spec 4.4 (package default is 3.3); size in UTF-8 bytes |
+| [yaml](https://github.com/symfony/yaml) | `yaml` | `suite` | `text_on_stream` | Pure-PHP `symfony/yaml` |
+| [yaml-pecl](https://github.com/php/pecl-file_formats-yaml) | `yaml` | `suite` (optional) | `text_on_stream` | `ext-yaml` LibYAML C binding (PECL; skipped if unloaded) |
 
-PECL and other C extensions are typically much faster than pure-PHP packages such as `rybakit/msgpack` and `symfony/yaml`. `google/protobuf` reports `+ext` or `+php` in the version column, depending on which implementation loaded. The built-in `serialize` format works only in PHP.
+??? note "Library background & provenance"
 
-### Suite-specific gotchas
+    Origin and design rationale for each registered library. Links point to upstream repositories, standard-library paths, or in-tree reference implementations.
 
-A host that has the PECL rows and a host that does not are not the same matrix. Compare them only after you know which extensions were loaded.
+    - **[avro](https://github.com/flix-tech/avro-php)** — flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format).
+    - **[bson](https://github.com/mongodb/mongo-php-driver)** — BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
+    - **[cbor](https://github.com/Spomky-Labs/cbor-php)** — spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC.
+    - **[gld-arrow](https://github.com/leo-gan/gld-arrow-php)** — gld-arrow-php (leo-gan) is a pure-PHP Apache Arrow IPC stream encoder and decoder supporting the five suite data types.
+    - **[gld-ion](https://github.com/leo-gan/gld-ion-php)** — gld-ion-php (leo-gan) is a pure-PHP Amazon Ion 1.0 binary encoder and decoder supporting the five suite data types.
+    - **[igbinary](https://github.com/igbinary/igbinary)** — igbinary is a PECL replacement for PHP `serialize` with a more compact binary. The problem was PHP's verbose native serializer in caches and sessions. igbinary drops duplicate strings and uses a denser layout.
+    - **[jms-json](https://github.com/schmittjoh/serializer)** — JMS Serializer was created for PHP applications that needed annotation-driven object serialization (especially APIs). The problem was mapping rich object graphs to JSON. This row times the JSON encoder.
+    - **[json](https://github.com/php/php-src/tree/master/ext/json)** — PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They exist so PHP can speak the web's data format without a package. This row times the bundled ext-json.
+    - **[msgpack-pecl](https://github.com/msgpack/msgpack-php)** — ext-msgpack is the official PECL MessagePack extension for PHP. MessagePack exists as compact binary JSON. The C extension is the fast path versus userland MessagePack.
+    - **[protobuf](https://github.com/protocolbuffers/protobuf)** — Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+    - **[rybakit-msgpack](https://github.com/rybakit/msgpack.php)** — rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as compact binary JSON. This package is the userland baseline versus the PECL extension.
+    - **[serialize](https://github.com/php/php-src)** — PHP `serialize` / `unserialize` is the language's native object format. It exists so PHP can persist values across requests. It is PHP-only and unsafe for untrusted input.
+    - **[simdjson](https://github.com/crazyxman/simdjson_php)** — ext-simdjson binds the simdjson parser to PHP. simdjson was created to parse JSON at memory-bandwidth speeds. This row uses SIMD only for decode; encode is `json_encode`.
+    - **[symfony-json](https://github.com/symfony/serializer)**, **[symfony-xml](https://github.com/symfony/serializer)** — The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
+    - **[toon](https://github.com/HelgeSverre/toon-php)** — helgesverre/toon encodes and decodes TOON in PHP. The package default wire version is 3.3. This row selects specification 4.4. The timed path is Toon::encode and Toon::decode. The Size column is the UTF-8 byte length.
+    - **[yaml](https://github.com/symfony/yaml)** — The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
+    - **[yaml-pecl](https://github.com/php/pecl-file_formats-yaml)** — ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML.
 
-These times cannot be ranked against another language.
+## Measurement Caveats
 
-### Where to go next
+- **Static CLI host without PECL:** The default host install script provides a static PHP 8.3 CLI built without PECL extensions (`igbinary`, `msgpack`, `yaml`, `simdjson`, `mongodb`). Those five rows are therefore absent from default Dashboard snapshots until run on a PHP build with those extensions enabled. Similarly, `google/protobuf` appends `+ext` or `+php` to `SerializerVersion` to distinguish the C extension from the pure-PHP runtime.
+- **`simdjson` split path:** When loaded, `ext-simdjson` accelerates decode only; timed encode falls back to `json_encode`.
+- **Excluded candidates:** RPC framers (`Goridge`/`RoadRunner`), closure serializers (`opis/closure`, `laravel/serializable-closure`), decode-only parsers (`salsify/jsonstreamingparser`), line-delimited streams (`clue/ndjson`), flat CSV (`Symfony CSV`), framework hydrators (`laravel-data`, `PDO`), and ungenerated IDL targets (`Cap'n Proto`, `FlatBuffers`, `Thrift`) are excluded.
 
-The steps to install the toolchain and run the benchmark are in [`php/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/php/README.md). The language overview is [What is PHP?](https://www.php.net/manual/en/intro-whatis.php).
+## Results & Further Reading
 
-## Benchmark runner
-
-- Directory: `php/` (repository root)
-- Output: `logs/php/YYYY-MM-DD-HHMMSS.csv` (`Language=php`, times in **nanoseconds**)
-- Runner: `php/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
-- Registration: `php/src/Serializers/Registry.php`
-- Protobuf classes: `php/scripts/generate-protobuf.sh` (from `schemas/v2/protobuf/benchmark_v2.proto`)
-
-PECL rows register only when the extension is loaded. This host’s static PHP CLI has none of those extensions, so those rows stay dark until `igbinary` / `msgpack` / `yaml` / `simdjson` / `mongodb` are present.
-
-## Serializers
-
-| Name | Category | Package | Stream | Notes |
-|------|----------|---------|--------|-------|
-| [json](https://github.com/php/php-src/tree/master/ext/json) | JSON | php-json | text_on_stream | `json_encode` / `json_decode` |
-| [simdjson](https://github.com/crazyxman/simdjson_php) | JSON | ext-simdjson | text_on_stream | **Decode only** is SIMDJSON; encode is `json_encode` |
-| [serialize](https://github.com/php/php-src) | Binary | php-serialize | adapted | PHP-only |
-| [igbinary](https://github.com/igbinary/igbinary) | Binary | ext-igbinary | adapted | PECL; skip if missing |
-| [msgpack-pecl](https://github.com/msgpack/msgpack-php) | Binary | ext-msgpack | adapted | PECL; skip if missing |
-| [rybakit-msgpack](https://github.com/rybakit/msgpack.php) | Binary | rybakit/msgpack | adapted | Pure PHP MessagePack |
-| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | google/protobuf | adapted | Official generated messages; `+ext` vs `+php` in version |
-| [symfony-json](https://github.com/symfony/serializer) | JSON | symfony/serializer | text_on_stream | Serializer JSON encoder |
-| [symfony-xml](https://github.com/symfony/serializer) | Text | symfony/serializer | text_on_stream | Serializer XML encoder |
-| [jms-json](https://github.com/schmittjoh/serializer) | JSON | jms/serializer | text_on_stream | JMS JSON |
-| [bson](https://github.com/mongodb/mongo-php-driver) | Binary | ext-mongodb | adapted | Official BSON; skip if missing |
-| [avro](https://github.com/flix-tech/avro-php) | Schema | flix-tech/avro-php | adapted | Binary Avro (no object container) |
-| [cbor](https://github.com/Spomky-Labs/cbor-php) | Binary | spomky-labs/cbor-php | adapted | RFC 8949 |
-| [yaml](https://github.com/symfony/yaml) | Text | symfony/yaml | text_on_stream | Pure PHP YAML |
-| [toon](https://github.com/HelgeSverre/toon-php) | Text | helgesverre/toon | adapted | Specification 4.4. The package default is 3.3. Size is UTF-8 bytes |
-| [yaml-pecl](https://github.com/php/pecl-file_formats-yaml) | Text | ext-yaml | text_on_stream | LibYAML; skip if missing |
-| [gld-arrow](https://github.com/leo-gan/gld-arrow-php) | Schema | leo-gan/gld-arrow-php 0.2.0 | adapted | Arrow IPC stream for the five suite types |
-| [gld-ion](https://github.com/leo-gan/gld-ion-php) | Binary | leo-gan/gld-ion-php 0.2.0 | adapted | Ion 1.0 binary encode / decode |
-
-### Specifics
-
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
-
-#### [json](https://github.com/php/php-src/tree/master/ext/json)
-
-PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They exist so PHP can speak the web's data format without a package. This row times the bundled ext-json.
-
-#### [simdjson](https://github.com/crazyxman/simdjson_php)
-
-ext-simdjson binds the simdjson parser to PHP. simdjson was created to parse JSON at memory-bandwidth speeds. This row uses SIMD only for decode; encode is `json_encode`.
-
-#### [serialize](https://github.com/php/php-src)
-
-PHP `serialize` / `unserialize` is the language's native object format. It exists so PHP can persist values across requests. It is PHP-only and unsafe for untrusted input.
-
-#### [igbinary](https://github.com/igbinary/igbinary)
-
-igbinary is a PECL replacement for PHP `serialize` with a more compact binary. The problem was PHP's verbose native serializer in caches and sessions. igbinary drops duplicate strings and uses a denser layout.
-
-#### [msgpack-pecl](https://github.com/msgpack/msgpack-php)
-
-ext-msgpack is the official PECL MessagePack extension for PHP. MessagePack exists as compact binary JSON. The C extension is the fast path versus userland MessagePack.
-
-#### [rybakit-msgpack](https://github.com/rybakit/msgpack.php)
-
-rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as compact binary JSON. This package is the userland baseline versus the PECL extension.
-
-#### [protobuf](https://github.com/protocolbuffers/protobuf)
-
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
-
-#### [symfony-json](https://github.com/symfony/serializer), [symfony-xml](https://github.com/symfony/serializer)
-
-The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
-
-#### [jms-json](https://github.com/schmittjoh/serializer)
-
-JMS Serializer was created for PHP applications that needed annotation-driven object serialization (especially APIs). The problem was mapping rich object graphs to JSON. This row times the JSON encoder.
-
-#### [bson](https://github.com/mongodb/mongo-php-driver)
-
-BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
-
-#### [avro](https://github.com/flix-tech/avro-php)
-
-flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format).
-
-#### [cbor](https://github.com/Spomky-Labs/cbor-php)
-
-spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC.
-
-#### [yaml](https://github.com/symfony/yaml)
-
-The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
-
-#### [toon](https://github.com/HelgeSverre/toon-php)
-
-helgesverre/toon encodes and decodes TOON in PHP. The package default wire version is 3.3. This row selects specification 4.4. The timed path is Toon::encode and Toon::decode. The Size column is the UTF-8 byte length.
-
-#### [yaml-pecl](https://github.com/php/pecl-file_formats-yaml)
-
-ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML.
-
-#### [gld-arrow](https://github.com/leo-gan/gld-arrow-php)
-
-gld-arrow is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
-
-#### [gld-ion](https://github.com/leo-gan/gld-ion-php)
-
-gld-ion is a registered serializer in the php suite. This page links its upstream source; the language inventory table describes the timed call path.
-
-
-## Not in this suite (and why)
-
-These candidates from the intake lists are **not** rows:
-
-| Candidate | Why not |
-|-----------|---------|
-| Goridge / RoadRunner | RPC framing, not a general data-type codec |
-| opis/closure, laravel/serializable-closure | Packs executable closures — not suite data, and a security surface |
-| salsify/jsonstreamingparser | Decode-only SAX parser |
-| clue/ndjson | Line-delimited stream, different payload |
-| Symfony CSV | Nested data types are not a CSV table |
-| Spatie laravel-data / Laravel serialization | Framework hydrators, not a wire format |
-| YAS PHP / AMQP codecs | No official PHP codec for this suite’s data types |
-| Cap’n Proto PHP | No official PHP runtime |
-| FlatBuffers / Thrift PHP | No generated PHP tables in-tree yet (can be added like protobuf) |
-| PDO / custom hydrators | Object mapping, not encode/decode of bytes |
-
-[Dashboard](../dashboard/index.html?lang=php&data=document@n=1&mode=bytes)
+- **Live measurements (L1):** [Dashboard (PHP)](../dashboard/index.html?lang=php&data=document@n=1&mode=bytes) · [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md)
+- **Specification compliance:** [Compliance (PHP)](../dashboard/index.html#compliance)
+- **Source-level analyses:** [PHP: `json` vs. `google/protobuf`](../analysis/call-sites/php-json-vs-protobuf.md)
+- **Build & run guide:** [`php/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/php/README.md) · [Timing contract](../analysis/TIMING_HONESTY.md)

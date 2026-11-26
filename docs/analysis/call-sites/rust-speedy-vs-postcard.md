@@ -1,37 +1,22 @@
-# Rust: Speedy versus Postcard — fixed widths versus compact integers
+# Rust: `Speedy` vs. `Postcard`
 
-## Why this article exists
+This note compares the Rust `speedy` and `postcard` binary adapters on the `document` ($n = 1$, `bytes` mode) payload. Both omit field names and write into runner-reused byte vectors; the comparison isolates fixed-width native stores (`Speedy`, **214 B**) against compact variable-length integers via `serde` (`Postcard`, **114 B**).
 
-[Speedy versus Bincode](../../theory/401/rust-speedy-vs-bincode.md) showed that leaving Serde and writing fixed-width integers makes encode fast and messages **larger**. A student can fairly ask whether compactness requires leaving Serde. **Postcard** stays on Serde, writes variable-length integers, and on this suite’s **document** payload it is both smaller than Bincode and faster than Bincode. It is still slower than Speedy.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare) · [Rust overview](../../rust/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page holds “no field names” still and compares two compact binaries: Speedy’s native `Writable` with four- and eight-byte integers, versus Postcard’s Serde encoder with postcard-varints.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+| Property | `speedy` | `postcard` |
+|---|---|---|
+| Standard | `custom` (Rust-only fixed-width binary) | `custom` (`no_std`-oriented varint binary) |
+| Encoded size (`document`, $n = 1$) | **214 B** | **114 B** (−100 B) |
+| Integer & length encoding | Fixed-width native (`u32` lengths, 4 B `i32`, 8 B `i64`) | Base-128 unsigned/zigzag varints (1 B for values $< 128$) |
+| Timed value boundary | Direct `Document` struct (`Writable` / `Readable`) | Runner `Fixture` enum via `serde` (includes variant index) |
+| Output buffer policy | Reused `&mut Vec<u8>` (`write_to_stream`) | Reused `Vec<u8>` via `postcard::to_extend` |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=rust&standard=custom&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Rust overview](../../rust/index.md)
+## Timed Call Sites
 
-## Short answer
-
-Speedy is faster than Postcard (2.84 million versus 1.73 million cycles per second). Postcard writes the smaller message (114 bytes versus 214). We can see both facts in the table.
-
-Both omit field names. Speedy copies each integer at its native width and each length as a `u32`. Postcard writes a **variable-length integer** (seven data bits per byte, high bit continues) for integers, lengths, and the `Fixture` variant index. Small numbers become one byte. That is why Postcard is **114 bytes** and Speedy is **214**. Speedy is still faster because it never asks “how many bytes does this need?” and it never visits Serde.
-
-| | Speedy 0.8.7 | Postcard 1.1.3 | Bincode 2.0.1 |
-|--|--------------|----------------|---------------|
-| Mean encode + decode | **2.84 million / s** | 1.73 million / s | 1.29 million / s |
-| Encode | **88 ns** | 163 ns | 203 ns |
-| Decode | **264 ns** | 414 ns | 573 ns |
-| Encoded size | 214 B | **114 B** | 122 B |
-
-Postcard writes the smallest message among the fast Rust binaries. Speedy has the highest cycle rate. Bincode is neither the smallest nor the fastest.
-
-## The two timed call sites
-
-**Speedy** writes a `Document` (`rust/src/serializers/direct.rs`):
+**`speedy`** (`rust/src/serializers/direct.rs`) bypasses `serde` and invokes derived fixed-width traits directly on `Document`:
 
 ```rust
 v.write_to_stream(&mut *out)?;
@@ -39,7 +24,7 @@ v.write_to_stream(&mut *out)?;
 Document::read_from_buffer(d)
 ```
 
-**Postcard** writes the `Fixture` enumeration through Serde (`rust/src/serializers/binary_serde.rs`):
+**`postcard`** (`rust/src/serializers/binary_serde.rs`) encodes the runner's `Fixture` enum through `serde` into the reused output vector:
 
 ```rust
 fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
@@ -52,63 +37,8 @@ fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
 }
 ```
 
-`to_extend` appends into an existing `Vec<u8>` (Postcard 1.1.3, `src/ser/mod.rs`). That is kinder to allocation than “return a new vector.” It is still a Serde visit of `Fixture`, which begins with a variant index. Speedy never writes that index. Part of the time gap is this wrapper. The larger part is integer width.
+## Mechanistic Analysis and Scope Limits
 
-## What Speedy stores
-
-A derived `write_to` emits, for each string, a **32-bit length** and the bytes; for each `i32`, four bytes; for each `i64`, eight. On a little-endian host those stores are copies. See the Speedy/Bincode page for the generated skeleton and `write_u32`.
-
-## What Postcard stores
-
-Postcard (James Munns and the Ferrous Systems community, late 2010s) was written for **embedded** programs: `no_std`, small messages, no heap required if you encode into a stack buffer. Compactness is the point. Integers use a postcard-varint — the same family as Protocol Buffers varints:
-
-```rust
-// postcard 1.1.3, src/varint.rs
-pub fn varint_u32(n: u32, out: &mut [u8; varint_max::<u32>()]) -> &mut [u8] {
-    let mut value = n;
-    for i in 0..varint_max::<u32>() {
-        out[i] = value.to_le_bytes()[0];
-        if value < 128 {
-            return &mut out[..=i];
-        }
-        out[i] |= 0x80;
-        value >>= 7;
-    }
-    &mut out[..]
-}
-```
-
-The Serde serializer calls that helper for `u16`/`u32`/`u64`, for string lengths, and for sequence lengths (`src/ser/serializer.rs`). A `status` of `1` is one byte. Speedy always writes four. Eight line items, each with a small `qty` and a modest `price_minor`, add up to the 100-byte gap.
-
-Decode walks the same varints in reverse (`try_take_varint_u32`). Each integer is a short loop rather than a four-byte load. That is the 414 ns versus 264 ns.
-
-**History.** Variable-length integers are an old density trick: ASN.1 length octets, then Protocol Buffers varints (Google, 2000s), then Avro zigzag, then Postcard for microcontrollers. Speedy’s fixed widths are the other old trick: XDR and packed records. This pair is those two bets on the same Rust `Document`. See [Historical perspective](../../theory/101/historical_perspective.md).
-
-## Side-by-side: one small `i32`
-
-| Step | Speedy | Postcard |
-|------|--------|----------|
-| How the field is reached | Generated `write_to` | Serde `serialize_i32` |
-| Bytes for `qty = 2` | 4 (`02 00 00 00`) | 1 (`02`) |
-| Bytes for a length 3 string | 4 + 3 | 1 + 3 |
-| Branches | Endian swap if needed (none here) | “Is it less than 128?” per integer |
-
-Postcard is still faster than Bincode because its Serde encoder is thinner (no `standard()` width prefixes such as “this is a two-byte int”) and because `to_extend` reuses the runner’s vector. The idea — variable-length integers — is the same family as Bincode’s `standard()` config. The engineering is tighter.
-
-## What you give up
-
-| Axis | Speedy | Postcard |
-|------|--------|----------|
-| Size on this document | Larger | Smaller |
-| Encode/decode time | Smaller | Larger |
-| Another language | No public spec | Documented postcard layout, still Rust-first |
-| Embedded / `no_std` | Possible, not the design centre | The design centre |
-| Evolution | Reorder breaks readers | Reorder breaks readers (no field numbers) |
-
-Neither library is a multi-language service contract. For that, this suite’s `prost` row (155 B, 841 thousand / s on this payload) is the Protocol Buffers answer. Postcard versus Speedy is a lesson about **width**, not about schemas.
-
-## Self-check
-
-1. Using `varint_u32`, how many bytes is `qty = 2`? How many is Speedy’s `i32`?
-2. Name one reason Postcard can stay on Serde and still beat Bincode.
-3. Why is this pair a better “size versus speed” lesson than Speedy versus Bincode alone?
+1. **Exact 100-byte size trade-off (214 B vs. 114 B):** `Speedy` stores every string/vector length as a 4-byte `u32`, every `i32` as 4 bytes, and every `i64` as 8 bytes using unbranched little-endian copies. `Postcard` encodes lengths and integers with continuation-bit varint loops (`varint_u32`), shrinking small counts, `status`, `qty`, and `price_minor` to 1–3 bytes at the cost of per-integer bit-shifting and branching on both encode and decode.
+2. **Wrapper asymmetry (`Document` vs. `Fixture`):** Part of the CPU gap reflects `Postcard` routing through `serde` and encoding the outer `Fixture` enum discriminant, whereas `Speedy` operates directly on `Document` (the same documented asymmetry examined in [4.9 Rust: `Speedy` vs. `Bincode`](../../theory/401/rust-speedy-vs-bincode.md)). Even among `serde` crates, `Postcard`'s thin encoder and `to_extend` reuse typically outperform `Bincode`'s `standard()` configuration.
+3. **Evolution trade-off:** Neither positional format carries field tags; reordering struct fields breaks existing wire bytes. For a cross-language schema-evolving Rust codec, see `prost` ([4.4 Rust: `prost`](../../theory/401/protobuf-rust-prost.md)).

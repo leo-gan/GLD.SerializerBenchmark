@@ -1,40 +1,24 @@
-# Python: why orjson outruns the standard library on the same JSON
+# Python: `orjson` vs. stdlib `json`
 
-## Why this article exists
+This note inspects Python's Rust-backed `orjson` and standard-library `json` adapters on the `document` ($n = 1$, `bytes` mode) payload. Both receive an identical pre-built Python `dict` from untimed `prepare_data` and emit the **exact same 448-byte** compact UTF-8 JSON document, isolating pure implementation overhead in CPython.
 
-On this suite’s **document** payload, one instance, **orjson** and the standard library `json` module emit the **same 448 bytes**. orjson finishes about **five times** as many encode-and-decode cycles per second. The encodings are the same JSON objects with the same keys. The gap is how each library walks a Python dictionary and how it hands bytes back to the caller.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=python&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare) · [Python overview](../../python/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page compares the two timed wrappers and the library functions they call. After reading it you should be able to point at the extra `str` and the missed cached encoder in the standard-library path.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+| Property | `orjson` | `json` (CPython stdlib) |
+|---|---|---|
+| Standard | `json` (RFC 8259, compact UTF-8) | `json` (RFC 8259, compact UTF-8) |
+| Encoded size (`document`, $n = 1$) | **448 B** | **448 B** (identical) |
+| Input / output model | Nested Python `dict` ↔ `bytes` | Nested Python `dict` ↔ `bytes` |
+| Intermediate `str` allocation | None (direct Rust UTF-8 buffer) | Encode builds `str` then `.encode("utf-8")`; decode decodes `bytes` to `str` first |
+| Encoder caching | Stateless Rust entry point (`orjson.dumps`) | `separators=(",", ":")` bypasses CPython `_default_encoder` (constructs `JSONEncoder` per call) |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=python&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Python overview](../../python/index.md)
+## Timed Call Sites
 
-## Short answer
-
-orjson is about five times as fast as the standard library on this slice. We can see that in the table (242 thousand versus 48 thousand cycles per second). Both write 448 bytes of JSON, so size cannot explain the difference.
-
-orjson writes UTF-8 **bytes** in Rust and parses those bytes back into dictionaries. The standard-library wrapper builds a Python **Unicode string**, then encodes it to UTF-8, and it constructs a new `JSONEncoder` on every call because `separators=(",", ":")` misses the cached encoder. Decode first turns bytes back into a `str`. Same JSON. Five times the work.
-
-| | orjson 3.11.9 | stdlib json (Python 3.14) |
-|--|---------------|---------------------------|
-| Mean encode + decode, document, *n* = 1 | **242 thousand / s** | 48 thousand / s |
-| Encode | **1.62 µs** | 12.4 µs |
-| Decode | **2.50 µs** | 8.53 µs |
-| Encoded size | **448 B** | **448 B** |
-
-Equal size is the teaching fact. The speed difference is implementation, not a different encoding.
-
-## The two timed call sites
-
-Both wrappers convert the dataclass to a dictionary in untimed `prepare_data`. Timed work is only dump and load.
+**`orjson`** (`python/src/benchmark/serializers/json_orjson.py`) reads and writes UTF-8 `bytes` directly from Rust:
 
 ```python
-# python/src/benchmark/serializers/json_orjson.py
 def serialize_bytes(self, obj):
     return orjson.dumps(obj)
 
@@ -42,8 +26,9 @@ def deserialize_bytes(self, data):
     return orjson.loads(data)
 ```
 
+**stdlib `json`** (`python/src/benchmark/serializers/json_stdlib.py`) passes `ensure_ascii=False` and compact `separators=(",", ":")` to match `orjson`'s 448-byte output, then encodes the resulting `str` to UTF-8:
+
 ```python
-# python/src/benchmark/serializers/json_stdlib.py
 def serialize_bytes(self, obj):
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
@@ -51,54 +36,8 @@ def deserialize_bytes(self, data):
     return json.loads(data)
 ```
 
-`separators=(",", ":")` is there so the standard library emits compact JSON, matching orjson’s default. It is also what takes the slow path.
+## Mechanistic Analysis and Scope Limits
 
-## What the standard library does on every encode
-
-`json.dumps` keeps a single cached encoder for the *default* argument combination. Any other combination builds a new encoder:
-
-```python
-# CPython 3.14, Lib/json/__init__.py
-if (not skipkeys and ensure_ascii and
-    check_circular and allow_nan and
-    cls is None and indent is None and separators is None and
-    default is None and not sort_keys and not kw):
-    return _default_encoder.encode(obj)
-# otherwise:
-return cls(..., separators=separators, ...).encode(obj)
-```
-
-This runner sets `ensure_ascii=False` *and* `separators=...`. Both conditions fail. Every timed encode constructs a `JSONEncoder`, walks the dictionary, and returns a `str`. The wrapper then calls `.encode("utf-8")` and allocates a `bytes` object. Two Python strings’ worth of data for one JSON document.
-
-`json.loads` on a `bytes` object first decodes to `str`:
-
-```python
-# same file
-else:
-    s = s.decode(detect_encoding(s), 'surrogatepass')
-return _default_decoder.decode(s)
-```
-
-The C accelerator `_json` then parses Unicode. orjson never builds that intermediate `str`.
-
-## What orjson does instead
-
-orjson (`dumps` / `loads` in the Rust crate `ijl/orjson`) takes a Python object and writes UTF-8 into a byte buffer. `loads` parses those bytes and allocates dictionaries. There is still a dictionary per nested record — this is not msgspec’s typed Struct path. orjson is faster than the standard library for three reasons:
-
-1. it does not build an intermediate Unicode string;
-2. it does not construct a `JSONEncoder` on every call;
-3. its Rust inner loop examines many characters at once (the simdjson tradition of Geoff Langdale and Daniel Lemire, 2018–2019).
-
-**History.** The standard library’s `json` module (Bob Ippolito and contributors, Python 2.6 onward) is the portable, always-there encoder. It was written to be correct and maintainable, not to be the fastest JSON implementation. orjson (late 2010s) exists because web services paid real time for that portability. The JSON encoding did not change. The path from a `dict` to bytes did.
-
-## What this page is not
-
-It is not “JSON is slow.” jsoniter, Glaze, yyjson, and V8 `JSON.stringify` show that JSON can be fast when the implementation is specialized. It is not “orjson beats msgspec.” [msgspec-msgpack versus orjson](../../theory/401/python-msgspec-vs-orjson.md) is a different experiment: positional MessagePack Structs versus named JSON dictionaries.
-
-A fairer stdlib call would keep a long-lived `JSONEncoder(ensure_ascii=False, separators=(",", ":"))` and write with `encode`. That would remove the per-call constructor. It would not remove the `str` then UTF-8 copy. The five-times gap would shrink. It would not vanish.
-
-## Self-check
-
-1. Why is equal size essential to this lesson?
-2. Which two extra allocations does `.dumps(...).encode("utf-8")` perform that `orjson.dumps` does not?
-3. Why does passing `separators=` make CPython skip `_default_encoder`?
+1. **Double string conversion on stdlib `json`:** `json.dumps` returns a Python Unicode `str`, forcing a second allocation and copy via `.encode("utf-8")` to produce wire `bytes`. Symmetrically, `json.loads(bytes)` first calls `detect_encoding` and `.decode(...)` into a `str` before invoking CPython's C `_json` scanner. `orjson` bypasses intermediate Unicode `str` objects in both directions and uses SIMD-style UTF-8 scanning in Rust.
+2. **Missed `_default_encoder` fast path:** In CPython's `Lib/json/__init__.py`, `_default_encoder` is reused only when every keyword argument stays at its default. Passing `ensure_ascii=False, separators=(",", ":")` instantiates a fresh `JSONEncoder` on every timed encode. Caching a long-lived `JSONEncoder` instance in `prepare` would remove the per-call constructor overhead, though it would not eliminate the intermediate `str` ↔ `bytes` round trip or the C vs. Rust inner-loop gap.
+3. **Scope limits:** Both adapters still materialize ten Python `dict` objects per decoded `document`; to see the additional effect of replacing dynamic dictionaries with typed positional C structs, see [4.8 Python: `msgspec-msgpack` vs. `orjson`](../../theory/401/python-msgspec-vs-orjson.md).

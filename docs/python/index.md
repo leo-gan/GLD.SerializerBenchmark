@@ -3,281 +3,119 @@ title: "Python"
 ---
 
 # Python
-Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
-## Runtime
+Python serialization reflects a sharp boundary between CPython object-allocation overhead and compiled C/C++/Rust extensions. Libraries such as `orjson`, `msgspec`, `protobuf` (upb), and `pyarrow` move scanning and conversion into native code, whereas pure-Python paths (`dill`, Python `flatbuffers` Builder, pure-Python `Dagr`) execute inside the bytecode interpreter.
 
-### What it is
+## Runtime & Environment
 
-This suite measures **CPython**, the usual C implementation of the Python interpreter. Other implementations such as PyPy are not used here. CPython compiles source to bytecode and then runs that bytecode in a virtual machine. Almost every value is a heap object with a type pointer and a reference count. That design makes Python easy to write and expensive to decode into, because even a small integer is a full object.
+This runner executes under **CPython 3.12+** (not PyPy or Jython), managed via [`uv`](https://docs.astral.sh/uv/) and `python/pyproject.toml`. Every Python value is a heap-allocated object with reference counting and a cyclic garbage collector, guarded during bytecode execution by the Global Interpreter Lock (GIL). Consequently, decoding into dictionaries or `msgspec.Struct` C objects avoids Python-level class instantiation costs, while native extensions can also release the GIL during buffer processing (see [Latency tails and GC](../theory/301/latency-tails-and-gc.md)). Language semantics are defined by the [Python Language Reference](https://docs.python.org/3/reference/index.html).
 
-The language is specified by the [Python Language Reference](https://docs.python.org/3/reference/index.html). CPython is the reference implementation named there. Other implementations are listed in the [reference introduction](https://docs.python.org/3/reference/introduction.html#alternate-implementations).
-
-The **Global Interpreter Lock (GIL)** is a lock that lets only one thread run Python bytecode at a time inside a process. If a decode takes 10 ms of Python bytecode, the whole process is blocked for those 10 ms, unless the library releases the GIL while it works in C, C++, or Rust.
-
-| | This suite |
+| Property | Configuration |
 |---|---|
-| Interpreter | CPython **3.12 or newer**. Not PyPy or Jython. |
-| Host toolchain | [uv](https://docs.astral.sh/uv/) (`uv sync`) |
-| Prepare | `./scripts/install-host-requirements.sh python` |
-| Run | `python/scripts/run-benchmarks.sh` |
-| Memory | Reference counting plus a cyclic garbage collector. The GIL is present. |
+| Language / spec | CPython 3.12+ (reference implementation; Python Language Reference) |
+| Build & toolchain | `uv sync` (`python/pyproject.toml`, local `.venv`) |
+| Memory model | Reference counting + cyclic garbage collector; GIL active for bytecode |
+| Runner & logs | `python/scripts/run-benchmarks.sh` → `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds) |
+| Registration | [`python/src/benchmark/runner.py`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/src/benchmark/runner.py) |
+| Data sets | `suite`, `columnar`, `graph`, `array`, `tensor` |
+
+## Registered Serializers
+
+`prepare_data` converts suite dataclasses to each library's native input (`dict`, `Struct`, `Message`, `BaseModel`, or generated node) outside the timer; exceptions for `columnar` and `flatbuffers` follow [Timing contract](../analysis/TIMING_HONESTY.md).
+
+| Serializer | Standard | Data sets | Stream I/O | Timed call path & notes |
+|---|---|---|---|---|
+| [adios2](https://github.com/ornladios/ADIOS2) | `adios2` | `array` | `native` | Official ADIOS2 serial BP5 directory; `set_selection` for `grid_window` |
+| [amazon-ion](https://github.com/amazon-ion/ion-python) | `ion` | `suite` | `native` | Official `amazon-ion` binary `simpleion` dump/load on `dict` |
+| [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) | `arrow` | `columnar`, `tensor` | `adapted` | `pyarrow` IPC stream; `Table.from_pylist` timed; `table_project` uses `included_fields`; `tensor_view` returns stream buffer |
+| [avro](https://github.com/fastavro/fastavro) | `avro` | `suite`, `columnar` | `adapted` | `fastavro` Cython `schemaless_writer` / `schemaless_reader` with cached `parse_schema` |
+| [cbor2](https://github.com/agronholm/cbor2) | `cbor` | `suite` | `native` | IETF CBOR (RFC 8949) on `dict` |
+| [cloudpickle](https://github.com/cloudpipe/cloudpickle) | `custom` | `suite`, `graph` | `native` | Extended Python `pickle` on dataclasses (unsafe on untrusted input) |
+| [ctoon](https://github.com/MohammadRaziei/ctoon) | `toon` | `suite` | `adapted` | Python binding over C99 TOON core; size in UTF-8 bytes |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | `custom` | `suite`, `graph` | `adapted` | Pure-Python reflective runtime (`to_bytes` / `restore`), `frozen` positional layout |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | `custom` | `suite` | `adapted` | Pure-Python reflective runtime, `frozen`+`packed` layout |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | `custom` | `suite` | `adapted` | Pure-Python reflective runtime, `packed` tagged layout |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | `custom` | `suite`, `graph` | `adapted` | Pure-Python reflective runtime, `regular` vtable layout |
+| [dill](https://github.com/uqfoundation/dill) | `custom` | `suite` | `native` | Pure-Python extended pickler on dataclasses (unsafe on untrusted input) |
+| [flatbuffers](https://github.com/google/flatbuffers) | `flatbuffers` | `suite`, `columnar`, `tensor` | `adapted` | Pure-Python `Builder` on encode; zero-copy `GetRootAs` view on decode (`tensor_view` reads in place) |
+| [fory](https://github.com/apache/fory) | `custom` | `suite` | `adapted` | `pyfory` native mode on pre-registered dataclasses |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-python) | `kiln` | `suite`, `tensor` | `adapted` | `gld-kiln` 0.2.0 positional codec; `tensor_view` borrows `float32` payload |
+| [h5py](https://docs.h5py.org/) | `hdf5` | `array` | `adapted` | Official `h5py` using HDF5 core virtual file driver; hyperslab read for `grid_window` |
+| [json](https://github.com/python/cpython/tree/main/Lib/json) | `json` | `suite` | `adapted` | Stdlib `json.dumps` / `json.loads` on `dict` (compact baseline) |
+| [mashumaro](https://github.com/Fatal1ty/mashumaro) | `json` | `suite` | `adapted` | Code-generated dataclass `ORJSONEncoder` / `ORJSONDecoder` |
+| [msgpack](https://github.com/msgpack/msgpack-python) | `msgpack` | `suite` | `native` | Official PyPI `msgpack` C extension on `dict` (named maps) |
+| [msgspec](https://github.com/jcrist/msgspec) | `json` | `suite` | `native` | Typed `msgspec.Struct` (`array_like=True`) JSON via `encode_into` |
+| [msgspec-msgpack](https://github.com/jcrist/msgspec) | `msgpack` | `suite` | `native` | Same typed `msgspec.Struct` (`array_like=True`) MessagePack encoder/decoder |
+| [netCDF4](https://unidata.github.io/netcdf4-python/) | `netcdf` | `array` | `adapted` | Official `netCDF4` file write/read; slice read for `grid_window` |
+| [orc](https://arrow.apache.org/docs/python/orc.html) | `orc` | `columnar` | `adapted` | `pyarrow.orc.write_table` / `read_table` (pyarrow defaults to uncompressed); `table_project` passes `columns=['f_float_0']` |
+| [orc-uncompressed](https://arrow.apache.org/docs/python/orc.html) | `orc` | `columnar` | `adapted` | Explicit `compression="uncompressed"` (identical bytes to `orc` on pyarrow 25) |
+| [orjson](https://github.com/ijl/orjson) | `json` | `suite`, `columnar` | `adapted` | Rust `orjson.dumps` / `loads` on pre-built `dict` |
+| [parquet](https://arrow.apache.org/docs/python/parquet.html) | `parquet` | `columnar` | `adapted` | `pyarrow.parquet` with library-default Snappy pages; `table_project` passes `columns=['f_float_0']` |
+| [parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html) | `parquet` | `columnar` | `adapted` | Same `pyarrow.parquet` writer with `compression="NONE"` |
+| [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) | `custom` | `suite`, `graph` | `native` | Stdlib C `_pickle` on dataclasses (cycles supported; unsafe on untrusted input) |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | `protobuf` | `suite`, `columnar` | `adapted` | Official `protobuf` (upb C core) on generated `benchmark_v2.proto` messages |
+| [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF) | `amf0` | `suite` | `adapted` | `Py3AMF` AMF0 (`pyamf.encode` / `decode` on `dict`; numbers as doubles) |
+| [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF) | `amf3` | `suite` | `adapted` | `Py3AMF` AMF3 (`pyamf.encode` / `decode` on `dict`; compact ints/references) |
+| [pydantic](https://github.com/pydantic/pydantic) | `json` | `suite` | `adapted` | Validation-oriented `BaseModel` (`model_dump_json` / `TypeAdapter`) |
+| [rapidjson](https://github.com/python-rapidjson/python-rapidjson) | `json` | `suite` | `adapted` | C++ RapidJSON bindings (`dumps` / `loads` on `dict`) |
+| [serpyco-rs](https://github.com/opengovsg/serpyco-rs) | `json` | `suite` | `adapted` | Rust-accelerated dataclass dump/load over `orjson` |
+| [toon-format](https://github.com/toon-format/toon-python) | `toon` | `suite` | `adapted` | Official Python TOON codec; size in UTF-8 bytes (not token count) |
+| [toons](https://github.com/alesanfra/toons) | `toon` | `suite` | `adapted` | Rust-backed Python TOON codec (`dumps` / `loads`); size in UTF-8 bytes |
+| [yaml](https://github.com/yaml/pyyaml) | `yaml` | `suite` | `text_on_stream` | `PyYAML` `safe_dump` / `safe_load` |
+
+??? note "Library background & provenance"
+
+    Origin and design rationale for each registered library. Links point to upstream repositories, standard-library paths, or in-tree reference implementations.
+
+    - **[adios2](https://github.com/ornladios/ADIOS2)** — adios2 is the official ADIOS2 Python API. The engine is BP5 and MPI is off. This row times one float64 variable named grid. grid_window reads with a 0-based start and count. The buffer is a packed copy of the BP5 directory. The row does not time the five suite types.
+    - **[amazon-ion](https://github.com/amazon-ion/ion-python)** — Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation.
+    - **[arrow-ipc](https://arrow.apache.org/docs/python/ipc.html)** — Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. request is those prompt tensors plus one record batch in the same buffer. tensor_view returns a buffer inside the stream.
+    - **[avro](https://github.com/fastavro/fastavro)** — fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack.
+    - **[cbor2](https://github.com/agronholm/cbor2)** — cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a binary JSON-like format for constrained devices and IETF protocols. cbor2 solves the Python side with a widely used encoder/decoder.
+    - **[cloudpickle](https://github.com/cloudpipe/cloudpickle)** — cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats.
+    - **[ctoon](https://github.com/MohammadRaziei/ctoon)** — ctoon is a C99 TOON core. This row is the Python binding. The timed path is dumps and loads. The Size column is the UTF-8 byte length.
+    - **[dagr-frozen](https://codeberg.org/mzaks/dagr)**, **[dagr-frozen-packed](https://codeberg.org/mzaks/dagr)**, **[dagr-packed](https://codeberg.org/mzaks/dagr)**, **[dagr-regular](https://codeberg.org/mzaks/dagr)** — Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back.
+        - `dagr-frozen`: This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
+        - `dagr-frozen-packed`: This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
+        - `dagr-packed`: This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
+        - `dagr-regular`: This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
+    - **[dill](https://github.com/uqfoundation/dill)** — dill extends pickle further for scientific Python: graphs, lambdas, and interpreter state. The problem was that pickle and even cloudpickle still failed on objects researchers actually use. dill solves that with a broader, mostly pure-Python save path.
+    - **[flatbuffers](https://github.com/google/flatbuffers)** — FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder runs every type: tensor, tensor_view, prompt, shard, and request. tensor_view reads the float vector in place.
+    - **[fory](https://github.com/apache/fory)** — Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
+    - **[gld-kiln](https://github.com/leo-gan/gld-kiln-python)** — gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
+    - **[h5py](https://docs.h5py.org/)** — h5py is the standard Python binding for HDF5. This row times the array data set: one contiguous float64 dataset named grid on the core virtual file driver. The byte size is the flushed file image. grid_window reads an interior hyperslab. The row does not time the five suite types.
+    - **[json](https://github.com/python/cpython/tree/main/Lib/json)** — The CPython `json` module is the language's standard JSON encoder/decoder (RFC 8259). It was added so Python programs had a stdlib way to speak the web's data format. The implementation is a C-accelerated codec over Python objects; this suite times that path as the baseline.
+    - **[mashumaro](https://github.com/Fatal1ty/mashumaro)** — mashumaro was written to serialize Python dataclasses to JSON and other formats with code generation, not runtime reflection on every call. The problem was slow dataclass codecs. This row times the ORJSON encoder/decoder path.
+    - **[msgpack](https://github.com/msgpack/msgpack-python)** — msgpack-python is the official MessagePack implementation for Python. MessagePack was created to be as compact as a binary format and as simple as JSON. The package exposes pack/unpack (and stream APIs) on Python objects.
+    - **[msgspec](https://github.com/jcrist/msgspec)**, **[msgspec-msgpack](https://github.com/jcrist/msgspec)** — msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack).
+        - `msgspec-msgpack`: This row times the MessagePack encoder/decoder on the same Struct types.
+    - **[netCDF4](https://unidata.github.io/netcdf4-python/)** — netCDF4 is the Python interface to the NetCDF C library. This row times one float64 variable named grid in a NetCDF-4 file. grid_window reads that variable with a 0-based slice. The returned buffer is the file. The row does not time the five suite types.
+    - **[orc](https://arrow.apache.org/docs/python/orc.html)** — Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times pyarrow.orc.write_table and read_table with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. table_project passes columns=['f_float_0'] on read.
+    - **[orc-uncompressed](https://arrow.apache.org/docs/python/orc.html)** — This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib.
+    - **[orjson](https://github.com/ijl/orjson)** — orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types.
+    - **[parquet](https://arrow.apache.org/docs/python/parquet.html)** — Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times pyarrow.parquet.write_table and read_table with pyarrow's default page compression, Snappy. Encodings stay at the library default. table_project passes columns=['f_float_0'] on read.
+    - **[parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html)** — This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy.
+    - **[pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py)** — pickle is CPython's native object serializer. It exists so Python processes can snapshot almost any object graph. That power is also the problem: loading untrusted pickle can run arbitrary code. This row times the stdlib C implementation.
+    - **[protobuf](https://github.com/protocolbuffers/protobuf)** — Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+    - **[py3amf-amf0](https://github.com/zhangxaochen/Py3AMF)**, **[py3amf-amf3](https://github.com/zhangxaochen/Py3AMF)** — Py3AMF is a Python 3 fork of PyAMF implementing Adobe Action Message Format (AMF0/AMF3) over Python dictionaries via `pyamf.encode` and `pyamf.decode`.
+        - `py3amf-amf0`: Uses AMF0 (RTMP command encoding), where every number is written as an IEEE 754 double.
+        - `py3amf-amf3`: Uses AMF3, which encodes small integers compactly and supports reference sharing for repeated strings and objects.
+    - **[pydantic](https://github.com/pydantic/pydantic)** — Pydantic was created to validate and serialize Python data for APIs (later FastAPI). The problem was that ad-hoc dicts and hand-written validators were error-prone. Pydantic solves it with typed models and JSON dump/load (`model_dump_json` / TypeAdapter).
+    - **[rapidjson](https://github.com/python-rapidjson/python-rapidjson)** — python-rapidjson wraps Tencent RapidJSON so CPython can use that C++ parser/generator. RapidJSON was written for speed with a SAX and DOM API. The Python binding exposes `dumps`/`loads` on dicts.
+    - **[serpyco-rs](https://github.com/opengovsg/serpyco-rs)** — serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The problem was that dataclass-to-JSON in pure Python is slow. It solves that by compiling the dump/load path and using orjson on the wire.
+    - **[toon-format](https://github.com/toon-format/toon-python)** — toon-format is the official Python codec for TOON, a text encoding of the JSON data model made so prompts can carry the same values in fewer tokens. The timed path is encode and decode. The Size column is the UTF-8 byte length. A token count is a separate measure and is not timed.
+    - **[toons](https://github.com/alesanfra/toons)** — toons is a Python TOON codec whose core is Rust. It speaks the same JSON data model through loads and dumps. The timed path is that text. The Size column is the UTF-8 byte length, not a token count.
+    - **[yaml](https://github.com/yaml/pyyaml)** — PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load.
+
+## Measurement Caveats
+
+- **Pure-Python vs. C-core gaps:** `flatbuffers` serialize builds via a pure-Python `Builder` (orders of magnitude slower than C++/Rust FlatBuffers, whereas decode returns a zero-copy `GetRootAs` view without forcing full materialization). `dill` serialize uses a pure-Python dispatch path (~15–20× slower than C `pickle`). All four `dagr-*` rows run a pure-Python reflective runtime (`to_bytes` / `restore`) with $N > 1$ framed as `[u32 count][u32 len][record]` (404 B framing overhead at $N = 100$). `fastavro` (Cython) still walks Python dicts and unions, lagging upb-backed `protobuf` on nested structures.
+- **Columnar and array boundaries:** Per [Timing contract rule 8](../analysis/TIMING_HONESTY.md), `pyarrow` rows select schemas in `prepare` and time `Table.from_pylist` inside `serialize_bytes`, while `table_project` projects `f_float_0` directly (`IpcReadOptions.included_fields` or `columns=["f_float_0"]`). `h5py`, `netCDF4`, and `adios2` run on `array` only.
+- **Security and instrumentation:** `pickle`, `cloudpickle`, and `dill` execute arbitrary code on untrusted input and are Python-only. `tracemalloc` is disabled during timed loops (it inflated allocation-heavy codecs 2–3×) and under-counts native C/Rust allocations. Fidelity checks are semantic (dict vs. dataclass, enum vs. int, millisecond timestamp truncation).
+
+## Results & Further Reading
 
-### What this suite runs
-
-`python/pyproject.toml` requires Python 3.12 or newer. The `uv` tool creates a local virtual environment and installs the packages listed in the lock file. The benchmark runner is ordinary CPython on the command line. It is not a web server such as FastAPI or Flask.
-
-### What changes the numbers
-
-Libraries with a C or Rust core, such as `orjson`, `msgspec`, and `protobuf`, spend most of the timed path outside the interpreter. They can release the GIL while they parse bytes. Pure-Python paths, such as `dill` serialize and the official FlatBuffers Builder, stay inside the virtual machine and look much slower.
-
-Deserializing into a `dict` is usually cheaper than building a class or a Pydantic model, because constructing Python objects is itself expensive. The `tracemalloc` tool under-counts allocations that happen inside C or Rust extensions.
-
-### Suite-specific gotchas
-
-The official FlatBuffers Python package builds with a pure-Python Builder. The C++ and Rust FlatBuffers libraries are a different speed class. This suite measures the Python binding. See [caveats](#why-flatbuffers-and-dill-opss-look-low).
-
-`pickle`, `cloudpickle`, and `dill` work only in Python. Loading untrusted input with them can run arbitrary code.
-
-`h5py`, `netCDF4`, and `adios2` time the array data set (`grid` and `grid_window` in `config/library/array.yaml`). They do not run on the five suite types or the tensor data set. `h5py` uses the HDF5 core driver. `netCDF4` writes a NetCDF-4 file. `adios2` writes a serial BP5 directory. The window read is a hyperslab, a variable slice, or an ADIOS selection. `arrow-ipc` and `flatbuffers` run every type in the tensor data set. `protobuf` does not.
-
-These times cannot be ranked against another language.
-
-### Where to go next
-
-The steps to install the toolchain and run the benchmark are in [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). The language overview is [The Python interpreter](https://docs.python.org/3/tutorial/interpreter.html). For the GIL and garbage collection in latency, see [Latency tails and GC](../theory/301/latency-tails-and-gc.md).
-
-## Benchmark runner
-
-- Directory: `python/` (repository root)
-- Output: monorepo `logs/python/YYYY-MM-DD-HHMMSS.csv` (`Language=python`, times in **nanoseconds**)
-- Runner: `python/scripts/run-benchmarks.sh` (or project docs for modes)
-- Registration: [`python/src/benchmark/runner.py`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/src/benchmark/runner.py)
-- Modes: `bytes` and `stream`
-
-## Serializers
-
-| Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
-|----------|----------|---------|---------------------------------|-------------|-------|
-| [amazon-ion](https://github.com/amazon-ion/ion-python) | Binary | `amazon-ion` | dict | native | Official Ion binary `simpleion` dump/load |
-| [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | IPC stream in the bytes API. `table_project` reads `f_float_0` only |
-| [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
-| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Pure-Python reflective runtime (eager `to_bytes` / `restore`); ~35–390× slower than protobuf (upb), size ≈ protobuf. See [caveat](#why-dagr-opss-look-low) |
-| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Same runtime and call path as `dagr-packed`; regular (vtable) nodes — evolvable, larger than `packed`. See [layouts](#why-dagr-opss-look-low) |
-| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen` (positional) nodes — no schema evolution. See [layouts](#why-dagr-opss-look-low) |
-| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen`+`packed` (positional, self-sizing) — smallest Dagr row, no schema evolution. See [layouts](#why-dagr-opss-look-low) |
-| [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
-| [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF0. Every number is a double |
-| [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF) | Binary | `Py3AMF` | dict | adapted | AMF3. Small integers stay integers |
-| [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
-| [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
-| [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
-| [fory](https://github.com/apache/fory) | Binary | `pyfory` | dataclass | adapted | Native mode; types registered before timing |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-python) | Binary | `gld-kiln` | dict | adapted | Kiln 0.2.0 positional encode / decode. A batch is one list |
-| [json](https://github.com/python/cpython/tree/main/Lib/json) | JSON | stdlib | dict | adapted | Baseline text JSON |
-| [mashumaro](https://github.com/Fatal1ty/mashumaro) | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
-| [msgpack](https://github.com/msgpack/msgpack-python) | Binary | `msgpack` | dict | native | Reference MessagePack |
-| [msgspec](https://github.com/jcrist/msgspec) | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
-| [msgspec-msgpack](https://github.com/jcrist/msgspec) | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
-| [orc](https://arrow.apache.org/docs/python/orc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | `write_table` default is uncompressed on pyarrow |
-| [orc-uncompressed](https://arrow.apache.org/docs/python/orc.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="uncompressed"` |
-| [orjson](https://github.com/ijl/orjson) | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
-| [parquet](https://arrow.apache.org/docs/python/parquet.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Default page compression is Snappy. `table_project` reads one column |
-| [parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html) | Columnar | `pyarrow` | rows → `Table` inside serialize | adapted | Same writer, `compression="NONE"` |
-| [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
-| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | `protobuf` | Message | adapted | From suite protobuf schemas under `schemas/v2/` / language generated modules |
-| [pydantic](https://github.com/pydantic/pydantic) | JSON | `pydantic` | BaseModel | adapted | Validation-oriented API models |
-| [rapidjson](https://github.com/python-rapidjson/python-rapidjson) | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
-| [serpyco-rs](https://github.com/opengovsg/serpyco-rs) | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
-| [yaml](https://github.com/yaml/pyyaml) | Text | `pyyaml` | dict | text_on_stream | `safe_dump` / `safe_load` |
-| [toon-format](https://github.com/toon-format/toon-python) | Text | `toon-format` | dict | adapted | Official TOON. UTF-8 bytes, not a token count |
-| [toons](https://github.com/alesanfra/toons) | Text | `toons` | dict | adapted | TOON with a Rust core. UTF-8 bytes |
-| [ctoon](https://github.com/MohammadRaziei/ctoon) | Text | `ctoon` | dict | adapted | C99 core. Size is UTF-8 bytes |
-
-### Specifics
-
-Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times).
-
-#### [amazon-ion](https://github.com/amazon-ion/ion-python)
-
-Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation.
-
-#### [arrow-ipc](https://arrow.apache.org/docs/python/ipc.html)
-
-Apache Arrow was created so analytic engines could share columnar batches without copying each one into a private layout. The problem was a convert-at-every-boundary tax. Arrow IPC is the stream format for those batches. This row times pyarrow's IPC stream writer and reader inside the suite's bytes mode, not the Arrow file format. Schema objects are selected in prepare. Row-to-column conversion stays inside serialize. table_project deserialize reads f_float_0 only. On the tensor data set this row runs every type. The matrix, the prompt, and the shard are IPC tensor messages. request is those prompt tensors plus one record batch in the same buffer. tensor_view returns a buffer inside the stream.
-
-#### [avro](https://github.com/fastavro/fastavro)
-
-fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack.
-
-#### [dagr-packed](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `packed` node layout (tagged, evolvable). It does not support the graph data type.
-
-#### [dagr-regular](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `regular` node layout (vtable, evolvable). It also times the graph data type.
-
-#### [dagr-frozen](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen` node layout (positional, no evolution). It also times the graph data type.
-
-#### [dagr-frozen-packed](https://codeberg.org/mzaks/dagr)
-
-Dagr ("Data Graph") is a schema-driven binary format that can store shared nodes and cycles, built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The five suite types are emitted in all four node layouts, one row each. The graph data type is emitted only for regular and frozen, because a packed reference cannot store the person ring. On suite types, prepare builds the native value and the timed call writes every field (direct builder or arena serializer) and reads them back. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution). It does not support the graph data type.
-
-#### [cbor2](https://github.com/agronholm/cbor2)
-
-cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a binary JSON-like format for constrained devices and IETF protocols. cbor2 solves the Python side with a widely used encoder/decoder.
-
-#### [py3amf-amf0](https://github.com/zhangxaochen/Py3AMF)
-
-Py3AMF is a Python 3 fork of PyAMF. This row uses AMF0, the form RTMP still uses for commands. Every number is written as a double. The timed path calls pyamf.encode and pyamf.decode on a dict.
-
-#### [py3amf-amf3](https://github.com/zhangxaochen/Py3AMF)
-
-The same Py3AMF library, with the AMF3 encoding. AMF3 can store a small integer more tightly than AMF0, and it can share repeated strings and objects. The timed path is the same encode and decode calls.
-
-#### [cloudpickle](https://github.com/cloudpipe/cloudpickle)
-
-cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats.
-
-#### [dill](https://github.com/uqfoundation/dill)
-
-dill extends pickle further for scientific Python: graphs, lambdas, and interpreter state. The problem was that pickle and even cloudpickle still failed on objects researchers actually use. dill solves that with a broader, mostly pure-Python save path.
-
-#### [flatbuffers](https://github.com/google/flatbuffers)
-
-FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place. On the tensor data set the Builder runs every type: tensor, tensor_view, prompt, shard, and request. tensor_view reads the float vector in place.
-
-#### [fory](https://github.com/apache/fory)
-
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
-
-#### [gld-kiln](https://github.com/leo-gan/gld-kiln-python)
-
-gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
-
-#### [json](https://github.com/python/cpython/tree/main/Lib/json)
-
-The CPython `json` module is the language's standard JSON encoder/decoder (RFC 8259). It was added so Python programs had a stdlib way to speak the web's data format. The implementation is a C-accelerated codec over Python objects; this suite times that path as the baseline.
-
-#### [mashumaro](https://github.com/Fatal1ty/mashumaro)
-
-mashumaro was written to serialize Python dataclasses to JSON and other formats with code generation, not runtime reflection on every call. The problem was slow dataclass codecs. This row times the ORJSON encoder/decoder path.
-
-#### [msgpack](https://github.com/msgpack/msgpack-python)
-
-msgpack-python is the official MessagePack implementation for Python. MessagePack was created to be as compact as a binary format and as simple as JSON. The package exposes pack/unpack (and stream APIs) on Python objects.
-
-#### [msgspec](https://github.com/jcrist/msgspec)
-
-msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack).
-
-#### [msgspec-msgpack](https://github.com/jcrist/msgspec)
-
-msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack). This row times the MessagePack encoder/decoder on the same Struct types.
-
-#### [orc](https://arrow.apache.org/docs/python/orc.html)
-
-Apache ORC was created at Hive as a columnar stripe file with indexes and compression. This row times pyarrow.orc.write_table and read_table with no compression argument. pyarrow's default is uncompressed. Apache ORC's own C++ and Java writers default to Zlib; this binding does not. table_project passes columns=['f_float_0'] on read.
-
-#### [orc-uncompressed](https://arrow.apache.org/docs/python/orc.html)
-
-This is the same pyarrow ORC writer as orc, with compression='uncompressed'. On pyarrow 25 that codec is also the default, so the bytes match orc. The name stays so the allow-list matches languages whose ORC writer defaults to Zlib.
-
-#### [orjson](https://github.com/ijl/orjson)
-
-orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types.
-
-#### [parquet](https://arrow.apache.org/docs/python/parquet.html)
-
-Apache Parquet was created as a columnar file for scans that touch a few fields of many rows. The problem was row files that made every reader parse every column. This row times pyarrow.parquet.write_table and read_table with pyarrow's default page compression, Snappy. Encodings stay at the library default. table_project passes columns=['f_float_0'] on read.
-
-#### [parquet-uncompressed](https://arrow.apache.org/docs/python/parquet.html)
-
-This is the same pyarrow Parquet writer as parquet, with compression='NONE'. Encodings stay at the library default. The name is the override. Use this size when the question is layout rather than Snappy.
-
-#### [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py)
-
-pickle is CPython's native object serializer. It exists so Python processes can snapshot almost any object graph. That power is also the problem: loading untrusted pickle can run arbitrary code. This row times the stdlib C implementation.
-
-#### [protobuf](https://github.com/protocolbuffers/protobuf)
-
-Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
-
-#### [pydantic](https://github.com/pydantic/pydantic)
-
-Pydantic was created to validate and serialize Python data for APIs (later FastAPI). The problem was that ad-hoc dicts and hand-written validators were error-prone. Pydantic solves it with typed models and JSON dump/load (`model_dump_json` / TypeAdapter).
-
-#### [rapidjson](https://github.com/python-rapidjson/python-rapidjson)
-
-python-rapidjson wraps Tencent RapidJSON so CPython can use that C++ parser/generator. RapidJSON was written for speed with a SAX and DOM API. The Python binding exposes `dumps`/`loads` on dicts.
-
-#### [serpyco-rs](https://github.com/opengovsg/serpyco-rs)
-
-serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The problem was that dataclass-to-JSON in pure Python is slow. It solves that by compiling the dump/load path and using orjson on the wire.
-
-#### [yaml](https://github.com/yaml/pyyaml)
-
-PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load.
-
-#### [toon-format](https://github.com/toon-format/toon-python)
-
-toon-format is the official Python codec for TOON, a text encoding of the JSON data model made so prompts can carry the same values in fewer tokens. The timed path is encode and decode. The Size column is the UTF-8 byte length. A token count is a separate measure and is not timed.
-
-#### [toons](https://github.com/alesanfra/toons)
-
-toons is a Python TOON codec whose core is Rust. It speaks the same JSON data model through loads and dumps. The timed path is that text. The Size column is the UTF-8 byte length, not a token count.
-
-#### [ctoon](https://github.com/MohammadRaziei/ctoon)
-
-ctoon is a C99 TOON core. This row is the Python binding. The timed path is dumps and loads. The Size column is the UTF-8 byte length.
-
-
-### Call-path contract (fair timing)
-
-Timed methods measure **codec only** on library-native values:
-
-1. `prepare(name, type)` — encoders, schemas, buffers (untimed)
-2. `prepare_data(obj, …)` — dataclass → dict / Struct / Message / Model (untimed)
-3. `serialize_*` / `deserialize_*` — encode/decode only (timed)
-
-FlatBuffers is the exception where Builder construction *is* the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
-
-For `table`, `table_project`, `nested_table`, and `signal` only, rule 8 of [Timing honesty](../analysis/TIMING_HONESTY.md) overrides the usual “convert in prepare” rule. The pyarrow rows keep the Arrow schema as a module constant and select it in `prepare`. `serialize_bytes` builds the `pyarrow.Table` with `Table.from_pylist`, then calls `pyarrow.ipc.new_stream` (`arrow-ipc`), `pyarrow.parquet.write_table` (`parquet`, `parquet-uncompressed`), or `pyarrow.orc.write_table` (`orc`, `orc-uncompressed`). `table_project` deserialize does not materialize the other columns: IPC uses `IpcReadOptions.included_fields`, and Parquet and ORC pass `columns=["f_float_0"]`. Row peers (`orjson`, `protobuf`, `flatbuffers`, `avro`) still convert to their native value in `prepare_data`. Their timed `table_project` path is a full decode plus `project_f_float_0`. These rows have no compliance decoder. The columnar configs time bytes only.
-
-### Caveats
-
-#### Why avro size is great but ops/s lag protobuf
-
-- **Size is real:** schemaless Avro omits field names (schema out-of-band).
-- **Speed is mostly library/runtime:** timed path is only `schemaless_writer`/`reader` on a pre-built dict + cached `parse_schema`. fastavro (Cython) still loses to protobuf message `SerializeToString` by ~20–30× on nested types because of Python-dict field walks and null-unions.
-- **Measurement:** the benchmark runner no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
-
-#### Why flatbuffers and dill ops/s look low
-
-- **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
-- **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
-- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
-
-#### Why dagr ops/s look low
-
-- **Pure-Python runtime:** the Dagr Python target is a reflective runtime (typed `@dataclass` layer over a generic node model); there is no C extension. `serialize` is `<graph>.to_bytes(node)` on nodes built in `prepare_data`, `deserialize` is `<graph>.restore(bytes)` back to the generated dataclasses (eager — Python has no lazy reader). Peer-smoke medians: ~20–75× slower than `protobuf` (upb C core) on single messages and ~40–125× on n=100 cells (protobuf's packed `repeated double` is close to a memcpy in C). Size is within a few % of protobuf, and smaller on `strings`.
-- **Hot-path audit:** cProfile shows no per-call imports or schema loading. The generated module caches the schema's per-node facts once (lookup, field plans, elidability). Its dataclasses feed the serializer directly and are built directly by `restore`, with no intermediate node graph, so what remains is the per-field Python work.
-- **Layouts:** all four `dagr*` rows run the same reflective runtime, so their ops/s differ only by the per-layout work in the runtime, not by a different code path.
-- **Framing:** N>1 cells encode N independent Dagr buffers in a `u32 count` + `u32 len` frame (same frame as the Rust `dagr-packed` row, used by all four `dagr*` rows), so n=100 carries 404 bytes of framing that protobuf's `Batch*` wrapper does not.
-
-### Other caveats
-
-- `tracemalloc` under-counts C/Rust extension allocations.
-- Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
-
-Benchmark runner: [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). [Families](../analysis/families.md).
-
-## Numbers
-
-Measured numbers for this language live on the
-[Dashboard](../dashboard/index.html?lang=python&data=document@n=1&mode=bytes)
-(pre-filtered). Claim level is **L1** (one machine, one session) —
-see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+- **Live measurements (L1):** [Dashboard (Python)](../dashboard/index.html?lang=python&data=document@n=1&mode=bytes) · [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md)
+- **Specification compliance:** [Compliance (Python)](../dashboard/index.html#compliance)
+- **Source-level analyses:** [Python: `orjson` vs. stdlib `json`](../analysis/call-sites/python-orjson-vs-json.md) · [Python: `msgspec` JSON vs. MessagePack](../analysis/call-sites/python-msgspec-json-vs-msgpack.md) · [4.3 Python: `google.protobuf`](../theory/401/protobuf-python.md) · [4.8 Python: `msgspec-msgpack` vs. `orjson`](../theory/401/python-msgspec-vs-orjson.md)
+- **Build & run guide:** [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md) · [Timing contract](../analysis/TIMING_HONESTY.md)

@@ -1,18 +1,22 @@
-# Fortran: json-fortran vs rojff
+# Fortran: `json-fortran` vs. `rojff`
 
-## Why this article exists
+This note inspects two pure-Fortran JSON libraries—`json-fortran` and `rojff`—on the `document` ($n = 1$, `bytes` mode) payload. Because Fortran lacks compiler or runtime reflection, both adapters explicitly construct an in-memory JSON value tree and emit identical compact UTF-8 text.
 
-Fortran's JSON rows do not use compiler reflection. Each adapter walks the suite value and calls the library. **json-fortran** builds a `json_value` tree through `json_core`. **rojff** builds a `json_object_t` with unsafe constructors and prints it with `to_compact_string`. Both write named JSON. Both are pure Fortran.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=fortran&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json-fortran&ser=json-fortran&ser=rojff#compare) · [Fortran overview](../../fortran/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page opens those two timed call sites on the suite **document** payload (one shop order). Measured times belong on the Dashboard slice below. The call sites are the part you can read without a chart.
+## Structural and Wire-Size Summary
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=fortran&standard=json&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json-fortran&ser=json-fortran&ser=rojff#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Fortran overview](../../fortran/index.md)
+| Property | `json-fortran` | `rojff` |
+|---|---|---|
+| Standard | `json` (compact) | `json` (compact) |
+| Encoded size (`document`, $n = 1$) | **473 B** | **473 B** (identical) |
+| DOM representation | Mutable `json_value` tree via `json_core` | Immutable `json_object_t` built via `json_object_unsafe` |
+| Integer kind (`json_IK`) | `int64` (built with `-DINT64 -DREAL64`) | Default `int32`; values outside 32-bit emit as JSON numbers (`float64`, exact $< 2^{53}$) |
+| Post-decode fidelity | Checked field-by-field outside the timer | Checked field-by-field outside the timer |
 
-## The two timed call sites
+## Timed Call Sites
 
-**json-fortran** (`fortran/src/ser_json_fortran.f90`) times `json_core` serialize and deserialize. One record is the object itself. There is no extra copy of the text inside the clock beyond what `serialize` allocates.
+**`json-fortran`** (`fortran/src/ser_json_fortran.f90`) constructs the `json_value` tree through `json_core` and serializes with whitespace disabled and strict type checks enabled:
 
 ```fortran
 call core%initialize(no_whitespace=.true., strict_type_checking=.true.)
@@ -20,48 +24,19 @@ call write_record(core, root, items(1), stat)
 call core%serialize(root, text)
 ```
 
-Decode is `core%deserialize`, then `core%get` for each field. `strict_type_checking` is on so an integer get does not silently turn a JSON number into an int32.
+Decode invokes `core%deserialize` followed by typed `core%get` calls.
 
-**rojff** (`fortran/src/ser_rojff.f90`) times `to_compact_string` and `parse_json_from_string`. The object is built with `json_object_unsafe` and `json_member_unsafe`. The type's intrinsic constructor is a deleted stub that error-stops, so the adapter cannot call `json_object_t()`.
+**`rojff`** (`fortran/src/ser_rojff.f90`) builds a `json_object_t` via `json_object_unsafe` and `json_member_unsafe` (the type's default constructor is deleted) and prints/parses compact JSON:
 
 ```fortran
 root = record_object(items(1), stat)
 text = root%to_compact_string()
-```
-
-```fortran
+! decode:
 parsed = parse_json_from_string(text)
 ```
 
-Both rows then check the suite value field by field. That check is outside the deserialize timer. gzip and zstd sizes are outside both timers.
+## Mechanistic Analysis and Scope Limits
 
-## Integers wider than int32
-
-json-fortran is built with `-DINT64` and `-DREAL64`, so `json_IK` is int64. Epoch milliseconds stay JSON integers. rojff's integer kind is the compiler default, int32. A document `price_minor` is at most 100000, so both rows write it as a JSON integer.
-
-Telemetry `ts` and event `occurred_at` are about 1.7e12. json-fortran writes those as JSON integers. rojff writes them as JSON numbers and reads them back with `nint`. They are exact in float64 below 2^53.
-
-json-fortran:
-
-```fortran
-if (json_IK == int64 .or. (value >= -2147483648_int64 .and. value <= 2147483647_int64)) then
-  call core%add(node, key, int(value, json_IK))
-else
-  call core%add(node, key, real(value, json_RK))
-end if
-```
-
-rojff splits the same value with `json_integer_t` and `json_number_t`. A digit string with no decimal point is parsed as an integer. Writing the timestamp as digits would be a parse error, not a big integer.
-
-## One full run on this host
-
-Run `2026-10-10-133855`, gfortran 11.4, 100 repetitions, document, one record, bytes. The Dashboard default drops the warmup and IQR outliers. Both rows wrote **473** bytes. Median total time was **75.2 µs** for json-fortran and **99.2 µs** for rojff. Same JSON shape, a small gap. One machine, one run. json-fortran was built with `-DINT64`. This host's HDF5 and NetCDF Fortran modules are the Ubuntu 22.04 modules, which gfortran 13 cannot read, so this run used gfortran 11.4. CI installs gfortran 13 with that image's matching HDF5 package.
-
-## What to look at on the Dashboard
-
-1. **Size on document, one record.** Both write the same field names. A large gap means a different JSON shape, not a faster parser.
-2. **Encode time.** `json_core%serialize` versus `to_compact_string`.
-3. **Decode time.** `deserialize` plus `get` versus `parse_json_from_string` plus `%get`.
-4. **Telemetry, not this document slice,** if you want the integer-kind difference. json-fortran writes the timestamp as a JSON integer. rojff writes it as a JSON number. fortran-messagepack stores that same timestamp as a MessagePack integer.
-
-These times are Fortran on this runner. They are not a ranking against C or Python.
+1. **Identical wire payload (473 B):** On `document`, all integer values (`status`, `version`, `qty`, `price_minor`) fit within signed 32-bit integers, so both libraries serialize identical compact JSON. Any latency difference reflects DOM node allocation, string concatenation, and parser implementation inside each pure-Fortran library.
+2. **64-bit integer divergence on `telemetry` and `event`:** Epoch-millisecond timestamps ($\approx 1.7 \times 10^{12}$) exceed signed 32-bit range. Because `json-fortran` is compiled with `-DINT64`, it encodes timestamps as JSON integers; `rojff` formats them as JSON numbers (`json_number_t`) and recovers them via `nint` (exact up to $2^{53}$).
+3. **Pure-Fortran boundary:** Neither adapter calls a C JSON library. The cost of calling a C codec across Fortran's `iso_c_binding` boundary is measured separately in [Experiment 4: Fortran FFI tax](../../experiments/index.md).

@@ -28,7 +28,7 @@ standard, one data set, and one data type**, not to crown a single global winner
 | One-question tests (why we do not only use the big table) | **[Experiments](experiments/index.md)** |
 | Does this library match the RFC / spec section? | **[Dashboard · Compliance](dashboard/index.html#compliance)** (`#compliance/{lang}/{serializer}`) · [catalog notes](compliance/index.md) |
 | Course syllabus, formats, and trade-offs (101–401) | **[Learn](theory/index.md)** |
-| Per-language runtime primer, library lists, and caveats | **[Languages](c/index.md)** (sidebar: C, C#, C++, …) |
+| Per-language runtime matrix, library rosters, and caveats | **[Languages](languages/index.md)** |
 | Methodology, metrics, how to add a codec | **[Benchmarks](analysis/index.md)** |
 | The five data sets (suite, columnar, graph, array, tensor) | **[Data sets](analysis/test_data_configuration.md)** |
 | The words this site uses (data set, data type, runner) | **[Terminology](analysis/terminology.md)** |
