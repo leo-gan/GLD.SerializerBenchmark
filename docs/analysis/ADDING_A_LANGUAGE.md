@@ -1,265 +1,65 @@
-# Adding a language
-
-This page is a **checklist for implementers**. Follow it when you want a new programming language in the suite without changing the shared analysis core.
-
-Background (layout, timing model, contract): [Benchmark architecture](architecture.md).  
-I/O modes and run modes: [Modes](modes.md).  
-Data sets: [Data sets](test_data_configuration.md).  
-How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).  
-**Only adding one library to an existing language?** Use [Adding a serializer](ADDING_A_SERIALIZER.md) instead.
-
-Kotlin (2026) showed that `benchmark_config.yaml` is **not** the only registry. Analysis, the Dashboard, experiments, CI, and host scripts each keep a closed list of language ids. A runner that is missing from any of those lists will time correctly and still be invisible.
-
----
-
-## 0. Choose the id
-
-Use a short lowercase id (`php`, `kotlin`, `go`). Check substring collisions **before** you name the tree:
-
-| Collision | Rule |
-|-----------|------|
-| `c` vs `csharp` vs `cpp` | Longer path token first; `c-sharp/*` before `c/*` in detect scripts |
-| `java` vs `kotlin` | Match `/kotlin/` before `/java/`. A Kotlin Gradle tree contains `src/main/java` |
-| New id | If the id is a substring of an existing path token (or the reverse), add it to every path-inference list **before** the shorter token |
-
-Do not pick an id that is a prefix of another language’s folder (`java` inside `javascript` is already handled by matching `/javascript/` first).
-
----
-
-## 1. Register the language
-
-Edit **`config/benchmark_config.yaml`**. That file is read by `scripts/read-config.py`, `scripts/run-all-benchmarks.sh`, and `analyze-benchmarks`.
-
-```yaml
-languages:
-  php:  # short lowercase id
-    display_name: PHP
-    enabled: true
-    runner_dir: php
-    runner_script: scripts/run-benchmarks.sh
-    log_dir: logs/php
-    time_unit: nanoseconds
-    docs_dir: docs/php
-    serializers: [...]
-```
-
-If your config uses `paths.language_log_dirs`, add `php: logs/php`.
-
-### Closed-set consumers (required)
-
-`languages.*.enabled` is **not** enough. Update every list below or the language will disappear in one surface.
-
-| Consumer | What to add |
-|----------|-------------|
-| `analysis/.../cli.py` `_KNOWN_LANGS` / `_LANG_ALIASES` | id + aliases (`php`) |
-| `analysis/.../config_loader.py` fallback tuple | id |
-| `analysis/.../reports.py` fallback list | id |
-| `analysis/.../environment.py` `_infer_language` | path token, **ordered** (see §0) |
-| `dashboard/main.js` `LANGUAGE_CATALOG` | `{ id, label }` **alphabetical by label** |
-| `dashboard/experiments.js` `LANG_LABELS` | id → display name |
-| `dashboard/exp-charts.js` | same label map if present |
-| `dashboard/scripts/sync-data.py` `languages = [...]` | id (otherwise no `php_latest.json.gz`) |
-| `docs/javascripts/languages-nav.js` | id if that map is hardcoded |
-| `experiments/lib/experiment.config.schema.json` `languages.id.enum` | id |
-| `experiments/lib/experiment_config.py` `RUNNERS` | `php`: `php/scripts/run-benchmarks.sh` |
-| every `experiments/*/run.sh` `RUNNER` map | `[php]="$REPO/php/scripts/run-benchmarks.sh"` |
-| `.grok/skills/prepare-pr/scripts/detect-changed-langs.sh` | `php/*)` → `HIT[php]` |
-| `scripts/check-host-requirements.sh` | `KNOWN` + default `TARGETS` |
-| `scripts/install-host-requirements.sh` | same |
-| `.github/workflows/benchmark-ci.yml` | `changes` output, `dorny/paths-filter` `php/**`, `php-benchmark` job, analysis grep |
-| `mkdocs.yml` **Languages** nest | one-child Overview, **alphabetical by display name** |
-| root `README.md` Supported languages | link + serializer count, **alphabetical** |
-| `docs/index.md` Languages table | same order; bump the runner count in the lead sentence |
-| `docs/analysis/index.md` language table | same order |
-| `docs/analysis/architecture.md` runner-folder list | add `php/` |
-| `docs/analysis/ADDING_A_SERIALIZER.md` | build + serializer-dir rows |
-| `docs/analysis/ANALYSIS_METHODOLOGY.md` | `Language` column example list |
-
-Leave historical prose such as `experiments/PLAN.md` (“nine languages”) alone unless you are rewriting that history.
-
----
-
-## 2. Implement the benchmark runner contract
-
-Meet the [benchmark runner contract](architecture.md#harness-contract-summary) and [measurement model](architecture.md#measurement-model). In particular:
-
-| Requirement | Detail |
-|-------------|--------|
-| Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with columns from `csv_schema` |
-| `Language` column | Must match the language id (for example `php`) |
-| Time unit | **Nanoseconds** for all runners (including C#) |
-| Modes | `bytes` and `stream` when there is a real second path. If stream would be a label-only alias of bytes, emit **bytes only** |
-| Stream honesty | On every stream row set CSV `StreamMode` to `native` \| `text_on_stream` \| `adapted` ([modes](modes.md#three-levels-of-stream-honesty)); never claim `native` if either timed half is still bytes |
-| Warmup | Log repetition index 0; analysis excludes it from aggregates |
-| Prepare outside the loop | Schema compile, type registration, buffer pools, bind data-type encode function — not timed |
-| Timed section | Serialize and deserialize only |
-| Schedule | Default `block_shuffle`: after prepare, nest `mode → rep → shuffled serializers`; match golden vector in [architecture — schedule](architecture.md#timed-trial-schedule); emit optional `RunOrder` |
-| Output buffer | Runner-owned / pre-sized buffer reused across reps — see [timing rules](architecture.md#timing-methodology-suite-wide-issue-59) |
-| Optimization barriers | `black_box` / `DoNotOptimize` / `KeepAlive` (or equivalent) on timed I/O for native compilers |
-| Fidelity | Semantic round-trip check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
-| Optional sidecars | `*.configs.json` (environment plus optional dataset / serializer metadata); include `schedule` strategy/seed when set |
-| Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED`; document the PRNG and any magic constants |
-
-Use **official library APIs** on the timed path. Copy the newest language tree (Swift, then Kotlin) for the prepare / timed / fidelity shape; do not invent a second contract.
-
----
-
-## 3. Suite data types
-
-Implement `make_one` (or the language equivalent) and run-config **cells** for the suite set:
-
-`message` · `document` · `telemetry` · `strings` · `event`
-
-Columnar, graph, array, and tensor are separate data sets. Add one when the language has a library that can carry it. Shapes and batch rules are on [Data sets](test_data_configuration.md).
-
-- Expand cells with `./scripts/resolve_run_config.py`.
-- Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells.
-- Generators live under each language tree (for example `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`, `kotlin/.../model/v2`).
-- Wire schemas: `schemas/v2/` and `scripts/schemas/generate-all.sh`.
-- Catalog defaults: `schemas/data_catalog_v2.yaml`.
-
----
-
-## 4. Runner script
-
-`runner_dir/scripts/run-benchmarks.sh` must accept modes:
-
-`smoke` | `all-single` | `full` | `research`
-
-Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads `modes.<name>.repetitions`). Set `BENCHMARK_SEED` from `bench_random_seed`. Do **not** hard-code repetition counts.
-
-Honor `LOG_DIR` and `BENCHMARK_RUN_CONFIG` so lab experiments can point at `experiments/<id>/run.yaml` and write under `experiments/<id>/<lang>/logs/<lang>/`.
-
----
-
-## 5. First bench and suspicious results
-
-1. Smoke: non-empty CSV, positive times, required columns.
-2. `all-single` (or `full`) for this language only. Do **not** re-bench other languages to “complete” the matrix.
-3. Run **review-suspicious-results** on that CSV: sizes that do not match the format, fidelity failures, and call paths that are not the official API.
-4. Re-bench only this language after fixes.
-
----
-
-## 6. Documentation
-
-- `docs/<lang>/index.md` — ecosystem overview, a short **Runtime** section (what the platform is, what this suite targets, what changes the numbers, gotchas), registered inventory, caveats. Match the headings used by the existing language pages.
-- After benchmarks: run `analyze-benchmarks` and pack Dashboard data (step 8).
-- Register Overview under the **Languages** tab as a one-child nest in `mkdocs.yml`. The sidebar injects a Dashboard sibling.
-- Keep **Supported languages** lists alphabetical by display name (README, docs analysis index, MkDocs Languages).
-
----
-
-## 7. Experiments (required for the Experiments tab)
-
-The Dashboard Experiments tab shows a language only when that experiment’s `results.json` has `languages.<id>.status = ok`. A `languages:` block in `experiment.yaml` is not enough.
-
-For **each** `experiments/*/experiment.yaml` where this language can answer the question:
-
-1. Add a `languages:` block. Map libraries the way the nearest existing language in that experiment does. Use registry names from `config/benchmark_config.yaml`. The four experiments are `01-sensor-list-size`, `02-compression-size`, `03-memory-vs-stream`, and `04-fortran-ffi-tax`.
-2. Add `experiments/<id>/<lang>/run.sh` that execs `../run.sh <lang>`.
-3. Add the language to that experiment’s parent `run.sh` `RUNNER` map (and to `experiment_config.py` `RUNNERS` / the schema enum — once).
-4. **Time it:** `./experiments/<id>/run.sh <lang>`. Then `python3 dashboard/scripts/sync-experiments.py`.
-
-`summarize.py --language` already refreshes the combined `results.json`. A one-language run must **not** call `summarize.py --all`: leftover CSVs for other languages would rewrite their pages. `--all` keeps a language that has no CSV from that combined file.
-
-[prepare-pr](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/.grok/skills/prepare-pr/SKILL.md) step 7 runs `run-experiments-for-langs.sh` for every changed language. Do not skip it.
-
----
-
-## 8. Dashboard (required)
-
-After the language bench and experiment runs:
-
-```bash
-python3 dashboard/scripts/sync-data.py
-```
-
-That writes `dashboard/public/data/<lang>_latest.json.gz` (run id, configs, and errors), `stats_<lang>_latest.json.gz` (the only copy of the measurements), `available_runs.json`, and the experiment catalog (`sync-experiments.py`). Do not copy the stats into the language pack, and do not commit `baseline.json`. The regression baseline stays in `reports/`.
-
-**Do not** re-run sync only to “touch” files. gzip recompression churns other languages’ binaries even when the JSON is unchanged. If a full sync rewrote unrelated `*_latest.json.gz`, restore those binaries and keep only the new language plus `available_runs.json` / experiment payloads you actually updated.
-
-Verify:
-
-```bash
-python3 - <<'PY'
-import gzip, json
-from pathlib import Path
-root = Path("dashboard/public/data")
-d = json.loads(gzip.open(root / "php_latest.json.gz").read())
-print("run_id", d.get("run_id"), "language", d.get("language"))
-print("available", "php" in json.loads((root / "available_runs.json").read_text()))
-PY
-```
-
-Vite `outDir` is `docs/dashboard`, not `dist`. A local preview must be rebuilt (`npm run build` in `dashboard/`) or it will serve a stale copy.
-
----
-
-## 9. Courses 101–401
-
-| Course | Action |
-|--------|--------|
-| 101–301 | Language-agnostic. No roster change. |
-| **Call-site notes** | Add at least one timed-call-site note (`docs/analysis/call-sites/<lang>-*.md`) that opens two adapters on **document** $n = 1$. Link it from `docs/analysis/call-sites/index.md`, `mkdocs.yml`, and [TIMING_HONESTY](TIMING_HONESTY.md). |
-
-The first article usually compares the speed or size leader to the next interesting row (same bytes, two libraries; or same library, two encodings). Quote an L1 Dashboard slice; do not invent a ranking.
-
----
-
-## 10. Wire orchestration and CI
-
-Update `scripts/run-all-benchmarks.sh` if it does not already pick up `languages.*.enabled` automatically.
-
-Analysis auto-discovers timestamped CSVs under `logs/<lang>/`. You can also pass explicit paths:
-
-```bash
-analyze-benchmarks --logs php=logs/php
-```
-
-Host scripts: `scripts/check-host-requirements.sh`, `scripts/install-host-requirements.sh`.
-
-### GitHub Actions (required)
-
-Update **`.github/workflows/benchmark-ci.yml`**:
-
-1. `changes` job outputs and a `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/data_catalog_v2.yaml` / `schemas/v2/**/*.proto` if shared contracts apply — not `schemas/**`, which would also match `schemas/v2/README.md` and start every language job).
-2. A new `*-benchmark` job: install the toolchain, run `check-host-requirements.sh <id>`, run `./scripts/run-benchmarks.sh` (smoke by default).
-3. Analysis smoke step: assert the new id appears in `--enabled-langs` / `--lang-runners`.
-
-Without this, pull requests that only touch the new benchmark runner never run it in CI.
-
----
-
-## 11. Tests
-
-At minimum:
-
-- A smoke run produces a non-empty CSV.
-- Times are positive.
-- Required columns are present.
-- Language-local unit tests for data models and registry (if the tree has a test runner).
-
-Optional in prepare-pr: run those tests when the toolchain is present.
-
----
-
-## 12. Prepare the PR
-
-Stay off `master` / `main`. Run **prepare-pr**. That gate now:
-
-1. Tests
-2. Full bench **only** for changed languages
-3. Error-CSV regression
-4. Analysis artifacts
-5. **Every experiment that enables those languages**
-6. `sync-data.py` (Dashboard + experiment catalog)
-7. Commit, push, PR body
-
-Do not land a language whose Experiments tab is empty. That is how Kotlin shipped first and had to be filled in a follow-up.
-
----
-
-## Suggested order
-
-Do **1 → 0 (collisions) → 2–5 → 6 → 7 → 8 → 9 → 10–12**. Experiments and Dashboard last, after the benchmark runner is honest. prepare-pr is the last gate, not a substitute for the closed-set list.
+# Adding a Language
+
+This checklist specifies every repository surface required to onboard a new programming language benchmark runner without modifying the shared statistical core. To add a single codec to an existing language, see [Adding a serializer](ADDING_A_SERIALIZER.md). Reference specifications: [Architecture](architecture.md) · [Timing contract](TIMING_HONESTY.md) · [Data sets](test_data_configuration.md) · [I/O & run modes](modes.md).
+
+Experience onboarding later languages confirmed that `config/benchmark_config.yaml` is only one of several closed-set language registries; omitting any downstream consumer causes the runner to execute normally while remaining invisible in analysis, Dashboard, experiments, or CI.
+
+## 1. Choose a Collision-Safe Language ID
+
+Select a short lowercase identifier (`php`, `kotlin`, `zig`, `mojo`, `fortran`) and check for path-substring collisions before creating directories:
+
+| Existing Pattern | Path-Matching Rule |
+|---|---|
+| `c` vs. `c-sharp` vs. `cpp` | Match longer path tokens first (`c-sharp/` and `cpp/` before `c/`). |
+| `java` vs. `javascript` vs. `kotlin` | Match `/javascript/` and `/kotlin/` before `/java/` (Kotlin Gradle trees contain `src/main/java`). |
+| Any new id | If the new id is a prefix or substring of an existing token (or vice versa), insert the longer token first in every path-inference table. |
+
+## 2. Register Across All Closed-Set Consumers
+
+Add the language block under `languages:` in `config/benchmark_config.yaml` (`display_name`, `enabled`, `runner_dir`, `runner_script`, `log_dir`, `time_unit: nanoseconds`, `docs_dir`, `serializers`), and register the id in every consumer below:
+
+| Subsystem | Files & Symbols to Update |
+|---|---|
+| **Analysis package** | `analysis/.../cli.py` (`_KNOWN_LANGS`, `_LANG_ALIASES`), `config_loader.py` (fallback tuple), `reports.py` (fallback list), `environment.py` (`_infer_language`, collision-ordered) |
+| **Dashboard** | `dashboard/main.js` (`LANGUAGE_CATALOG`, alphabetical by label), `dashboard/experiments.js` (`LANG_LABELS`), `dashboard/exp-charts.js` (if present), `dashboard/scripts/sync-data.py` (`languages = [...]`) |
+| **Navigation & docs** | `docs/javascripts/languages-nav.js` (`DOCS_DIR_TO_LANG`), `mkdocs.yml` (`Languages` section, alphabetical), `docs/languages/index.md` (Runtime Matrix), `docs/index.md` (Languages table & lead count), `docs/analysis/architecture.md` (layout list), `docs/analysis/ADDING_A_SERIALIZER.md` (manifest table), root `README.md` |
+| **Experiments** | `experiments/lib/experiment.config.schema.json` (`languages.id.enum`), `experiments/lib/experiment_config.py` (`RUNNERS`), every `experiments/*/run.sh` (`RUNNER` map) |
+| **Host & CI scripts** | `scripts/check-host-requirements.sh` & `scripts/install-host-requirements.sh` (`KNOWN`, `TARGETS`), `scripts/run-all-benchmarks.sh` (verify auto-discovery), `.github/workflows/benchmark-ci.yml` (`changes` output, `dorny/paths-filter`, `<lang>-benchmark` job, analysis smoke assertion) |
+
+## 3. Implement the Benchmark Runner Contract
+
+Use an existing mature runner (such as `rust/`, `zig/`, or `kotlin/`) as a structural reference and satisfy every requirement in [Benchmark architecture](architecture.md#harness-contract-summary) and [Timing contract](TIMING_HONESTY.md):
+
+1. **CSV contract:** Write `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with timings in **nanoseconds**, runtime `SerializerVersion`, `DataTypeInstanceCount`, `TypeConfigHash`, and honest `StreamMode` (`native`, `text_on_stream`, `adapted`, or `bytes`-only if no distinct stream path exists).
+2. **Schedule & warmup:** Implement `block_shuffle` matching golden vector `[C, B, A]` ([Architecture](architecture.md#timed-trial-schedule)) and always log repetition index `0` (analysis drops warmup).
+3. **Suite data types:** Implement deterministic `make_one` generators for `message`, `document`, `telemetry`, `strings`, and `event` matching `schemas/data_catalog_v2.yaml` and wire IDLs under `schemas/v2/`. Expand run-config cells with `./scripts/resolve_run_config.py`. Add `columnar`, `graph`, `array`, or `tensor` support whenever the language has qualified libraries.
+4. **Runner wrapper script:** Implement `<dir>/scripts/run-benchmarks.sh` accepting `smoke | all-single | full | research`, sourcing `scripts/lib/config.sh` (`bench_mode_reps`, `bench_random_seed`), and honoring `LOG_DIR` and `BENCHMARK_RUN_CONFIG` for experiment runners.
+5. **Sidecar & fidelity:** Verify semantic round trips after deserialize (writing failures to `*.errors.csv`) and emit a `*.configs.json` sidecar containing `environment.machine_id`, runtime versions, and schedule metadata.
+
+## 4. Verify, Run Experiments, and Pack Dashboard Data
+
+1. **Smoke and full benchmark (changed language only):**
+   ```bash
+   ./scripts/check-host-requirements.sh <lang>
+   ./scripts/run-all-benchmarks.sh --mode smoke --lang <lang>
+   ./scripts/run-all-benchmarks.sh --mode full --lang <lang> --analyze
+   ```
+   Audit the resulting CSV for realistic wire sizes vs. same-standard peers, non-empty `SerializerVersion`, `FidelityScore = 1.0`, and zero unexpected `*.errors.csv` rows.
+2. **Compliance:** Execute `./scripts/run-compliance.sh --lang <lang>` and verify `logs/compliance/latest-<lang>.json` is produced.
+3. **Experiments:** For each applicable experiment (`01-sensor-list-size`, `02-compression-size`, `03-memory-vs-stream`, `04-fortran-ffi-tax`), add a `languages:` block to `experiments/<id>/experiment.yaml`, add `experiments/<id>/<lang>/run.sh`, run `./experiments/<id>/run.sh <lang>`, and verify `languages.<lang>.status = ok` in `results.json`. Do not run `summarize.py --all` after a single-language execution.
+4. **Pack Dashboard data:**
+   ```bash
+   python3 dashboard/scripts/sync-data.py
+   python3 dashboard/scripts/sync-experiments.py
+   ```
+   Commit only the new language's `dashboard/public/data/<lang>_latest.json.gz`, `stats_<lang>_latest.json.gz`, updated `available_runs.json`, and updated experiment payloads; restore any unrelated `.json.gz` files touched solely by gzip recompression. Note that Vite outputs the built Dashboard to `docs/dashboard/` (`npm run build` inside `dashboard/`).
+
+## 5. Author Language Documentation and Call-Site Note
+
+1. Create `docs/<lang>/index.md` following the uniform five-section specification (`Runtime & Environment`, `Registered Serializers`, `Measurement Caveats`, `Results & Further Reading`), populate `config/serializer-specifics.json`, and run `write-serializer-sources.py` + `apply-serializer-sources-to-docs.py`.
+2. Author at least one source-level call-site note under `docs/analysis/call-sites/<lang>-*.md` comparing two timed adapters on `document` ($n = 1$, `bytes`). Link it from `docs/analysis/call-sites/index.md`, `mkdocs.yml`, `docs/analysis/TIMING_HONESTY.md`, and `docs/<lang>/index.md`.
+3. Validate documentation and strict MkDocs build before opening a pull request:
+   ```bash
+   python3 scripts/check-docs.py
+   mkdocs build --strict
+   ```

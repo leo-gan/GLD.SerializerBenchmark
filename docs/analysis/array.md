@@ -1,62 +1,46 @@
-# Array
+# Array Data Set
 
-The **array** data set is `grid` and `grid_window`: one 512×512 float64 array, and an interior window of that array. These cells run from `array.yaml` and `array-smoke.yaml`. `all@` does not include them. N stays 1. Other languages do not receive these type ids from `default.yaml` or `smoke.yaml`.
+The **`array`** data set evaluates scientific array containers (`HDF5`, `NetCDF-4`, `ADIOS2`, and Arrow numeric buffers) on dense two-dimensional `float64` grids and interior hyperslab reads. Cells execute via `config/library/array.yaml` and `array-smoke.yaml` with $N = 1$ and `compression.mode: none`.
 
-## Why this set
+## Motivation and Inclusion Policy
 
-The array set is one dense grid of numbers, plus a read of a window inside that grid. It exists so scientific file formats are compared on the job they were built for, instead of on a small message. A message of a few fields does not show the cost of writing 262,144 floats (2 MiB), or of reading a rectangle out of them. Typical uses are images, maps, and simulation grids. The five suite records are not part of this set. N stays 1 because the array is one value. The batch size is not a row count here.
+Small scalar records fail to characterize scientific container formats designed for multi-megabyte contiguous arrays and partial-slice I/O. A language is included on `array` only when a maintained library writes the full array and reads the interior window through its own API; ad-hoc FFI shims written solely for this repository are excluded.
 
-A language is measured on this set when a maintained library writes that array and reads the window through its own API. A one-off call into the C library, written only for this benchmark, is not a member of the set.
-
-The generator contract and the other sets are on [Data sets](test_data_configuration.md).
+## Data Types
 
 ```text
 grid {
-  values: float64[y][x]    // nx = 512, ny = 512
+  values: float64[ny][nx]                  // nx = 512, ny = 512 (262,144 elements = 2 MiB raw)
 }
 grid_window {
-  same write
-  read: values[y0 : y0+wy][x0 : x0+wx]
-  // x0 = 128, y0 = 64, wx = 256, wy = 128
+  write:  identical full 512×512 array
+  read:   values[y0 : y0 + wy][x0 : x0 + wx]   // x0 = 128, y0 = 64, wx = 256, wy = 128
 }
 ```
 
-Coordinates are 0-based. Fill order is `y` outer, `x` inner, one unscaled unit-interval float64 per element. Fortran stores `values(nx, ny)`, and the file dimensions follow that array: `x` then `y`. Fidelity is bit-identical float64. The size column is the full file.
+Coordinates are 0-based with `y` outer and `x` inner (unit-interval `float64` values); Fortran follows column-major `values(nx, ny)` ordering. Fidelity requires **bit-identical `float64`** round trips, and `Size` records the full container size.
 
-## grid
+### `grid`
 
-A grid is one 512 by 512 array of 64-bit floats, written and read in full. That is 2 MiB of numbers before any file wrapper. It exists so array file formats are timed on a real grid rather than on a handful of fields. Typical uses are a raster, a map layer, or a simulation field.
+Writes and reads the complete $512 \times 512$ `float64` array (2 MiB of numeric data prior to container headers), isolating bulk scientific array serialization throughput and container overhead.
 
-## grid_window
+### `grid_window`
 
-Grid window writes the same array as `grid`, and the read returns only an interior rectangle. It exists because scientific formats can fetch a window without copying the whole array. A second type is required for that question. One score for `grid` would mix a full read and a window read. A full read followed by a slice on the host is not a `grid_window` result. Typical uses are viewing a region of a map or a tile of a larger field. `grid_window` writes the whole array and reads the window with a hyperslab, a NetCDF `start`/`count`, or an ADIOS selection.
+Writes the same $512 \times 512$ array as `grid`, then reads only the interior $256 \times 128$ rectangle using native partial selection (HDF5 hyperslab, NetCDF `start`/`count`, or ADIOS selection). A full read followed by a host-side slice is invalid except where explicitly caveated (`gld-hdf5`, `gld-arrow`).
 
-## Measured on this set
+## Language Coverage
 
-NetCDF-4 files are HDF5 files. A second NetCDF row in a language that already times HDF5 would measure the same container again, so new languages on this set are HDF5 only. Fortran and Python keep the NetCDF and ADIOS2 rows that were already published. ADIOS2’s own libraries are C++, C, Fortran, Python, and Matlab. No further ADIOS2 row is added: the C and C++ engines are the same library Fortran and Python already call, and the other languages have no library for it.
+Because NetCDF-4 uses HDF5 as its storage container, newly added languages register HDF5 only (Fortran and Python retain their published NetCDF-4 and ADIOS2 rows; ADIOS2's C/C++ engines underlie the existing Python and Fortran bindings).
 
-| Language | HDF5 | NetCDF | ADIOS2 |
-|----------|------|--------|--------|
-| C | `hdf5` | | |
-| C++ | `highfive` | | |
-| C# | `PureHDF` | | |
-| Fortran | `hdf5-fortran` | `netcdf-fortran` | `adios2` |
-| JavaScript | `h5wasm` | | |
-| Python | `h5py` | `netCDF4` | `adios2` |
-| Rust | `hdf5-metno` | | |
-| Mojo | `gld-hdf5` | | |
+| Language | HDF5 | NetCDF-4 | ADIOS2 | Notes |
+|---|---|---|---|---|
+| **C** | `hdf5` | — | — | HDF5 core driver (in-memory file image) |
+| **C#** | `PureHDF` | — | — | Pure-managed .NET writer (no `libhdf5`) |
+| **C++** | `highfive` | — | — | C++ HighFive wrapper over `libhdf5` |
+| **Fortran** | `hdf5-fortran` | `netcdf-fortran` | `adios2` | Also times `gld-arrow` (Arrow C Data Interface) |
+| **JavaScript** | `h5wasm` | — | — | WebAssembly `libhdf5` on Emscripten memory FS |
+| **Mojo** | `gld-hdf5` | — | — | Pure-Mojo writer; `grid_window` slices after full read (`gld-netcdf`/`gld-adios2` stay on `suite`) |
+| **Python** | `h5py` | `netCDF4` | `adios2` | `h5py` uses core driver; excludes `xarray`/`PyTables`/`h5netcdf` duplicates |
+| **Rust** | `hdf5-metno` | — | — | Rust bindings to `libhdf5` |
 
-`hdf5` uses the HDF5 core driver and returns the file image. `highfive` and `hdf5-metno` write a file and return those bytes. `h5wasm` uses the WebAssembly memory filesystem. `PureHDF` is a managed writer, not libhdf5, and the bytes path returns the file bytes, so the size is the file length. `gld-hdf5` is a from-scratch Mojo writer, not libhdf5. It writes one contiguous float64 dataset. `grid_window` copies the interior window after `read_hdf5` returns the whole file, because that library has no hyperslab. The other window reads are a hyperslab, a slice, or a selection. These rows do not time the five suite types. Fortran also times `gld-arrow` on the same grid: Arrow C Data Interface numeric buffers, not an HDF5 file. Mojo `gld-netcdf` and `gld-adios2` are not array rows.
-
-## Not measured on this set
-
-| Language | Why there is no row |
-|----------|---------------------|
-| Go | `gonum.org/v1/hdf5` is archived. There is no maintained writer for this set. |
-| Java | The HDF Group Java library is a native installer, not a Maven dependency this runner can build. JHDF is read-focused. |
-| Kotlin | A Kotlin row would call the Java libraries. Those are not on this set. |
-| PHP | No maintained writer. |
-| Swift | No maintained writer. A C import would time libhdf5 plus an FFI crossing this suite did not write a library for. |
-| Zig | No maintained writer. The same FFI crossing applies. |
-
-PyTables, xarray, h5netcdf, and SciPy’s classic NetCDF reader are not extra Python rows. xarray is not a format. The others sit on HDF5 or on NetCDF-3, and Python already times `h5py` and `netCDF4`.
+**Languages not measured on `array`:** Go (`gonum.org/v1/hdf5` archived), Java/Kotlin (official HDF Group Java bindings require a native installer rather than Maven; JHDF is read-focused), PHP, Swift, and Zig (no maintained native HDF5 writers without custom C FFI shims).

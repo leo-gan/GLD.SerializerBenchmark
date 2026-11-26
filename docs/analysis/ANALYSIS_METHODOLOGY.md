@@ -1,384 +1,125 @@
-# Analysis methodology
+# Analysis Methodology
 
-This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, and Dashboard numbers.
+This document specifies how the `analyze-benchmarks` package transforms raw per-language CSV logs into cleaned distributions, uncertainty intervals, effect sizes, regression checks, and multi-policy exports for the [Dashboard](../dashboard/index.html). Column definitions live in [Metrics catalog](METRICS.md); runner collection rules live in [Benchmark architecture](architecture.md); claim-level boundaries live in [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
-If architecture is the lab setup, methodology is the **lab notebook**: what we keep, what we drop, and how we summarize.
+Statistical defaults are configured under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Analysis and Dashboard packing (`dashboard/scripts/sync-data.py`) execute locally; CI does not recompute published benchmark numbers.
 
-**Metric names and importance tiers:** [Metrics catalog](METRICS.md).
+## Pipeline Overview
 
-| If you need… | Go here |
-|--------------|---------|
-| What the benchmark runner times / suite layout | [Benchmark architecture](architecture.md) |
-| I/O modes and run modes | [Modes](modes.md) |
-| Data-type meanings | [Data sets](test_data_configuration.md) |
-| Paradigms | [Families](families.md) |
-| How to regenerate published numbers | [Dashboard](../dashboard/index.html) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
+Raw CSV records (`logs/<lang>/YYYY-MM-DD-HHMMSS.csv`; column schema in [Metrics catalog](METRICS.md)) are processed per raw measurement group `(Language, SerializerName, TestDataName, TypeConfigHash, DataTypeInstanceCount, StringOrStream)`. After aggregation, analysis stamps `Standard` and `DataSet` and folds optional I/O levels into the published group identity ([I/O & run modes](modes.md)).
 
-Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.
+One function (`prepare_analysis_records` in `analysis/src/benchmark_analysis/stats.py`) performs unit normalization, warmup exclusion, and outlier filtering before any summary table or plot is computed, guaranteeing identical sample sets across all outputs.
 
----
+| Stage | Operation | Purpose |
+|---|---|---|
+| 1. Unit normalization | Scale raw timings via `csv_schema.time_unit` (all runners emit nanoseconds). | Eliminates unit heuristics; latency tables display µs ($\text{ns} / 1000$). |
+| 2. Warmup exclusion | Drop `RepetitionIndex == 0` when `statistics.exclude_warmup` is true. | Removes cold-start JIT compilation, first-touch allocation, and cold-cache bias[^1] without modifying raw logs. |
+| 3. Outlier policy | Apply paired Tukey IQR fences or Winsorization across four fixed Dashboard policies. | Stabilizes mean estimates against transient OS/GC stalls while preserving raw `all` distributions. |
+| 4. Descriptive statistics | Compute median, mean, SD, MAD, CV, quantiles (P5–P99), median payload size, and throughput. | Summarizes central tendency, scale, and upper tail behavior. |
+| 5. Bootstrap inference | Compute 95% percentile bootstrap CI on mean total latency (2,000 resamples). | Quantifies within-session sampling uncertainty without normality assumptions.[^2] |
+| 6. Group effect sizes | Compute Cliff's $\delta$, Hedges' $g$, and Holm-adjusted Mann–Whitney $U$ vs. group fastest. | Provides exploratory magnitude and rank-separation diagnostics within one cell. |
+| 7. Pairwise A/B & gate | Optional `--compare-a` / `--compare-b` hypothesis test or `--check-regression` gate. | Supports confirmatory version comparisons and regression detection. |
 
-## Inputs
+## Warmup and Outlier Policies
 
-| Source | Role |
-|--------|------|
-| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language benchmark runner output (gitignored) |
-| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`, `fortran`, …) |
-| `csv_schema` in master config | Required and optional columns |
+Benchmark runners log every successful repetition, including `RepetitionIndex = 0` (`reproducibility.warmup_repetitions = 1`). Analysis records provenance counts `runs_raw`, `warmup_skipped`, `outliers_removed`, and final `runs` for every group.
 
-**Core columns** you will see often:
+### Paired Tukey IQR Filtering
 
-| Column | Everyday meaning |
-|--------|------------------|
-| `SerializerName` | Which library |
-| `SerializerVersion` | Installed package or crate version (right after the name) |
-| `TestDataName` | Which sample data type (`message`, `document`, …) |
-| `StringOrStream` | API mode (`bytes` / `stream`, or legacy aliases) |
-| `RepetitionIndex` | Which trial in the loop (`0` is warmup for analysis) |
-| `TimeSer`, `TimeDeser`, `TimeSerAndDeser` | Times in **nanoseconds** |
-| `Size` | Encoded size in **bytes** |
-| Ops/sec fields | Throughput estimates (analysis may recompute from means) |
-
-Optional columns include peak memory, fidelity score, and call-path metadata.
-
----
-
-## The pipeline
-
-Processing is **per group**. A group is one combination of:
-
-```text
-(Language, SerializerName, TestDataName, StringOrStream)
-```
-
-That key is how trials are cleaned. It includes I/O mode. It does not include the standard.
-
-The published row uses a different key. Analysis stamps **Standard** and **Data set** onto each group after the trials are summarized. The published identity is language, serializer, standard, data set, data type, and batch size. I/O mode is not part of that key. The field list is in [Metrics](METRICS.md).
-
-Effect sizes on this page compare serializers inside one language, one data type, one batch size, and one I/O mode. That peer set does not slice by standard. A fastest-in-group effect can name a library on a different standard. The implementation comparison to quote is the Dashboard cell: one language, one standard, one data set, and one data type.
-
-One function, `prepare_analysis_records` in `stats.py`, performs steps 1–3. **Tables and charts both consume that output**, so they cannot disagree about which trials were kept or which units were used.
-
-| Step | What happens | Why |
-|------|--------------|-----|
-| 1 | Load CSV; normalize time units from config | Every language reports nanoseconds; analysis applies one consistent scale |
-| 2 | Drop warmup (`RepetitionIndex == 0` when enabled) | Removes cold-start spikes (JIT, first allocations, cold caches) |
-| 3 | Optional **all-or-nothing** outlier filter (default Tukey IQR) | Softens rare stalls (GC, OS noise) without rewriting raw logs |
-| 4 | Descriptive statistics | Means, medians, spread, percentiles |
-| 5 | Bootstrap confidence interval on the mean | How stable is the average? |
-| 6 | Effect sizes vs the fastest serializer in the group | Is the gap large, or just noise? |
-| 7 | Optional version A/B tests | Did *this library* change between two runs? |
-
-### Time units
-
-All benchmark runners write times in **nanoseconds** (including C#). Analysis reads the scale once from master config (`csv_schema.time_unit`, optionally overridden per language) and uses the same factor everywhere. It does **not** guess units from medians or language names.
-
-Published **latency** tables use **microseconds** (µs = ns ÷ 1000). Latency charts also use µs and usually show the **top five** serializers by mean total time per data type so plots stay readable.
-
-### Warmup exclusion
-
-**Benchmark runners write full raw CSVs.** Every successful timed repetition is logged, including index `0`. Runners must not drop warmup, apply IQR, or otherwise “clean” data before writing.
-
-**Analysis only** applies the policy: if `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped inside `prepare_analysis_records` before outlier filtering and summaries.
-
-Useful provenance fields:
-
-| Field | Meaning |
-|-------|---------|
-| `warmup_skipped` | How many warmup rows were dropped |
-| `runs_raw` | Sample size before warmup drop (still reflects the full log) |
-| `runs` | Final sample size after warmup and outlier steps |
-
-Configured warmup length: `reproducibility.warmup_repetitions` = **1**.
-
-### Outlier filtering
-
-Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences") [interquartile range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range "Interquartile range — spread of the middle 50% of values")** fences (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
-
-**Idea in plain language:** look at the middle half of the data (from the 25th percentile $Q_1$ to the 75th percentile $Q_3$, with $\text{IQR} = Q_3 - Q_1$). Observations outside the Tukey fences
+The canonical policy (`iqr_1.5`) applies Tukey fences[^3] with $k = 1.5$ independently to the serialize, deserialize, and total latency series of each group (when sample count $\ge$ `min_samples_for_outlier_filter`, default 10):
 
 $$
-[Q_1 - k \cdot \text{IQR},\;\; Q_3 + k \cdot \text{IQR}]
+\left[ Q_1 - k \cdot \text{IQR},\;\; Q_3 + k \cdot \text{IQR} \right], \qquad \text{IQR} = Q_3 - Q_1
 $$
 
-are treated as [outliers](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data"). If *any* of the three times (serialize, deserialize, total) falls outside its fence, the **whole repetition** is dropped so the three series stay paired.
+Filtering is **all-or-nothing per repetition**: a repetition is retained if and only if all three measurements (`TimeSer`, `TimeDeser`, `TimeSerAndDeser`) fall within their respective fences, preserving exact pairing across series. Edge cases are guarded: a metric with $\text{IQR} = 0$ removes no rows, and if filtering would empty a group, the unfiltered post-warmup series is preserved.
 
-| Rule | Default behavior |
-|------|------------------|
-| Fences | $[Q_1 - k \cdot \text{IQR},\ Q_3 + k \cdot \text{IQR}]$ computed **separately** on serialize, deserialize, and total |
-| Keep rule | A row is kept only if it sits **inside all three** fences |
-| Group size | Apply only if there are at least `min_samples_for_outlier_filter` samples (10) |
-| IQR = 0 for a metric | That metric does not remove anyone |
-| Would drop the entire group | Keep the original series |
-| Method `none` | Skip filtering |
-| Method `winsorize` | [Winsorize](https://en.wikipedia.org/wiki/Winsorizing "Winsorizing — replace extreme values with less extreme ones"): clip each series at the 5th and 95th percentiles; never drop rows |
+### Multi-Policy Dashboard Export
 
-Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and [confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter") too.
+`reports/stats_<lang>_latest.json` (schema 2.2, gzip-packed to `dashboard/public/data/stats_<lang>_latest.json.gz`) precomputes every group under four policies exposed by the Dashboard **Samples** selector:
 
-### Dashboard filter policies (multi-aggregation export)
+| Policy ID | Cleaning Rule |
+|---|---|
+| `all` | Post-warmup only; no repetitions dropped or clipped. |
+| `iqr_1.5` | Paired Tukey fences with $k = 1.5$ (canonical Dashboard default). |
+| `iqr_3` | Paired Tukey fences with $k = 3.0$ (retains moderate tail spikes). |
+| `winsorize_5_95` | Clips each series independently to $[P_5, P_{95}]$ while preserving sample count $n$ (`values_clipped` records modified entries). |
 
-Machine-readable `stats_<lang>_latest.json` (schema **2.2**, published as **`.json.gz`**) recomputes every group under **four fixed sample policies** so the dashboard can research outliers without re-running filters in the browser:
+Pareto non-dominance is recomputed dynamically by the Dashboard for the active policy and filter slice.
 
-| Policy id | Behavior |
-|-----------|----------|
-| `all` | Post-warmup only; no drop, no winsorize |
-| `iqr_1.5` | Paired IQR with **k = 1.5** (canonical / default rankings) |
-| `iqr_3` | Paired IQR with **k = 3** (looser fences) |
-| `winsorize_5_95` | Clip each series at the 5th/95th percentile; **n** unchanged (`values_clipped` counts affected rows) |
+## Estimators, Throughput, and Uncertainty
 
-Export fields (compact):
+For a cleaned latency sample $\{t_1, \dots, t_n\}$ (nanoseconds) with sample mean $\bar{t}$, median $\tilde{t}$, and sample standard deviation $s$:
 
-- `default_filter_policy` — usually `iqr_1.5`
-- `filter_policies` — catalog once (label, description, method, k, …)
-- `groups[]` — identity fields once + `variants.<policy>` metrics (no duplicated flat lists)
-- per-variant `filter` — counts / fences / method only (labels live in the catalog)
-- Pareto is **not** precomputed; the dashboard recalculates from the active policy metrics
+$$
+\text{ops/s} = \frac{10^9}{\bar{t}_{\text{ns}}}, \qquad
+\text{MAD} = \operatorname{median}_i \bigl(|t_i - \tilde{t}|\bigr), \qquad
+\text{CV} = \frac{s}{\bar{t}}
+$$
 
-Published dashboard path: `dashboard/public/data/stats_<lang>_latest.json.gz` (gzip of the same JSON).
+By Jensen's inequality for the convex function $f(t) = 1/t$ on $t > 0$, $\text{ops/s} = 10^9 / \bar{t} \le \frac{1}{n}\sum_{i=1}^n (10^9 / t_i)$, and mean-derived throughput can rank two close codecs differently from the default median-latency rank (`total_median_ns`).
 
-Single-policy CLI markdown reports (`reports/`) use the configured `statistics.outlier_method` path (default IQR 1.5). The multi-policy pack feeds the interactive Dashboard **Samples** control.
+**Bootstrap confidence interval:** When $n \ge$ `min_samples_for_inference` (default 5), analysis computes a 95% percentile bootstrap CI (`total_ci_low_ns`, `total_ci_high_ns`) over $B = 2000$ resamples[^2] using a deterministic per-group seed derived from `(base_seed, language, serializer, test_data, mode, series_prefix)`. For $n < 5$, the interval collapses to the point estimate.
 
-### Descriptive statistics (per group)
+## Effect Sizes and Exploratory Multi-Way Ranks {#exploratory-ranks}
 
-| Kind | What we report |
-|------|----------------|
-| Central tendency | [Mean](https://en.wikipedia.org/wiki/Arithmetic_mean "Arithmetic mean — average") and [median](https://en.wikipedia.org/wiki/Median "Median — middle value when sorted") of serialize / deserialize / total times |
-| Dispersion | [Standard deviation](https://en.wikipedia.org/wiki/Standard_deviation "Standard deviation — typical distance from the mean"), [median absolute deviation (MAD)](https://en.wikipedia.org/wiki/Median_absolute_deviation "Median absolute deviation — robust scale measure"), [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation "Coefficient of variation — std / mean"), min/max, percentiles (default 5, 25, 50, 75, 95, 99) |
-| Size | Median serialized `Size` (bytes) |
-| Throughput | Operations per second from mean total time |
-| Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
+Within each peer group `(language × data type × type-config × batch N × I/O mode)`, every serializer is compared against the group's fastest reference (selected by minimum `total_median_ns`, falling back to mean). Note that this peer group spans standards; for controlled implementation comparisons, slice by **standard** on the Dashboard.
 
-Published numbers live on the [Dashboard](../dashboard/index.html).
+| Statistic | Mathematical Definition | Role |
+|---|---|---|
+| **Cliff's $\delta$**[^4] | $\delta = \dfrac{\#(x_i > y_j) - \#(x_i < y_j)}{n_1 n_2} \in [-1, 1]$ | Nonparametric stochastic dominance (no normality assumption); magnitude thresholds $\lvert \delta \rvert < 0.147$ (negligible), $< 0.33$ (small), $< 0.474$ (medium), $\ge 0.474$ (large).[^5] For $n_1 n_2 > 2 \times 10^6$, estimated via a seeded sample of $10^5$ pairs. |
+| **Hedges' $g$**[^6] | $g = J(n_1 + n_2 - 2)\,\dfrac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}, \quad J(\nu) \approx 1 - \dfrac{3}{4\nu - 1}$ | Small-sample bias-corrected standardized mean difference. |
+| **Mann–Whitney $U$ + Holm–Bonferroni**[^7][^8] | $p_{(i)}^{\text{Holm}} = \min\!\Bigl(1,\; \max_{j \le i}\,(m - j + 1)\,p_{(j)}\Bigr)$ | Two-sample rank test (SciPy tie-aware implementation, with tie- and continuity-corrected NumPy fallback) adjusted step-down across the $m$ peers **within one group only** ($\alpha = 0.05$). |
 
-### Bootstrap confidence interval on the mean
-
-When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics) — resampling to estimate uncertainty")** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter"), seed 42) and reports:
-
-- `total_ci_low_ns`
-- `total_ci_high_ns`
-
-**Plain language:** “If we repeated this experiment many times, the true mean would usually fall between these two numbers.”
-
-Produced only when the post-filter sample size is at least `min_samples_for_inference` (default 5); otherwise the interval collapses to the point estimate.
-
-### Effect sizes versus the fastest in the group
-
-When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant") are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The standard is not part of that peer set. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions") story of the suite.
-
-| Method | Definition and role |
-|--------|---------------------|
-| **[Cliff’s $\delta$ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")** | Nonparametric dominance: $\delta = \frac{\#(x_i > y_j) - \#(x_i < y_j)}{n_1 n_2} \in [-1, 1]$; measures how often this library is slower than the reference without normality assumptions |
-| **[Hedges’ $g$](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")** | Bias-corrected standardized mean difference: $g = J(n_1 + n_2 - 2)\,\frac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}$, where $J(\nu) \approx 1 - \frac{3}{4\nu - 1}$ |
-| **[Mann–Whitney $U$](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test") + [Holm–Bonferroni](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")** | Two-sample rank test with step-down adjustment $p_{(i)}^{\text{Holm}} = \min\!\big(1,\; \max_{j \le i}\,(m - j + 1)\,p_{(j)}\big)$ across the $m$ peers **in that one group only** |
-
-Use these for **within-language** interpretation. Do not treat them as cross-runtime rankings. Multi-way tables treat ranks as **exploratory** — see [Exploratory ranks](#exploratory-ranks).
-
-### Exploratory ranks {#exploratory-ranks}
-
-#### What problem are we solving?
-
-A Dashboard slice often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives"). If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
-
-#### What we do
-
-1. **Show effect sizes** ([Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta") label, and in machine-readable JSON also [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g")) so you can see *how large* a gap looks.
-2. **Attach [Mann–Whitney](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test") [p-values](https://en.wikipedia.org/wiki/P-value "P-value")** vs the group’s fastest codec when samples allow.
-3. **[Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")-adjust those p-values inside the group** `(language × data type × type-config × batch N × I/O mode)` only — not across every cell on the page.
-4. **Label multi-way Dashboard ranks as exploratory.** Prefer **pairwise A/B** (`--compare-a` / `--compare-b`) when you need a confirmatory “did *this* change beat *that* baseline?” answer.
-
-#### Plain-language takeaway
-
-> Scores (effect sizes) help you browse. Adjusted p-values inside one group reduce “many quizzes” mistakes. They are **not** a global [family-wise](https://en.wikipedia.org/wiki/Family-wise_error_rate "Family-wise error rate — chance of any false positive in a family of tests") guarantee for the whole Dashboard roster, and default published ranks are still **L1 single-session** evidence ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
-
-Config knobs live under `statistics.effect_sizes.vs_fastest` (defaults in code if YAML omits them): `reference: median`, `test: mann_whitney_u`, `multiple_comparison: holm`.
-
-### Version A/B (same language, two runs)
-
-Library authors often care about *their* change, not a global leaderboard:
+**Exploratory status:** Selecting the fastest codec post-hoc and testing all remaining peers inflates family-wise Type I error across a multi-cell Dashboard. Holm adjustment controls error only inside a single group, not across the entire site. Multi-way Dashboard ranks are therefore labeled **exploratory** (`effect_vs_fastest_exploratory = true`). Confirmatory version comparisons require a dedicated pairwise A/B run:
 
 ```bash
-./scripts/run-all-benchmarks.sh -m full
-analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
-# or:
 analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
-This writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, [Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta"), [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g"), **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test")**, and **[Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")**-adjusted p-values when hypothesis tests are enabled (`alpha` 0.05).
+which writes `reports/VERSION_COMPARE.md` containing percent change, Cliff's $\delta$, Hedges' $g$, and Holm-adjusted Mann–Whitney $U$ p-values.
 
-Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save a baseline with `--save-baseline`. Details: [Regression gate](#regression-gate).
+## Regression Gate {#regression-gate}
 
----
-
-## Regression gate {#regression-gate}
-
-### What problem are we solving?
-
-Imagine you measured how long a library takes to serialize data **yesterday** (the **baseline**), and you measure again **today** (the **current** run).
-
-- Some days the computer is a bit busier (other programs, heat, random noise).
-- So today’s *average* can look 12% slower even when the library did **not** really get worse.
-
-If our quality gate shouted “REGRESSION!” every time the average wiggled, we would get **false alarms** and stop trusting the gate.
-
-### What went wrong with the old rule (OR)
-
-The old gate used two checks and failed if **either** was true (logical **OR**):
-
-1. **Practical check:** “Is the point estimate more than 10% slower than baseline?”
-2. **Statistical check:** “Is even the *optimistic* end of our confidence interval still more than 10% slower?”
-
-With **OR**, a noisy average alone could fail the gate even when the confidence interval still said “this might still be about the same.” That is like failing a student for one shaky quiz question while the rest of the exam looks fine.
-
-### What we do now (AND)
-
-By default the gate uses logical **AND** with threshold $\tau = \text{threshold\_percent} / 100$ (default $\tau = 0.10$):
+Automated regression checks compare a new run against a saved baseline (`reports/baseline.json`, schema v2, keyed by `(language, serializer, data_type, N, type_config_hash, io_mode)`). To prevent false alarms from single-run noise under an `OR` trigger, the default gate requires **both** a practical slowdown exceeding $\tau = \text{threshold\_percent} / 100$ (default $\tau = 0.10$) **and** statistical support from the lower bound of the bootstrap CI (`regression.combine: and`):
 
 $$
-\text{Regression} \iff \Big(\hat{t}_{\text{curr}} > t_{\text{base}}(1 + \tau)\Big) \;\land\; \Big(\text{CI}_{\text{low}}(\bar{t}_{\text{curr}}) > t_{\text{base}}(1 + \tau)\Big)
+\text{Regression} \iff \Bigl(\hat{t}_{\text{curr}} > t_{\text{base}}(1 + \tau)\Bigr) \;\land\; \Bigl(\text{CI}_{\text{low}}(\bar{t}_{\text{curr}}) > t_{\text{base}}(1 + \tau)\Bigr)
 $$
 
-> Fail only if the run looks **practically** slower **and** the data still look slower even under the lower bound of the bootstrap confidence interval.
+| Practical Check ($\hat{t}_{\text{curr}} > t_{\text{base}}(1+\tau)$) | Statistical Check ($\text{CI}_{\text{low}} > t_{\text{base}}(1+\tau)$) | Classification | Exit Code |
+|---|---|---|---|
+| Pass (within $\tau$) | — | `equivalent` | 0 |
+| Exceeds $\tau$ | Below threshold | `unclear` (investigate) | 0 |
+| Exceeds $\tau$ | Exceeds $\tau$ | `regression` | 1 (blocks `--save-baseline`) |
 
-| Check | Plain meaning |
-|-------|----------------|
-| **Practical** | Median (preferred) or mean total time is more than `threshold_percent` (default 10%) worse than baseline |
-| **Statistical** | The lower end of the bootstrap CI on the **mean** is still above `baseline × (1 + threshold/100)` |
-
-So:
-
-- **Practical yes + statistical no** → classified **unclear** (investigate; do not hard-fail by default).
-- **Both yes** → **regression** (exit code 1; baseline is not overwritten).
-- **Within threshold** (and Cliff’s δ negligible when samples exist) → **equivalent**.
-
-You can restore the old noisier behavior with `regression.combine: or` or `--regression-combine or`.
-
-### Cliff’s δ (optional, when we saved samples)
-
-If the baseline file stores a sample of old timings, we also compute **[Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — nonparametric effect size")** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
-
-### Baseline file (what we store)
-
-`reports/baseline.json` (schema v2) stores, per group:
-
-- median and mean total time, CI, ops/s, size, run count  
-- optional capped list of sample times (for δ)  
-- keys that include **language, serializer, data type, batch N, type-config hash, I/O mode** so N=1 and N=100 do not collide  
-
-Legacy flat baselines (older keys without N/hash) are still **read** for one migration cycle; re-save with `--save-baseline` after a clean run.
-
-### Commands
+When the baseline retains capped raw samples, Cliff's $\delta$ is also reported as a diagnostic (`require_for_fail: false`).
 
 ```bash
-analyze-benchmarks --check-regression
 analyze-benchmarks --check-regression --regression-threshold 5 --regression-combine and
-analyze-benchmarks --save-baseline   # only if check passes (or check not requested)
+analyze-benchmarks --save-baseline   # writes baseline only when regression check passes
 ```
 
-A machine-readable summary is written to `reports/regression_report.json` when you check.
+## Multi-Session Aggregation {#multi-session-claims}
 
-Config lives under `regression:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml).
-
----
-
-## Multi-session and multi-machine claims {#multi-session-claims}
-
-Full claim ladder: [Claims and replication](CLAIMS_AND_REPLICATION.md).
-
-### Why one run is not enough for strong claims
-
-One full matrix on one laptop is a **snapshot**. Noise (other programs, thermal state, cloud neighbors) can move ranks a little. Stronger language needs **more races**:
-
-| Level | Evidence | Example claim |
-|-------|----------|---------------|
-| **L1** | One session, one host | “On this machine, this session, ….” |
-| **L2** | ≥3 sessions, same known `machine_id` | “Stable across repeated sessions on this host….” |
-| **L2 (host unknown)** | ≥3 sessions, missing sidecars | “Repeated sessions, but host fingerprint missing….” |
-| **L3** | ≥2 distinct `machine_id`s | “Consistent across machines in this set….” |
-
-Default Dashboard packed latest is **L1**. Sidecars store `environment.machine_id` so analysis can tell hosts apart.
-
-### Aggregate several CSVs
-
-```bash
-analyze-benchmarks --list -l python
-analyze-benchmarks \
-  --multi-session python:STEM1 \
-  --multi-session python:STEM2 \
-  --multi-session python:STEM3
-```
-
-Writes `reports/multi_session_<lang>.json` and `.md` with:
-
-- median-of-session-medians and IQR across sessions  
-- how often each serializer is fastest (rank stability)  
-- heuristic `claim_level` (`L2_…` / `L3_…`)
-
-For research-oriented L2/L3 collection tips and soft host checks, see [Claims and replication](CLAIMS_AND_REPLICATION.md).
-
----
-
-## Outputs
-
-| Output | Content |
-|--------|---------|
-| `reports/stats_<lang>_latest.json` | Multi-policy stats export (Dashboard sync input; **always** written) |
-| [Dashboard](../dashboard/index.html) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
-| `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
-| `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |
-| Console | Load counts, warmup and outlier tallies |
-
-Latency charts use the **same** sanitized records as the summary tables. There is no separate hidden filter for plots. Display may still limit charts to the top five serializers by mean time; that does not change table membership.
-
-How to run the CLI: `analyze-benchmarks` writes `reports/`; pack the Dashboard with `python3 dashboard/scripts/sync-data.py`. Claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md). The Dashboard draws the published comparisons.
-
----
+Single-session Dashboard snapshots constitute **L1** evidence. Aggregating repeated sessions (`--multi-session`) computes median-of-session-medians, cross-session IQR, rank stability, and heuristic L2/L3 claim classifications from `*.configs.json` host fingerprints (`machine_id`). Full evidence definitions and replication commands live in [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
 ## Limitations {#limitations}
 
-Honest methodology includes what the suite **cannot** claim.
+- **Cross-language latency:** Absolute timings across languages confound runtimes, garbage collectors, and allocators; use within-language, within-standard comparisons for rankings.
+- **Residual execution variance:** Default `block_shuffle` scheduling mitigates monotonic thermal and frequency drift,[^9] but single-session L1 runs still reflect transient host state.
+- **Adapter-specific constraints:** C portable proto3 stand-ins, Rust eager `rkyv` materialization, and `adapted` stream rows carry explicit disclosures on their language pages and in [Timing contract](TIMING_HONESTY.md).
+- **Fidelity scope:** Fidelity checks verify semantic or structural equivalence (with bit-identical rules on `array` and `tensor`), not cross-format byte equality.
+- **Outlier sensitivity:** Dropping outliers stabilizes means at the cost of hiding rare GC or allocator spikes; always inspect `all` alongside `iqr_1.5`, plus `runs`, P95/P99, and CIs.
 
-- **Cross-language absolute times** are directional at best. Garbage collection, allocators, and runtimes differ. Prefer within-language ranks and effect sizes.
-- **Run order:** default benchmark-runner schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode). This reduces thermal/order confounds vs serializer-outer fixed order. Escape hatch: `BENCHMARK_SCHEDULE=none`. See [architecture — schedule](architecture.md#timed-trial-schedule).
-- **C** default builds may use portable stand-ins under real library names—see the [C overview](../c/index.md).
-- **Rust** paths such as `prost`, `rkyv`, and `minicbor` use concrete native codecs; timed `rkyv` deserialize **materializes** owned values for fidelity—see the [Rust overview](../rust/index.md).
-- **Stream** mode is not always a true incremental API. New runs must label stream rows with CSV `StreamMode` (`native` / `text_on_stream` / `adapted`). Languages that only alias bytes must **not** emit stream rows. See [Modes — stream honesty](modes.md#three-levels-of-stream-honesty).
-- **Fidelity** is semantic or structural, not bit-identical across formats.
-- Outlier removal and warmup policy affect means; always read `runs`, confidence intervals, and effect sizes together.
+## References {#references}
 
-### Methodological disclosures (for careful readers)
-
-- **Bootstrap reproducibility:** each group gets a *derived* seed (base bootstrap seed mixed with a stable hash of language + serializer + data type + mode + series prefix) so intervals are independent across groups yet fully reproducible.
-- **Paired series:** serialize, deserialize, and total times share one all-or-nothing keep-mask.
-- **Mann–Whitney:** uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.
-- **Regression gates:** default combine is **and** (practical % and CI support). `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline. See [Regression gate](#regression-gate).
-- **Effect vs fastest:** reference is **median** total by default; Mann–Whitney + **within-group Holm** when hypothesis tests are enabled. Multi-way ranks are **exploratory** ([Exploratory ranks](#exploratory-ranks)).
-- **Claim scope:** default Dashboard packed latest is **L1** single-session / single-host. Multi-session tooling does not rewrite the Dashboard automatically ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
-- **Cliff’s δ for large N:** if the full pair count exceeds about two million, a seeded 100 000-pair random sample is used.
-- Some documented config keys are parsed for documentation but do not yet change runtime behaviour; the implementation still computes the full rich metric set.
-
-## References
-
-### Wikipedia (statistical terms used on this page)
-
-| Term | Link |
-|------|------|
-| Interquartile range (IQR) | [en.wikipedia.org/wiki/Interquartile_range](https://en.wikipedia.org/wiki/Interquartile_range) |
-| John Tukey | [en.wikipedia.org/wiki/John_Tukey](https://en.wikipedia.org/wiki/John_Tukey) |
-| Confidence interval | [en.wikipedia.org/wiki/Confidence_interval](https://en.wikipedia.org/wiki/Confidence_interval) |
-| Bootstrapping | [en.wikipedia.org/wiki/Bootstrapping_(statistics)](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29) |
-| Effect size | [en.wikipedia.org/wiki/Effect_size](https://en.wikipedia.org/wiki/Effect_size) |
-| Cliff’s delta | [Effect size § ordinal data](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data) |
-| Hedges’ g | [Effect size § Hedges' g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g) |
-| Mann–Whitney U test | [en.wikipedia.org/wiki/Mann–Whitney_U_test](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test) |
-| Holm–Bonferroni method | [en.wikipedia.org/wiki/Holm–Bonferroni_method](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method) |
-| P-value | [en.wikipedia.org/wiki/P-value](https://en.wikipedia.org/wiki/P-value) |
-| Multiple comparisons problem | [en.wikipedia.org/wiki/Multiple_comparisons_problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) |
-| Family-wise error rate | [en.wikipedia.org/wiki/Family-wise_error_rate](https://en.wikipedia.org/wiki/Family-wise_error_rate) |
-| Nonparametric statistics | [en.wikipedia.org/wiki/Nonparametric_statistics](https://en.wikipedia.org/wiki/Nonparametric_statistics) |
-| Median | [en.wikipedia.org/wiki/Median](https://en.wikipedia.org/wiki/Median) |
-| Median absolute deviation | [en.wikipedia.org/wiki/Median_absolute_deviation](https://en.wikipedia.org/wiki/Median_absolute_deviation) |
-| Winsorizing | [en.wikipedia.org/wiki/Winsorizing](https://en.wikipedia.org/wiki/Winsorizing) |
-
-### Other
-
-- Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences).
+[^1]: Georges, A., Buytaert, D., & Eeckhout, L. (2007). "Statistically Rigorous Java Performance Evaluation." *Proceedings of OOPSLA '07*, 57–76. <https://doi.org/10.1145/1297027.1297033>
+[^2]: Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman & Hall/CRC.
+[^3]: Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley.
+[^4]: Cliff, N. (1993). "Dominance Statistics: Ordinal Analyses to Answer Ordinal Questions." *Psychological Bulletin*, 114(3), 494–509. <https://doi.org/10.1037/0033-2909.114.3.494>
+[^5]: Romano, J., Kromrey, J. D., Coraggio, J., & Skowronek, J. (2006). "Appropriate Statistics for Ordinal Level Data: Should We Really Be Using t-test and Cohen's d for Evaluating Group Differences on the NSSE and Other Surveys?" *Annual Meeting of the Florida Association of Institutional Research*.
+[^6]: Hedges, L. V. (1981). "Distribution Theory for Glass's Estimator of Effect Size and Related Estimators." *Journal of Educational Statistics*, 6(2), 107–128. <https://doi.org/10.3102/10769986006002107>
+[^7]: Mann, H. B., & Whitney, D. R. (1947). "On a Test of Whether One of Two Random Variables Is Stochastically Larger than the Other." *The Annals of Mathematical Statistics*, 18(1), 50–60. <https://doi.org/10.1214/aoms/1177730491>
+[^8]: Holm, S. (1979). "A Simple Sequentially Rejective Multiple Test Procedure." *Scandinavian Journal of Statistics*, 6(2), 65–70.
+[^9]: Mytkowicz, T., Diwan, A., Hauswirth, M., & Sweeney, P. F. (2009). "Producing Wrong Data Without Doing Anything Obviously Wrong!" *Proceedings of ASPLOS '09*, 265–276. <https://doi.org/10.1145/1508244.1508275>

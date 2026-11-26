@@ -1,44 +1,30 @@
-# C#: why BinaryPack outruns Bond Fast on Document
+# C#: `BinaryPack` vs. `MS Bond Fast`
 
-## Why this article exists
+This note examines the C# `BinaryPack` and `MS Bond Fast` adapters on the `document` ($n = 1$, `bytes` mode) payload. Both compile specialized delegates ahead of time rather than using per-call reflection; the structural difference is positional storage versus per-field type-and-identifier tagging.
 
-On this suite’s **document** payload, one instance, **BinaryPack** finishes more encode-and-decode cycles per second than **Microsoft Bond Fast**. Both omit JSON field names. Both compile a specialized writer once. The remaining difference is what that writer *puts on the wire* and how the runner calls it.
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=csharp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=BinaryPack&ser=BinaryPack&ser=MS%20Bond%20Fast#compare) · [C# overview](../../c-sharp/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-This page compares the two timed wrappers and the library code they invoke. After reading it you should be able to point at Bond’s per-field type-and-identifier prefix and at BinaryPack’s positional stores.
+## Structural and Wire-Size Summary
 
-Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking. That published slice timed Base64 around both binary codecs. Compare ranks inside C#, not those sizes against another language.
+| Property | `BinaryPack` | `MS Bond Fast` |
+|---|---|---|
+| Standard | `custom` (positional .NET binary) | `bond` (Fast Binary protocol) |
+| Encoded size (`document`, $n = 1$, `bytes`) | **224 B** | **282 B** (+58 B) |
+| Per-field framing | None (declaration order only) | 1-byte `BondDataType` + 2-byte `ushort` field ID (3 B/field) |
+| Specialization | Dynamic IL (`ObjectProcessor<T>`) once per `T` | Compiled expression-tree `Action<object, W>` once per `T` |
+| Buffer allocation in wrapper | Pooled writer via `BinaryConverter.Serialize<T>` | Fresh `new OutputBuffer(2 * 1024)` + `ToArray()` per encode |
+| Schema evolution | Breaks on field reorder or insertion | Reader skips unknown field IDs using wire type tags |
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=csharp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=BinaryPack&ser=BinaryPack&ser=MS%20Bond%20Fast#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [C# overview](../../c-sharp/index.md)
+## Timed Call Sites
 
-## Short answer
-
-BinaryPack is faster than Bond Fast on this slice (about 190–210 thousand versus 160–190 thousand cycles per second). We can see the rank in the table.
-
-BinaryPack emits **raw fields in declaration order**. Bond Fast emits **a type byte and a 16-bit field identifier in front of every value**. Both specialize the encode function ahead of time. Bond pays extra stores (and extra reads) on every field in exchange for a skip rule: a reader can ignore an unknown identifier.
-
-| | BinaryPack | Bond Fast |
-|--|------------|-----------|
-| Mean encode + decode, document, *n* = 1 (string path) | **about 190–210 thousand / s** | about 160–190 thousand / s |
-| Wire idea | Positional, no identifiers | Tagged: type + id + value |
-| Specialization | Dynamic IL, once per `T` | Expression trees, once per type |
-| Evolution | Breaks if you reorder fields | Unknown ids can be skipped |
-
-## The two timed call sites
-
-**BinaryPack** binds a closed generic once and, during the timed call, serializes to bytes (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`):
+**`BinaryPack`** (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`) binds a closed generic delegate to `BinaryConverter.Serialize<T>` once during initialization:
 
 ```csharp
 public override byte[] SerializeBytes(object serializable)
     => _serBytes(serializable);
 ```
 
-`_serBytes` is `BinaryConverter.Serialize<T>` for the prepared `T`.
-
-**Bond Fast** builds `Serializer<FastBinaryWriter<OutputBuffer>>` once, then allocates a 2 KiB `OutputBuffer` on every encode (`c-sharp/src/Serializers/BondFastSerializer.cs`):
+**`MS Bond Fast`** (`c-sharp/src/Serializers/BondFastSerializer.cs`) caches `Serializer<FastBinaryWriter<OutputBuffer>>` during initialization (`BondSkipCodegen=true` uses Bond's compiled expression trees), then allocates a 2 KiB output buffer on each timed encode:
 
 ```csharp
 public override byte[] SerializeBytes(object serializable)
@@ -49,70 +35,8 @@ public override byte[] SerializeBytes(object serializable)
 }
 ```
 
-The published numbers include a shared Base64 step. That cost does not explain the rank. The wrappers now time the library bytes.
+## Mechanistic Analysis and Scope Limits
 
-## What BinaryPack generates
-
-[BinaryPack](https://github.com/Sergio0694/BinaryPack) (Sergio Pedri) emits IL for `ObjectProcessor<T>`. Unmanaged members become a store of the bits. There is no field number.
-
-```csharp
-// ObjectProcessor<T> — conceptual form of the generated write
-// writer.Write(obj.Property);
-il.EmitLoadArgument(Arguments.Write.RefBinaryWriter);
-il.EmitLoadArgumentForMemberRead(Arguments.Write.T, memberInfo);
-il.EmitReadMember(memberInfo);
-il.EmitCall(KnownMembers.BinaryWriter.WriteT(memberInfo.GetMemberType()));
-```
-
-The public entry constructs a pooled writer and copies the span out (`BinaryConverter.Serialize<T>`). After the first call, encode is a specialized delegate, not reflection.
-
-The README is explicit: the format is **not** version-resilient. That is the Speedy / Bitsery / custom-binary idea in a .NET setting.
-
-## What Bond Fast writes
-
-[Microsoft Bond](https://github.com/microsoft/bond) (open-sourced 2015, after internal use at Microsoft) is its own schema-driven standard. It is not Protocol Buffers. **Fast binary** is the simpler of Bond’s two binary protocols: little-endian values, no variable-length integers. Compact binary adds those. This runner uses Fast.
-
-Every field on the wire is:
-
-```text
-.------.----.----------.
-| type | id |  value   |
-```
-
-The writer is three stores before the payload:
-
-```csharp
-// cs/src/core/protocols/FastBinary.cs
-public void WriteFieldBegin(BondDataType type, ushort id, Metadata metadata)
-{
-    output.WriteUInt8((byte) type);
-    output.WriteUInt16(id);
-}
-```
-
-The serializer itself is specialized. `Serializer<W>` compiles an `Action<object, W>` from expression trees (`cs/src/core/Serializer.cs`). The runner skips Bond’s code generator (`BondSkipCodegen=true`) and uses that runtime compile. So Bond is *not* reflecting on every call. It is still writing three extra bytes per field, and it still allocates a fresh `OutputBuffer` in this wrapper.
-
-**History.** Bond exists because Microsoft needed a schema that many languages could share, with a defined way to add fields. The type-and-id prefix is the same pressure that produced ASN.1 tags in 1984 and Protocol Buffers field numbers in the 2000s. BinaryPack exists because some .NET services only ever talk to themselves and want the processor to store the value, not to prefix a type and identifier.
-
-## Side-by-side: one `int` field
-
-| Step | BinaryPack | Bond Fast |
-|------|------------|-----------|
-| How the field is found | Generated IL reads the property | Compiled action reads the property |
-| Bytes before the value | None | 1 (type) + 2 (id) |
-| The value | 4 bytes, little-endian | 4 bytes, little-endian |
-| Unknown-field rule | None | Reader can skip by type |
-
-Eight line items, each with three fields, plus the document header: the type-and-identifier prefix is tens of bytes and a comparable number of extra stores.
-
-## Honesty
-
-1. **The quoted table includes Base64** on both sides. Do not compare those sizes to Rust or C byte counts.
-2. **MemoryPack** is also specialized (source-generated formatters on the models). This runner calls the non-generic `MemoryPackSerializer.Serialize(Type, object)` API, so the measured MemoryPack row is not the fastest MemoryPack path. That is why this page uses Bond Fast as the schema-driven counterpart.
-3. Bond Compact would change the integer encoding. It is a different row on the Dashboard.
-
-## Self-check
-
-1. If you removed Base64 from both wrappers, would you expect the *rank* to change? Why or why not?
-2. Why can a Bond reader skip an unknown field, and why can a BinaryPack reader not?
-3. Which historical format does Bond Fast most resemble, and which does BinaryPack most resemble?
+1. **Tagging overhead (+58 B):** `FastBinaryWriter.WriteFieldBegin` writes 3 bytes (`uint8` type + `uint16` field ID) ahead of every scalar, nested struct, and list element field, plus struct-end markers. Across the `Document` header, `Meta`, and eight 3-field `DocumentItem` records, per-field framing accounts for the entire 58-byte expansion and additional write/dispatch operations.
+2. **Buffer reuse asymmetry:** Unlike `BinaryPack`'s pooled writer, the `MS Bond Fast` adapter allocates a 2 KiB `OutputBuffer` on every timed encode, adding GC pressure alongside tag dispatch.
+3. **Scope limits:** Historical C# snapshots emitted Base64-encoded `string` rows; current published runs time raw `bytes` payloads directly. Note also that `MS Bond Compact` adds varint integer compression (measured as a separate Dashboard row), and `MemoryPack` is called through its non-generic `Serialize(Type, object)` entry point in this runner.

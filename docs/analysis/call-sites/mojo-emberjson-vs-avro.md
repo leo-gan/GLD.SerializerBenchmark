@@ -1,48 +1,37 @@
-# Mojo: EmberJson vs mojo-avro
+# Mojo: `EmberJson` vs. `mojo-avro`
 
-## Why this article exists
+This note inspects Mojo's reflection JSON codec (`EmberJson`) and schema-ordered Avro binary codec (`mojo-avro`, `leo-gan/gld-avro`) on the `document` ($n = 1$, `bytes` mode) payload. Both serialize the same pure-Mojo `Document` struct with no streaming API (`bytes` only), contrasting self-describing UTF-8 JSON text (**448 B**) against schema-dependent binary Avro (**114 B**).
 
-Mojo has a widely used **JSON** library (EmberJson) and a native **Avro** library (`leo-gan/gld-avro`). They do not write the same bytes. This page opens both timed wrappers on the suite **document** payload (one shop order: an id, a status, and eight line items).
+[Dashboard comparison (L1)](../../dashboard/index.html?lang=mojo&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=EmberJson&ser=EmberJson&ser=mojo-avro#compare) · [Mojo overview](../../mojo/index.md) · [Timing contract](../TIMING_HONESTY.md)
 
-[Open this slice on the Dashboard](../../dashboard/index.html?lang=mojo&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=EmberJson&ser=EmberJson&ser=mojo-avro#compare)
-· [Claims (L1)](../CLAIMS_AND_REPLICATION.md)
-· [Mojo overview](../../mojo/index.md)
+## Structural and Wire-Size Summary
 
-## The two timed call sites
+| Property | `EmberJson` | `mojo-avro` (`gld-avro`) |
+|---|---|---|
+| Standard | `json` | `avro` |
+| Encoded size (`document`, $n = 1$) | **448 B** | **114 B** ($3.9\times$ smaller) |
+| Wire representation | Named UTF-8 JSON objects and decimal digits | Positional schema-ordered binary datum; zigzag varints; no keys |
+| Timed boundary | `Document` ↔ JSON string (`serialize` / `deserialize`) | `Document` ↔ Avro byte buffer (`encode` / `decode` via `AvroDatum`) |
+| Stream I/O | `bytes` only | `bytes` only |
 
-**EmberJson** (`mojo/src/bench/emberjson_ser.mojo`) uses official reflection serde:
+## Timed Call Sites
+
+**`EmberJson`** (`mojo/src/bench/emberjson_ser.mojo`) uses reflection-based serialization over the suite `Document` struct:
 
 ```mojo
 var text = serialize(document)
 var back = deserialize[Document](text)
 ```
 
-**mojo-avro** (`mojo/src/bench/avro_ser.mojo`) times the official `AvroDatum` path:
+**`mojo-avro`** (`mojo/src/bench/avro_ser.mojo`) invokes `AvroDatum` trait encoding and decoding on the same struct:
 
 ```mojo
 var buf = encode(document)
 var back = decode[Document](buf)
 ```
 
-Both rows start from the same suite `Document` struct. EmberJson writes named JSON text. Avro writes the binary datum (field order from the schema, no field names on the wire). Stream mode is not claimed for either row.
+## Mechanistic Analysis and Scope Limits
 
-## An L1 slice (document, n=1, bytes)
-
-One Linux x86_64 session, warmup dropped, nine remaining trials. Sizes are exact for this sample. Times are median total serialize+deserialize.
-
-| Serializer | Size | Median total |
-|------------|-----:|-------------:|
-| EmberJson | 452 B | 2.4 µs |
-| mojo-avro | 118 B | 1.5 µs |
-
-Avro is smaller because it does not write key strings. The time gap on this tiny record is small; a different machine or a later Mojo compiler can move it. Read the Dashboard similar / close sets before you quote a ranking.
-
-## What this does not claim
-
-It does not claim Avro is always faster than JSON in Mojo. It does not compare these times to Python `fastavro` or Rust `serde_avro_fast`. Cross-language times are not one contest.
-
-## Self-check
-
-1. Why can Avro be about one quarter the size of EmberJson on the same struct?
-2. Which row writes field names into the payload?
-3. Why is stream mode missing from both rows?
+1. **Nearly $4\times$ wire reduction (448 B → 114 B):** `EmberJson` repeats `"sku"`, `"qty"`, and `"price_minor"` eight times alongside punctuation and decimal ASCII numbers. `mojo-avro` omits all field names (relying on the out-of-band Avro schema) and packs small integers into 1–2 byte zigzag varints.
+2. **Parse and formatting cost:** Avoiding UTF-8 token scanning, quote/escape handling, and decimal–binary conversion reduces both encode and decode work on `mojo-avro` relative to `EmberJson`.
+3. **Scope limits:** Because these two libraries implement different standards (`json` vs. `avro`), treat live Dashboard differences as a **format trade-off** (human readability vs. compact schema-driven binary) rather than an implementation ranking; consult the live Dashboard CIs and Mojo 1.1 toolchain version before quoting L1 timings.

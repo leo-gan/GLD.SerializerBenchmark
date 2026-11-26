@@ -1,243 +1,78 @@
-# Benchmark modes
+# I/O and Run Modes
 
-This page explains the two different meanings of **mode** in this project. I/O mode is how a raw CSV row called the library. Run mode is how heavy the experiment was. The dashboard ranks a parent row. An I/O control opens a second level only when one was stored.
-
-| Name | Question it answers | Example values |
-|------|---------------------|----------------|
-| **I/O mode** | *How* did we call the serializer? | bytes (or string) · stream |
-| **Run mode** | *How long / how heavy* was the experiment? | smoke · all-single · full · research |
-
-A third related idea is **batch size N** (1 vs 100 instances in one call). That is **not** a “mode”; it lives under [Data sets](test_data_configuration.md).
-
----
-
-## Picture: three knobs on one experiment
+This project uses the word **mode** in two orthogonal senses: **I/O mode** selects which programming interface is called (`bytes` vs. `stream`), whereas **run mode** selects how many repetitions and which matrix preset an experiment executes (`smoke` through `research`). Batch size $N$ (1 vs. 100 instances per call) is a third independent axis specified under [Data sets](test_data_configuration.md).
 
 ```text
-  Run mode          → how many times we repeat the timed loop (and which matrix)
-  I/O mode          → buffer/string API  vs  stream API
-  Data type + N     → e.g. message with N=1 or N=100
+  Run mode        → repetition budget & matrix preset (smoke | all-single | full | research)
+  I/O mode        → API surface (bytes in-memory buffer vs. stream reader/writer)
+  Data type × N   → payload schema and batch cardinality (e.g., document @ n=1 or n=100)
 
-  One CSV row = one language + one serializer + one data type + one N + one I/O mode + one repetition
+  One raw CSV row = (Language, SerializerName, TestDataName, N, StringOrStream, RepetitionIndex)
 ```
 
-You can change any knob independently. Changing run mode does **not** change what “stream” means.
+---
+
+## Part 1 — I/O Modes and Stream Honesty
+
+Real applications serialize either into contiguous in-memory buffers (caches, small RPC frames) or through streaming readers and writers (files, network sockets). Note that **`bytes` and `stream` name the API surface, not payload size**—either interface can carry small or large records.
+
+| Dashboard Label | CSV `StringOrStream` | Semantics |
+|---|---|---|
+| **Bytes mode** | `bytes` (legacy C# snapshots: `string`) | In-memory buffer serialize/deserialize. On legacy C# `string` logs, binary codecs timed Base64 strings (~4/3 raw wire length). |
+| **Stream mode** | `stream` (legacy C#: `Stream`) | Stream/reader/writer API serialize/deserialize. |
+
+### Three Levels of Stream Honesty {#three-levels-of-stream-honesty}
+
+Not every library exposes an incremental streaming codec. Every newly emitted stream CSV row must populate `StreamMode` with one of three machine-readable labels (displayed as a chip on the Dashboard):
+
+| `StreamMode` | Timed Implementation | Interpretation |
+|---|---|---|
+| `native` | Both timed serialize and timed deserialize invoke the library's native stream, reader, or writer API. | Valid evidence for streaming performance. |
+| `text_on_stream` | The library writes/reads text through a writer or reader bound to a stream (e.g., `JsonTextWriter`, `std.Io.Writer`). | Real streaming text interface; distinct from binary incremental framing. |
+| `adapted` | The runner encodes the full in-memory buffer first and writes it to a stream (or reads all bytes before decoding). | Times track `bytes` closely; **not** evidence of incremental I/O. |
+
+Normative rules:
+- `bytes` rows may leave `StreamMode` blank.
+- Never tag a row `native` if either timed half still uses the `bytes` API.
+- If a language runner has no distinct stream path (e.g., JavaScript, Mojo), emit `bytes` rows only.
+
+### Dimension Contract and Parent-Row Folding
+
+Published Dashboard rows are keyed by:
+
+```text
+(Language, SerializerName, Standard, DataSet, TestDataName, DataTypeInstanceCount)
+```
+
+Standard labels come from [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) (with multi-standard primary resolution and optional I/O rules in [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml)); data-set membership comes from `data_sets` and `serializer_data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml).
+
+**Optional I/O folding:** `StringOrStream` is not part of the published group key. The publication matrix times the in-memory `bytes` API by default; a second I/O level is retained in `optional[]` only for serializers on the contract's opt-in list meeting four criteria: `StreamMode` is `native` or `text_on_stream`, $N = 100$, the absolute pooled median difference exceeds $10\%$, and the 95% confidence interval excludes $0$. Adapted streams never create a second published level.
+
+- **Equal-size pair (within 2%):** The published parent row reports the arithmetic mean of the two level medians, and the Dashboard **I/O** toggle expands both levels.
+- **Legacy Base64 `string` vs. raw `bytes` (size ratio $\approx 3/4$):** Payloads are never averaged; the raw-byte measurement is the parent row and the Base64 `string` path is attached as a child.
 
 ---
 
-## Part 1 — I/O modes (how we call the library)
+## Part 2 — Run Modes {#part-2-run-modes-how-heavy-the-experiment-is}
 
-### Why two paths?
+Run modes are configured under `modes:` in `config/benchmark_config.yaml`. Runner scripts must query `bench_mode_reps` rather than hard-coding repetition counts.
 
-Real programs use serializers in more than one way:
+| Run Mode | Repetitions | Statistical Role | Typical Use |
+|---|---:|---|---|
+| `smoke` | 2 | Minimal functional verification | Local sanity check and CI smoke jobs |
+| `all-single` | 10 | Fast full-matrix sweep | Pre-publication spot check across all cells |
+| `full` | 100 | Publication baseline (~99 post-warmup samples) | Generating Dashboard snapshots via `sync-data.py` |
+| `research` | 500 | High-power estimation | Tight bootstrap CIs and formal statistical studies |
 
-- **In memory:** “Turn this object into a byte array (or string), then later turn those bytes back into an object.” Common for caches, small RPC bodies, tests.
-- **Through a stream:** “Write the encoded form into a stream” / “Read it from a stream.” Common for files, sockets, and large payloads where you do not want one giant string in memory first.
-
-This suite measures **both call shapes** when the language runner supports them, so rankings are not tied to only one API style.
-
-### What the labels mean
-
-On the **Dashboard** Mode filter you usually see:
-
-| Label on Dashboard | Everyday meaning | Typical CSV value (`StringOrStream`) |
-|------------------|------------------|--------------------------------------|
-| **bytes mode** | In-memory buffer | `bytes` (older C# logs may say `string`) |
-| **stream mode** | Stream-style write/read | `stream` |
-
-**Important:** these names describe the **programming interface**, not the **size** of the data. “Bytes mode” does **not** mean “small payload.” “Stream mode” does **not** mean “large payload.”
-
-### What is timed
-
-For **each** I/O mode, the stopwatch covers:
-
-1. Serialize using that mode’s API  
-2. Deserialize using that mode’s API  
-
-Setup (schemas, maps, buffer pools) is **not timed**. Details: [Architecture — what we measure](architecture.md#measurement-model) and [Timing honesty](TIMING_HONESTY.md).
-
-### Older C# logs
-
-Runners log the in-memory path as `bytes`. Older C# logs and the published C# snapshot say `string`. On those rows, binary libraries timed Base64 of the payload, so the string size is larger than the stream size. The fold keeps the raw-byte row as the parent.
-
-### Three levels of “stream” honesty {#three-levels-of-stream-honesty}
-
-Not every “stream mode” row is a deep, true streaming API.
-
-| Kind | What the runner does | How to read the Dashboard |
-|------|----------------------|---------------------|
-| **Native stream** | Calls the library’s real stream (or reader/writer) API | Best evidence for “stream performance” of that library |
-| **Text writer on a stream** | Library writes text through a writer attached to a stream (common for JSON/YAML) | Still a real library path; not the same as binary stream APIs |
-| **Adapted stream** | Builds the full in-memory result first, then dumps it to a stream (or the reverse) | Times often **close to** the in-memory path; do **not** treat as proof of incremental I/O |
-
-#### CSV `StreamMode` (required on new stream rows)
-
-Machine-readable honesty on **stream** I/O rows (`StringOrStream` = `stream` / C# `Stream`):
-
-| CSV value | Meaning |
-|-----------|---------|
-| `native` | Timed **serialize and deserialize** both use the library’s real stream/reader/writer APIs |
-| `text_on_stream` | Library text writer/reader on a stream (JSON/YAML/XML style) |
-| `adapted` | Full in-memory encode/decode plus dump to / load from a stream (or equivalent wrapper) |
-
-Rules:
-
-- Bytes/string rows may leave `StreamMode` empty.
-- Do **not** label `native` if either timed half is still the bytes API.
-- If the timed stream path is **identical** to bytes (label-only “stream”), the benchmark runner must **not emit stream rows** for that language/codec.
-
-The Dashboard shows a **stream honesty** chip next to Mode from these labels. See [Metrics — StreamMode](METRICS.md).
-
-If stream and bytes (or string) times are almost the same, check the language **Overview** and the banner. Many suites mark adapted paths there. Methodology also notes that stream is not always incremental: [Analysis methodology — limitations](ANALYSIS_METHODOLOGY.md#limitations).
-
-### How I/O mode appears in the pipeline
-
-| Place | What you see |
-|-------|----------------|
-| Raw CSV | Column `StringOrStream` |
-| Published group | Language + serializer + **standard** + **data set** + data type + batch size. I/O is not part of the key |
-| Dashboard | **Standard** filter (default All). Data types are grouped under their data set. An **I/O** control opens child rows when a second level was stored |
-| Fair ranking | Compare serializers in the **same** language, same **standard**, same **data set**, same data type. Rankings use the parent row |
-
-### Fair comparison checklist (I/O)
-
-- Same **language**
-- Same **standard** (`json` with `json`, `avro` with `avro`)
-- Same **data set** and same **data type**, and the same batch size N
-- Rank the **parent** row. Open I/O only to read a second level that the opt-in list stored
-- If a child is labeled adapted, read the honesty notes before treating it as a stream API
-
----
-
-## Dimension contract
-
-Standard and Data Set are labels on rows the suite already measures. Data Set membership is `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Which serializers are measured on each set is `serializer_data_sets` in that file. A name that is absent is suite only. Standard primary rules and optional I/O stay in [`config/dimensions.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/dimensions.yaml). Membership does not time a serializer on a standard or a data set it is not mapped to.
-
-| Dimension | Where it comes from | Values |
-|-----------|---------------------|--------|
-| **Standard** | [`compliance/serializer-standards.json`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/compliance/serializer-standards.json) | `json`, `avro`, `parquet`, … |
-| **Data Set** | `data_sets` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). The catalog stamps the same id. | `suite` (message, document, telemetry, strings, event), `columnar` (table, table_project, nested_table, signal), `graph` (graph), `array` (grid, grid_window), and `tensor` (tensor, tensor_view, prompt, shard, request) |
-| **Data Type** | the type id, child of its Data Set | `message`, `table`, … |
-
-An empty compliance list is the standard `custom`. Those codecs stay on the leaderboard and stay unscored in compliance. C# `MS Bond Json` lists both `json` and `bond`. The timed row uses primary id `json`. One serializer stays one timed row.
-
-**Optional I/O.** Under this contract the publication matrix times the in-memory API. A second level is kept only for the opt-in list in the contract: native or text-on-stream, batch N=100, absolute pooled median gap over 10%, and the 95% CI excludes 0. Adapted stream is not a second level. Java, Kotlin, Swift, and Rust stay on the in-memory row until their runners measure a real second API.
-
-When both stored levels have the same payload size, the parent row is the arithmetic mean of the two medians, and the table opens into the two levels. Rankings use that mean. When the string path is Base64 of the raw bytes (size ratio about 3/4), the parent is the raw-byte measurement and the string path is the child. Those two payloads are not averaged.
-
----
-
-## Part 2 — Run modes (how heavy the experiment is) {#part-2-run-modes-how-heavy-the-experiment-is}
-
-### Why several run modes?
-
-A full matrix (many serializers × data types × N × two I/O modes × many repetitions) takes a long time. The suite offers **presets** so you can:
-
-- smoke-test a change in minutes, or  
-- collect publication-quality samples overnight.
-
-Run modes are defined in `config/benchmark_config.yaml` under `modes:`. Scripts should **read** those values (via `bench_mode_reps`), not invent their own counts.
-
-### The four standard run modes
-
-| Run mode | Repetitions (default) | Intent | Typical use |
-|----------|----------------------|--------|-------------|
-| **smoke** | 2 | Smallest useful run | “Does this still work?” CI, local quick check |
-| **all-single** | 10 | Short full matrix | Fast multi-serializer pass before a long run |
-| **full** | 100 | Publication-quality | Numbers you pack into the Dashboard / the site |
-| **research** | 500 | High sample count | Statistics papers, tight confidence intervals |
-
-Exact repetition counts live in config; if config changes, this table should be updated to match.
-
-### What a run mode does *not* change
-
-| Unchanged by run mode | Controlled instead by |
-|-----------------------|------------------------|
-| Which serializers exist | Language registration / Overview |
-| Data type shapes | [Data sets](test_data_configuration.md) / `config/library/` |
-| Whether both I/O modes run | Language runner design |
-| Warmup policy | Analysis drops repetition index 0; runners still log it |
-| Fairness rules | Same CSV contract for all modes |
-
-So: **smoke** is not “a different I/O mode.” It is “fewer timed repetitions (and often a smaller data matrix if the script’s config says so).”
-
-### Which run mode should I pick?
-
-| Goal | Prefer |
-|------|--------|
-| I changed one serializer and want a quick green light | `smoke` |
-| I want a full matrix without waiting forever | `all-single` |
-| I will publish or commit Dashboard data | `full` |
-| I need strong statistical power | `research` |
-
-Example:
+Example invocations:
 
 ```bash
 ./scripts/run-all-benchmarks.sh --mode smoke --lang python
 ./scripts/run-all-benchmarks.sh --mode full --lang rust
 ```
 
-### Warmup and repetitions
+Run mode alters repetition count (and optionally which run config a script selects); it never changes serializer definitions, data-type schemas, warmup logging (`RepetitionIndex = 0` is always logged by runners and excluded by analysis), or the [timing contract](TIMING_HONESTY.md).
 
-- The runner logs **every** successful repetition, including the first (`RepetitionIndex = 0`).  
-- Analysis treats the first as **warmup** and drops it from averages by default.  
-- So `full` with 100 logged reps yields about **99** samples in summaries when warmup exclusion is on.
+## Related Pages
 
-Details: [Architecture — run modes](architecture.md#run-modes-how-many-repetitions) · [Methodology — warmup](ANALYSIS_METHODOLOGY.md).
-
----
-
-## Part 3 — How modes show up together
-
-### One example CSV row (idea)
-
-```text
-Language=python, StringOrStream=bytes, TestDataName=message,
-DataTypeInstanceCount=100, SerializerName=orjson, RepetitionIndex=3, ...
-```
-
-Read as: Python, **bytes** I/O mode, data type **message**, batch **N=100**, library **orjson**, 4th timed try (index 3).
-
-### Dashboard tables
-
-- **Overview** ranks the parent row for the current language, standard, and data type.
-- **I/O** on a row opens the stored levels. A same-size pair shows **avg** on the parent. A C# Base64 pair shows the raw-byte parent and the string child.
-- **Details** breaks out median / std / P95 / P99 so you can see which workload matters.
-
-If stream and bytes look almost equal, open [stream honesty](#three-levels-of-stream-honesty) before concluding the library’s stream API is “free.”
-
-### Dashboard and regenerate
-
-- Published numbers come from a chosen run (often `full`), packed via `dashboard/scripts/sync-data.py`.  
-- Regeneration and claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).  
-- Metrics names: [Metrics catalog](METRICS.md) (`StringOrStream`).
-
----
-
-## Quick reference
-
-| If you hear… | It means… |
-|--------------|-----------|
-| “bytes mode” / “string mode” | In-memory API path. `string` is the older C# label |
-| “stream mode” | Stream API path (native, text-on-stream, or adapted) |
-| “smoke / full / research” | How heavy the **run** is (repetitions / matrix intent) |
-| “message @ n=100” | Data type + batch size — **not** an I/O mode |
-| “modes in config” | Usually **run** modes under `modes:` in YAML |
-
----
-
-## Related pages
-
-| Topic | Page |
-|-------|------|
-| Suite layout and timing rules | [Architecture](architecture.md) |
-| How CSVs become numbers | [Methodology](ANALYSIS_METHODOLOGY.md) |
-| Column dictionary | [Metrics](METRICS.md) |
-| Data types and batch size N | [Data sets](test_data_configuration.md) |
-| C# envelopes | [C# overview](../c-sharp/index.md) |
-| Fair format families | [Families](families.md) |
-
-
-## Timed-trial order (serializers)
-
-Within each data type and I/O mode, serializers are **reshuffled each repetition** by default (`block_shuffle`) so wall-clock position does not systematically favor early registration order. Details: [architecture — schedule](architecture.md#timed-trial-schedule).
+- [Terminology](terminology.md) · [Benchmark architecture](architecture.md#timed-trial-schedule) · [Data sets](test_data_configuration.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Metrics catalog](METRICS.md)
