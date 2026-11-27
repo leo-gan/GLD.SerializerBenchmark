@@ -27,18 +27,41 @@ MATRIX = {"arrow-ipc": TENSOR_TYPES, "flatbuffers": TENSOR_TYPES}
 STANDARDS = {"arrow-ipc": "arrow", "flatbuffers": "flatbuffers"}
 REMOVED: tuple[str, ...] = ("h5py", "netCDF4", "adios2", "protobuf")
 MIN_REPS = 100
+KILN_LANGUAGES: tuple[str, ...] = (
+    "c",
+    "cpp",
+    "csharp",
+    "go",
+    "java",
+    "javascript",
+    "mojo",
+    "python",
+    "rust",
+    "swift",
+    "zig",
+)
+KILN_WIRE_SIZE = {
+    "tensor": 4_194_316,
+    "tensor_view": 4_194_316,
+    "prompt": 24_596,
+    "shard": 1_836_060,
+    "request": 24_623,
+}
 
 
-def select_language(language: str) -> None:
+def select_language(language: str, serializer: str = "default") -> None:
     global LANGUAGE, MATRIX, STANDARDS, REMOVED
+    if language not in KILN_LANGUAGES:
+        raise SystemExit(f"unsupported language {language}")
     LANGUAGE = language
-    if language in ("mojo", "csharp"):
+    if serializer == "gld-kiln" or language != "python":
         MATRIX = {"gld-kiln": TENSOR_TYPES}
         STANDARDS = {"gld-kiln": "kiln"}
         REMOVED = ()
         return
-    if language != "python":
-        raise SystemExit(f"unsupported language {language}")
+    MATRIX = {"arrow-ipc": TENSOR_TYPES, "flatbuffers": TENSOR_TYPES}
+    STANDARDS = {"arrow-ipc": "arrow", "flatbuffers": "flatbuffers"}
+    REMOVED = ("h5py", "netCDF4", "adios2", "protobuf")
 
 
 def _analyze(csv_path: Path) -> tuple[dict, dict]:
@@ -60,12 +83,23 @@ def _analyze(csv_path: Path) -> tuple[dict, dict]:
             or str(row.get("StreamMode") or "").strip() not in ("", "adapted")
         ):
             raise SystemExit(f"{csv_path}: invalid tensor row {name} {type_id}")
+        if name == "gld-kiln":
+            size = _norm(row.get("Size"))
+            if size != KILN_WIRE_SIZE[type_id]:
+                raise SystemExit(f"{csv_path}: {type_id} size {size!r} != {KILN_WIRE_SIZE[type_id]}")
         indexes.setdefault((name, type_id), set()).add(int(row.get("RepetitionIndex") or 0))
     for name, type_ids in MATRIX.items():
         for type_id in type_ids:
             if indexes.get((name, type_id)) != set(range(MIN_REPS)):
                 raise SystemExit(f"{csv_path}: {(name, type_id)} repetition indexes are not 0..{MIN_REPS - 1}")
-    return export_stats(records, LANGUAGE), {
+    fresh = export_stats(records, LANGUAGE)
+    if list(MATRIX) == ["gld-kiln"]:
+        for group in fresh.get("groups") or []:
+            for metrics in (group.get("variants") or {}).values():
+                if isinstance(metrics, dict):
+                    for key in [k for k in metrics if k == "fastest_in_group" or str(k).startswith("effect_vs_fastest")]:
+                        metrics.pop(key, None)
+    return fresh, {
         "reps": reps,
         "serializers": sorted(versions),
         "versions": versions,
@@ -138,11 +172,12 @@ def splice(csv_path: Path, *, dry_run: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="python", choices=("python", "mojo", "csharp"))
+    parser.add_argument("--language", default="python", choices=KILN_LANGUAGES)
+    parser.add_argument("--serializer", default="default", choices=("default", "gld-kiln"))
     parser.add_argument("--csv", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
-    select_language(args.language)
+    select_language(args.language, args.serializer)
     csv_path = (args.csv if args.csv.is_absolute() else REPO / args.csv).resolve()
     if not csv_path.is_file():
         raise SystemExit(f"CSV not found: {csv_path}")

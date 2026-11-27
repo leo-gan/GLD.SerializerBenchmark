@@ -204,5 +204,32 @@ class SharedSpliceGuardsAndValidatorsTest(unittest.TestCase):
             validate_group_variants("python", bad, {"iqr_1.5"}, 100)
 
 
+class SpliceTensorSelectionTest(unittest.TestCase):
+    def test_select_language_preserves_python_default_and_supports_kiln(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "splice_tensor_stats",
+            Path(__file__).resolve().parent / "splice-tensor-stats.py",
+        )
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        mod.select_language("python")
+        self.assertEqual(set(mod.MATRIX), {"arrow-ipc", "flatbuffers"})
+        self.assertIn("protobuf", mod.REMOVED)
+
+        mod.select_language("python", "gld-kiln")
+        self.assertEqual(set(mod.MATRIX), {"gld-kiln"})
+        self.assertEqual(mod.REMOVED, ())
+
+        for lang in ("zig", "c", "cpp", "go", "swift", "java", "csharp", "javascript", "mojo", "rust"):
+            mod.select_language(lang)
+            self.assertEqual(mod.LANGUAGE, lang)
+            self.assertEqual(set(mod.MATRIX), {"gld-kiln"})
+            self.assertEqual(mod.STANDARDS, {"gld-kiln": "kiln"})
+
+
 if __name__ == "__main__":
     unittest.main()
