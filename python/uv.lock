@@ -332,8 +332,8 @@ wheels = [
 
 [[package]]
 name = "gld-kiln"
-version = "0.2.1"
-source = { git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.1#8a43190cb35b480ae9fb38581e9bf6cbe7c7a1e8" }
+version = "0.2.2"
+source = { git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.2#f413b87747566c19039162aa72dec9b3fa529117" }
 
 [[package]]
 name = "h5py"
@@ -1285,7 +1285,7 @@ requires-dist = [
     { name = "dill", specifier = ">=0.3.9,<1" },
     { name = "fastavro", specifier = ">=1.10.0,<2" },
     { name = "flatbuffers", specifier = ">=25.12.19,<26" },
-    { name = "gld-kiln", git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.1" },
+    { name = "gld-kiln", git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.2" },
     { name = "h5py", specifier = ">=3.16,<4" },
     { name = "mashumaro", specifier = ">=3.14,<4" },
     { name = "msgpack", specifier = ">=1.1.0,<2" },

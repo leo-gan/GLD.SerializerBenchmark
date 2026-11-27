@@ -32,7 +32,7 @@ dependencies = [
     "pymongo>=4.10,<5",
     "zstandard>=0.23,<1",
     "amazon-ion>=0.13,<1",
-    "gld-kiln>=0.2.1,<0.3",
+    "gld-kiln>=0.2.2,<0.3",
     "py-ubjson>=0.16,<1",
     "newsmile>=1.1,<2",
     "pyarrow>=25.0.1,<26",
@@ -69,4 +69,4 @@ constraint-dependencies = [
 ]
 
 [tool.uv.sources]
-gld-kiln = { git = "https://github.com/leo-gan/gld-kiln-python.git", tag = "0.2.1" }
+gld-kiln = { git = "https://github.com/leo-gan/gld-kiln-python.git", tag = "0.2.2" }
