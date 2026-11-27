@@ -6,6 +6,28 @@
 #include <cstdint>
 #if __has_include(<rapidjson/document.h>)
 #include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#endif
+#if __has_include(<simdjson.h>) && defined(COMPLIANCE_WITH_SIMDJSON)
+#include <simdjson.h>
+#endif
+#if __has_include(<yyjson.h>) && defined(COMPLIANCE_WITH_YYJSON)
+#include <yyjson.h>
+#endif
+#if __has_include(<ArduinoJson.h>)
+#include <ArduinoJson.h>
+#endif
+#if __has_include(<glaze/glaze.hpp>)
+#include <glaze/glaze.hpp>
+#endif
+#if __has_include(<jsoncons/json.hpp>) && __has_include(<jsoncons_ext/msgpack/msgpack.hpp>) && \
+    __has_include(<jsoncons_ext/cbor/cbor.hpp>) && __has_include(<jsoncons_ext/bson/bson.hpp>)
+#define COMPLIANCE_WITH_JSONCONS 1
+#include <jsoncons/config/version.hpp>
+#include <jsoncons/json.hpp>
+#include <jsoncons_ext/bson/bson.hpp>
+#include <jsoncons_ext/cbor/cbor.hpp>
+#include <jsoncons_ext/msgpack/msgpack.hpp>
 #endif
 #if __has_include(<yaml-cpp/yaml.h>)
 #include <yaml-cpp/yaml.h>
@@ -160,6 +182,38 @@ static std::vector<uint8_t> from_hex(const std::string& s) {
   }
   return out;
 }
+
+#if __has_include(<glaze/glaze.hpp>)
+static bool json_nesting_exceeds(const std::vector<uint8_t>& raw, size_t limit) {
+  size_t depth = 0;
+  bool in_str = false;
+  bool esc = false;
+  for (uint8_t b : raw) {
+    if (in_str) {
+      if (esc) esc = false;
+      else if (b == '\\') esc = true;
+      else if (b == '"') in_str = false;
+      continue;
+    }
+    if (b == '"') {
+      in_str = true;
+    } else if (b == '[' || b == '{') {
+      if (++depth > limit) return true;
+    } else if ((b == ']' || b == '}') && depth > 0) {
+      --depth;
+    }
+  }
+  return false;
+}
+#endif
+
+#if defined(COMPLIANCE_WITH_JSONCONS)
+static std::string jsoncons_ver() {
+  return std::to_string(JSONCONS_VERSION_MAJOR) + "." +
+         std::to_string(JSONCONS_VERSION_MINOR) + "." +
+         std::to_string(JSONCONS_VERSION_PATCH);
+}
+#endif
 
 #if defined(COMPLIANCE_WITH_ARROW)
 static json columnar_rows(const std::shared_ptr<arrow::Table>& table) {
@@ -343,15 +397,73 @@ int main(int argc, char** argv) {
         ads.push_back({"nlohmann_json", [](const auto& raw, const auto&) {
           return json::parse(raw.begin(), raw.end());
         }});
-        // glaze, ArduinoJson, yyjson, simdjson, and RapidJSON are not registered
-        // here. Earlier adapters called nlohmann::json::parse and copied its
-        // score onto those names (issue #288).
+#if __has_include(<rapidjson/document.h>)
+        ads.push_back({"rapidjson", [](const auto& raw, const auto&) -> json {
+          const char* ptr = raw.empty() ? "" : reinterpret_cast<const char*>(raw.data());
+          rapidjson::Document d;
+          d.Parse<rapidjson::kParseIterativeFlag>(ptr, raw.size());
+          if (d.HasParseError()) {
+            throw std::runtime_error(rapidjson::GetParseError_En(d.GetParseError()));
+          }
+          return json("ok");
+        }, RAPIDJSON_VERSION_STRING});
+#endif
+#if __has_include(<simdjson.h>) && defined(COMPLIANCE_WITH_SIMDJSON)
+        ads.push_back({"simdjson", [](const auto& raw, const auto&) -> json {
+          const char* ptr = raw.empty() ? "" : reinterpret_cast<const char*>(raw.data());
+          simdjson::dom::parser parser;
+          simdjson::padded_string ps(ptr, raw.size());
+          simdjson::dom::element el;
+          auto err = parser.parse(ps).get(el);
+          if (err) throw std::runtime_error(simdjson::error_message(err));
+          return json("ok");
+        }, SIMDJSON_VERSION});
+#endif
+#if __has_include(<yyjson.h>) && defined(COMPLIANCE_WITH_YYJSON)
+        ads.push_back({"yyjson", [](const auto& raw, const auto&) -> json {
+          const char* ptr = raw.empty() ? "" : reinterpret_cast<const char*>(raw.data());
+          yyjson_read_err err{};
+          yyjson_doc* doc = yyjson_read_opts(const_cast<char*>(ptr), raw.size(), YYJSON_READ_NOFLAG, nullptr, &err);
+          if (!doc) throw std::runtime_error(err.msg ? err.msg : "yyjson parse error");
+          yyjson_doc_free(doc);
+          return json("ok");
+        }, YYJSON_VERSION_STRING});
+#endif
+#if __has_include(<ArduinoJson.h>)
+        ads.push_back({"arduinojson", [](const auto& raw, const auto&) -> json {
+          const char* ptr = raw.empty() ? "" : reinterpret_cast<const char*>(raw.data());
+          ArduinoJson::JsonDocument doc;
+          auto err = ArduinoJson::deserializeJson(doc, ptr, raw.size());
+          if (err) throw std::runtime_error(err.c_str());
+          return json("ok");
+        }, ARDUINOJSON_VERSION});
+#endif
+#if __has_include(<glaze/glaze.hpp>)
+        ads.push_back({"glaze", [](const auto& raw, const auto&) -> json {
+          // glaze 2.9.5 parses recursively with no depth cap; guard >2048 to
+          // avoid native stack overflow on 100k-bracket fuzz fixtures.
+          if (json_nesting_exceeds(raw, 2048)) {
+            throw std::runtime_error("glaze: nesting depth exceeds 2048");
+          }
+          std::string_view sv(raw.empty() ? "" : reinterpret_cast<const char*>(raw.data()), raw.size());
+          glz::json_t val{};
+          auto ec = glz::read_json(val, sv);
+          if (ec) throw std::runtime_error(glz::format_error(ec, sv));
+          return json("ok");
+        }, "2.9.5"});
+#endif
       } else if (fmt == "cbor") {
         // The binary decoders are called with the default allow_exceptions=true:
         // with allow_exceptions=false, malformed input is reported by returning a
         // discarded value instead of throwing, which the catch block below would
         // miss and score as "accepted".
         ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
+#if defined(COMPLIANCE_WITH_JSONCONS)
+        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) -> json {
+          (void)jsoncons::cbor::decode_cbor<jsoncons::json>(raw);
+          return json("ok");
+        }, jsoncons_ver()});
+#endif
       } else if (fmt == "msgpack") {
         ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
 #if __has_include(<msgpack.hpp>)
@@ -373,11 +485,23 @@ int main(int argc, char** argv) {
           return json(mp_type_name(oh.get().type));
         }});
 #endif
+#if defined(COMPLIANCE_WITH_JSONCONS)
+        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) -> json {
+          (void)jsoncons::msgpack::decode_msgpack<jsoncons::json>(raw);
+          return json("ok");
+        }, jsoncons_ver()});
+#endif
 
       } else if (fmt == "ubjson") {
         ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw); }});
       } else if (fmt == "bson") {
         ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
+#if defined(COMPLIANCE_WITH_JSONCONS)
+        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) -> json {
+          (void)jsoncons::bson::decode_bson<jsoncons::json>(raw);
+          return json("ok");
+        }, jsoncons_ver()});
+#endif
       } else if (fmt == "protobuf") {
         ads.push_back({"protobuf-wire", decode_protobuf});
         ads.push_back({"protobuf", decode_protobuf});

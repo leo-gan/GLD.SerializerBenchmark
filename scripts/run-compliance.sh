@@ -293,6 +293,18 @@ if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/s
             CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/$d")
         fi
     done
+    SIMDJSON_LIB="$PROJECT_ROOT/cpp/third_party/_fetch/simdjson-build/libsimdjson.a"
+    if [[ -f "$SIMDJSON_LIB" && -d "$PROJECT_ROOT/cpp/third_party/simdjson/singleheader" ]]; then
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_SIMDJSON=1)
+        CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/simdjson/singleheader")
+        CPP_LIBS+=("$SIMDJSON_LIB")
+    fi
+    YYJSON_LIB="$PROJECT_ROOT/cpp/third_party/_fetch/yyjson-build/libyyjson.a"
+    if [[ -f "$YYJSON_LIB" && -d "$PROJECT_ROOT/cpp/third_party/yyjson/src" ]]; then
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_YYJSON=1)
+        CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/yyjson/src")
+        CPP_LIBS+=("$YYJSON_LIB")
+    fi
     YAML_LIB="$PROJECT_ROOT/cpp/third_party/_fetch/yaml_cpp-build/libyaml-cpp.a"
     if [[ -f "$YAML_LIB" ]]; then
         CPP_LIBS+=("$YAML_LIB")
