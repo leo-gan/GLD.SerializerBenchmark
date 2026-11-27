@@ -107,7 +107,8 @@ if(EXISTS ${TP}/mpack/src/mpack/mpack-common.c)
   file(GLOB MPACK_SRC ${TP}/mpack/src/mpack/mpack-*.c)
   list(APPEND BENCH_SOURCES ${MPACK_SRC} src/serializers/ser_mpack.c)
   list(APPEND BENCH_INCLUDES ${TP}/mpack/src)
-  add_compile_definitions(HAS_MPACK=1)
+  # Enable MessagePack extension types (including timestamps) per ludocode/mpack#128.
+  add_compile_definitions(HAS_MPACK=1 MPACK_EXTENSIONS=1)
   message(STATUS "serializer: mpack REAL")
 endif()
 
