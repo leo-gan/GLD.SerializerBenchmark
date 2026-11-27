@@ -68,7 +68,7 @@ let package = Package(
         .package(url: "https://github.com/lynixliu/SwiftAvroCore.git", from: "2.0.0"),
         .package(url: "https://github.com/leo-gan/gld-avro-swift.git", from: "0.2.0"),
         .package(url: "https://github.com/leo-gan/gld-ion-swift.git", revision: "15d245a0859ed0221a30bf6bdc17452a9e8198a9"),
-        .package(url: "https://github.com/leo-gan/gld-kiln-swift.git", revision: "f22aea9ea6b66304214681499c7c460b42d3ee13"),
+        .package(url: "https://github.com/leo-gan/gld-kiln-swift.git", exact: "0.2.1"),
         .package(url: "https://github.com/christophhagen/BinaryCodable", from: "4.0.0"),
         .package(url: "https://github.com/mattt/swift-toml.git", from: "2.0.0"),
         // CryptoKit-compatible SHA-256 on Linux (Apple platforms use system CryptoKit).

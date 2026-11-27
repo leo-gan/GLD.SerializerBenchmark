@@ -1,5 +1,5 @@
 {
-  "originHash" : "a94665f3272eeda629d741077491ce07f55414044c1d169e3203357eaf299c89",
+  "originHash" : "bda6eeeafb9fea23fe04a8b0a3ecf2d6ef20c3bd099eef7aea208cf0e49d94b9",
   "pins" : [
     {
       "identity" : "binarycodable",
@@ -50,7 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/leo-gan/gld-kiln-swift.git",
       "state" : {
-        "revision" : "f22aea9ea6b66304214681499c7c460b42d3ee13"
+        "revision" : "7c588c50e415a08844fc9274457551ee78919237",
+        "version" : "0.2.1"
       }
     },
     {

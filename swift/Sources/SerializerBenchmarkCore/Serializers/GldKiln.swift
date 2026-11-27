@@ -17,7 +17,9 @@ public final class GldKilnSerializer: BenchSerializer {
     public let nativeKind: NativeKind = .schema
 
     private let writer = Writer(capacity: 256)
+    private let byteWriter = ByteWriter(capacity: 256)
     private let buffers = ReusedByteScratch()
+    private var encodedScratch = Data()
     /// Bound in prepare — timed path has no multi-way fixture switch (issue #59).
     private var encodeFn: ((Fixture) throws -> Data)?
     private var decodeFn: ((Data) throws -> Any)?
@@ -36,51 +38,57 @@ public final class GldKilnSerializer: BenchSerializer {
 
     public func prepare(_ fixture: Fixture) throws {
         let batch = fixture.instanceCount > 1
-        let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
         let writer = self.writer
+        let byteWriter = self.byteWriter
         let buffers = self.buffers
         switch fixture.name {
         case "message":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.messageValue
+            encodeFn = GldKilnBridge.bindCursorEncode(
+                typeName: fixture.name, batch: batch, writer: byteWriter,
+                store: { [self] raw in self.copyOut(raw) },
+                write: GldKilnBridge.writeMessage
             )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.message
+            decodeFn = GldKilnBridge.bindCursorDecode(
+                batch: batch, elemMinSize: 34, read: GldKilnBridge.readMessage
             )
         case "document":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.documentValue
+            encodeFn = GldKilnBridge.bindCursorEncode(
+                typeName: fixture.name, batch: batch, writer: byteWriter,
+                store: { [self] raw in self.copyOut(raw) },
+                write: GldKilnBridge.writeDocument
             )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.document
+            decodeFn = GldKilnBridge.bindCursorDecode(
+                batch: batch, elemMinSize: 20, read: GldKilnBridge.readDocument
             )
         case "telemetry":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.telemetryValue
+            encodeFn = GldKilnBridge.bindCursorEncode(
+                typeName: fixture.name, batch: batch, writer: byteWriter,
+                store: { [self] raw in self.copyOut(raw) },
+                write: GldKilnBridge.writeTelemetry
             )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.telemetry
+            decodeFn = GldKilnBridge.bindCursorDecode(
+                batch: batch, elemMinSize: 20, read: GldKilnBridge.readTelemetry
             )
         case "strings":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.stringsValue
+            encodeFn = GldKilnBridge.bindCursorEncode(
+                typeName: fixture.name, batch: batch, writer: byteWriter,
+                store: { [self] raw in self.copyOut(raw) },
+                write: GldKilnBridge.writeStrings
             )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.strings
+            decodeFn = GldKilnBridge.bindCursorDecode(
+                batch: batch, elemMinSize: 4, read: GldKilnBridge.readStrings
             )
         case "event":
-            encodeFn = GldKilnBridge.bindEncode(
-                typeName: fixture.name, batch: batch, schema: schema,
-                writer: writer, buffers: buffers, write: GldKilnBridge.eventValue
+            encodeFn = GldKilnBridge.bindCursorEncode(
+                typeName: fixture.name, batch: batch, writer: byteWriter,
+                store: { [self] raw in self.copyOut(raw) },
+                write: GldKilnBridge.writeEvent
             )
-            decodeFn = GldKilnBridge.bindDecode(
-                batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.event
+            decodeFn = GldKilnBridge.bindCursorDecode(
+                batch: batch, elemMinSize: 24, read: GldKilnBridge.readEvent
             )
         case "tensor":
+            let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
             encodeFn = GldKilnBridge.bindEncode(
                 typeName: fixture.name, batch: batch, schema: schema,
                 writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
@@ -89,12 +97,14 @@ public final class GldKilnSerializer: BenchSerializer {
                 batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.tensor
             )
         case "tensor_view":
+            let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
             encodeFn = GldKilnBridge.bindEncode(
                 typeName: fixture.name, batch: batch, schema: schema,
                 writer: writer, buffers: buffers, write: GldKilnBridge.tensorValue
             )
             decodeFn = { data in try GldKilnBridge.tensorView(data) }
         case "prompt":
+            let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
             encodeFn = GldKilnBridge.bindEncode(
                 typeName: fixture.name, batch: batch, schema: schema,
                 writer: writer, buffers: buffers, write: GldKilnBridge.promptValue
@@ -103,6 +113,7 @@ public final class GldKilnSerializer: BenchSerializer {
                 batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.prompt
             )
         case "shard":
+            let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
             encodeFn = GldKilnBridge.bindEncode(
                 typeName: fixture.name, batch: batch, schema: schema,
                 writer: writer, buffers: buffers, write: GldKilnBridge.shardValue
@@ -111,6 +122,7 @@ public final class GldKilnSerializer: BenchSerializer {
                 batch: batch, schema: schema, buffers: buffers, read: GldKilnBridge.shard
             )
         case "request":
+            let schema = try GldKilnBridge.schema(named: fixture.name, batch: batch)
             encodeFn = GldKilnBridge.bindEncode(
                 typeName: fixture.name, batch: batch, schema: schema,
                 writer: writer, buffers: buffers, write: GldKilnBridge.requestValue
@@ -122,6 +134,14 @@ public final class GldKilnSerializer: BenchSerializer {
             throw BenchError.unknownType(fixture.name)
         }
         _ = try serializeBytes(fixture)
+    }
+
+    private func copyOut(_ raw: UnsafeRawBufferPointer) -> Data {
+        encodedScratch.removeAll(keepingCapacity: true)
+        if let base = raw.baseAddress, raw.count > 0 {
+            encodedScratch.append(base.assumingMemoryBound(to: UInt8.self), count: raw.count)
+        }
+        return encodedScratch
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {
@@ -221,6 +241,196 @@ enum GldKilnBridge {
         default: throw BenchError.unknownType(name)
         }
         return batch ? .list(base) : base
+    }
+
+    static func bindCursorEncode<T>(
+        typeName: String,
+        batch: Bool,
+        writer: ByteWriter,
+        store: @escaping (UnsafeRawBufferPointer) -> Data,
+        write: @escaping (ByteWriter, T) throws -> Void
+    ) -> (Fixture) throws -> Data {
+        if batch {
+            return { fx in
+                guard let rows = fx.value as? [T] else {
+                    throw BenchError.unsupported("gld-kiln batch \(typeName)")
+                }
+                writer.reset()
+                try writer.writeCount(rows.count)
+                for row in rows {
+                    try write(writer, row)
+                }
+                return writer.withBytes(store)
+            }
+        }
+        return { fx in
+            guard let row = fx.value as? T else {
+                throw BenchError.unsupported("gld-kiln \(typeName)")
+            }
+            writer.reset()
+            try write(writer, row)
+            return writer.withBytes(store)
+        }
+    }
+
+    static func bindCursorDecode<T>(
+        batch: Bool,
+        elemMinSize: Int,
+        read: @escaping (inout ByteReader) throws -> T
+    ) -> (Data) throws -> Any {
+        if batch {
+            return { data in
+                try data.withUnsafeBytes { raw in
+                    var r = ByteReader(raw)
+                    let n = try r.readCount(each: elemMinSize)
+                    var rows: [T] = []
+                    rows.reserveCapacity(n)
+                    for _ in 0..<n {
+                        rows.append(try read(&r))
+                    }
+                    try r.finish()
+                    return rows
+                }
+            }
+        }
+        return { data in
+            try data.withUnsafeBytes { raw in
+                var r = ByteReader(raw)
+                let out = try read(&r)
+                try r.finish()
+                return out
+            }
+        }
+    }
+
+    static func writeMessage(_ w: ByteWriter, _ m: Message) throws {
+        w.writeBool(m.f_bool)
+        w.writeI32(m.f_int32)
+        w.writeI64(m.f_int64)
+        w.writeF64(m.f_float64)
+        try w.writeString(m.f_string)
+        w.writeBool(m.f_bool_2)
+        w.writeI32(m.f_int32_2)
+        try w.writeString(m.f_string_2)
+    }
+
+    static func readMessage(_ r: inout ByteReader) throws -> Message {
+        let fBool = try r.readBool()
+        let fInt32 = try r.readI32()
+        let fInt64 = try r.readI64()
+        let fFloat64 = try r.readF64()
+        let fString = try r.readString()
+        let fBool2 = try r.readBool()
+        let fInt32_2 = try r.readI32()
+        let fString2 = try r.readString()
+        return Message(
+            f_bool: fBool,
+            f_int32: fInt32,
+            f_int64: fInt64,
+            f_float64: fFloat64,
+            f_string: fString,
+            f_bool_2: fBool2,
+            f_int32_2: fInt32_2,
+            f_string_2: fString2
+        )
+    }
+
+    static func writeDocument(_ w: ByteWriter, _ d: Document) throws {
+        try w.writeString(d.id)
+        w.writeI32(d.status)
+        try w.writeString(d.meta.region)
+        w.writeI32(d.meta.version)
+        try w.writeCount(d.items.count)
+        for item in d.items {
+            try w.writeString(item.sku)
+            w.writeI32(item.qty)
+            w.writeI64(item.price_minor)
+        }
+    }
+
+    static func readDocument(_ r: inout ByteReader) throws -> Document {
+        let id = try r.readString()
+        let status = try r.readI32()
+        let region = try r.readString()
+        let version = try r.readI32()
+        let n = try r.readCount(each: 16)
+        var items: [DocumentItem] = []
+        items.reserveCapacity(n)
+        for _ in 0..<n {
+            let sku = try r.readString()
+            let qty = try r.readI32()
+            let price = try r.readI64()
+            items.append(DocumentItem(sku: sku, qty: qty, price_minor: price))
+        }
+        return Document(id: id, status: status, meta: DocumentMeta(region: region, version: version), items: items)
+    }
+
+    static func writeTelemetry(_ w: ByteWriter, _ t: Telemetry) throws {
+        try w.writeString(t.source)
+        w.writeI64(t.ts)
+        try w.writeCount(t.tags.count)
+        for tag in t.tags {
+            try w.writeString(tag)
+        }
+        try w.writeF64s(t.values)
+    }
+
+    static func readTelemetry(_ r: inout ByteReader) throws -> Telemetry {
+        let source = try r.readString()
+        let ts = try r.readI64()
+        let tagCount = try r.readCount(each: 4)
+        var tags: [String] = []
+        tags.reserveCapacity(tagCount)
+        for _ in 0..<tagCount {
+            tags.append(try r.readString())
+        }
+        let values = try r.readF64s()
+        return Telemetry(source: source, ts: ts, tags: tags, values: values)
+    }
+
+    static func writeStrings(_ w: ByteWriter, _ s: Strings) throws {
+        try w.writeCount(s.items.count)
+        for item in s.items {
+            try w.writeString(item)
+        }
+    }
+
+    static func readStrings(_ r: inout ByteReader) throws -> Strings {
+        let n = try r.readCount(each: 4)
+        var items: [String] = []
+        items.reserveCapacity(n)
+        for _ in 0..<n {
+            items.append(try r.readString())
+        }
+        return Strings(items: items)
+    }
+
+    static func writeEvent(_ w: ByteWriter, _ e: Event) throws {
+        try w.writeString(e.event_id)
+        try w.writeString(e.event_type)
+        w.writeI64(e.occurred_at)
+        try w.writeString(e.producer)
+        try w.writeCount(e.attrs.count)
+        for attr in e.attrs {
+            try w.writeString(attr.key)
+            try w.writeString(attr.value)
+        }
+    }
+
+    static func readEvent(_ r: inout ByteReader) throws -> Event {
+        let eventId = try r.readString()
+        let eventType = try r.readString()
+        let occurredAt = try r.readI64()
+        let producer = try r.readString()
+        let n = try r.readCount(each: 8)
+        var attrs: [EventAttr] = []
+        attrs.reserveCapacity(n)
+        for _ in 0..<n {
+            let k = try r.readString()
+            let v = try r.readString()
+            attrs.append(EventAttr(key: k, value: v))
+        }
+        return Event(event_id: eventId, event_type: eventType, occurred_at: occurredAt, producer: producer, attrs: attrs)
     }
 
     static func bindEncode<T>(
