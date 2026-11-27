@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Pack Gld.Kiln from git tag 0.2.0 into the local NuGet feed the csproj restores.
+# Pack Gld.Kiln from git tag 0.2.1 into the local NuGet feed the csproj restores.
 # Not a ProjectReference to a local checkout.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 FEED="$CS_DIR/src/obj/gld-kiln-feed"
-TAG="0.2.0"
+TAG="0.2.1"
 REPO="https://github.com/leo-gan/gld-kiln-csharp"
 
 mkdir -p "$FEED"
-if compgen -G "$FEED/*.nupkg" > /dev/null; then
+if [[ -f "$FEED/Gld.Kiln.$TAG.nupkg" ]]; then
   exit 0
 fi
 

@@ -49,8 +49,8 @@
             .hash = "jsonz-0.9.3-DD_xno8uCQBcGwewfw15VZ8a3zc3H3d2FNbSyPIYq457",
         },
         .gld_kiln_zig = .{
-            .url = "git+https://github.com/leo-gan/gld-kiln-zig#51fd845a02c7ed5633552ac644a8aa425675f32f",
-            .hash = "gld_kiln_zig-0.2.0-Ts3JGfI6AgBVCio2q0Yt4JVgKI7ijytdB0d7gksI3F7V",
+            .url = "git+https://github.com/leo-gan/gld-kiln-zig?ref=0.2.1#6362a19be2f7bd0e6c33b9193895a4f260a3d762",
+            .hash = "gld_kiln_zig-0.2.1-Ts3JGQJ8AgDhoGG0B3FN2N5vdphNsgj80pfiABxAd3nV",
         },
     },
     .paths = .{

@@ -61,6 +61,8 @@ github.com/klauspost/cpuid/v2 v2.4.0 h1:S6Hrbc7+ywsr0r+RLapfGBHfyefhCTwEh3A0tV91
 github.com/klauspost/cpuid/v2 v2.4.0/go.mod h1:19jmZ9mjzoF//ddRSUsv0zfBTJWh3QJh9FNxZTMrGxU=
 github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4 h1:bAIIJpAy0WpLRsI7bGwe+gPU56ELHQajtE8HPrz7YXo=
 github.com/leo-gan/gld-kiln-go v0.0.0-20261021054340-c2c91fa472b4/go.mod h1:aemlYZQdcR8c7uAbzmMzRILz6p3VDZYV79eHn5eyRL8=
+github.com/leo-gan/gld-kiln-go v0.0.0-20261126213433-7c00dafddb27 h1:UrtH0RM81W0RxWkod2YuOh5XkBi07DFXCmE2IdUwW3Y=
+github.com/leo-gan/gld-kiln-go v0.0.0-20261126213433-7c00dafddb27/go.mod h1:aemlYZQdcR8c7uAbzmMzRILz6p3VDZYV79eHn5eyRL8=
 github.com/linkedin/goavro/v2 v2.15.0 h1:pDj1UrjUOO62iXhgBiE7jQkpNIc5/tA5eZsgolMjgVI=
 github.com/linkedin/goavro/v2 v2.15.0/go.mod h1:KXx+erlq+RPlGSPmLF7xGo6SAbh8sCQ53x064+ioxhk=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=

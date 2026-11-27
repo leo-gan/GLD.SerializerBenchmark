@@ -1,5 +1,5 @@
 /**
- * gld-kiln 0.2.0 — positional little-endian encode/decode.
+ * gld-kiln 0.2.1 — positional little-endian encode/decode.
  * Schemas are built once in prepare(). Numeric lists are cached as one
  * little-endian byte run outside the timer, then copied. tensor_view borrows.
  * A batch (array) is one list of the struct; one instance is the struct.
@@ -77,7 +77,7 @@ async function loadKiln() {
   return import(pathToFileURL(outfile).href);
 }
 
-const { FloatBits } = await loadKiln();
+const { FloatBits, compile } = await loadKiln();
 
 export { FloatBits };
 
@@ -197,7 +197,9 @@ const SCHEMAS = {
 
 const CAP = 16_777_216;
 const podBytes = new WeakMap();
+const compiledCodecs = new Map();
 let schema = null;
+let activeCodec = null;
 let borrow = false;
 
 function fail(kind) {
@@ -522,7 +524,7 @@ function borrowMatrix(buf) {
 
 export const kilnSer = {
   name: 'gld-kiln',
-  version: pkgVersion('gld-kiln') || '0.2.0',
+  version: pkgVersion('gld-kiln') || '0.2.1',
   category: 'binary',
   supports(name) {
     return Object.prototype.hasOwnProperty.call(SCHEMAS, name);
@@ -532,16 +534,30 @@ export const kilnSer = {
     if (!base) throw new Error(`gld-kiln has no schema for ${dataName}`);
     // Same schema object for every timed call. Array value => one list.
     // N is 1 for tensor, so tensor_view borrows that one struct.
-    borrow = dataName === 'tensor_view' && !Array.isArray(value);
-    schema = Array.isArray(value) ? ['list', base] : base;
+    const isBatch = Array.isArray(value);
+    borrow = dataName === 'tensor_view' && !isBatch;
+    schema = isBatch ? ['list', base] : base;
+    if (dataName !== 'tensor' && dataName !== 'tensor_view' && dataName !== 'shard') {
+      const key = isBatch ? `${dataName}:batch` : dataName;
+      let codec = compiledCodecs.get(key);
+      if (!codec) {
+        codec = compile(schema);
+        compiledCodecs.set(key, codec);
+      }
+      activeCodec = codec;
+      return;
+    }
+    activeCodec = null;
     // Numeric lists become one byte run here, outside the timer.
     warm(schema, value);
   },
   serialize(value) {
+    if (activeCodec !== null) return activeCodec.encode(value);
     if (schema == null) throw new Error('gld-kiln prepare was not called');
     return encodeDirect(schema, value);
   },
   deserialize(buf) {
+    if (activeCodec !== null) return activeCodec.decode(buf);
     if (schema == null) throw new Error('gld-kiln prepare was not called');
     if (borrow) return borrowMatrix(buf);
     f32Used = 0;

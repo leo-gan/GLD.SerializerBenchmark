@@ -3,8 +3,8 @@
 # The Maven version stays 0.2.0. REV is the bulk numeric-list commit.
 set -euo pipefail
 
-TAG=0.2.0
-REV=888ad8f91efe0d8c86e8763fb8fa328d3fb671b6
+TAG=0.2.1
+REV=8dec7bedd2267f3444a39f0bab85259746ce0fdb
 URL=https://github.com/leo-gan/gld-kiln-java.git
 M2_REPO="${M2_REPO:-${HOME}/.m2/repository}"
 JAR="${M2_REPO}/io/github/leo-gan/gld-kiln-java/${TAG}/gld-kiln-java-${TAG}.jar"

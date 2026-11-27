@@ -783,13 +783,36 @@
       "nlohmann_ubjson": [
         "ubjson"
       ],
+      "rapidjson": [
+        "json"
+      ],
+      "simdjson": [
+        "json"
+      ],
+      "yyjson": [
+        "json"
+      ],
+      "arduinojson": [
+        "json"
+      ],
+      "glaze": [
+        "json"
+      ],
       "yaml-cpp": [
         "yaml"
       ],
       "msgpack": [
         "msgpack"
       ],
-
+      "jsoncons_msgpack": [
+        "msgpack"
+      ],
+      "jsoncons_cbor": [
+        "cbor"
+      ],
+      "jsoncons_bson": [
+        "bson"
+      ],
       "protobuf": [
         "protobuf"
       ],

@@ -931,11 +931,194 @@ static size_t payload_need(test_data_kind_t kind, const test_fixture_t *fx) {
     }
 }
 
+static int g_direct_suite;
+static int g_batch;
+static test_data_kind_t g_kind;
+
+static int is_suite_kind(test_data_kind_t kind) {
+    return kind == TD_MESSAGE || kind == TD_DOCUMENT || kind == TD_TELEMETRY ||
+           kind == TD_STRINGS || kind == TD_EVENT;
+}
+
+static int direct_write_message(kiln_writer *w, const message_t *m) {
+    if (kiln_writer_bool(w, m->f_bool) != KILN_OK) return -1;
+    if (kiln_writer_i32(w, m->f_int32) != KILN_OK) return -1;
+    if (kiln_writer_i64(w, m->f_int64) != KILN_OK) return -1;
+    if (kiln_writer_f64(w, m->f_float64) != KILN_OK) return -1;
+    if (kiln_writer_cstr(w, m->f_string) != KILN_OK) return -1;
+    if (kiln_writer_bool(w, m->f_bool_2) != KILN_OK) return -1;
+    if (kiln_writer_i32(w, m->f_int32_2) != KILN_OK) return -1;
+    if (kiln_writer_cstr(w, m->f_string_2) != KILN_OK) return -1;
+    return 0;
+}
+
+static int direct_write_document(kiln_writer *w, const document_t *d) {
+    int i;
+    if (d->item_count < 0 || d->item_count > V2_MAX_CHILDREN) return -1;
+    if (kiln_writer_cstr(w, d->id) != KILN_OK) return -1;
+    if (kiln_writer_i32(w, d->status) != KILN_OK) return -1;
+    if (kiln_writer_cstr(w, d->meta.region) != KILN_OK) return -1;
+    if (kiln_writer_i32(w, d->meta.version) != KILN_OK) return -1;
+    if (kiln_writer_count(w, (size_t)d->item_count) != KILN_OK) return -1;
+    for (i = 0; i < d->item_count; i++) {
+        if (kiln_writer_cstr(w, d->items[i].sku) != KILN_OK) return -1;
+        if (kiln_writer_i32(w, d->items[i].qty) != KILN_OK) return -1;
+        if (kiln_writer_i64(w, d->items[i].price_minor) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_write_telemetry(kiln_writer *w, const telemetry_t *t) {
+    int i;
+    if (t->tag_count < 0 || t->tag_count > V2_MAX_TAGS) return -1;
+    if (t->value_count < 0 || t->value_count > V2_MAX_POINTS) return -1;
+    if (kiln_writer_cstr(w, t->source) != KILN_OK) return -1;
+    if (kiln_writer_i64(w, t->ts) != KILN_OK) return -1;
+    if (kiln_writer_count(w, (size_t)t->tag_count) != KILN_OK) return -1;
+    for (i = 0; i < t->tag_count; i++) {
+        if (kiln_writer_cstr(w, t->tags[i]) != KILN_OK) return -1;
+    }
+    if (kiln_writer_pod(w, t->values, (size_t)t->value_count, 8) != KILN_OK) return -1;
+    return 0;
+}
+
+static int direct_write_strings(kiln_writer *w, const strings_t *s) {
+    int i;
+    if (s->count < 0 || s->count > V2_MAX_STRINGS) return -1;
+    if (kiln_writer_count(w, (size_t)s->count) != KILN_OK) return -1;
+    for (i = 0; i < s->count; i++) {
+        if (kiln_writer_cstr(w, s->items[i]) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_write_event(kiln_writer *w, const event_t *e) {
+    int i;
+    if (e->attr_count < 0 || e->attr_count > V2_MAX_ATTRS) return -1;
+    if (kiln_writer_cstr(w, e->event_id) != KILN_OK) return -1;
+    if (kiln_writer_cstr(w, e->event_type) != KILN_OK) return -1;
+    if (kiln_writer_i64(w, e->occurred_at) != KILN_OK) return -1;
+    if (kiln_writer_cstr(w, e->producer) != KILN_OK) return -1;
+    if (kiln_writer_count(w, (size_t)e->attr_count) != KILN_OK) return -1;
+    for (i = 0; i < e->attr_count; i++) {
+        if (kiln_writer_cstr(w, e->attrs[i].key) != KILN_OK) return -1;
+        if (kiln_writer_cstr(w, e->attrs[i].value) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_write_one(kiln_writer *w, test_data_kind_t kind, const test_fixture_t *fx) {
+    switch (kind) {
+        case TD_MESSAGE: return direct_write_message(w, &fx->message);
+        case TD_DOCUMENT: return direct_write_document(w, &fx->document);
+        case TD_TELEMETRY: return direct_write_telemetry(w, &fx->telemetry);
+        case TD_STRINGS: return direct_write_strings(w, &fx->strings);
+        case TD_EVENT: return direct_write_event(w, &fx->event);
+        default: return -1;
+    }
+}
+
+static int direct_read_message(kiln_reader *r, message_t *m) {
+    int b1 = 0, b2 = 0;
+    if (kiln_reader_bool(r, &b1) != KILN_OK) return -1;
+    m->f_bool = b1 != 0;
+    if (kiln_reader_i32(r, &m->f_int32) != KILN_OK) return -1;
+    if (kiln_reader_i64(r, &m->f_int64) != KILN_OK) return -1;
+    if (kiln_reader_f64(r, &m->f_float64) != KILN_OK) return -1;
+    if (kiln_reader_cstr(r, m->f_string, sizeof m->f_string) != KILN_OK) return -1;
+    if (kiln_reader_bool(r, &b2) != KILN_OK) return -1;
+    m->f_bool_2 = b2 != 0;
+    if (kiln_reader_i32(r, &m->f_int32_2) != KILN_OK) return -1;
+    if (kiln_reader_cstr(r, m->f_string_2, sizeof m->f_string_2) != KILN_OK) return -1;
+    return 0;
+}
+
+static int direct_read_document(kiln_reader *r, document_t *d) {
+    uint32_t n = 0, i;
+    if (kiln_reader_cstr(r, d->id, sizeof d->id) != KILN_OK) return -1;
+    if (kiln_reader_i32(r, &d->status) != KILN_OK) return -1;
+    if (kiln_reader_cstr(r, d->meta.region, sizeof d->meta.region) != KILN_OK) return -1;
+    if (kiln_reader_i32(r, &d->meta.version) != KILN_OK) return -1;
+    if (kiln_reader_count(r, 16, &n) != KILN_OK || n > (uint32_t)V2_MAX_CHILDREN) return -1;
+    d->item_count = (int)n;
+    for (i = 0; i < n; i++) {
+        if (kiln_reader_cstr(r, d->items[i].sku, sizeof d->items[i].sku) != KILN_OK) return -1;
+        if (kiln_reader_i32(r, &d->items[i].qty) != KILN_OK) return -1;
+        if (kiln_reader_i64(r, &d->items[i].price_minor) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_read_telemetry(kiln_reader *r, telemetry_t *t) {
+    uint32_t nt = 0, nv = 0, i;
+    if (kiln_reader_cstr(r, t->source, sizeof t->source) != KILN_OK) return -1;
+    if (kiln_reader_i64(r, &t->ts) != KILN_OK) return -1;
+    if (kiln_reader_count(r, 4, &nt) != KILN_OK || nt > (uint32_t)V2_MAX_TAGS) return -1;
+    t->tag_count = (int)nt;
+    for (i = 0; i < nt; i++) {
+        if (kiln_reader_cstr(r, t->tags[i], V2_STR) != KILN_OK) return -1;
+    }
+    if (kiln_reader_pod(r, t->values, V2_MAX_POINTS, 8, &nv) != KILN_OK) return -1;
+    t->value_count = (int)nv;
+    return 0;
+}
+
+static int direct_read_strings(kiln_reader *r, strings_t *s) {
+    uint32_t n = 0, i;
+    if (kiln_reader_count(r, 4, &n) != KILN_OK || n > (uint32_t)V2_MAX_STRINGS) return -1;
+    s->count = (int)n;
+    for (i = 0; i < n; i++) {
+        if (kiln_reader_cstr(r, s->items[i], V2_STR) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_read_event(kiln_reader *r, event_t *e) {
+    uint32_t n = 0, i;
+    if (kiln_reader_cstr(r, e->event_id, sizeof e->event_id) != KILN_OK) return -1;
+    if (kiln_reader_cstr(r, e->event_type, sizeof e->event_type) != KILN_OK) return -1;
+    if (kiln_reader_i64(r, &e->occurred_at) != KILN_OK) return -1;
+    if (kiln_reader_cstr(r, e->producer, sizeof e->producer) != KILN_OK) return -1;
+    if (kiln_reader_count(r, 8, &n) != KILN_OK || n > (uint32_t)V2_MAX_ATTRS) return -1;
+    e->attr_count = (int)n;
+    for (i = 0; i < n; i++) {
+        if (kiln_reader_cstr(r, e->attrs[i].key, sizeof e->attrs[i].key) != KILN_OK) return -1;
+        if (kiln_reader_cstr(r, e->attrs[i].value, sizeof e->attrs[i].value) != KILN_OK) return -1;
+    }
+    return 0;
+}
+
+static int direct_read_one(kiln_reader *r, test_data_kind_t kind, test_fixture_t *out) {
+    stamp_one(out, kind);
+    switch (kind) {
+        case TD_MESSAGE: return direct_read_message(r, &out->message);
+        case TD_DOCUMENT: return direct_read_document(r, &out->document);
+        case TD_TELEMETRY: return direct_read_telemetry(r, &out->telemetry);
+        case TD_STRINGS: return direct_read_strings(r, &out->strings);
+        case TD_EVENT: return direct_read_event(r, &out->event);
+        default: return -1;
+    }
+}
+
+static size_t suite_min_size(test_data_kind_t kind) {
+    switch (kind) {
+        case TD_MESSAGE: return 34;
+        case TD_DOCUMENT: return 20;
+        case TD_TELEMETRY: return 20;
+        case TD_STRINGS: return 4;
+        case TD_EVENT: return 24;
+        default: return 1;
+    }
+}
+
 static int prep(test_data_kind_t kind, const test_fixture_t *fx) {
     int batch = fx && fx->batch_n > 1 && fx->batch;
     g_write = NULL;
     g_read = NULL;
     g_schema = NULL;
+    g_direct_suite = is_suite_kind(kind);
+    g_batch = batch;
+    g_kind = kind;
     switch (kind) {
         case TD_MESSAGE:
             g_schema = batch ? &SCH_MESSAGE_LIST : &SCH_MESSAGE;
@@ -1002,7 +1185,25 @@ static int prep(test_data_kind_t kind, const test_fixture_t *fx) {
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
     kiln_value root;
-    if (!g_schema || !g_write || !fx || !buf || !ol) return -1;
+    if (!fx || !buf || !ol) return -1;
+    if (g_direct_suite) {
+        kiln_writer w;
+        kiln_writer_init(&w, buf, cap);
+        if (g_batch) {
+            int n = fx->batch_n;
+            int i;
+            if (n <= 1 || !fx->batch) return -1;
+            if (kiln_writer_count(&w, (size_t)n) != KILN_OK) return -1;
+            for (i = 0; i < n; i++) {
+                if (direct_write_one(&w, g_kind, &fx->batch[i])) return -1;
+            }
+        } else {
+            if (direct_write_one(&w, g_kind, fx)) return -1;
+        }
+        *ol = w.pos;
+        return 0;
+    }
+    if (!g_schema || !g_write) return -1;
     {
         size_t nbatch = (fx->batch_n > 1 && fx->batch) ? (size_t)fx->batch_n : 1;
         if (pool_reserve(nbatch * 96u + 64u)) return -1;
@@ -1022,8 +1223,36 @@ static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
     kiln_read_opts opts;
     kiln_err err;
-    (void)kind;
-    if (!g_schema || !g_read || !buf || !out) return -1;
+    if (!buf || !out) return -1;
+    if (g_direct_suite) {
+        kiln_reader r;
+        int expect = out->batch_n;
+        kiln_reader_init(&r, buf, len, NULL);
+        if (g_batch) {
+            uint32_t n = 0, i;
+            test_fixture_t *items;
+            if (kiln_reader_count(&r, suite_min_size(kind), &n) != KILN_OK) return -1;
+            if (n < 1 || (expect > 1 && (int)n != expect)) return -1;
+            items = (test_fixture_t *)calloc((size_t)n, sizeof(test_fixture_t));
+            if (!items) return -1;
+            for (i = 0; i < n; i++) {
+                if (direct_read_one(&r, kind, &items[i])) {
+                    free(items);
+                    return -1;
+                }
+            }
+            if (kiln_reader_finish(&r) != KILN_OK) {
+                free(items);
+                return -1;
+            }
+            return finish_batch(out, kind, items, (int)n);
+        }
+        memset(out, 0, sizeof(*out));
+        if (direct_read_one(&r, kind, out)) return -1;
+        if (kiln_reader_finish(&r) != KILN_OK) return -1;
+        return 0;
+    }
+    if (!g_schema || !g_read) return -1;
     memset(&opts, 0, sizeof opts);
     opts.standalone = 1;
     if (!g_doc)
@@ -1132,7 +1361,7 @@ static bool supports_kiln(test_data_kind_t kind) {
 }
 
 void bench_register_kiln(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "gld-kiln", "0.2.0", "binary", prep, ser, de, kiln_fidelity);
+    BENCH_ADD(o, c, "gld-kiln", kiln_version(), "binary", prep, ser, de, kiln_fidelity);
     o[*c - 1].owns_batch = 1;
     o[*c - 1].supports = supports_kiln;
 }

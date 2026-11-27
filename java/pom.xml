@@ -120,12 +120,12 @@
       <artifactId>jackson-dataformat-ion</artifactId>
       <version>${jackson.version}</version>
     </dependency>
-    <!-- io.github.leo-gan:gld-kiln-java 0.2.0 from main 888ad8f, not Maven Central.
+    <!-- io.github.leo-gan:gld-kiln-java 0.2.1 from tag 0.2.1, not Maven Central.
          java/scripts/fetch-gld-kiln.sh publishes that commit to the local repo before mvn. -->
     <dependency>
       <groupId>io.github.leo-gan</groupId>
       <artifactId>gld-kiln-java</artifactId>
-      <version>0.2.0</version>
+      <version>0.2.1</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>

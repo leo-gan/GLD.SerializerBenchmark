@@ -553,363 +553,232 @@ Value decode_request(const kiln::Value& value) { return request_from(value); }
 
 [[noreturn]] void fail(const char* what) { throw std::runtime_error(std::string("gld-kiln: ") + what); }
 
-void append_bytes(std::vector<uint8_t>& b, const void* p, std::size_t n) {
-  const auto* c = static_cast<const std::uint8_t*>(p);
-  b.insert(b.end(), c, c + n);
+void write_message(kiln::ByteWriter& w, const Message& row) {
+  w.put_bool(row.f_bool);
+  w.put_i32(row.f_int32);
+  w.put_i64(row.f_int64);
+  w.put_f64(row.f_float64);
+  w.put_str(row.f_string);
+  w.put_bool(row.f_bool_2);
+  w.put_i32(row.f_int32_2);
+  w.put_str(row.f_string_2);
 }
 
-void append_u32(std::vector<uint8_t>& b, std::uint32_t v) {
-  std::uint8_t t[4];
-  kiln::store_u32(t, v);
-  append_bytes(b, t, 4);
-}
-
-void append_count(std::vector<uint8_t>& b, std::size_t n) {
-  if (n > kiln::kCap || n > 0xffffffffu) fail("LIMIT");
-  append_u32(b, static_cast<std::uint32_t>(n));
-}
-
-void append_bool(std::vector<uint8_t>& b, bool v) { b.push_back(v ? 1 : 0); }
-
-void append_i32(std::vector<uint8_t>& b, std::int32_t v) {
-  append_u32(b, static_cast<std::uint32_t>(v));
-}
-
-void append_i64(std::vector<uint8_t>& b, std::int64_t v) {
-  std::uint8_t t[8];
-  kiln::store_u64(t, static_cast<std::uint64_t>(v));
-  append_bytes(b, t, 8);
-}
-
-void append_f32(std::vector<uint8_t>& b, float v) {
-  std::uint8_t t[4];
-  kiln::store_f32(t, v);
-  append_bytes(b, t, 4);
-}
-
-void append_f64(std::vector<uint8_t>& b, double v) {
-  std::uint8_t t[8];
-  kiln::store_f64(t, v);
-  append_bytes(b, t, 8);
-}
-
-void append_str(std::vector<uint8_t>& b, const std::string& s) {
-  append_count(b, s.size());
-  if (!s.empty()) append_bytes(b, s.data(), s.size());
-}
-
-template <typename T>
-void append_pod(std::vector<uint8_t>& b, const std::vector<T>& values) {
-  static_assert(std::is_trivially_copyable_v<T>);
-  append_count(b, values.size());
-  if (values.empty()) return;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  append_bytes(b, values.data(), values.size() * sizeof(T));
-#else
-  for (const T& value : values) {
-    if constexpr (std::is_same_v<T, float>) append_f32(b, value);
-    else if constexpr (std::is_same_v<T, double>) append_f64(b, value);
-    else append_i64(b, value);
-  }
-#endif
-}
-
-void append_message(std::vector<uint8_t>& b, const Message& row) {
-  append_bool(b, row.f_bool);
-  append_i32(b, row.f_int32);
-  append_i64(b, row.f_int64);
-  append_f64(b, row.f_float64);
-  append_str(b, row.f_string);
-  append_bool(b, row.f_bool_2);
-  append_i32(b, row.f_int32_2);
-  append_str(b, row.f_string_2);
-}
-
-void append_document(std::vector<uint8_t>& b, const Document& row) {
-  append_str(b, row.id);
-  append_i32(b, row.status);
-  append_str(b, row.meta.region);
-  append_i32(b, row.meta.version);
-  append_count(b, row.items.size());
+void write_document(kiln::ByteWriter& w, const Document& row) {
+  w.put_str(row.id);
+  w.put_i32(row.status);
+  w.put_str(row.meta.region);
+  w.put_i32(row.meta.version);
+  w.put_count(row.items.size());
   for (const DocumentItem& item : row.items) {
-    append_str(b, item.sku);
-    append_i32(b, item.qty);
-    append_i64(b, item.price_minor);
+    w.put_str(item.sku);
+    w.put_i32(item.qty);
+    w.put_i64(item.price_minor);
   }
 }
 
-void append_telemetry(std::vector<uint8_t>& b, const Telemetry& row) {
-  append_str(b, row.source);
-  append_i64(b, row.ts);
-  append_count(b, row.tags.size());
-  for (const std::string& tag : row.tags) append_str(b, tag);
-  append_pod(b, row.values);
+void write_telemetry(kiln::ByteWriter& w, const Telemetry& row) {
+  w.put_str(row.source);
+  w.put_i64(row.ts);
+  w.put_count(row.tags.size());
+  for (const std::string& tag : row.tags) w.put_str(tag);
+  w.put_pod(row.values);
 }
 
-void append_strings(std::vector<uint8_t>& b, const Strings& row) {
-  append_count(b, row.items.size());
-  for (const std::string& item : row.items) append_str(b, item);
+void write_strings(kiln::ByteWriter& w, const Strings& row) {
+  w.put_count(row.items.size());
+  for (const std::string& item : row.items) w.put_str(item);
 }
 
-void append_event(std::vector<uint8_t>& b, const Event& row) {
-  append_str(b, row.event_id);
-  append_str(b, row.event_type);
-  append_i64(b, row.occurred_at);
-  append_str(b, row.producer);
-  append_count(b, row.attrs.size());
+void write_event(kiln::ByteWriter& w, const Event& row) {
+  w.put_str(row.event_id);
+  w.put_str(row.event_type);
+  w.put_i64(row.occurred_at);
+  w.put_str(row.producer);
+  w.put_count(row.attrs.size());
   for (const EventAttr& attr : row.attrs) {
-    append_str(b, attr.key);
-    append_str(b, attr.value);
+    w.put_str(attr.key);
+    w.put_str(attr.value);
   }
 }
 
-void append_tensor(std::vector<uint8_t>& b, const TensorMatrix& row) {
-  append_i32(b, row.rows);
-  append_i32(b, row.cols);
-  append_pod(b, row.values);
+void write_tensor(kiln::ByteWriter& w, const TensorMatrix& row) {
+  w.put_i32(row.rows);
+  w.put_i32(row.cols);
+  w.put_pod(row.values);
 }
 
-void append_prompt(std::vector<uint8_t>& b, const Prompt& row) {
-  append_i32(b, row.batch);
-  append_i32(b, row.seq);
-  append_pod(b, row.input_ids);
-  append_pod(b, row.attention_mask);
-  append_pod(b, row.position_ids);
+void write_prompt(kiln::ByteWriter& w, const Prompt& row) {
+  w.put_i32(row.batch);
+  w.put_i32(row.seq);
+  w.put_pod(row.input_ids);
+  w.put_pod(row.attention_mask);
+  w.put_pod(row.position_ids);
 }
 
-void append_shard(std::vector<uint8_t>& b, const Shard& row) {
-  append_i32(b, row.vocab);
-  append_i32(b, row.hidden);
-  append_i32(b, row.ffn);
-  append_pod(b, row.tok_emb);
-  append_pod(b, row.attn);
-  append_pod(b, row.ffn_weight);
-  append_pod(b, row.norm);
+void write_shard(kiln::ByteWriter& w, const Shard& row) {
+  w.put_i32(row.vocab);
+  w.put_i32(row.hidden);
+  w.put_i32(row.ffn);
+  w.put_pod(row.tok_emb);
+  w.put_pod(row.attn);
+  w.put_pod(row.ffn_weight);
+  w.put_pod(row.norm);
 }
 
-void append_request(std::vector<uint8_t>& b, const Request& row) {
-  append_i64(b, row.request_id);
-  append_str(b, row.model);
-  append_f32(b, row.temperature);
-  append_prompt(b, row.inputs);
+void write_request(kiln::ByteWriter& w, const Request& row) {
+  w.put_i64(row.request_id);
+  w.put_str(row.model);
+  w.put_f32(row.temperature);
+  write_prompt(w, row.inputs);
 }
 
-struct Cursor {
-  const std::uint8_t* p;
-  const std::uint8_t* end;
-  explicit Cursor(const std::vector<uint8_t>& data) : p(data.data()), end(data.data() + data.size()) {}
-  std::size_t left() const { return static_cast<std::size_t>(end - p); }
-  void need(std::size_t n) const {
-    if (left() < n) fail("EOF");
-  }
-  std::uint32_t u32() {
-    need(4);
-    const std::uint32_t v = kiln::load_u32(p);
-    p += 4;
-    return v;
-  }
-  std::uint32_t count(std::size_t width) {
-    const std::uint32_t n = u32();
-    if (static_cast<std::uint64_t>(n) > kiln::kCap) fail("LIMIT");
-    if (width != 0 && static_cast<std::uint64_t>(n) > left() / width) fail("EOF");
-    return n;
-  }
-  bool boolean() {
-    need(1);
-    const std::uint8_t v = *p++;
-    if (v > 1) fail("TYPE");
-    return v == 1;
-  }
-  std::int32_t i32() { return static_cast<std::int32_t>(u32()); }
-  std::int64_t i64() {
-    need(8);
-    const std::uint64_t v = kiln::load_u64(p);
-    p += 8;
-    return static_cast<std::int64_t>(v);
-  }
-  float f32() {
-    need(4);
-    const float v = kiln::load_f32(p);
-    p += 4;
-    return v;
-  }
-  double f64() {
-    need(8);
-    const double v = kiln::load_f64(p);
-    p += 8;
-    return v;
-  }
-  std::string str() {
-    const std::uint32_t n = count(1);
-    need(n);
-    if (!kiln::utf8_ok(p, n)) fail("UTF8");
-    std::string out(reinterpret_cast<const char*>(p), n);
-    p += n;
-    return out;
-  }
-  void finish() const {
-    if (p != end) fail("TRAILING");
-  }
-};
-
-template <typename T>
-std::vector<T> read_pod(Cursor& in) {
-  static_assert(std::is_trivially_copyable_v<T>);
-  const std::uint32_t n = in.count(sizeof(T));
-  std::vector<T> out;
-  if (n == 0) return out;
-  const std::size_t bytes = static_cast<std::size_t>(n) * sizeof(T);
-  in.need(bytes);
-  {
-    PoolOn pool;
-    out.reserve(n);
-  }
-  const bool aligned = (reinterpret_cast<std::uintptr_t>(in.p) % alignof(T)) == 0;
-  if (aligned) {
-    const T* src = reinterpret_cast<const T*>(in.p);
-    out.insert(out.end(), src, src + n);
-  } else if (n >= 4096) {
-    out.insert(out.end(), n, T{});
-    std::memcpy(out.data(), in.p, bytes);
-  } else {
-    for (std::uint32_t i = 0; i < n; ++i) {
-      T value;
-      std::memcpy(&value, in.p + i * sizeof(T), sizeof(T));
-      out.push_back(value);
-    }
-  }
-  in.p += bytes;
-  return out;
-}
-
-Message read_message(Cursor& in) {
-  Message out;
+void read_message(kiln::ByteReader& in, Message& out) {
   out.f_bool = in.boolean();
   out.f_int32 = in.i32();
   out.f_int64 = in.i64();
   out.f_float64 = in.f64();
-  out.f_string = in.str();
+  in.str_into(out.f_string);
   out.f_bool_2 = in.boolean();
   out.f_int32_2 = in.i32();
-  out.f_string_2 = in.str();
-  return out;
+  in.str_into(out.f_string_2);
 }
 
-Document read_document(Cursor& in) {
-  Document out;
-  out.id = in.str();
+void read_document(kiln::ByteReader& in, Document& out) {
+  in.str_into(out.id);
   out.status = in.i32();
-  out.meta.region = in.str();
+  in.str_into(out.meta.region);
   out.meta.version = in.i32();
   const std::uint32_t n = in.count(16);
   {
     PoolOn pool;
-    out.items.reserve(n);
+    out.items.resize(n);
   }
   for (std::uint32_t i = 0; i < n; ++i) {
-    DocumentItem item;
-    item.sku = in.str();
+    DocumentItem& item = out.items[i];
+    in.str_into(item.sku);
     item.qty = in.i32();
     item.price_minor = in.i64();
-    out.items.push_back(std::move(item));
   }
-  return out;
 }
 
-Telemetry read_telemetry(Cursor& in) {
-  Telemetry out;
-  out.source = in.str();
+void read_telemetry(kiln::ByteReader& in, Telemetry& out) {
+  in.str_into(out.source);
   out.ts = in.i64();
   const std::uint32_t tags = in.count(4);
-  out.tags.reserve(tags);
-  for (std::uint32_t i = 0; i < tags; ++i) out.tags.push_back(in.str());
-  out.values = read_pod<double>(in);
-  return out;
+  out.tags.resize(tags);
+  for (std::uint32_t i = 0; i < tags; ++i) in.str_into(out.tags[i]);
+  PoolOn pool;
+  in.read_pod(out.values);
 }
 
-Strings read_strings(Cursor& in) {
-  Strings out;
+void read_strings(kiln::ByteReader& in, Strings& out) {
   const std::uint32_t n = in.count(4);
-  out.items.reserve(n);
-  for (std::uint32_t i = 0; i < n; ++i) out.items.push_back(in.str());
-  return out;
+  out.items.resize(n);
+  for (std::uint32_t i = 0; i < n; ++i) in.str_into(out.items[i]);
 }
 
-Event read_event(Cursor& in) {
-  Event out;
-  out.event_id = in.str();
-  out.event_type = in.str();
+void read_event(kiln::ByteReader& in, Event& out) {
+  in.str_into(out.event_id);
+  in.str_into(out.event_type);
   out.occurred_at = in.i64();
-  out.producer = in.str();
+  in.str_into(out.producer);
   const std::uint32_t n = in.count(8);
-  out.attrs.reserve(n);
+  out.attrs.resize(n);
   for (std::uint32_t i = 0; i < n; ++i) {
-    EventAttr attr;
-    attr.key = in.str();
-    attr.value = in.str();
-    out.attrs.push_back(std::move(attr));
+    EventAttr& attr = out.attrs[i];
+    in.str_into(attr.key);
+    in.str_into(attr.value);
   }
-  return out;
 }
 
-TensorMatrix read_tensor(Cursor& in) {
+TensorMatrix read_tensor(kiln::ByteReader& in) {
   TensorMatrix out;
   out.rows = in.i32();
   out.cols = in.i32();
-  out.values = read_pod<float>(in);
+  PoolOn pool;
+  in.read_pod(out.values);
   return out;
 }
 
-Prompt read_prompt(Cursor& in) {
+Prompt read_prompt(kiln::ByteReader& in) {
   Prompt out;
   out.batch = in.i32();
   out.seq = in.i32();
-  out.input_ids = read_pod<std::int64_t>(in);
-  out.attention_mask = read_pod<std::int64_t>(in);
-  out.position_ids = read_pod<std::int64_t>(in);
+  PoolOn pool;
+  in.read_pod(out.input_ids);
+  in.read_pod(out.attention_mask);
+  in.read_pod(out.position_ids);
   return out;
 }
 
-Shard read_shard(Cursor& in) {
+Shard read_shard(kiln::ByteReader& in) {
   Shard out;
   out.vocab = in.i32();
   out.hidden = in.i32();
   out.ffn = in.i32();
-  out.tok_emb = read_pod<float>(in);
-  out.attn = read_pod<float>(in);
-  out.ffn_weight = read_pod<float>(in);
-  out.norm = read_pod<float>(in);
+  PoolOn pool;
+  in.read_pod(out.tok_emb);
+  in.read_pod(out.attn);
+  in.read_pod(out.ffn_weight);
+  in.read_pod(out.norm);
   return out;
 }
 
-Request read_request(Cursor& in) {
+Request read_request(kiln::ByteReader& in) {
   Request out;
   out.request_id = in.i64();
-  out.model = in.str();
+  in.str_into(out.model);
   out.temperature = in.f32();
   out.inputs = read_prompt(in);
   return out;
 }
 
-std::size_t str_wire(const std::string& s) {
-  if (s.size() > kiln::kCap) fail("LIMIT");
-  return 4 + s.size();
-}
-
 std::size_t message_wire(const Message& row) {
-  return 26 + str_wire(row.f_string) + str_wire(row.f_string_2);
+  return 26 + kiln::wire_str_size(row.f_string) + kiln::wire_str_size(row.f_string_2);
 }
 
-std::size_t pod_wire(std::size_t n, std::size_t width) { return 4 + n * width; }
+std::size_t document_wire(const Document& row) {
+  std::size_t n = 12 + kiln::wire_str_size(row.id) + kiln::wire_str_size(row.meta.region);
+  kiln::wire_list_header_size(row.items.size());
+  for (const DocumentItem& item : row.items) {
+    n += 12 + kiln::wire_str_size(item.sku);
+  }
+  return n;
+}
+
+std::size_t telemetry_wire(const Telemetry& row) {
+  std::size_t n = 12 + kiln::wire_str_size(row.source) + kiln::wire_pod_size(row.values.size(), 8);
+  kiln::wire_list_header_size(row.tags.size());
+  for (const std::string& tag : row.tags) n += kiln::wire_str_size(tag);
+  return n;
+}
+
+std::size_t strings_wire(const Strings& row) {
+  std::size_t n = kiln::wire_list_header_size(row.items.size());
+  for (const std::string& item : row.items) n += kiln::wire_str_size(item);
+  return n;
+}
+
+std::size_t event_wire(const Event& row) {
+  std::size_t n = 12 + kiln::wire_str_size(row.event_id) + kiln::wire_str_size(row.event_type) +
+                  kiln::wire_str_size(row.producer);
+  kiln::wire_list_header_size(row.attrs.size());
+  for (const EventAttr& attr : row.attrs) {
+    n += kiln::wire_str_size(attr.key) + kiln::wire_str_size(attr.value);
+  }
+  return n;
+}
 
 std::size_t prompt_wire(const Prompt& row) {
-  return 8 + pod_wire(row.input_ids.size(), 8) + pod_wire(row.attention_mask.size(), 8) +
-         pod_wire(row.position_ids.size(), 8);
+  return 8 + kiln::wire_pod_size(row.input_ids.size(), 8) +
+         kiln::wire_pod_size(row.attention_mask.size(), 8) +
+         kiln::wire_pod_size(row.position_ids.size(), 8);
 }
 
 template <typename T>
 std::size_t rows_wire(const std::vector<T>& rows, std::size_t (*one)(const T&)) {
-  std::size_t n = 4;
+  std::size_t n = kiln::wire_list_header_size(rows.size());
   for (const T& row : rows) n += one(row);
   return n;
 }
@@ -927,18 +796,24 @@ void lock_wire_once() {
   message.f_bool_2 = false;
   message.f_int32_2 = 4;
   message.f_string_2 = "z";
-  std::vector<uint8_t> direct;
-  append_message(direct, message);
+  std::vector<uint8_t> direct(message_wire(message));
+  {
+    kiln::ByteWriter bw(direct.data());
+    write_message(bw, message);
+  }
   const std::vector<uint8_t> library = kiln::encode(message_schema(), message_value(message));
   if (direct != library) fail("message wire");
   TensorMatrix tensor;
   tensor.rows = 1;
   tensor.cols = 2;
   tensor.values = {f32_from_bits(0x80000000u), f32_from_bits(0x7fc00000u)};
-  direct.clear();
-  append_tensor(direct, tensor);
+  direct.resize(12 + tensor.values.size() * 4);
+  {
+    kiln::ByteWriter bw(direct.data());
+    write_tensor(bw, tensor);
+  }
   if (direct != kiln::encode(tensor_schema(), tensor_value(tensor))) fail("tensor wire");
-  Cursor back(direct);
+  kiln::ByteReader back(direct);
   const TensorMatrix round = read_tensor(back);
   back.finish();
   if (!(round == tensor)) fail("tensor round");
@@ -1007,9 +882,10 @@ class KilnSer final : public ISerializer {
       writer_.encode(active_schema(), library_value(fx));
       return writer_.release();
     }
-    std::vector<uint8_t> out;
-    out.reserve(wire_size(fx));
-    write_fixture(out, fx);
+    const std::size_t need = wire_size(fx);
+    std::vector<uint8_t> out(need);
+    kiln::ByteWriter bw(out.data());
+    write_fixture(bw, fx);
     return out;
   }
 
@@ -1035,7 +911,7 @@ class KilnSer final : public ISerializer {
           break;
       }
     }
-    Cursor in(data);
+    kiln::ByteReader in(data);
     Value out = read_fixture(in);
     in.finish();
     return out;
@@ -1047,69 +923,83 @@ class KilnSer final : public ISerializer {
       case Cell::Message:
         return batch_ ? rows_wire(std::get<std::vector<Message>>(fx.value), message_wire)
                       : message_wire(std::get<Message>(fx.value));
+      case Cell::Document:
+        return batch_ ? rows_wire(std::get<std::vector<Document>>(fx.value), document_wire)
+                      : document_wire(std::get<Document>(fx.value));
+      case Cell::Telemetry:
+        return batch_ ? rows_wire(std::get<std::vector<Telemetry>>(fx.value), telemetry_wire)
+                      : telemetry_wire(std::get<Telemetry>(fx.value));
+      case Cell::Strings:
+        return batch_ ? rows_wire(std::get<std::vector<Strings>>(fx.value), strings_wire)
+                      : strings_wire(std::get<Strings>(fx.value));
+      case Cell::Event:
+        return batch_ ? rows_wire(std::get<std::vector<Event>>(fx.value), event_wire)
+                      : event_wire(std::get<Event>(fx.value));
       case Cell::Tensor: {
         const auto& row = std::get<TensorMatrix>(fx.value);
-        return 12 + row.values.size() * 4;
+        return 8 + kiln::wire_pod_size(row.values.size(), 4);
       }
       case Cell::Prompt:
         return prompt_wire(std::get<Prompt>(fx.value));
       case Cell::Shard: {
         const auto& row = std::get<Shard>(fx.value);
-        return 28 + 4 * (row.tok_emb.size() + row.attn.size() + row.ffn_weight.size() + row.norm.size());
+        return 12 + kiln::wire_pod_size(row.tok_emb.size(), 4) +
+               kiln::wire_pod_size(row.attn.size(), 4) +
+               kiln::wire_pod_size(row.ffn_weight.size(), 4) +
+               kiln::wire_pod_size(row.norm.size(), 4);
       }
       case Cell::Request: {
         const auto& row = std::get<Request>(fx.value);
-        return 12 + str_wire(row.model) + prompt_wire(row.inputs);
+        return 12 + kiln::wire_str_size(row.model) + prompt_wire(row.inputs);
       }
-      default:
-        return batch_ ? static_cast<std::size_t>(fx.instance_count) * 256 : 256;
     }
+    fail("prepare was not called");
   }
 
-  void write_fixture(std::vector<uint8_t>& out, const Fixture& fx) const {
+  void write_fixture(kiln::ByteWriter& w, const Fixture& fx) const {
     switch (cell_) {
       case Cell::Message:
-        write_rows<Message>(out, fx, append_message);
+        write_rows<Message>(w, fx, write_message);
         break;
       case Cell::Document:
-        write_rows<Document>(out, fx, append_document);
+        write_rows<Document>(w, fx, write_document);
         break;
       case Cell::Telemetry:
-        write_rows<Telemetry>(out, fx, append_telemetry);
+        write_rows<Telemetry>(w, fx, write_telemetry);
         break;
       case Cell::Strings:
-        write_rows<Strings>(out, fx, append_strings);
+        write_rows<Strings>(w, fx, write_strings);
         break;
       case Cell::Event:
-        write_rows<Event>(out, fx, append_event);
+        write_rows<Event>(w, fx, write_event);
         break;
       case Cell::Tensor:
-        append_tensor(out, std::get<TensorMatrix>(fx.value));
+        write_tensor(w, std::get<TensorMatrix>(fx.value));
         break;
       case Cell::Prompt:
-        append_prompt(out, std::get<Prompt>(fx.value));
+        write_prompt(w, std::get<Prompt>(fx.value));
         break;
       case Cell::Shard:
-        append_shard(out, std::get<Shard>(fx.value));
+        write_shard(w, std::get<Shard>(fx.value));
         break;
       case Cell::Request:
-        append_request(out, std::get<Request>(fx.value));
+        write_request(w, std::get<Request>(fx.value));
         break;
     }
   }
 
   template <typename T>
-  void write_rows(std::vector<uint8_t>& out, const Fixture& fx, void (*one)(std::vector<uint8_t>&, const T&)) const {
+  void write_rows(kiln::ByteWriter& w, const Fixture& fx, void (*one)(kiln::ByteWriter&, const T&)) const {
     if (!batch_) {
-      one(out, std::get<T>(fx.value));
+      one(w, std::get<T>(fx.value));
       return;
     }
     const auto& rows = std::get<std::vector<T>>(fx.value);
-    append_count(out, rows.size());
-    for (const T& row : rows) one(out, row);
+    w.put_count(rows.size());
+    for (const T& row : rows) one(w, row);
   }
 
-  Value read_fixture(Cursor& in) const {
+  Value read_fixture(kiln::ByteReader& in) const {
     switch (cell_) {
       case Cell::Message:
         return read_rows<Message>(in, read_message, 34);
@@ -1134,15 +1024,19 @@ class KilnSer final : public ISerializer {
   }
 
   template <typename T>
-  Value read_rows(Cursor& in, T (*one)(Cursor&), std::size_t min_size) const {
-    if (!batch_) return one(in);
+  Value read_rows(kiln::ByteReader& in, void (*one)(kiln::ByteReader&, T&), std::size_t min_size) const {
+    if (!batch_) {
+      T row;
+      one(in, row);
+      return row;
+    }
     const std::uint32_t n = in.count(min_size);
     std::vector<T> rows;
     {
       PoolOn pool;
-      rows.reserve(n);
+      rows.resize(n);
     }
-    for (std::uint32_t i = 0; i < n; ++i) rows.push_back(one(in));
+    for (std::uint32_t i = 0; i < n; ++i) one(in, rows[i]);
     return rows;
   }
 
