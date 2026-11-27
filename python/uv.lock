@@ -332,12 +332,8 @@ wheels = [
 
 [[package]]
 name = "gld-kiln"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ea/15/2297f4c9430b85ca72457796aa8a97a3ae8d43657adb92eaae41766c2f25/gld_kiln-0.2.0.tar.gz", hash = "sha256:4e94213e439f4071e048467bc4bcc510faf86009a61b6ef70d6ddede052f9833", size = 16395, upload-time = "2026-10-20T04:26:56.297Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/cc/45c753165c122fcdb92728c1f99b7aacda5d459ef6db023f208bd9536a77/gld_kiln-0.2.0-py3-none-any.whl", hash = "sha256:71ba9964474be2ae9e2cf264f3735676bddd9058265936f8dbd66aafefed8e86", size = 16314, upload-time = "2026-10-20T04:26:54.895Z" },
-]
+version = "0.2.1"
+source = { git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.1#8a43190cb35b480ae9fb38581e9bf6cbe7c7a1e8" }
 
 [[package]]
 name = "h5py"
@@ -1289,7 +1285,7 @@ requires-dist = [
     { name = "dill", specifier = ">=0.3.9,<1" },
     { name = "fastavro", specifier = ">=1.10.0,<2" },
     { name = "flatbuffers", specifier = ">=25.12.19,<26" },
-    { name = "gld-kiln", specifier = ">=0.2.0,<0.3" },
+    { name = "gld-kiln", git = "https://github.com/leo-gan/gld-kiln-python.git?tag=0.2.1" },
     { name = "h5py", specifier = ">=3.16,<4" },
     { name = "mashumaro", specifier = ">=3.14,<4" },
     { name = "msgpack", specifier = ">=1.1.0,<2" },
