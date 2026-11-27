@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * gld-kiln 0.2.0 — positional little-endian structs. Schema is built once in {@link #prepare}.
+ * gld-kiln 0.2.1 — positional little-endian structs. Schema is built once in {@link #prepare}.
  * The timed path is {@link Kiln#encodeTo} and {@link Kiln#decode} with a {@link NumericPool}.
  * Domain maps are built in prepare. {@code tensor_view} decode borrows the encoded bytes.
  *
