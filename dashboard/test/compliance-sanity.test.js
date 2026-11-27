@@ -393,6 +393,29 @@ test('live C# JSON payload scores NetJSON, SpanJson, and ShapeShift', () => {
   }
 });
 
+test('live C++ and Zig payloads score real JSON, MessagePack, CBOR, BSON, and ZON adapters', () => {
+  const compliance = loadJsonGz('compliance.json.gz');
+  const totals = new Map();
+  for (const cell of compliance.matrix || []) {
+    const key = `${cell.language}:${cell.format}:${cell.serializer}`;
+    totals.set(key, (totals.get(key) || 0) + (Number(cell.total) || 0));
+  }
+  for (const key of [
+    'cpp:json:arduinojson',
+    'cpp:json:glaze',
+    'cpp:json:rapidjson',
+    'cpp:json:simdjson',
+    'cpp:json:yyjson',
+    'cpp:msgpack:jsoncons_msgpack',
+    'cpp:cbor:jsoncons_cbor',
+    'cpp:bson:jsoncons_bson',
+    'zig:msgpack:serde.msgpack',
+    'zig:zon:serde.zon',
+  ]) {
+    assert.ok((totals.get(key) || 0) > 0, `${key} must have live compliance cells`);
+  }
+});
+
 test('live payload: every language All = scored ∪ No public spec', () => {
   const compliance = loadJsonGz('compliance.json.gz');
   const langs = [...new Set((compliance.languages || []).map(String))];

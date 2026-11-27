@@ -234,16 +234,11 @@ pub fn main(init: std.process.Init) !void {
         .{ .dir = "toml", .sers = &.{"serde.toml"} },
         .{ .dir = "arrow", .sers = &.{"gld-arrow"} },
         .{ .dir = "avro", .sers = &.{"gld-avro"} },
-        // serde.msgpack stays unscored: serde.zig 1.2.4 decodes only into a
-        // comptime type, and Value itself does not deserialize. A hand-written
-        // skip would not be this library.
-        .{ .dir = "msgpack", .sers = &.{ "zig-msgpack", "msgpack.zig" } },
+        .{ .dir = "msgpack", .sers = &.{ "zig-msgpack", "msgpack.zig", "serde.msgpack" } },
         .{ .dir = "cbor", .sers = &.{"zbor"} },
         .{ .dir = "capnp", .sers = &.{"capnproto"} },
         .{ .dir = "flatbuffers", .sers = &.{"flatbuffers"} },
-        // serde.zon stays unscored for the same reason: union decode is rejected
-        // at compile time, so there is no dynamic ZON entry point.
-        .{ .dir = "zon", .sers = &.{"std.zon"} },
+        .{ .dir = "zon", .sers = &.{ "std.zon", "serde.zon" } },
     };
     for (extras) |ex| {
         if (!wantFmt(formats.items, ex.dir)) continue;
@@ -399,6 +394,14 @@ fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8, sch
         try decodeStdZon(alloc, bytes);
         return;
     }
+    if (std.mem.eql(u8, ser, "serde.zon")) {
+        try decodeSerdeZon(alloc, bytes);
+        return;
+    }
+    if (std.mem.eql(u8, ser, "serde.msgpack")) {
+        try decodeSerdeMsgpack(alloc, bytes);
+        return;
+    }
     if (std.mem.eql(u8, ser, "zbor")) {
         _ = try zbor.DataItem.new(bytes);
         return;
@@ -448,6 +451,48 @@ fn decodeStdZon(alloc: std.mem.Allocator, bytes: []const u8) !void {
     var ast = try std.zig.Ast.parse(alloc, src, .zon);
     defer ast.deinit(alloc);
     if (ast.errors.len != 0) return error.InvalidZon;
+}
+
+fn decodeSerdeMsgpack(alloc: std.mem.Allocator, bytes: []const u8) !void {
+    // Wrap input as a 1-entry fixmap {"v": <bytes>} and skip the unknown field
+    // through serde.msgpack.Deserializer's own MapAccess.skipValue() -> skipByTag().
+    const wrapped = try alloc.alloc(u8, 3 + bytes.len);
+    wrapped[0] = 0x81;
+    wrapped[1] = 0xa1;
+    wrapped[2] = 'v';
+    @memcpy(wrapped[3..], bytes);
+    var de = serde.msgpack.Deserializer.init(wrapped);
+    var map = try de.deserializeStruct(struct {});
+    if ((try map.nextKey(alloc)) == null) return error.UnexpectedEof;
+    try map.skipValue();
+    if (de.pos != wrapped.len) return error.TrailingData;
+}
+
+fn decodeSerdeZon(alloc: std.mem.Allocator, bytes: []const u8) !void {
+    var de = serde.zon.Deserializer.init(bytes);
+    de.skipWhitespace();
+    if (de.pos >= bytes.len) return error.UnexpectedEof;
+    const c = bytes[de.pos];
+    if (c == '.' and de.pos + 1 < bytes.len and bytes[de.pos + 1] == '{') {
+        var map = try de.deserializeStruct(struct {});
+        while (try map.nextKey(alloc)) |_| {
+            try map.skipValue();
+        }
+    } else if (c == '"') {
+        _ = try de.deserializeString(alloc);
+    } else if (c == 't' or c == 'f') {
+        _ = try de.deserializeBool();
+    } else if (c == 'n') {
+        _ = try de.deserializeOptional(i64, alloc);
+    } else {
+        const saved = de;
+        if (de.deserializeInt(i64)) |_| {} else |_| {
+            de = saved;
+            _ = try de.deserializeFloat(f64);
+        }
+    }
+    de.skipWhitespace();
+    if (de.pos != bytes.len) return error.TrailingData;
 }
 
 fn decodeCapnp(bytes: []const u8) !void {
