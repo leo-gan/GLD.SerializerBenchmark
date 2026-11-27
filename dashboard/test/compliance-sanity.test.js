@@ -325,6 +325,11 @@ test('live C payload scores mapped Avro / MessagePack / JSON libraries', () => {
   assert.ok((by.get('msgpack:mpack') || 0) > 0, 'C mpack must have live MessagePack cells');
   assert.ok((by.get('json:jansson') || 0) > 0, 'C jansson must have live JSON cells');
   assert.ok((by.get('json:yyjson') || 0) > 0, 'C yyjson must have live JSON cells');
+  const mpackCells = cells.filter((c) => c.format === 'msgpack' && c.serializer === 'mpack');
+  assert.equal(mpackCells.length, 3, 'C mpack must cover all 3 MessagePack spec profiles');
+  for (const c of mpackCells) {
+    assert.equal(c.failed, 0, `C mpack ${c.standard} must pass with MPACK_EXTENSIONS=1`);
+  }
 });
 
 test('C JSON and MessagePack subsets include ungraded libraries', () => {
