@@ -52,6 +52,10 @@ if [[ -x "${HOME}/.local/bin/protoc" ]]; then
 fi
 
 bash "$SCRIPT_DIR/fetch-gld-kiln.sh"
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_jni.so" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm JNI library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
 mvn -q -DskipTests package
 
 JAR="$JAVA_DIR/target/serializer-benchmark-java-1.0.0-SNAPSHOT.jar"

@@ -18,6 +18,7 @@ from .binary_amf import PyAmf0Serializer, PyAmf3Serializer
 from .binary_cbor2 import Cbor2Serializer
 from .binary_ion import AmazonIonSerializer
 from .binary_kiln import KilnSerializer
+from .binary_kiln_asm import KilnAsmSerializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
@@ -46,6 +47,7 @@ __all__ = [
     "PyAmf3Serializer",
     "AmazonIonSerializer",
     "KilnSerializer",
+    "KilnAsmSerializer",
     "ProtobufSerializer",
     "AvroSerializer",
     "FlatBuffersSerializer",

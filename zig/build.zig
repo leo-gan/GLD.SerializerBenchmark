@@ -100,6 +100,8 @@ pub fn build(b: *std.Build) void {
     const capnp_so = buildCapnpShared(b, capnp_prefix);
     b.getInstallStep().dependOn(&b.addInstallLibFile(capnp_so, "libzigcapnp.so").step);
 
+    const kiln_asm_lib = b.path("../build/kiln-asm/libkiln_asm_bench.a");
+
     const root = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
@@ -107,6 +109,7 @@ pub fn build(b: *std.Build) void {
         .imports = &imports,
     });
     applyCapnp(b, root, capnp_so, capnp_prefix);
+    root.addObjectFile(kiln_asm_lib);
 
     const exe = b.addExecutable(.{
         .name = "serializer-benchmark-zig",
@@ -138,6 +141,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .imports = &compliance_imports,
     });
+    compliance_root.addObjectFile(kiln_asm_lib);
     const compliance_exe = b.addExecutable(.{
         .name = "compliance",
         .root_module = compliance_root,
@@ -155,6 +159,7 @@ pub fn build(b: *std.Build) void {
         .imports = &imports,
     });
     applyCapnp(b, test_root, capnp_so, capnp_prefix);
+    test_root.addObjectFile(kiln_asm_lib);
     const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &.{};
     const unit_tests = b.addTest(.{
         .root_module = test_root,

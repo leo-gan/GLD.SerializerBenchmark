@@ -409,6 +409,7 @@ func builtin() []adapter {
 		{"sbe", "sbe", "1.40.2", decodeSBE},
 		{"go-amf0", "amf0", moduleVer("github.com/yutopp/go-amf0"), decodeGoAmf0},
 		{"gamf-amf0", "amf0", moduleVer("github.com/gnolizuh/gamf"), decodeGamfAmf0},
+		{"gld-kiln-asm", "kiln", kilnAsmVersion(), decodeKilnAsm},
 	}
 }
 

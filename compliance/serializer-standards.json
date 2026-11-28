@@ -77,6 +77,9 @@
       ],
       "gld-kiln": [
         "kiln"
+      ],
+      "gld-kiln-asm": [
+        "kiln"
       ]
     },
     "python": {
@@ -180,6 +183,9 @@
       "gld-kiln": [
         "kiln"
       ],
+      "gld-kiln-asm": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -275,6 +281,9 @@
       "gld-kiln": [
         "kiln"
       ],
+      "gld-kiln-asm": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -368,6 +377,9 @@
       "gld-kiln": [
         "kiln"
       ],
+      "gld-kiln-asm": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -452,6 +464,9 @@
         "sbe"
       ],
       "gld-kiln": [
+        "kiln"
+      ],
+      "gld-kiln-asm": [
         "kiln"
       ],
       "jtoon": [
@@ -555,6 +570,9 @@
       ],
       "ktoon": [
         "toon"
+      ],
+      "gld-kiln-asm": [
+        "kiln"
       ]
     },
     "csharp": {
@@ -678,6 +696,9 @@
       "gld-kiln": [
         "kiln"
       ],
+      "gld-kiln-asm": [
+        "kiln"
+      ],
       "Toon.Format": [
         "toon"
       ],
@@ -751,6 +772,9 @@
       ],
       "fory": [],
       "gld-kiln": [
+        "kiln"
+      ],
+      "gld-kiln-asm": [
         "kiln"
       ],
       "dagr-packed": [],
@@ -869,6 +893,9 @@
       "gld-kiln": [
         "kiln"
       ],
+      "gld-kiln-asm": [
+        "kiln"
+      ],
       "dagr-packed": [],
       "dagr-regular": [],
       "dagr-frozen": [],
@@ -924,6 +951,9 @@
       "BinaryCodable": [],
       "fory": [],
       "gld-kiln": [
+        "kiln"
+      ],
+      "gld-kiln-asm": [
         "kiln"
       ],
       "dagr-packed": [],
@@ -1053,6 +1083,9 @@
       ],
       "gld-kiln": [
         "kiln"
+      ],
+      "gld-kiln-asm": [
+        "kiln"
       ]
     },
     "mojo": {
@@ -1096,6 +1129,9 @@
         "smile"
       ],
       "gld-kiln": [
+        "kiln"
+      ],
+      "gld-kiln-asm": [
         "kiln"
       ],
       "gld-yaml": [
@@ -1152,6 +1188,9 @@
       ],
       "gld-arrow": [
         "arrow"
+      ],
+      "gld-kiln-asm": [
+        "kiln"
       ]
     }
   }

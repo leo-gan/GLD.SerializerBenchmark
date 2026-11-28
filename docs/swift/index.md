@@ -38,6 +38,7 @@ Swift compiles ahead of time to native machine code (`swift build -c release`) a
 | [gld-avro](https://github.com/leo-gan/gld-avro-swift) | `avro` | `suite` | `adapted` | `leo-gan/gld-avro-swift` 0.2.0 `parseAvsc` once; `encodeGeneric` / `decodeGeneric` |
 | [gld-ion](https://github.com/leo-gan/gld-ion-swift) | `ion` | `suite` | `adapted` | `leo-gan/gld-ion-swift` 0.2.0 Ion 1.0 binary `encode` / `decodeBinary` |
 | [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) | `kiln` | `suite`, `tensor` | `adapted` | `leo-gan/gld-kiln-swift` 0.2.0 positional `Writer.encode` / `decode`; `tensor_view` borrows payload |
+| [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln Wire Format v2 (`libkiln_asm_bench.a` via `KilnAsmC`); `tensor_view` borrows payload |
 | [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | `json` | `suite` | `adapted` | Server-oriented `Codable` JSON codec |
 | [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | `avro` | `suite` | `adapted` | Binary Avro with schema |
 | [SwiftBSON](https://github.com/mongodb/swift-bson) | `bson` | `suite` | `adapted` | Official `swift-bson`; map-root wrap for $N > 1$ |
@@ -67,6 +68,7 @@ Swift compiles ahead of time to native machine code (`swift build -c release`) a
     - **[gld-avro](https://github.com/leo-gan/gld-avro-swift)** — gld-avro-swift (leo-gan) is a pure-Swift Apache Avro binary codec that parses `.avsc` schemas in `prepare` and times `encodeGeneric` and `decodeGeneric`.
     - **[gld-ion](https://github.com/leo-gan/gld-ion-swift)** — gld-ion-swift (leo-gan) is a pure-Swift Amazon Ion 1.0 binary encoder and decoder timing `encode` and `decodeBinary`.
     - **[gld-kiln](https://github.com/leo-gan/gld-kiln-swift)** — gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
+    - **[gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm)** — gld-kiln-asm (leo-gan) is a pure x86-64 Assembly (GNU as) Kiln Wire Format v2 library with AOT schema codegen (`gld_kilngen_asm.py`) statically linked via `KilnAsmC` and shared `libkiln_asm_bench.a`. Covers `suite` and `tensor` (KLNT v2 with zero-copy `tensor_view`).
     - **[IkigaJSON](https://github.com/orlandos-nl/IkigaJSON)** — IkigaJSON is a server-oriented JSON encoder/decoder for Swift. The problem was Foundation JSON performance on Linux servers. IkigaJSON implements Codable with a faster core.
     - **[SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore)** — SwiftAvroCore implements Apache Avro for Swift. Avro exists for compact, schema-driven records. The library encodes binary Avro with a schema.
     - **[SwiftBSON](https://github.com/mongodb/swift-bson)** — swift-bson is MongoDB's official BSON library for Swift. BSON exists so MongoDB can store typed documents. This package implements that spec for Codable-style use.

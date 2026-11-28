@@ -275,6 +275,7 @@ set(BENCH_SOURCES
   src/serializers/ser_dagr.cpp
   src/serializers/ser_highfive.cpp
   src/serializers/ser_kiln.cpp
+  src/serializers/ser_kiln_asm.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -464,6 +465,7 @@ set(TEST_SOURCES
   src/serializers/ser_dagr.cpp
   src/serializers/ser_highfive.cpp
   src/serializers/ser_kiln.cpp
+  src/serializers/ser_kiln_asm.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -507,6 +509,20 @@ if(BENCH_HAS_HIGHFIVE)
     ${highfive_SOURCE_DIR}/include ${HDF5_INCLUDE_DIRS})
   target_link_directories(cpp_serializer_tests PRIVATE ${HDF5_LIBRARY_DIRS})
   target_link_libraries(cpp_serializer_tests PRIVATE ${HDF5_LIBRARIES})
+endif()
+set(KILN_ASM_BENCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/kiln-asm")
+if(EXISTS "${KILN_ASM_BENCH_DIR}/include/kiln_asm_bench.h" AND EXISTS "${KILN_ASM_BENCH_DIR}/libkiln_asm_bench.a")
+  message(STATUS "serializer: gld-kiln-asm REAL (${KILN_ASM_BENCH_DIR})")
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_KILN_ASM=1)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_KILN_ASM=1)
+  target_include_directories(serializer_benchmark_cpp PRIVATE "${KILN_ASM_BENCH_DIR}/include")
+  target_include_directories(cpp_serializer_tests PRIVATE "${KILN_ASM_BENCH_DIR}/include")
+  target_link_libraries(serializer_benchmark_cpp PRIVATE "${KILN_ASM_BENCH_DIR}/libkiln_asm_bench.a")
+  target_link_libraries(cpp_serializer_tests PRIVATE "${KILN_ASM_BENCH_DIR}/libkiln_asm_bench.a")
+else()
+  message(STATUS "serializer: gld-kiln-asm SKIPPED (run scripts/build-kiln-asm-bench.sh)")
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_KILN_ASM=0)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_KILN_ASM=0)
 endif()
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)

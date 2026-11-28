@@ -18,6 +18,11 @@ if ! command -v g++ >/dev/null 2>&1 && ! command -v clang++ >/dev/null 2>&1; the
   exit 1
 fi
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+  echo "[INFO] Shared libkiln_asm_bench missing; running scripts/build-kiln-asm-bench.sh..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 echo "[INFO] Building C++ benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cmake -S "$CPP_DIR" -B "$CPP_DIR/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$CPP_DIR/build" -j"$(nproc 2>/dev/null || echo 2)" --target serializer_benchmark_cpp

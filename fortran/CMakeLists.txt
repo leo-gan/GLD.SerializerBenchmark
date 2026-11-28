@@ -40,4 +40,8 @@ fortran_target(test_roundtrip
   test/test_roundtrip.f90
   src/data.f90
   src/custom_binary.f90
+  src/ser_kiln_asm.f90
+  src/kiln_asm_c_helpers.c
   src/schedule.f90)
+target_include_directories(test_roundtrip PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../build/kiln-asm/include")
+target_link_libraries(test_roundtrip PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../build/kiln-asm/libkiln_asm_bench.a")

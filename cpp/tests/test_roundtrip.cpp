@@ -72,7 +72,8 @@ int main() {
     }
   }
   for (auto& ser : sers) {
-    if (std::string(ser->name()) != "highfive") continue;
+    const std::string nm = ser->name();
+    if (nm != "highfive" && nm != "gld-kiln-asm") continue;
     for (const char* tid : {"grid", "grid_window"}) {
       try {
         Fixture fx = make_fixture(tid, cfg, 42, 1, "test");
@@ -89,6 +90,31 @@ int main() {
       } catch (const std::exception& e) {
         std::cerr << "FAIL " << ser->name() << " / " << tid << ": " << e.what() << "\n";
         ++failures;
+      }
+    }
+    if (nm == "gld-kiln-asm") {
+      TypeConfig tcfg = cfg;
+      tcfg.rows = 8; tcfg.cols = 8; tcfg.batch = 2; tcfg.seq = 8; tcfg.vocab = 32;
+      tcfg.hidden = 8; tcfg.ffn = 16;
+      for (const char* tid : {"tensor", "tensor_view", "prompt", "shard", "request",
+                              "table", "table_project", "nested_table", "signal"}) {
+        for (int n : (std::string(tid) == "table" || std::string(tid) == "table_project" ||
+                      std::string(tid) == "nested_table" || std::string(tid) == "signal"
+                      ? std::vector<int>{1, 10} : std::vector<int>{1})) {
+          try {
+            Fixture fx = make_fixture(tid, tcfg, 42, n, "test");
+            ser->prepare(fx);
+            auto buf = ser->serialize_bytes(fx);
+            auto out = ser->deserialize_bytes(buf);
+            if (!fidelity(expected_for_fidelity(fx), out)) {
+              std::cerr << "FAIL fidelity " << ser->name() << " / " << tid << " N=" << n << "\n";
+              ++failures;
+            }
+          } catch (const std::exception& e) {
+            std::cerr << "FAIL " << ser->name() << " / " << tid << " N=" << n << ": " << e.what() << "\n";
+            ++failures;
+          }
+        }
       }
     }
   }

@@ -177,6 +177,13 @@ private fun adapters(): List<Adapter> {
         Adapter("sbe", "sbe", "1.40.2") { b, _ ->
             decodeSbe(b)
         },
+        Adapter("gld-kiln-asm", "kiln", benchmark.serializers.KilnAsmJni.VERSION) { b, schema ->
+            benchmark.serializers.KilnAsmJni.ensureLoaded()
+            val tag = benchmark.serializers.KilnAsmJni.schemaTag(schema)
+            if (tag < 0) error("unsupported kiln schema: $schema")
+            val json = benchmark.serializers.KilnAsmJni.complianceDecodeJson(b, tag)
+            jackson.readValue(json, Any::class.java)
+        },
     )
 }
 

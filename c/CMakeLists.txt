@@ -270,6 +270,15 @@ if(EXISTS ${TP}/gld-kiln-c/include/kiln.h AND EXISTS ${TP}/gld-kiln-c/build/libk
   message(STATUS "serializer: gld-kiln REAL")
 endif()
 
+set(KILN_ASM_BENCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/kiln-asm")
+if(EXISTS "${KILN_ASM_BENCH_DIR}/include/kiln_asm_bench.h" AND EXISTS "${KILN_ASM_BENCH_DIR}/libkiln_asm_bench.a")
+  list(APPEND BENCH_SOURCES src/serializers/ser_kiln_asm.c)
+  list(APPEND BENCH_INCLUDES "${KILN_ASM_BENCH_DIR}/include")
+  list(APPEND BENCH_LIBS "${KILN_ASM_BENCH_DIR}/libkiln_asm_bench.a")
+  add_compile_definitions(HAS_KILN_ASM=1)
+  message(STATUS "serializer: gld-kiln-asm REAL")
+endif()
+
 if(EXISTS ${TP_BUILD}/ion-c/ionc/libionc.so AND EXISTS ${TP}/ion-c/ionc/include/ionc/ion.h)
   list(APPEND BENCH_SOURCES src/serializers/ser_ionc.c)
   list(APPEND BENCH_INCLUDES ${TP}/ion-c/ionc/include ${TP}/ion-c/decNumber/include)

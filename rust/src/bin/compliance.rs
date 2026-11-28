@@ -401,7 +401,283 @@ fn builtin() -> Vec<Adapter> {
             version: crate_version("hdf5-metno").to_string(),
             decode: decode_hdf5_metno,
         },
+        #[cfg(has_kiln_asm)]
+        Adapter {
+            name: "gld-kiln-asm",
+            format: "kiln",
+            version: kiln_asm_compliance::version(),
+            decode: kiln_asm_compliance::decode_kiln_asm,
+        },
     ]
+}
+
+#[cfg(has_kiln_asm)]
+mod kiln_asm_compliance {
+    use anyhow::{bail, Result};
+    use serde_json::{json, Value};
+    use std::ffi::CStr;
+    use std::os::raw::c_char;
+
+    #[repr(C)]
+    struct KilnArena {
+        base: *mut u8,
+        cur: *mut u8,
+        end: *mut u8,
+    }
+    #[repr(C)]
+    #[derive(Default)]
+    struct KilnResult {
+        bytes: u64,
+        hash: u64,
+    }
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct KilnStr {
+        ptr: *const u8,
+        len: u64,
+    }
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct KilnTensor {
+        name: *const u8,
+        name_len: u64,
+        layout: *const u8,
+        layout_len: u64,
+        data: *const u8,
+        data_len: u64,
+        shape: [u64; 8],
+        dtype: u16,
+        rank: u8,
+        _pad0: u8,
+        quant_scheme: u16,
+        quant_axis: u16,
+        group_size: u32,
+        scale_index: u32,
+        outer_index: u32,
+        block_size: u32,
+        elem_count: u64,
+    }
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct KilnTensorDir {
+        items: *mut KilnTensor,
+        count: u64,
+        block_length: u64,
+        flags: u32,
+        version: u32,
+    }
+    #[repr(C)]
+    struct KilnIdTensors {
+        id: i64,
+        batch: KilnTensorDir,
+    }
+
+    extern "C" {
+        fn kiln_asm_version() -> *const c_char;
+        fn kiln_asm_err_name(err: u32) -> *const c_char;
+        fn kiln_asm_dtype_name(dtype: u16) -> *const c_char;
+        fn kiln_asm_decode_tensors(
+            src: *const u8, len: usize, out: *mut KilnTensorDir,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+        fn kiln_asm_decode_id_tensors(
+            src: *const u8, len: usize, out: *mut KilnIdTensors,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+        fn kiln_asm_decode_id_tensors_framed(
+            src: *const u8, len: usize, out: *mut KilnIdTensors,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+        fn kiln_asm_decode_list_f32(
+            src: *const u8, len: usize, out_items: *mut *const u8, out_count: *mut usize,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+        fn kiln_asm_decode_list_str(
+            src: *const u8, len: usize, out_items: *mut *mut KilnStr, out_count: *mut usize,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+        fn kiln_asm_decode_list_i64_struct(
+            src: *const u8, len: usize, out_items: *mut *const u8, out_count: *mut usize,
+            arena: *mut KilnArena, opts: *const std::ffi::c_void, res: *mut KilnResult,
+        ) -> u32;
+    }
+
+    pub fn version() -> String {
+        unsafe { CStr::from_ptr(kiln_asm_version()).to_string_lossy().into_owned() }
+    }
+
+    fn err_str(err: u32) -> String {
+        unsafe { CStr::from_ptr(kiln_asm_err_name(err)).to_string_lossy().into_owned() }
+    }
+
+    fn hex_lower(bytes: &[u8]) -> String {
+        let mut s = String::with_capacity(bytes.len() * 2);
+        for b in bytes {
+            use std::fmt::Write;
+            let _ = write!(&mut s, "{b:02x}");
+        }
+        s
+    }
+
+    unsafe fn dir_to_json(dir: &KilnTensorDir) -> Value {
+        let mut flags = Vec::new();
+        if (dir.flags & 1) != 0 {
+            flags.push(Value::String("names".into()));
+        }
+        if (dir.flags & 2) != 0 {
+            flags.push(Value::String("le".into()));
+        }
+        let n = dir.count as usize;
+        let items = if n > 0 {
+            std::slice::from_raw_parts(dir.items, n)
+        } else {
+            &[]
+        };
+        let mut tensors = Vec::with_capacity(n);
+        for t in items {
+            let name = if !t.name.is_null() {
+                let s = std::slice::from_raw_parts(t.name, t.name_len as usize);
+                Value::String(std::str::from_utf8_unchecked(s).to_owned())
+            } else {
+                Value::Null
+            };
+            let dn = kiln_asm_dtype_name(t.dtype);
+            let dtype = if !dn.is_null() {
+                Value::String(CStr::from_ptr(dn).to_string_lossy().into_owned())
+            } else {
+                json!(t.dtype)
+            };
+            let shape: Vec<u64> = t.shape[..t.rank as usize].to_vec();
+            let data = if t.data_len > 0 {
+                std::slice::from_raw_parts(t.data, t.data_len as usize)
+            } else {
+                &[]
+            };
+            tensors.push(json!({
+                "name": name,
+                "dtype": dtype,
+                "shape": shape,
+                "quant_scheme": t.quant_scheme,
+                "data_hex": hex_lower(data),
+            }));
+        }
+        json!({
+            "version": dir.version,
+            "flags": flags,
+            "tensors": tensors,
+            "block_length": dir.block_length,
+        })
+    }
+
+    pub fn decode_kiln_asm(b: &[u8], schema: &str) -> Result<Value> {
+        let mut arena_mem = vec![0u8; 65536];
+        let mut arena = KilnArena {
+            base: arena_mem.as_mut_ptr(),
+            cur: arena_mem.as_mut_ptr(),
+            end: unsafe { arena_mem.as_mut_ptr().add(arena_mem.len()) },
+        };
+        let mut res = KilnResult::default();
+        if schema == "tensor-v2" {
+            let mut dir: KilnTensorDir = unsafe { std::mem::zeroed() };
+            let err = unsafe {
+                kiln_asm_decode_tensors(b.as_ptr(), b.len(), &mut dir, &mut arena, std::ptr::null(), &mut res)
+            };
+            if err != 0 {
+                bail!("{}", err_str(err));
+            }
+            return Ok(unsafe { dir_to_json(&dir) });
+        }
+        if schema == "frame" {
+            let mut v: KilnIdTensors = unsafe { std::mem::zeroed() };
+            let err = unsafe {
+                kiln_asm_decode_id_tensors_framed(b.as_ptr(), b.len(), &mut v, &mut arena, std::ptr::null(), &mut res)
+            };
+            if err != 0 {
+                bail!("{}", err_str(err));
+            }
+            return Ok(json!({
+                "hash": res.hash,
+                "id": v.id,
+                "batch": unsafe { dir_to_json(&v.batch) },
+            }));
+        }
+        if schema.starts_with('{') {
+            let sc: Value = serde_json::from_str(schema)?;
+            match sc.get("type").and_then(|v| v.as_str()).unwrap_or("") {
+                "struct" => {
+                    let mut v: KilnIdTensors = unsafe { std::mem::zeroed() };
+                    let err = unsafe {
+                        kiln_asm_decode_id_tensors(b.as_ptr(), b.len(), &mut v, &mut arena, std::ptr::null(), &mut res)
+                    };
+                    if err != 0 {
+                        bail!("{}", err_str(err));
+                    }
+                    return Ok(json!({
+                        "id": v.id,
+                        "batch": unsafe { dir_to_json(&v.batch) },
+                    }));
+                }
+                "list" => match sc.get("element").and_then(|v| v.as_str()).unwrap_or("") {
+                    "f32" => {
+                        let mut ptr: *const u8 = std::ptr::null();
+                        let mut cnt: usize = 0;
+                        let err = unsafe {
+                            kiln_asm_decode_list_f32(b.as_ptr(), b.len(), &mut ptr, &mut cnt, &mut arena, std::ptr::null(), &mut res)
+                        };
+                        if err != 0 {
+                            bail!("{}", err_str(err));
+                        }
+                        let mut arr = Vec::with_capacity(cnt);
+                        for i in 0..cnt {
+                            let val = unsafe { (ptr.add(i * 4) as *const f32).read_unaligned() };
+                            arr.push(json!(val as f64));
+                        }
+                        return Ok(Value::Array(arr));
+                    }
+                    "str" => {
+                        let mut ptr: *mut KilnStr = std::ptr::null_mut();
+                        let mut cnt: usize = 0;
+                        let err = unsafe {
+                            kiln_asm_decode_list_str(b.as_ptr(), b.len(), &mut ptr, &mut cnt, &mut arena, std::ptr::null(), &mut res)
+                        };
+                        if err != 0 {
+                            bail!("{}", err_str(err));
+                        }
+                        let mut arr = Vec::with_capacity(cnt);
+                        for i in 0..cnt {
+                            let ks = unsafe { *ptr.add(i) };
+                            let s = if ks.len > 0 {
+                                unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(ks.ptr, ks.len as usize)) }
+                            } else {
+                                ""
+                            };
+                            arr.push(Value::String(s.to_owned()));
+                        }
+                        return Ok(Value::Array(arr));
+                    }
+                    "struct{a:i64}" => {
+                        let mut ptr: *const u8 = std::ptr::null();
+                        let mut cnt: usize = 0;
+                        let err = unsafe {
+                            kiln_asm_decode_list_i64_struct(b.as_ptr(), b.len(), &mut ptr, &mut cnt, &mut arena, std::ptr::null(), &mut res)
+                        };
+                        if err != 0 {
+                            bail!("{}", err_str(err));
+                        }
+                        let mut arr = Vec::with_capacity(cnt);
+                        for i in 0..cnt {
+                            let a = unsafe { (ptr.add(i * 8) as *const i64).read_unaligned() };
+                            arr.push(json!({"a": a}));
+                        }
+                        return Ok(Value::Array(arr));
+                    }
+                    other => bail!("unsupported kiln list element: {other}"),
+                },
+                other => bail!("unsupported kiln schema type: {other}"),
+            }
+        }
+        bail!("unsupported kiln schema: {schema}")
+    }
 }
 
 /// hdf5-metno 0.15 has no safe is_hdf5. The crate already links libhdf5, so
@@ -662,7 +938,15 @@ fn run_one(suite: &Value, c: &Value, a: &Adapter) -> Value {
             return base;
         }
     };
-    let schema = c.get("schema").and_then(|v| v.as_str()).unwrap_or("");
+    let schema_owned: String;
+    let schema = match c.get("schema") {
+        Some(Value::String(s)) => s.as_str(),
+        Some(v) if !v.is_null() => {
+            schema_owned = v.to_string();
+            schema_owned.as_str()
+        }
+        _ => "",
+    };
     let decoded = (a.decode)(&raw, schema);
     let expect = c["expect"].as_str().unwrap_or("");
     match (expect, decoded) {

@@ -282,6 +282,7 @@ namespace GLD.SerializerBenchmark
                 new("parquet", "parquet", SerializerVersionRegistry.Resolve("parquet"), DecodeParquet),
                 new("parquet-uncompressed", "parquet", SerializerVersionRegistry.Resolve("parquet-uncompressed"), DecodeParquet),
                 new("PureHDF", "hdf5", SerializerVersionRegistry.Resolve("PureHDF"), DecodePureHdf),
+                new("gld-kiln-asm", "kiln", Serializers.KilnAsmNative.Version, Serializers.KilnAsmNative.DecodeCompliance),
             };
         }
 
@@ -575,7 +576,7 @@ namespace GLD.SerializerBenchmark
                 var raw = InputBytes(c);
                 // TooDeep counts '{'/'[' bytes for text parsers that blow the stack.
                 // Ion binary uses those bytes as data, and Ion text uses them as containers.
-                if ((a.Format != "ion" && TooDeep(raw)) || raw.Length > a.MaxBytes)
+                if ((a.Format != "ion" && a.Format != "kiln" && TooDeep(raw)) || raw.Length > a.MaxBytes)
                     throw new InvalidDataException("input too nested or large for this runner");
                 var schema = SchemaText(c.Schema);
                 if (a.TimeoutMs > 0)

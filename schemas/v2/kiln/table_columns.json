@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TableColumns",
+  "type": "object",
+  "properties": {
+    "f_float_0":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_1":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_2":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_3":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_4":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_5":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_6":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_7":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_8":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_9":  { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_10": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_11": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_12": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_13": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_14": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_float_15": { "type": "array", "items": { "type": "number",  "format": "double" } },
+    "f_int_0":    { "type": "array", "items": { "type": "integer", "format": "int64" } },
+    "f_int_1":    { "type": "array", "items": { "type": "integer", "format": "int64" } },
+    "f_int_2":    { "type": "array", "items": { "type": "integer", "format": "int64" } },
+    "f_int_3":    { "type": "array", "items": { "type": "integer", "format": "int64" } },
+    "f_str_0":    { "type": "array", "items": { "type": "string" } },
+    "f_str_1":    { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "f_float_0", "f_float_1", "f_float_2", "f_float_3",
+    "f_float_4", "f_float_5", "f_float_6", "f_float_7",
+    "f_float_8", "f_float_9", "f_float_10", "f_float_11",
+    "f_float_12", "f_float_13", "f_float_14", "f_float_15",
+    "f_int_0", "f_int_1", "f_int_2", "f_int_3",
+    "f_str_0", "f_str_1"
+  ]
+}

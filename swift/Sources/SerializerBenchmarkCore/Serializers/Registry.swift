@@ -26,6 +26,7 @@ public func allSerializers() -> [any BenchSerializer] {
         GldAvroSerializer(),
         GldIonSerializer(),
         GldKilnSerializer(),
+        GldKilnAsmSerializer(),
         CapnProtoSerializer(),
         DagrSerializer(),
         DagrSerializer(layout: .regular),

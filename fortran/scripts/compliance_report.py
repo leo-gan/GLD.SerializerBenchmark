@@ -33,6 +33,7 @@ PROBES = (
     ("hdf5", "hdf5", "hdf5-fortran", "1.10.7"),
     ("netcdf", "netcdf", "netcdf-fortran", "4.8.1"),
     ("adios2", "adios2", "adios2", "2.10.2"),
+    ("kiln", "kiln", "gld-kiln-asm", "0.2.0"),
 )
 # An empty ADIOS2 directory can sit in an engine open. Kill that and split.
 SCIENTIFIC_TIMEOUT_S = 45
@@ -86,11 +87,32 @@ def case_payload(case: dict) -> bytes:
     return raw.encode("utf-8")
 
 
-def pack_cases(cases: list[dict], dest: Path) -> None:
+def kiln_schema_tag(schema) -> int:
+    if schema == "tensor-v2":
+        return 0
+    if schema == "frame":
+        return 1
+    if isinstance(schema, dict):
+        if schema.get("type") == "struct":
+            return 2
+        if schema.get("type") == "list":
+            elem = schema.get("element")
+            if elem == "f32":
+                return 3
+            if elem == "str":
+                return 4
+            if elem == "struct{a:i64}":
+                return 5
+    return 255
+
+
+def pack_cases(cases: list[dict], dest: Path, fmt: str = "") -> None:
     blob = bytearray()
     blob += struct.pack("<i", len(cases))
     for case in cases:
         data = case_payload(case)
+        if fmt == "kiln":
+            data = bytes([kiln_schema_tag(case.get("schema"))]) + data
         blob += struct.pack("<i", len(data))
         blob += data
     dest.write_bytes(blob)
@@ -99,7 +121,7 @@ def pack_cases(cases: list[dict], dest: Path) -> None:
 def run_probe(exe: Path, fmt: str, cases: list[dict], work: Path, tag: str) -> tuple[int, list[tuple[int, str]] | None]:
     cases_path = work / f"{tag}.bin"
     out_path = work / f"{tag}.out"
-    pack_cases(cases, cases_path)
+    pack_cases(cases, cases_path, fmt=fmt)
     timeout = SCIENTIFIC_TIMEOUT_S if fmt in {"hdf5", "netcdf", "adios2"} else None
     try:
         proc = subprocess.run([str(exe), fmt, str(cases_path), str(out_path)], cwd=FORTRAN, timeout=timeout)

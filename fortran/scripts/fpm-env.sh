@@ -63,6 +63,11 @@ else
     _ld="${_ld} -L${HOME}/.local/lib -Wl,-rpath,${HOME}/.local/lib"
   fi
 fi
+_kiln_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/build/kiln-asm"
+if [[ -d "${_kiln_dir}" ]]; then
+  export FPM_CFLAGS="-I${_kiln_dir}/include ${FPM_CFLAGS:-}"
+  _ld="${_ld} -L${_kiln_dir} -Wl,-rpath,${_kiln_dir}"
+fi
 export FPM_FFLAGS="${_ff} ${FPM_FFLAGS:-}"
 export FPM_LDFLAGS="${_ld} ${FPM_LDFLAGS:-}"
-unset _ff _ld _h5 _nc _ad _use_prefix
+unset _ff _ld _h5 _nc _ad _use_prefix _kiln_dir

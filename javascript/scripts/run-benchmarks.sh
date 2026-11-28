@@ -13,6 +13,7 @@ if [[ ! -d node_modules ]]; then
   echo "[INFO] npm install..."
   npm install --no-fund --no-audit 2>&1 | tail -8
 fi
+"$SCRIPT_DIR/build-kiln-asm-napi.sh"
 
 echo "[INFO] node src/runner.js ${ARGS[*]} (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
 node src/runner.js "${ARGS[@]}"

@@ -25,7 +25,7 @@ program compliance_fortran
 
   narg = command_argument_count()
   if (narg < 3) then
-    write(0, '(A)') "usage: compliance_fortran json|jonquil|rojff|toml|msgpack|hdf5|netcdf|adios2 cases.bin outcomes.bin"
+    write(0, '(A)') "usage: compliance_fortran json|jonquil|rojff|toml|msgpack|hdf5|netcdf|adios2|kiln cases.bin outcomes.bin"
     error stop 2
   end if
   call get_command_argument(1, fmt, length=n)
@@ -64,6 +64,8 @@ program compliance_fortran
       call probe_netcdf(text, ok, dump)
     else if (fmt(1:n) == "adios2") then
       call probe_adios2(text, ok, dump)
+    else if (fmt(1:n) == "kiln") then
+      call probe_kiln(text, ok, dump)
     else
       call parse_json(text, ok, dump)
     end if
@@ -430,6 +432,36 @@ contains
     if (stat == 0) call adios2_get(eng, var, values, adios2_mode_sync, stat)
     call adios2_close(eng, ierr)
     if (stat == 0 .and. ierr == 0) ok = 1_int32
+  end subroutine
+
+  subroutine probe_kiln(text, ok, dump)
+    use, intrinsic :: iso_c_binding, only: c_int8_t, c_int32_t, c_size_t, c_ptr, c_null_ptr, c_loc
+    character(len=*), intent(in), target :: text
+    integer(int32), intent(out) :: ok
+    character(len=:), allocatable, intent(out) :: dump
+    interface
+      function kiln_f_compliance_probe(tag, src, slen) bind(C, name="kiln_f_compliance_probe") result(rc)
+        import :: c_int8_t, c_int32_t, c_size_t, c_ptr
+        integer(c_int8_t), value :: tag
+        type(c_ptr), value :: src
+        integer(c_size_t), value :: slen
+        integer(c_int32_t) :: rc
+      end function
+    end interface
+    integer(c_int8_t) :: tag
+    integer :: raw_n
+    type(c_ptr) :: p
+    ok = 0_int32
+    dump = ""
+    if (len(text) < 1) return
+    tag = int(iand(ichar(text(1:1)), 255), c_int8_t)
+    raw_n = len(text) - 1
+    if (raw_n > 0) then
+      p = c_loc(text(2:2))
+    else
+      p = c_null_ptr
+    end if
+    ok = kiln_f_compliance_probe(tag, p, int(raw_n, c_size_t))
   end subroutine
 
 end program compliance_fortran

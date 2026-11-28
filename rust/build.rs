@@ -37,6 +37,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Emit locked crate versions for CSV SerializerVersion (from Cargo.lock).
     write_dep_versions(&manifest)?;
     println!("cargo:rerun-if-changed=Cargo.lock");
+
+    // Optional Tier-1 C-ABI static library built by scripts/build-kiln-asm-bench.sh.
+    println!("cargo:rustc-check-cfg=cfg(has_kiln_asm)");
+    let kiln_asm_dir = manifest.join("../build/kiln-asm");
+    let kiln_asm_lib = kiln_asm_dir.join("libkiln_asm_bench.a");
+    if kiln_asm_lib.is_file() {
+        println!("cargo:rustc-cfg=has_kiln_asm");
+        println!("cargo:rustc-link-search=native={}", kiln_asm_dir.display());
+        println!("cargo:rustc-link-lib=static=kiln_asm_bench");
+        println!("cargo:rerun-if-changed={}", kiln_asm_lib.display());
+    }
     Ok(())
 }
 

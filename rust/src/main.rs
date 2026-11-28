@@ -140,19 +140,20 @@ mod tests {
         assert!(!serializer_selected("parquet-uncompressed", Some("parquet,")));
         assert!(serializer_selected("sbe", Some("SBE, arrow-ipc")));
         assert!(!serializer_selected("simd-json", Some("serde_json,prost")));
+        let expected_total = 33 + usize::from(cfg!(has_kiln_asm));
         assert_eq!(
             all_serializers()
                 .iter()
                 .filter(|s| serializer_selected(s.name(), None))
                 .count(),
-            33
+            expected_total
         );
         assert_eq!(
             all_serializers()
                 .iter()
                 .filter(|s| serializer_selected(s.name(), Some(" , ")))
                 .count(),
-            33
+            expected_total
         );
     }
 }

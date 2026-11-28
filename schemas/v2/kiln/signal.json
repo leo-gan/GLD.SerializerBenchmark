@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signal",
+  "$defs": {
+    "SignalLeg": {
+      "type": "object",
+      "properties": {
+        "leg_id":  { "type": "integer", "format": "int64" },
+        "leg_qty": { "type": "integer", "format": "int32" },
+        "leg_pad": { "type": "integer", "format": "int32" }
+      },
+      "required": ["leg_id", "leg_qty", "leg_pad"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "seq":            { "type": "integer", "format": "int64" },
+    "ts":             { "type": "integer", "format": "int64" },
+    "price_mantissa": { "type": "integer", "format": "int64" },
+    "qty":            { "type": "integer", "format": "int32" },
+    "flags":          { "type": "integer", "format": "int32" },
+    "symbol":         { "type": "string" },
+    "venue":          { "type": "string" },
+    "legs":           { "type": "array", "items": { "$ref": "#/$defs/SignalLeg" } }
+  },
+  "required": ["seq", "ts", "price_mantissa", "qty", "flags", "symbol", "venue", "legs"]
+}

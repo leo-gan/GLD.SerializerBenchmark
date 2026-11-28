@@ -421,4 +421,36 @@ final class RoundtripTests: XCTestCase {
         }
     }
 
+    func testGldKilnAsmSuiteAndTensor() throws {
+        let ser = GldKilnAsmSerializer()
+        XCTAssertEqual(ser.name, "gld-kiln-asm")
+        let cfg: [String: Any] = [
+            "rows": 8, "cols": 8, "batch": 2, "seq": 8,
+            "vocab": 32, "hidden": 8, "ffn": 16,
+        ]
+        for tid in ["message", "document", "telemetry", "strings", "event"] {
+            for n in [1, 5] {
+                let fx = try fixtureFromCell(typeId: tid, typeConfig: cfg, typeConfigHash: "", instanceCount: n, seed: 42)
+                try ser.prepare(fx)
+                let raw = try ser.serializeBytes(fx)
+                XCTAssertFalse(raw.isEmpty)
+                let got = try ser.deserializeBytes(raw)
+                XCTAssertTrue(fx.fidelity(against: got), "fidelity failed for \(tid) N=\(n)")
+            }
+        }
+        for tid in ["tensor", "tensor_view", "prompt", "shard", "request"] {
+            let fx = try fixtureFromCell(typeId: tid, typeConfig: cfg, typeConfigHash: "", instanceCount: 1, seed: 42)
+            try ser.prepare(fx)
+            let raw = try ser.serializeBytes(fx)
+            XCTAssertFalse(raw.isEmpty)
+            let got = try ser.deserializeBytes(raw)
+            XCTAssertTrue(fx.fidelity(against: got), "fidelity failed for \(tid)")
+            if tid == "tensor_view" {
+                let tv = try XCTUnwrap(got as? TensorView)
+                XCTAssertEqual(tv.storage, raw)
+                XCTAssertGreaterThan(tv.offset, 0)
+            }
+        }
+    }
+
 }

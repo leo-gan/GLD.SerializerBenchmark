@@ -7,9 +7,9 @@
 #include <math.h>
 
 static inline bool supports_all(test_data_kind_t k) {
-    /* grid and tensor are opt-in. Suite codecs have no array or tensor model. */
-    return k != TD_GRID && k != TD_GRID_WINDOW && k != TD_TENSOR && k != TD_TENSOR_VIEW &&
-           k != TD_PROMPT && k != TD_SHARD && k != TD_REQUEST;
+    /* array, tensor, and columnar are opt-in. Suite codecs support only the 5 suite types. */
+    return k == TD_MESSAGE || k == TD_DOCUMENT || k == TD_TELEMETRY ||
+           k == TD_STRINGS || k == TD_EVENT;
 }
 
 static inline bool f64_close(double a, double b) {
@@ -64,6 +64,46 @@ static inline bool fidelity_event(const event_t *a, const event_t *b) {
     return true;
 }
 
+static inline bool fidelity_table_row(const table_row_t *a, const table_row_t *b) {
+    for (int i = 0; i < 16; i++)
+        if (!f64_close(a->f_float[i], b->f_float[i])) return false;
+    for (int i = 0; i < 4; i++)
+        if (a->f_int[i] != b->f_int[i]) return false;
+    return strcmp(a->f_str_0, b->f_str_0) == 0 && strcmp(a->f_str_1, b->f_str_1) == 0;
+}
+
+static inline bool fidelity_table_batch(const table_batch_t *a, const table_batch_t *b) {
+    if (a->count != b->count) return false;
+    if (a->count == 0) return true;
+    if (!a->rows || !b->rows) return false;
+    for (int i = 0; i < a->count; i++)
+        if (!fidelity_table_row(&a->rows[i], &b->rows[i])) return false;
+    return true;
+}
+
+static inline bool fidelity_table_project(const table_batch_t *a, const table_project_t *b) {
+    if (a->count != b->count) return false;
+    if (a->count == 0) return true;
+    if (!a->rows || !b->values) return false;
+    for (int i = 0; i < a->count; i++)
+        if (!f64_close(a->rows[i].f_float[0], b->values[i])) return false;
+    return true;
+}
+
+static inline bool fidelity_signal(const signal_t *a, const signal_t *b) {
+    if (a->seq != b->seq || a->ts != b->ts || a->price_mantissa != b->price_mantissa) return false;
+    if (a->qty != b->qty || a->flags != b->flags) return false;
+    if (strcmp(a->symbol, b->symbol) || strcmp(a->venue, b->venue)) return false;
+    if (a->leg_count != b->leg_count) return false;
+    for (int i = 0; i < a->leg_count; i++) {
+        if (a->legs[i].leg_id != b->legs[i].leg_id ||
+            a->legs[i].leg_qty != b->legs[i].leg_qty ||
+            a->legs[i].leg_pad != b->legs[i].leg_pad)
+            return false;
+    }
+    return true;
+}
+
 static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b) {
     if (a->kind != b->kind) return false;
     switch (a->kind) {
@@ -72,6 +112,10 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
         case TD_TELEMETRY: return fidelity_telemetry(&a->telemetry, &b->telemetry);
         case TD_STRINGS: return fidelity_strings(&a->strings, &b->strings);
         case TD_EVENT: return fidelity_event(&a->event, &b->event);
+        case TD_TABLE: return fidelity_table_batch(&a->table_rows, &b->table_rows);
+        case TD_TABLE_PROJECT: return fidelity_table_project(&a->table_rows, &b->table_project);
+        case TD_NESTED_TABLE: return fidelity_document(&a->nested_table, &b->nested_table);
+        case TD_SIGNAL: return fidelity_signal(&a->signal, &b->signal);
         default: return false;
     }
 }

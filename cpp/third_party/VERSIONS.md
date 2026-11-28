@@ -19,6 +19,7 @@ Fetched by CMake `FetchContent` into `cpp/third_party/` (gitignored except this 
 | jsoncons | v0.177.0 | CBOR / BSON / MessagePack |
 | flatbuffers | v24.3.25 | FlatBuffers + FlexBuffers |
 | gld-kiln-cpp | 0.2.0 | Positional Kiln wire (`gld-kiln`) |
+| gld-kiln-asm | 0.2.0 | Pure x86-64 Assembly Kiln v2 C-ABI (`gld-kiln-asm`, built via `scripts/build-kiln-asm-bench.sh` into `build/kiln-asm/libkiln_asm_bench.a`) |
 
 Official Protobuf C++ (local sysroot, not FetchContent):
 

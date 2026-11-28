@@ -1,4 +1,5 @@
 import Foundation
+import KilnAsmC
 import IkigaJSON
 import ToonFormat
 import Yams
@@ -427,6 +428,50 @@ func adapters() -> [Adapter] {
             guard data.count >= 8 else { throw PBError.truncated }
             return data.count
         },
+        Adapter(name: "gld-kiln-asm", format: "kiln") { data, schema in
+            var arenaBuf = [UInt8](repeating: 0, count: 65_536)
+            return try data.withUnsafeBytes { raw in
+                let src = raw.bindMemory(to: UInt8.self).baseAddress
+                return try arenaBuf.withUnsafeMutableBytes { abuf in
+                    var arena = kiln_arena_t()
+                    kiln_arena_init(&arena, abuf.bindMemory(to: UInt8.self).baseAddress!, abuf.count)
+                    var res = kiln_result_t()
+                    var err = KILN_ERR_TYPE
+                    if schema == "tensor-v2" {
+                        var dir = kiln_tensor_dir_t()
+                        err = kiln_asm_decode_tensors(src, data.count, &dir, &arena, nil, &res)
+                    } else if schema == "frame" {
+                        var v = kiln_id_tensors_t()
+                        err = kiln_asm_decode_id_tensors_framed(src, data.count, &v, &arena, nil, &res)
+                    } else if schema.hasPrefix("{"),
+                              let sd = schema.data(using: .utf8),
+                              let sc = try? JSONSerialization.jsonObject(with: sd) as? [String: Any] {
+                        let tp = (sc["type"] as? String) ?? ""
+                        if tp == "struct" {
+                            var v = kiln_id_tensors_t()
+                            err = kiln_asm_decode_id_tensors(src, data.count, &v, &arena, nil, &res)
+                        } else if tp == "list" {
+                            let el = (sc["element"] as? String) ?? ""
+                            if el == "f32" {
+                                var p: UnsafePointer<UInt8>?
+                                var cnt: Int = 0
+                                err = kiln_asm_decode_list_f32(src, data.count, &p, &cnt, &arena, nil, &res)
+                            } else if el == "str" {
+                                var p: UnsafeMutablePointer<kiln_str_t>?
+                                var cnt: Int = 0
+                                err = kiln_asm_decode_list_str(src, data.count, &p, &cnt, &arena, nil, &res)
+                            } else if el == "struct{a:i64}" {
+                                var p: UnsafePointer<UInt8>?
+                                var cnt: Int = 0
+                                err = kiln_asm_decode_list_i64_struct(src, data.count, &p, &cnt, &arena, nil, &res)
+                            }
+                        }
+                    }
+                    guard err == KILN_OK else { throw PBError.truncated }
+                    return "ok"
+                }
+            }
+        },
     ]
 }
 
@@ -518,7 +563,7 @@ for fmtName in fmts.sorted() {
                     // The bracket counter is a stack guard for recursive JSON/YAML/TOML
                     // decoders. It counts every brace, not nesting depth, so Ion text
                     // fixtures trip it without being deep. Avro payloads are binary.
-                    if format != "ion" && format != "avro" && tooDeep(data) { throw PBError.truncated }
+                    if format != "ion" && format != "avro" && format != "kiln" && tooDeep(data) { throw PBError.truncated }
                     _ = try a.decode(data, schemaText(c["schema"]))
                     ok = true
                 } catch { err = "\(error)" }

@@ -8,6 +8,7 @@ import { performance } from 'node:perf_hooks';
 import { jsonSerializers } from './json.js';
 import { binarySerializers } from './binary.js';
 import { kilnSerializers } from './kiln.js';
+import { kilnAsmSerializers } from './kiln_asm.js';
 import { schemaSerializers } from './schema.js';
 import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
@@ -23,6 +24,7 @@ export const ALL_SERIALIZERS = [
   ...jsonSerializers(),
   ...binarySerializers(),
   ...kilnSerializers(),
+  ...kilnAsmSerializers(),
   ...schemaSerializers(),
   ...nativeSerializers(),
   ...modernSerializers(),

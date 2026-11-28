@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Event",
+  "$defs": {
+    "EventAttr": {
+      "type": "object",
+      "properties": {
+        "key":   { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "event_id":    { "type": "string" },
+    "event_type":  { "type": "string" },
+    "occurred_at": { "type": "integer", "format": "int64" },
+    "producer":    { "type": "string" },
+    "attrs":       { "type": "array", "items": { "$ref": "#/$defs/EventAttr" } }
+  },
+  "required": ["event_id", "event_type", "occurred_at", "producer", "attrs"]
+}

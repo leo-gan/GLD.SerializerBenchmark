@@ -694,6 +694,7 @@ jobs:
       - name: Run Zig tests
         run: |
           export PATH="${HOME}/.local/zig:${PATH}"
+          ./scripts/build-kiln-asm-bench.sh
           cd zig
           zig build test
 
@@ -731,6 +732,7 @@ jobs:
       - name: Run Mojo roundtrip tests
         run: |
           export PATH="${HOME}/.pixi/bin:${PATH}"
+          ./scripts/build-kiln-asm-bench.sh
           cd mojo
           pixi run test
 
@@ -777,6 +779,7 @@ jobs:
 
       - name: Run Fortran roundtrip test
         run: |
+          ./scripts/build-kiln-asm-bench.sh
           cmake -S fortran -B fortran/build-cmake -DCMAKE_BUILD_TYPE=Release
           cmake --build fortran/build-cmake -j"$(nproc)"
           ./fortran/build-cmake/test_roundtrip

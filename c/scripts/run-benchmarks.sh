@@ -14,6 +14,11 @@ if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" || ! -f "$C_DIR/third_p
   "$C_DIR/scripts/fetch-and-build-deps.sh"
 fi
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+  echo "[INFO] Shared libkiln_asm_bench missing; running scripts/build-kiln-asm-bench.sh..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 echo "[INFO] Building C benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cmake -S "$C_DIR" -B "$C_DIR/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$C_DIR/build" -j"$(nproc 2>/dev/null || echo 2)"

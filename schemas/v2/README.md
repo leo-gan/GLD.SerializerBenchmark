@@ -10,6 +10,7 @@ Canonical **wire** definitions for schema-driven serializers. Logical field mean
 | `avro/*.avsc` | Avro records for `Table`, `NestedRow`, and `Signal` |
 | `sbe/signal.xml` | SBE messages for `Signal` and `Table` (no `nested_table`) |
 | `dagr/schema.py` | Dagr (one DataGraph per type; see [`dagr/README.md`](dagr/README.md)) |
+| `kiln/*.json` | Kiln Wire Format v2 JSON Schemas for `gld-kiln-asm` AOT codegen (`scripts/build-kiln-asm-bench.sh`) |
 
 ## Regenerate language artifacts
 

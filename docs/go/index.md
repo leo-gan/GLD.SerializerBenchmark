@@ -35,6 +35,7 @@ Go compiles ahead of time to native machine code embedding a small runtime that 
 | [fxamacker/cbor](https://github.com/fxamacker/cbor) | `cbor` | `suite` | `native` | Reused `EncMode` / `DecMode` with default `EncOptions` (not CoreDet) |
 | [gamf-amf0](https://github.com/gnolizuh/gamf) | `amf0` | `suite` | `adapted` | `gamf` AMF0 `Marshal` / `Unmarshal` |
 | [gld-kiln](https://github.com/leo-gan/gld-kiln-go) | `kiln` | `suite`, `tensor` | `adapted` | Positional Kiln v2 `Append` / `Decode` into reused buffer; `tensor_view` borrows payload |
+| [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `columnar`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln v2 via flat-pointer cgo (`libkiln_asm_bench.a`); `TableColumns` + `KILN_OPT_EMBEDDED` O(1) skip; KLNT v2 zero-copy `tensor_view` |
 | [go-amf0](https://github.com/yutopp/go-amf0) | `amf0` | `suite` | `native` | Reflection `Encoder` / `Decoder` for AMF0 objects and strict arrays |
 | [goccy/go-json](https://github.com/goccy/go-json) | `json` | `suite` | `native` | Drop-in accelerated JSON replacement for `encoding/json` |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | `yaml` | `suite` | `native` | YAML 1.2 `Marshal` / `Unmarshal` |
@@ -76,6 +77,7 @@ Go compiles ahead of time to native machine code embedding a small runtime that 
     - **[fxamacker/cbor](https://github.com/fxamacker/cbor)** — fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values.
     - **[gamf-amf0](https://github.com/gnolizuh/gamf)** — gamf is a Go AMF0 codec. AMF0 is the command encoding inside RTMP. The timed path is Marshal, shaped like encoding/json. Version 1.0.0 panics while decoding AMF3 into a struct, so there is no AMF3 row.
     - **[gld-kiln](https://github.com/leo-gan/gld-kiln-go)** — gld-kiln (leo-gan) is a positional little-endian codec. The timed path reuses one writer. There are no field tags on the wire. This row times encode and decode of the suite structs. On the tensor data set this row runs every type. tensor_view borrows the float32 payload and does not copy the matrix.
+    - **[gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm)** — gld-kiln-asm (leo-gan) is a pure x86-64 Assembly Kiln Wire Format v2 codec linked statically into Go via a flat-pointer cgo bridge (`libkiln_asm_bench.a`). Covers `suite`, `columnar` (`TableColumns` with `KILN_OPT_EMBEDDED` O(1) column-skip for `table_project`), and `tensor` (KLNT v2 with zero-copy `tensor_view`). Full RFC 3629 UTF-8 validation is always active.
     - **[go-amf0](https://github.com/yutopp/go-amf0)** — go-amf0 is a Go AMF0 encoder and decoder. AMF0 is the command encoding inside RTMP. The timed path reuses an Encoder and calls Encode on the suite struct. The library does not implement AMF0 references, so a graph is skipped.
     - **[goccy/go-json](https://github.com/goccy/go-json)** — goccy/go-json was written as a faster drop-in for `encoding/json`. The problem was stdlib JSON cost in high-QPS Go services. It keeps the same API and implements a faster encode/decode path.
     - **[goccy/go-yaml](https://github.com/goccy/go-yaml)** — goccy/go-yaml is a high-performance YAML 1.2 library for Go. The problem was that go-yaml v2/v3 was often the slow path in config-heavy services. It aims at a faster Marshal/Unmarshal.
@@ -103,7 +105,7 @@ Go compiles ahead of time to native machine code embedding a small runtime that 
 
 ## Measurement Caveats
 
-- **Stream honesty:** `fory`, `protobuf`, `linkedin/goavro`, `arrow-ipc`, `parquet*`, `sbe`, `gamf-amf0`, `gld-kiln`, `toon-go`, and all four `dagr-*` rows have no native stream API for the same wire bytes and are logged as `StreamMode=adapted`. All other registered Go codecs use native stream APIs.
+- **Stream honesty:** `fory`, `protobuf`, `linkedin/goavro`, `arrow-ipc`, `parquet*`, `sbe`, `gamf-amf0`, `gld-kiln`, `gld-kiln-asm`, `toon-go`, and all four `dagr-*` rows have no native stream API for the same wire bytes and are logged as `StreamMode=adapted`. All other registered Go codecs use native stream APIs.
 - **Dagr decode boundary:** Like `protobuf`, `dagr-packed` and `dagr-frozen-packed` build value structs in untimed `Prepare` (and `dagr-regular`/`dagr-frozen` build arenas in `Prepare`). Unlike `protobuf` (`ToDomain` untimed), Dagr materializes domain values from lazy readers **inside** timed deserialize, and $N > 1$ batches use the suite `[u32 count][u32 len][record]` frame.
 - **Root-array wrappers:** `pelletier/go-toml` and `mongo-bson` wrap $N > 1$ batches in an `{items: [...]}` document because neither format permits a bare root array.
 - **Go-only formats & CPU sensitivity:** `encoding/gob` and `kelindar/binary` are Go-specific wire formats. `sonic` uses architecture-specific JIT/SIMD paths sensitive to host CPU extensions.

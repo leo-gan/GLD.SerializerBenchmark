@@ -181,7 +181,7 @@ bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
     int nb = b->batch_n > 0 ? b->batch_n : 1;
     if (na != nb) return false;
     if (!S || !S->fidelity) return true;
-    if (na <= 1)
+    if (na <= 1 || a->kind == TD_TABLE || a->kind == TD_TABLE_PROJECT)
         return S->fidelity(a, b);
     if (!a->batch || !b->batch) return false;
     for (int i = 0; i < na; i++) {

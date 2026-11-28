@@ -38,6 +38,11 @@ fi
 echo "[INFO] Building Kotlin benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $JAVA_VER"
 cd "$KOTLIN_DIR"
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_jni.so" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm JNI library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 GRADLEW="$KOTLIN_DIR/gradlew"
 if [[ ! -x "$GRADLEW" ]]; then
   echo "[ERROR] gradle wrapper missing at $GRADLEW" >&2

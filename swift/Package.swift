@@ -44,6 +44,11 @@ let gccLibDir: String = {
     return "/usr/lib/gcc/x86_64-linux-gnu/11"
 }()
 
+let kilnAsmRoot: String = {
+    let pkgDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    return pkgDir.deletingLastPathComponent().appendingPathComponent("build/kiln-asm").path
+}()
+
 let package = Package(
     name: "SerializerBenchmark",
     platforms: [
@@ -113,11 +118,25 @@ let package = Package(
             ]
         ),
         .target(
+            name: "KilnAsmC",
+            path: "Sources/KilnAsmC",
+            publicHeadersPath: "include",
+            cSettings: [
+                .unsafeFlags(["-I\(kilnAsmRoot)/include"]),
+            ],
+            linkerSettings: [
+                .unsafeFlags([
+                    "\(kilnAsmRoot)/libkiln_asm_bench.a",
+                ]),
+            ]
+        ),
+        .target(
             name: "SerializerBenchmarkCore",
             dependencies: [
                 .product(name: "Fory", package: "fory"),
                 "GzipC",
                 "CapnpBridge",
+                "KilnAsmC",
                 .product(name: "IkigaJSON", package: "IkigaJSON"),
                 .product(name: "SwiftMsgpack", package: "swift-msgpack"),
                 .product(name: "SwiftCbor", package: "swift-cbor"),
@@ -136,7 +155,10 @@ let package = Package(
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "BenchmarkV2", package: "BenchmarkV2"),
             ],
-            path: "Sources/SerializerBenchmarkCore"
+            path: "Sources/SerializerBenchmarkCore",
+            swiftSettings: [
+                .unsafeFlags(["-Xcc", "-I\(kilnAsmRoot)/include"]),
+            ]
         ),
         .executableTarget(
             name: "SerializerBenchmark",
@@ -146,6 +168,7 @@ let package = Package(
         .executableTarget(
             name: "Compliance",
             dependencies: [
+                "KilnAsmC",
                 .product(name: "IkigaJSON", package: "IkigaJSON"),
                 .product(name: "SwiftMsgpack", package: "swift-msgpack"),
                 .product(name: "SwiftCbor", package: "swift-cbor"),
@@ -159,7 +182,10 @@ let package = Package(
                 .product(name: "Ion", package: "gld-ion-swift"),
                 .product(name: "TOML", package: "swift-toml"),
             ],
-            path: "Sources/Compliance"
+            path: "Sources/Compliance",
+            swiftSettings: [
+                .unsafeFlags(["-Xcc", "-I\(kilnAsmRoot)/include"]),
+            ]
         ),
         .testTarget(
             name: "SerializerBenchmarkTests",

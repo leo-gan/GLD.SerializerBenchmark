@@ -37,6 +37,9 @@
 #ifdef HAS_HDF5
 #include <hdf5.h>
 #endif
+#ifdef HAS_KILN_ASM
+#include "kiln_asm.h"
+#endif
 
 typedef int (*decode_fn)(const unsigned char *data, size_t n, const cJSON *schema);
 
@@ -117,6 +120,52 @@ static int dec_hdf5(const unsigned char *data, size_t n, const cJSON *schema) {
   htri_t st = H5Fis_hdf5(path);
   unlink(path);
   return st > 0 ? 0 : -1;
+}
+#endif
+
+#ifdef HAS_KILN_ASM
+static int dec_kiln_asm(const unsigned char *data, size_t n, const cJSON *schema) {
+  static uint8_t arena_mem[65536];
+  kiln_arena_t arena;
+  kiln_result_t res;
+  kiln_arena_init(&arena, arena_mem, sizeof arena_mem);
+  if (cJSON_IsString(schema) && schema->valuestring) {
+    if (strcmp(schema->valuestring, "tensor-v2") == 0) {
+      kiln_tensor_dir_t dir;
+      return kiln_asm_decode_tensors(data, n, &dir, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+    }
+    if (strcmp(schema->valuestring, "frame") == 0) {
+      kiln_id_tensors_t v;
+      return kiln_asm_decode_id_tensors_framed(data, n, &v, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+    }
+    return -1;
+  }
+  if (cJSON_IsObject(schema)) {
+    const char *tp = cJSON_GetStringValue(cJSON_GetObjectItem(schema, "type"));
+    if (tp && strcmp(tp, "struct") == 0) {
+      kiln_id_tensors_t v;
+      return kiln_asm_decode_id_tensors(data, n, &v, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+    }
+    if (tp && strcmp(tp, "list") == 0) {
+      const char *el = cJSON_GetStringValue(cJSON_GetObjectItem(schema, "element"));
+      if (el && strcmp(el, "f32") == 0) {
+        const uint8_t *raw = NULL;
+        size_t cnt = 0;
+        return kiln_asm_decode_list_f32(data, n, &raw, &cnt, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+      }
+      if (el && strcmp(el, "str") == 0) {
+        kiln_str_t *items = NULL;
+        size_t cnt = 0;
+        return kiln_asm_decode_list_str(data, n, &items, &cnt, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+      }
+      if (el && strcmp(el, "struct{a:i64}") == 0) {
+        const uint8_t *raw = NULL;
+        size_t cnt = 0;
+        return kiln_asm_decode_list_i64_struct(data, n, &raw, &cnt, &arena, NULL, &res) == KILN_OK ? 0 : -1;
+      }
+    }
+  }
+  return -1;
 }
 #endif
 
@@ -723,6 +772,9 @@ int main(int argc, char **argv) {
 #endif
 #ifdef HAS_HDF5
   ADD("hdf5", "hdf5", dec_hdf5);
+#endif
+#ifdef HAS_KILN_ASM
+  ADD("gld-kiln-asm", "kiln", dec_kiln_asm);
 #endif
 #undef ADD
 

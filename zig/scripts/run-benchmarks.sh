@@ -19,6 +19,11 @@ if ! command -v zig >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 echo "[INFO] Building Zig benchmark (release, mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $(zig version)..."
 cd "$ZIG_DIR"
 zig build -Doptimize=ReleaseFast
