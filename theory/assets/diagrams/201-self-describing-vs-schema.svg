@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Self-describing vs schema-dependent</title>
+  <desc id="desc">Comparison of a self-describing JSON payload versus a schema-dependent compact binary encoding.</desc>
+  <defs>
+    <style type="text/css"><![CDATA[
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #37474f; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #607d8b; }
+      .small { font-size: 11px; fill: #607d8b; }
+      .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #283593; }
+      .mono-lg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; fill: #283593; }
+      .arrow-label {
+        font-family: "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        fill: #263238;
+        text-anchor: middle;
+      }
+      .panel-title { font-size: 14px; font-weight: 600; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#455a64"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="360" fill="#fafafa"/>
+  <rect x="28" y="40" width="450" height="280" rx="10" fill="#ffffff" stroke="#c5cae9" stroke-width="1.5"/>
+  <rect x="522" y="40" width="450" height="280" rx="10" fill="#ffffff" stroke="#c5cae9" stroke-width="1.5"/>
+  <text class="label panel-title" x="48" y="72" fill="#37474f">Self-describing</text>
+  <text class="label caption" x="48" y="94">names travel with values</text>
+  <text class="label panel-title" x="542" y="72" fill="#37474f">Schema-dependent</text>
+  <text class="label caption" x="542" y="94">names live in the shared contract</text>
+  <rect x="60" y="120" width="386" height="90" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="80" y="155">{&quot;user_id&quot;: 42,</text>
+  <text class="mono-lg" x="80" y="180">  &quot;name&quot;: &quot;Ada&quot; }</text>
+  <text class="label caption" x="60" y="240">Every message repeats field names.</text>
+  <text class="label caption" x="60" y="262">Generic tools can inspect without a schema file.</text>
+  <text class="label caption" x="60" y="284">Cost: size + parse work.</text>
+  <rect x="554" y="118" width="386" height="70" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="label small" x="574" y="142" fill="#37474f">Shared schema / IDL</text>
+  <text class="mono" x="574" y="164">1 → user_id (int)    2 → name (string)</text>
+  <line x1="747" y1="196" x2="747" y2="220" stroke="#455a64" stroke-width="1.75" marker-end="url(#arrowhead)"/>
+  <rect x="554" y="232" width="386" height="50" rx="8" fill="#ffffff" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="574" y="262">08 2a  12 03 41 64 61</text>
+  <text class="label caption" x="554" y="304">Compact tags + values — field names not on the wire.</text>
+</svg>
