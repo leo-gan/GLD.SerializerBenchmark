@@ -34,7 +34,7 @@ Shared domain classes under `benchmark.model.v2` expose public fields for reflec
 | [flatbuffers](https://github.com/google/flatbuffers) | `flatbuffers` | `suite`, `columnar` | `adapted` | `FlatBufferBuilder` on generated suite tables; columnar tables built in Java |
 | [fory](https://github.com/apache/fory) | `custom` | `suite` | `adapted` | Apache Fory binary (`fory-core`), types registered before timing |
 | [fory-json](https://fory.apache.org/docs/json/getting-started) | `json` | `suite` (optional) | `adapted` | Apache Fory JSON (`org.apache.fory:fory-json`) `ForyJson.toJsonBytes` / `fromJson` |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-java) | `kiln` | `suite`, `tensor` | `adapted` | `gld-kiln-java` 0.2.0 `Kiln.encodeTo` / `decode` into reused buffer; `tensor_view` borrows payload |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-java) | `kiln` | `suite`, `tensor` | `adapted` | `gld-kiln-java` 0.2.1 `Kiln.encodeTo` / `decode` into reused buffer; `tensor_view` borrows payload |
 | [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `columnar`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln Wire Format v2 (shared JNI `libkiln_asm_jni.so`); `KILN_OPT_EMBEDDED` `table_project`, zero-copy `tensor_view` |
 | [gson](https://github.com/google/gson) | `json` | `suite` | `native` | `Gson` with `disableHtmlEscaping`; `JsonWriter` / `JsonReader` on stream |
 | [hessian](https://github.com/ebourg/hessian) | `custom` | `suite` | `native` | `Hessian2` `writeObject` / `readObject` |

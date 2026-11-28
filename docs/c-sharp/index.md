@@ -38,7 +38,7 @@ Domain models in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-ga
 | [fory](https://github.com/apache/fory) | `custom` | `suite` | `adapted` | Apache Fory source-generated `[ForyStruct]` binary codec |
 | [FsPickler](https://github.com/mbraceproject/FsPickler) | `custom` | `suite` | `native` | MBrace binary pickler for .NET object graphs |
 | [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | `json` | `suite` | `native` | MBrace JSON pickler |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) | `kiln` | `suite`, `tensor` | `adapted` | `Gld.Kiln` 0.2.0 positional little-endian codec; `tensor_view` borrows payload |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-csharp) | `kiln` | `suite`, `tensor` | `adapted` | `Gld.Kiln` 0.2.1 positional little-endian codec; `tensor_view` borrows payload |
 | [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `columnar`, `array`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln Wire Format v2 (`[LibraryImport]` + `[SuppressGCTransition]` into `libkiln_asm_bench.so`); `KILN_OPT_EMBEDDED` `table_project`, strided `grid_window`, zero-copy `tensor_view` |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | `protobuf` | `suite`, `columnar` | `native` | Official `Google.Protobuf` `IMessage` generated from `benchmark_v2.proto` |
 | [GroBuf](https://github.com/skbkontur/GroBuf) | `custom` | `suite` | `native` | Compiled binary serializer for .NET types |

@@ -37,7 +37,7 @@ Swift compiles ahead of time to native machine code (`swift build -c release`) a
 | [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | `plist` | `suite` | `adapted` | Binary property list (`PropertyListEncoder`) |
 | [gld-avro](https://github.com/leo-gan/gld-avro-swift) | `avro` | `suite` | `adapted` | `leo-gan/gld-avro-swift` 0.2.0 `parseAvsc` once; `encodeGeneric` / `decodeGeneric` |
 | [gld-ion](https://github.com/leo-gan/gld-ion-swift) | `ion` | `suite` | `adapted` | `leo-gan/gld-ion-swift` 0.2.0 Ion 1.0 binary `encode` / `decodeBinary` |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) | `kiln` | `suite`, `tensor` | `adapted` | `leo-gan/gld-kiln-swift` 0.2.0 positional `Writer.encode` / `decode`; `tensor_view` borrows payload |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-swift) | `kiln` | `suite`, `tensor` | `adapted` | `leo-gan/gld-kiln-swift` 0.2.1 positional `Writer.encode` / `decode`; `tensor_view` borrows payload |
 | [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln Wire Format v2 (`libkiln_asm_bench.a` via `KilnAsmC`); `tensor_view` borrows payload |
 | [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | `json` | `suite` | `adapted` | Server-oriented `Codable` JSON codec |
 | [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | `avro` | `suite` | `adapted` | Binary Avro with schema |

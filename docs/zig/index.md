@@ -28,7 +28,7 @@ Zig compiles ahead of time to native machine code with explicit allocator passin
 | [flatbuffers](https://github.com/nDimensional/zig-flatbuffers) | `flatbuffers` | `suite` | `adapted` | `nDimensional/zig-flatbuffers` 0.2.1 `Builder.writeTable` / `decodeRoot` (`cpp/schemas/benchmark.fbs`) |
 | [gld-arrow](https://github.com/leo-gan/gld-arrow-zig) | `arrow` | `suite` | `adapted` | `leo-gan/gld-arrow-zig` 0.2.0 Arrow IPC stream; `rowsFromBatch` on decode |
 | [gld-avro](https://github.com/leo-gan/gld-avro-zig) | `avro` | `suite` | `adapted` | `leo-gan/gld-avro-zig` 0.2.0 `parseAvsc` in `prepare`; timed `Datum.encodeTo` / `decodeBin` |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-zig) | `kiln` | `suite`, `tensor` | `adapted` | `leo-gan/gld-kiln-zig` 0.2.0 positional `encodeReuse` / `decode`; `tensor_view` borrows payload |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-zig) | `kiln` | `suite`, `tensor` | `adapted` | `leo-gan/gld-kiln-zig` 0.2.1 positional `encodeReuse` / `decode`; `tensor_view` borrows payload |
 | [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln v2 C-ABI (`libkiln_asm_bench.a`); `tensor_view` borrows payload |
 | [json.zig](https://github.com/lalinsky/json.zig) | `json` | `suite` | `native` | `lalinsky/json.zig` 0.2.0 comptime-typed encode into reused buffer / `decodeFromSliceLeaky` into cell arena |
 | [jsonz](https://github.com/KercyDing/jsonz) | `json` | `suite` | `text_on_stream` | `KercyDing/jsonz` 0.9.2 `typed.toWriter` into reused buffer / owning `typed.parse` |
