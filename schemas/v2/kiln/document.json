@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Document",
+  "$defs": {
+    "DocumentMeta": {
+      "type": "object",
+      "properties": {
+        "region":  { "type": "string" },
+        "version": { "type": "integer", "format": "int32" }
+      },
+      "required": ["region", "version"]
+    },
+    "DocumentItem": {
+      "type": "object",
+      "properties": {
+        "sku":         { "type": "string" },
+        "qty":         { "type": "integer", "format": "int32" },
+        "price_minor": { "type": "integer", "format": "int64" }
+      },
+      "required": ["sku", "qty", "price_minor"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id":     { "type": "string" },
+    "status": { "type": "integer", "format": "int32" },
+    "meta":   { "$ref": "#/$defs/DocumentMeta" },
+    "items":  { "type": "array", "items": { "$ref": "#/$defs/DocumentItem" } }
+  },
+  "required": ["id", "status", "meta", "items"]
+}

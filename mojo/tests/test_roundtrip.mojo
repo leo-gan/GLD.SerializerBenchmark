@@ -36,6 +36,7 @@ from bench.hdf5_ser import AdiosSer, Hdf5Ser, NcSer
 from hdf5 import DT_F64, read_hdf5
 from bench.arrow_ser import ArrowIpcSer
 from bench.parquet_ser import ParquetSer
+from bench.kiln_asm_ser import KilnAsmSer
 from parquet_runtime.model import CODEC_NONE, CODEC_SNAPPY
 
 
@@ -475,6 +476,55 @@ def _grid_roundtrip() raises:
         raise Error("gld-hdf5 grid_window fidelity")
 
 
+def _kiln_asm_all_datasets() raises:
+    var ser = KilnAsmSer()
+    var cfg = TypeConfig()
+    cfg.rows = 8
+    cfg.cols = 8
+    cfg.batch = 2
+    cfg.seq = 8
+    cfg.vocab = 32
+    cfg.hidden = 8
+    cfg.ffn = 16
+    cfg.nx = 8
+    cfg.ny = 8
+    cfg.x0 = 2
+    cfg.y0 = 2
+    cfg.wx = 4
+    cfg.wy = 4
+    var batch_kinds: List[String] = [
+        "message", "document", "telemetry", "strings", "event",
+        "table", "table_project", "nested_table", "signal",
+    ]
+    for i in range(len(batch_kinds)):
+        var tid = batch_kinds[i]
+        var fx1 = make_cell(tid, cfg, UInt64(42), 1, "k1")
+        var b1 = ser.serialize_bytes(fx1)
+        var g1 = ser.deserialize_bytes(fx1, b1)
+        if not fidelity(fx1, g1):
+            raise Error("gld-kiln-asm fidelity N=1 " + tid)
+        var fx5 = make_cell(tid, cfg, UInt64(42), 5, "k5")
+        var b5 = ser.serialize_bytes(fx5)
+        var g5 = ser.deserialize_bytes(fx5, b5)
+        if not fidelity(fx5, g5):
+            raise Error("gld-kiln-asm fidelity N=5 " + tid)
+    var single_kinds: List[String] = [
+        "grid", "grid_window", "tensor", "tensor_view", "prompt", "shard", "request",
+    ]
+    for i in range(len(single_kinds)):
+        var tid = single_kinds[i]
+        var fx = make_cell(tid, cfg, UInt64(42), 1, "ks")
+        var raw = ser.serialize_bytes(fx)
+        var got = ser.deserialize_bytes(fx, raw)
+        if not fidelity(fx, got):
+            raise Error("gld-kiln-asm fidelity " + tid)
+        if tid == "tensor_view":
+            var b0 = Int(raw.unsafe_ptr())
+            var b1 = b0 + len(raw)
+            if not got.view_ok or got.view_addr < b0 or got.view_addr + got.view_nbytes > b1:
+                raise Error("gld-kiln-asm tensor_view did not borrow encoded buffer")
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
@@ -507,4 +557,5 @@ def main() raises:
     _graph_dagr()
     _columnar_scale()
     _grid_roundtrip()
+    _kiln_asm_all_datasets()
     print("ok")

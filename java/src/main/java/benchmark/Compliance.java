@@ -235,7 +235,16 @@ public final class Compliance {
     out.add(new Adapter("orc", "orc", Versions.of(org.apache.orc.OrcFile.class), Compliance::decodeOrc));
     out.add(new Adapter("orc-uncompressed", "orc", Versions.of(org.apache.orc.OrcFile.class), Compliance::decodeOrc));
     out.add(new Adapter("sbe", "sbe", "1.40.2", Compliance::decodeSbe));
+    out.add(new Adapter("gld-kiln-asm", "kiln", benchmark.serializers.KilnAsmJni.VERSION, Compliance::decodeKilnAsm));
     return out;
+  }
+
+  private static Object decodeKilnAsm(byte[] data, String schema) throws Exception {
+    benchmark.serializers.KilnAsmJni.ensureLoaded();
+    int tag = benchmark.serializers.KilnAsmJni.schemaTag(schema);
+    if (tag < 0) throw new IllegalArgumentException("unsupported kiln schema: " + schema);
+    String json = benchmark.serializers.KilnAsmJni.complianceDecodeJson(data, tag);
+    return JSON.readValue(json, Object.class);
   }
 
   private static List<Map<String, Object>> decodeArrow(byte[] data, String schema) throws Exception {
@@ -449,7 +458,7 @@ public final class Compliance {
     String err = "";
     try {
       byte[] raw = inputBytes(c);
-      if (tooDeep(raw)) throw new IllegalArgumentException("input too nested for this runner");
+      if (!"kiln".equals(a.format) && tooDeep(raw)) throw new IllegalArgumentException("input too nested for this runner");
       got = a.decode.apply(raw, String.valueOf(c.getOrDefault("schema", "")));
       ok = true;
     } catch (Exception ex) {

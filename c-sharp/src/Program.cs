@@ -117,6 +117,7 @@ namespace GLD.SerializerBenchmark
                 new GoogleProtobufSerializerSer(new GoogleProtobufDomainMap()),
                 new ApacheAvroSerializerSer(),
                 new KilnSerializerSer(),
+                new KilnAsmSerializerSer(),
                 new HyperionSerializerSer(),
                 new NetSerializerSer(),
                 new SpanJsonSerializerSer(),

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TableProject",
+  "type": "object",
+  "properties": {
+    "f_float_0": { "type": "array", "items": { "type": "number", "format": "double" } }
+  },
+  "required": ["f_float_0"]
+}

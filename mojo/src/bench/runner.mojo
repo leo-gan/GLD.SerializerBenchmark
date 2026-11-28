@@ -9,6 +9,7 @@ from bench.emberjson_ser import EmberJsonSer
 from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
 from bench.kiln_ser import KilnSer
+from bench.kiln_asm_ser import KilnAsmSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
@@ -394,6 +395,7 @@ def run() raises:
     var ehsan = EhsanJsonSer()
     var cbor = CborSer()
     var kiln = KilnSer()
+    var kiln_asm = KilnAsmSer()
     var avro = AvroSer()
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
@@ -420,6 +422,7 @@ def run() raises:
     names.append(ehsan.name())
     names.append(cbor.name())
     names.append(kiln.name())
+    names.append(kiln_asm.name())
     names.append(avro.name())
     names.append(proto.name())
     names.append(fb.name())
@@ -497,21 +500,26 @@ def run() raises:
         var ri = 0
         while ri < len(names):
             var nm = names[ri]
-            if _columnar_id(fx.type_id) != _columnar_name(nm):
-                ri += 1
-                continue
-            # grid is gld-hdf5 only. That name does not time the five suite types.
-            if _array_id(fx.type_id) != _array_name(nm):
-                ri += 1
-                continue
-            # The tensor data set is gld-kiln. Kiln also times the suite types.
-            if _tensor_id(fx.type_id) and nm != kiln.name():
-                ri += 1
-                continue
-            # Shared regions and the person ring. Only regular and frozen Dagr.
-            if fx.type_id == "graph" and nm != dagr_reg.name() and nm != dagr_frz.name():
-                ri += 1
-                continue
+            if nm == kiln_asm.name():
+                if not kiln_asm.supports(fx.type_id):
+                    ri += 1
+                    continue
+            else:
+                if _columnar_id(fx.type_id) != _columnar_name(nm):
+                    ri += 1
+                    continue
+                # grid is gld-hdf5 only. That name does not time the five suite types.
+                if _array_id(fx.type_id) != _array_name(nm):
+                    ri += 1
+                    continue
+                # The tensor data set is gld-kiln. Kiln also times the suite types.
+                if _tensor_id(fx.type_id) and nm != kiln.name():
+                    ri += 1
+                    continue
+                # Shared regions and the person ring. Only regular and frozen Dagr.
+                if fx.type_id == "graph" and nm != dagr_reg.name() and nm != dagr_frz.name():
+                    ri += 1
+                    continue
             try:
                 if nm == ember.name():
                     _ = ember.serialize_bytes(fx)
@@ -524,6 +532,8 @@ def run() raises:
                         ri += 1
                         continue
                     _ = kiln.serialize_bytes(fx)
+                elif nm == kiln_asm.name():
+                    _ = kiln_asm.serialize_bytes(fx)
                 elif nm == avro.name():
                     _ = avro.serialize_bytes(fx)
                 elif nm == proto.name():
@@ -651,6 +661,18 @@ def run() raises:
                             var buf = kiln.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = kiln.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == kiln_asm.name():
+                            ver = kiln_asm.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = kiln_asm.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = kiln_asm.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

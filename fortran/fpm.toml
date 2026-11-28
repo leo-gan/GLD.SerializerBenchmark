@@ -8,7 +8,7 @@ description = "Fortran serializer benchmark runner"
 auto-executables = false
 auto-tests = false
 auto-examples = false
-link = ["z", "zstd", "hdf5_fortran", "hdf5", "netcdff", "netcdf", "adios2_fortran"]
+link = ["z", "zstd", "hdf5_fortran", "hdf5", "netcdff", "netcdf", "adios2_fortran", "kiln_asm_bench"]
 external-modules = ["hdf5", "netcdf", "adios2"]
 
 [library]

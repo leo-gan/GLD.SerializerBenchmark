@@ -112,6 +112,7 @@ if want_lang python; then
     PY_DIR="$PROJECT_ROOT/python"
     cd "$PY_DIR"
     uv sync --quiet
+    "$PY_DIR/scripts/build-kiln-asm-ext.sh"
 
     ARGS=(--json-out "$JSON_OUT")
     if [[ "$DETAILED" == true ]]; then
@@ -157,9 +158,13 @@ run_lang() {
 }
 
 if want_lang javascript && command -v node >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/javascript/src/compliance.mjs" ]]; then
+    "$PROJECT_ROOT/javascript/scripts/build-kiln-asm-napi.sh" || true
     run_lang javascript env -C "$PROJECT_ROOT/javascript" node src/compliance.mjs
 fi
 if want_lang go && command -v go >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/go/compliance/main.go" ]]; then
+    if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" && -x "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh" ]]; then
+        "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh" || true
+    fi
     run_lang go env -C "$PROJECT_ROOT/go" go run ./compliance
 fi
 if want_lang rust && command -v cargo >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/rust/src/bin/compliance.rs" ]]; then
@@ -217,7 +222,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
         "YamlDotNet" "Toon.Format" "ToonNet" "Corvus.Toon" "SharpYaml" "MessagePack-CSharp" "Amazon.IonDotnet" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
-        "arrow-ipc" "parquet" "parquet-uncompressed" "PureHDF"
+        "arrow-ipc" "parquet" "parquet-uncompressed" "PureHDF" "gld-kiln-asm"
     )
     # NetJSON and ShapeShift use a per-case timeout inside Compliance.cs.
     export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
@@ -308,6 +313,12 @@ if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/s
     YAML_LIB="$PROJECT_ROOT/cpp/third_party/_fetch/yaml_cpp-build/libyaml-cpp.a"
     if [[ -f "$YAML_LIB" ]]; then
         CPP_LIBS+=("$YAML_LIB")
+    fi
+    KILN_ASM_LIB="$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a"
+    if [[ -f "$KILN_ASM_LIB" && -d "$PROJECT_ROOT/build/kiln-asm/include" ]]; then
+        CPP_DEFS+=(-DCOMPLIANCE_WITH_KILN_ASM=1)
+        CPP_INC+=(-I"$PROJECT_ROOT/build/kiln-asm/include")
+        CPP_LIBS+=("$KILN_ASM_LIB")
     fi
     if [[ ! -x "$CPP_BIN" || "$PROJECT_ROOT/cpp/src/compliance.cpp" -nt "$CPP_BIN" ]]; then
         g++ -O2 -std=c++20 "${CPP_DEFS[@]}" "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" "${CPP_LINK[@]}" -o "$CPP_BIN" || true

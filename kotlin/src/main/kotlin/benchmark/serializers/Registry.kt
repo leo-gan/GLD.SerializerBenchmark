@@ -29,6 +29,7 @@ object Registry {
             Entry("kbson", ::KBsonSer),
             Entry("kotlinx-ion", ::KotlinxIonSer),
             Entry("gld-ion", ::GldIonSer),
+            Entry("gld-kiln-asm", ::KilnAsmSer),
             Entry("tomlkt", ::TomlktSer),
             // Schema
             Entry("kotlinx-protobuf", ::KotlinxProtobufSer),

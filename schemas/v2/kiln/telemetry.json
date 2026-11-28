@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Telemetry",
+  "type": "object",
+  "properties": {
+    "source": { "type": "string" },
+    "ts":     { "type": "integer", "format": "int64" },
+    "tags":   { "type": "array", "items": { "type": "string" } },
+    "values": { "type": "array", "items": { "type": "number", "format": "double" } }
+  },
+  "required": ["source", "ts", "tags", "values"]
+}

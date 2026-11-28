@@ -18,6 +18,10 @@ fi
 echo "[INFO] Building C# benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$CS_DIR"
 bash "$SCRIPT_DIR/fetch-gld-kiln.sh"
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.so" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
 dotnet build src/GLD.SerializerBenchmark.csproj -c Release --nologo -v q
 
 export PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}"

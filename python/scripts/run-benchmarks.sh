@@ -19,6 +19,7 @@ fi
 echo "[INFO] Syncing Python deps (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$PY_DIR"
 uv sync
+"$SCRIPT_DIR/build-kiln-asm-ext.sh"
 
 # Package lives under src/ (not installed as an editable wheel).
 export PYTHONPATH="$PY_DIR/src:$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}"

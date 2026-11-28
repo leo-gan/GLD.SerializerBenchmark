@@ -14,6 +14,7 @@ program serializer_benchmark_fortran
   use ser_netcdf
   use ser_adios2
   use ser_gld_arrow
+  use ser_kiln_asm
   implicit none
 
   integer, parameter :: max_sers = 12
@@ -27,6 +28,7 @@ program serializer_benchmark_fortran
   integer, parameter :: ser_nc = 8
   integer, parameter :: ser_ad = 9
   integer, parameter :: ser_ga = 10
+  integer, parameter :: ser_kiln = 11
   integer, parameter :: buf_cap = 8 * 1024 * 1024
   character(len=64) :: ser_names(max_sers)
   character(len=32) :: ser_versions(max_sers)
@@ -69,7 +71,7 @@ contains
 
   subroutine load_registry()
     integer :: prep
-    nser = 10
+    nser = 11
     ser_names(ser_custom) = cb_name
     ser_versions(ser_custom) = cb_version
     ser_names(ser_jf) = jf_name
@@ -94,6 +96,13 @@ contains
     ser_names(ser_ga) = ga_name
     call ga_prepare(prep)
     ser_versions(ser_ga) = ga_version
+    ser_names(ser_kiln) = kiln_asm_name
+    call kiln_asm_prepare(prep)
+    if (prep /= 0) then
+      write(0, '(A)') "gld-kiln-asm ABI layout mismatch"
+      error stop 1
+    end if
+    ser_versions(ser_kiln) = kiln_asm_version
   end subroutine
 
   function read_seed() result(v)
@@ -155,7 +164,15 @@ contains
     integer, intent(in) :: ser_index
     logical :: yes
     yes = ser_index == ser_h5 .or. ser_index == ser_nc .or. ser_index == ser_ad &
-        .or. ser_index == ser_ga
+        .or. ser_index == ser_ga .or. ser_index == ser_kiln
+  end function
+
+  function ser_is_suite(ser_index) result(yes)
+    integer, intent(in) :: ser_index
+    logical :: yes
+    yes = ser_index == ser_custom .or. ser_index == ser_jf .or. ser_index == ser_jonquil &
+        .or. ser_index == ser_rojff .or. ser_index == ser_toml .or. ser_index == ser_mp &
+        .or. ser_index == ser_kiln
   end function
 
   function ser_selected(name, filter) result(yes)
@@ -266,7 +283,7 @@ contains
   end subroutine
 
   subroutine run_trial(items, type_id, reps, rep, ser_index, type_hash, run_order, pos, failed)
-    type(fixture_t), intent(in) :: items(:)
+    type(fixture_t), intent(in), target :: items(:)
     character(len=*), intent(in) :: type_id, type_hash
     integer, intent(in) :: reps, rep, ser_index, pos
     integer, intent(inout) :: run_order
@@ -308,6 +325,9 @@ contains
     case (ser_mp)
       call mp_write(items, payload, stat)
       if (stat == 0) call touch_payload(payload)
+    case (ser_kiln)
+      call kiln_asm_serialize(items, buf, out_len, stat)
+      if (stat == 0) call black_box_bytes(c_loc(buf), int(max(out_len, 0), c_size_t))
     case default
       stat = 1
     end select
@@ -336,6 +356,9 @@ contains
     case (ser_mp)
       call mp_read(payload, size(items), got, stat)
       call touch_payload(payload)
+    case (ser_kiln)
+      call kiln_asm_deserialize(buf, out_len, items(1)%kind_id, size(items), got, stat)
+      if (stat == 0) call black_box_bytes(c_loc(buf), int(out_len, c_size_t))
     case default
       stat = 1
     end select
@@ -398,7 +421,7 @@ contains
     nready = 0
     failed = .false.
     do i = 1, nser
-      if (ser_is_array(i)) cycle
+      if (.not. ser_is_suite(i)) cycle
       if (.not. ser_selected(ser_names(i), filter_ser)) cycle
       nready = nready + 1
       ready(nready) = i
@@ -538,6 +561,9 @@ contains
         mark = transfer(values(1, 1), mark)
         call black_box_bytes(c_loc(mark), 8_c_size_t)
       end if
+    case (ser_kiln)
+      call kiln_asm_write_grid(values, buf, out_len, stat)
+      if (stat == 0) call black_box_bytes(c_loc(buf), int(max(out_len, 0), c_size_t))
     case default
       stat = 1
     end select
@@ -580,6 +606,13 @@ contains
         call ga_read_grid(got, stat)
       end if
       if (stat == 0) call black_box_bytes(c_loc(mark), 8_c_size_t)
+    case (ser_kiln)
+      if (is_window) then
+        call kiln_asm_read_window(buf, out_len, x0, y0, wx, wy, win, stat)
+      else
+        call kiln_asm_read_grid(buf, out_len, got, stat)
+      end if
+      if (stat == 0) call black_box_bytes(c_loc(buf), int(out_len, c_size_t))
     case default
       stat = 1
     end select
@@ -609,6 +642,8 @@ contains
       call copy_payload(payload, out_len)
     else if (ser_index == ser_ga) then
       call copy_grid_bytes(values, out_len)
+    else if (ser_index == ser_kiln) then
+      ! buf(1:out_len) already holds the encoded KLNT payload.
     else if (ser_index == ser_nc) then
       call slurp_file(trim(nc_path), out_len)
       call nc_remove(trim(nc_path))

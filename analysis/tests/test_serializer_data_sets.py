@@ -44,6 +44,7 @@ _EXPECTED = {
         "netCDF4": ("array",),
         "adios2": ("array",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
     },
     "cpp": {
         "arrow-ipc": ("columnar",),
@@ -60,6 +61,7 @@ _EXPECTED = {
         "dagr-frozen": ("suite", "graph"),
         "highfive": ("array",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
     },
     "csharp": {
         "arrow-ipc": ("columnar",),
@@ -71,6 +73,7 @@ _EXPECTED = {
         "Apache.Avro": ("suite", "columnar"),
         "PureHDF": ("array",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
     },
     "go": {
         "arrow-ipc": ("columnar",),
@@ -83,6 +86,7 @@ _EXPECTED = {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "tensor"),
     },
     "java": {
         "arrow-ipc": ("columnar",),
@@ -96,6 +100,7 @@ _EXPECTED = {
         "flatbuffers": ("suite", "columnar"),
         "avro": ("suite", "columnar"),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "tensor"),
     },
     "kotlin": {
         "arrow-ipc": ("columnar",),
@@ -108,6 +113,7 @@ _EXPECTED = {
         "protobuf": ("suite", "columnar"),
         "flatbuffers": ("suite", "columnar"),
         "avro": ("suite", "columnar"),
+        "gld-kiln-asm": ("suite", "columnar"),
     },
     "javascript": {
         "arrow-ipc": ("columnar",),
@@ -121,6 +127,7 @@ _EXPECTED = {
         "dagr-frozen": ("suite", "graph"),
         "h5wasm": ("array",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
     },
     "rust": {
         "arrow-ipc": ("columnar",),
@@ -134,12 +141,14 @@ _EXPECTED = {
         "dagr-frozen": ("suite", "graph"),
         "hdf5-metno": ("array",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
     },
     "mojo": {
         "arrow-ipc": ("columnar",),
         "parquet": ("columnar",),
         "parquet-uncompressed": ("columnar",),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "gld-hdf5": ("array",),
@@ -148,14 +157,23 @@ _EXPECTED = {
         "dagr-regular": ("suite", "graph"),
         "dagr-frozen": ("suite", "graph"),
         "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "tensor"),
     },
-    "c": {"hdf5": ("array",), "gld-kiln": ("suite", "tensor")},
-    "zig": {"gld-kiln": ("suite", "tensor")},
+    "c": {
+        "hdf5": ("array",),
+        "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "columnar", "array", "tensor"),
+    },
+    "zig": {
+        "gld-kiln": ("suite", "tensor"),
+        "gld-kiln-asm": ("suite", "tensor"),
+    },
     "fortran": {
         "hdf5-fortran": ("array",),
         "netcdf-fortran": ("array",),
         "adios2": ("array",),
         "gld-arrow": ("array",),
+        "gld-kiln-asm": ("suite", "array"),
     },
 }
 
@@ -214,10 +232,10 @@ def test_specialized_filters_and_suite_skip():
     columnar = default_filter("rust", _LIB / "columnar-smoke.yaml")
     assert columnar.split(",") == allow_list("rust", "columnar")
     assert default_filter("fortran", _LIB / "array-smoke.yaml") == (
-        "hdf5-fortran,netcdf-fortran,adios2,gld-arrow"
+        "hdf5-fortran,netcdf-fortran,adios2,gld-arrow,gld-kiln-asm"
     )
     assert default_filter("java", _LIB / "graph.yaml") == NONE_FILTER
-    assert default_filter("go", _LIB / "tensor.yaml") == "gld-kiln"
+    assert default_filter("go", _LIB / "tensor.yaml") == "gld-kiln,gld-kiln-asm"
     assert data_set_for_run_config(_LIB / "columnar.yaml") == "columnar"
     assert data_set_for_run_config(_LIB / "tensor-smoke.yaml") == "tensor"
 

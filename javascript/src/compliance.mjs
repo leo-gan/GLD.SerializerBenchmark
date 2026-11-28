@@ -323,6 +323,30 @@ function makeAdapters() {
       throw new Error('no generated Bebop type for this payload');
     }, 'bebop runtime (bool / empty only)', 'bebop');
   } catch { /* optional */ }
+  try {
+    const kilnAsm = require(join(repoRoot, 'build/kiln-asm/kiln_asm_napi.node'));
+    adapters.push({
+      name: 'gld-kiln-asm',
+      format: 'kiln',
+      decode: (buf, schema) => {
+        let tag = 0;
+        if (schema === 'tensor-v2' || schema == null) tag = 0;
+        else if (schema === 'frame') tag = 1;
+        else if (schema && typeof schema === 'object') {
+          if (schema.type === 'struct') tag = 2;
+          else if (schema.type === 'list') {
+            if (schema.element === 'f32') tag = 3;
+            else if (schema.element === 'str') tag = 4;
+            else if (schema.element === 'struct{a:i64}') tag = 5;
+            else throw new Error(`unsupported kiln list element: ${schema.element}`);
+          } else throw new Error(`unsupported kiln schema type: ${schema.type}`);
+        } else throw new Error(`unsupported kiln schema: ${schema}`);
+        return JSON.parse(kilnAsm.complianceDecodeJson(buf, tag));
+      },
+      notes: 'gld-kiln-asm 0.2.0 Node N-API addon over libkiln_asm_bench.a',
+      version: kilnAsm.version(),
+    });
+  } catch { /* addon not built */ }
 
   return adapters.filter((a) => typeof a.decode === 'function');
 }

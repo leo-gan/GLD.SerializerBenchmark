@@ -19,6 +19,9 @@ export PATH="$(go env GOPATH 2>/dev/null)/bin:${PATH:-}"
 export PATH="${go_bin_dir}:${PATH}"
 
 echo "[INFO] Building Go benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" && -x "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh" ]]; then
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
 cd "$GO_DIR"
 if [[ -x "$GO_DIR/scripts/generate-protobuf.sh" ]]; then
   "$GO_DIR/scripts/generate-protobuf.sh" || echo "[WARN] protobuf generation skipped/failed"

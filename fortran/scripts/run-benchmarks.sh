@@ -10,6 +10,11 @@ source "$PROJECT_ROOT/scripts/lib/config.sh"
 bench_init_runner fortran json-fortran "$@"
 mkdir -p "$FORTRAN_DIR/build"
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 echo "[INFO] Building Fortran benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 export PATH="${HOME}/.local/bin:${PATH}"
 # shellcheck source=fpm-env.sh

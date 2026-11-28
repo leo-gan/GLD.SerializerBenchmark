@@ -75,6 +75,10 @@ const char *test_data_name(test_data_kind_t k) {
         case TD_PROMPT: return "prompt";
         case TD_SHARD: return "shard";
         case TD_REQUEST: return "request";
+        case TD_TABLE: return "table";
+        case TD_TABLE_PROJECT: return "table_project";
+        case TD_NESTED_TABLE: return "nested_table";
+        case TD_SIGNAL: return "signal";
         default: return "unknown";
     }
 }
@@ -177,6 +181,16 @@ void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, in
         case TD_REQUEST:
             data_fill_tensor(out, kind, seed, instance_index, 1024, 1024, 2, 4, 32, 256, 512, 3, 16);
             break;
+        case TD_TABLE:
+        case TD_TABLE_PROJECT:
+            data_fill_table_batch(out, kind, seed, 4, 0, 1000000, 3, 16, 0.5);
+            break;
+        case TD_NESTED_TABLE:
+            data_fill_nested_row(out, seed, instance_index, 4, 3, 12);
+            break;
+        case TD_SIGNAL:
+            data_fill_signal(out, seed, instance_index, 4, 3, 12);
+            break;
         default:
             break;
     }
@@ -217,6 +231,12 @@ void data_free_grid(test_fixture_t *fx) {
     free_prompt(&fx->prompt);
     free_shard(&fx->shard);
     free_prompt(&fx->request.inputs);
+    free(fx->table_rows.rows);
+    fx->table_rows.rows = NULL;
+    fx->table_rows.count = 0;
+    free(fx->table_project.values);
+    fx->table_project.values = NULL;
+    fx->table_project.count = 0;
 }
 
 static void *alloc_bytes(size_t n) {
@@ -388,6 +408,112 @@ void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, i
     out->grid.wy = wy;
     out->grid.nvalues = (int)n;
     out->grid.values = values;
+}
+
+void data_fill_table_batch(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int count,
+                           int int_min, int int_max, int string_min, int string_max,
+                           double duplication) {
+    char vocab[32][V2_STR];
+    rng_t vr;
+    table_row_t *rows;
+    const char *type_name = test_data_name(kind);
+    char vocab_tag[64];
+    int i, j;
+
+    data_free_grid(out);
+    memset(out, 0, sizeof(*out));
+    out->kind = kind;
+    out->name = type_name;
+    if (count < 1) count = 1;
+    if (string_min <= 0) string_min = 3;
+    if (string_max < string_min) string_max = 16;
+    if (int_max <= int_min) { int_min = 0; int_max = 1000000; }
+    if (duplication < 0.0) duplication = 0.5;
+
+    snprintf(vocab_tag, sizeof vocab_tag, "%s#vocab", type_name);
+    rng_init(&vr, mix_name(seed, vocab_tag, 0));
+    for (i = 0; i < 32; i++) rng_word(&vr, vocab[i], V2_STR, string_min, string_max);
+
+    rows = (table_row_t *)alloc_bytes((size_t)count * sizeof(table_row_t));
+    memset(rows, 0, (size_t)count * sizeof(table_row_t));
+    for (i = 0; i < count; i++) {
+        rng_t r;
+        rng_init(&r, mix_name(seed, type_name, i));
+        for (j = 0; j < 16; j++) rows[i].f_float[j] = rng_f64(&r) * 1000.0;
+        for (j = 0; j < 4; j++) rows[i].f_int[j] = rng_int(&r, int_min, int_max);
+        if (rng_f64(&r) < duplication) {
+            memcpy(rows[i].f_str_0, vocab[rng_int(&r, 0, 31)], V2_STR);
+        } else {
+            rng_word(&r, rows[i].f_str_0, V2_STR, string_min, string_max);
+        }
+        if (rng_f64(&r) < duplication) {
+            memcpy(rows[i].f_str_1, vocab[rng_int(&r, 0, 31)], V2_STR);
+        } else {
+            rng_word(&r, rows[i].f_str_1, V2_STR, string_min, string_max);
+        }
+    }
+    out->table_rows.count = count;
+    out->table_rows.rows = rows;
+    out->batch_n = count;
+}
+
+void data_fill_nested_row(test_fixture_t *out, uint64_t seed, int instance_index,
+                          int children, int string_min, int string_max) {
+    rng_t r;
+    nested_row_t *d;
+    int i;
+    data_free_grid(out);
+    memset(out, 0, sizeof(*out));
+    out->kind = TD_NESTED_TABLE;
+    out->name = test_data_name(TD_NESTED_TABLE);
+    out->batch_n = 1;
+    if (children < 0) children = 4;
+    if (children > V2_MAX_CHILDREN) children = V2_MAX_CHILDREN;
+    if (string_min <= 0) string_min = 3;
+    if (string_max < string_min) string_max = 12;
+    rng_init(&r, mix_name(seed, "nested_table", instance_index));
+    d = &out->nested_table;
+    d->item_count = children;
+    for (i = 0; i < children; i++) {
+        rng_word(&r, d->items[i].sku, sizeof d->items[i].sku, string_min, string_max);
+        d->items[i].qty = rng_int(&r, 1, 100);
+        d->items[i].price_minor = rng_int(&r, 0, 100000);
+    }
+    rng_word(&r, d->id, sizeof d->id, 8, 12);
+    d->status = rng_int(&r, 0, 5);
+    rng_word(&r, d->meta.region, sizeof d->meta.region, 2, 4);
+    d->meta.version = rng_int(&r, 1, 10);
+}
+
+void data_fill_signal(test_fixture_t *out, uint64_t seed, int instance_index,
+                      int group_count, int string_min, int string_max) {
+    rng_t r;
+    signal_t *s;
+    int i;
+    data_free_grid(out);
+    memset(out, 0, sizeof(*out));
+    out->kind = TD_SIGNAL;
+    out->name = test_data_name(TD_SIGNAL);
+    out->batch_n = 1;
+    if (group_count < 0) group_count = 4;
+    if (group_count > V2_MAX_LEGS) group_count = V2_MAX_LEGS;
+    if (string_min <= 0) string_min = 3;
+    if (string_max < string_min) string_max = 12;
+    rng_init(&r, mix_name(seed, "signal", instance_index));
+    s = &out->signal;
+    s->leg_count = group_count;
+    for (i = 0; i < group_count; i++) {
+        s->legs[i].leg_id = rng_int(&r, 0, 1000000);
+        s->legs[i].leg_qty = rng_int(&r, 0, 10000);
+        s->legs[i].leg_pad = 0;
+    }
+    s->seq = rng_int(&r, 0, 1000000000);
+    s->ts = kBaseTsMs + rng_int(&r, 0, 86400000);
+    s->price_mantissa = rng_int(&r, 0, 1000000000);
+    s->qty = rng_int(&r, 0, 10000);
+    s->flags = rng_int(&r, 0, 65535);
+    rng_word(&r, s->symbol, sizeof s->symbol, string_min, string_max);
+    rng_word(&r, s->venue, sizeof s->venue, string_min, string_max);
 }
 
 void data_init_all(test_fixture_t *out, int count, uint64_t seed) {

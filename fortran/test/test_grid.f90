@@ -7,6 +7,7 @@ program test_grid
   use ser_netcdf
   use ser_adios2
   use ser_gld_arrow
+  use ser_kiln_asm
   implicit none
   integer, parameter :: nx = 512
   integer, parameter :: ny = 512
@@ -18,8 +19,9 @@ program test_grid
   real(real64), allocatable :: values(:, :), got(:, :), win(:, :), expect(:, :)
   real(real64), allocatable :: other(:, :)
   integer(int8), allocatable :: payload(:)
+  integer(int8), allocatable :: kiln_buf(:)
   integer(int64) :: nbytes
-  integer :: stat, nfail
+  integer :: stat, nfail, kiln_len
   character(len=*), parameter :: nc_path = "/tmp/gld-grid-test.nc"
   character(len=*), parameter :: ad_path = "/tmp/gld-grid-test.bp"
 
@@ -100,6 +102,22 @@ program test_grid
     win = 0
     call ga_read_window(x0, y0, wx, wy, win, stat)
     if (stat /= 0 .or. .not. grid_equal(win, expect)) call fail("ga window")
+  end if
+
+  allocate(kiln_buf(buf_cap))
+  call kiln_asm_prepare(stat)
+  if (stat /= 0) call fail("kiln_asm_prepare")
+  call kiln_asm_write_grid(values, kiln_buf, kiln_len, stat)
+  if (stat /= 0) then
+    call fail("kiln_asm write")
+  else
+    if (kiln_len /= 512 * 512 * 8 + 192) call fail("kiln_asm size")
+    got = 0
+    call kiln_asm_read_grid(kiln_buf, kiln_len, got, stat)
+    if (stat /= 0 .or. .not. grid_equal(got, values)) call fail("kiln_asm full read")
+    win = 0
+    call kiln_asm_read_window(kiln_buf, kiln_len, x0, y0, wx, wy, win, stat)
+    if (stat /= 0 .or. .not. grid_equal(win, expect)) call fail("kiln_asm window")
   end if
 
   if (nfail /= 0) error stop 1

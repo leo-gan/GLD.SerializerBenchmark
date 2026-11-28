@@ -26,6 +26,11 @@ if ! command -v swift >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 # Cap'n Proto + local toolchains (Package.swift also reads CAPNP_PREFIX / HOME).
 export CAPNP_PREFIX="${CAPNP_PREFIX:-${HOME}/.local}"
 export PATH="${CAPNP_PREFIX}/bin:${PATH}"

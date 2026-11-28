@@ -47,6 +47,9 @@
 #include <cstdlib>
 #include <unistd.h>
 #endif
+#if defined(COMPLIANCE_WITH_KILN_ASM)
+#include "kiln_asm.h"
+#endif
 #include "Signal.h"
 #include <filesystem>
 #include <fstream>
@@ -557,6 +560,44 @@ int main(int argc, char** argv) {
       } else if (fmt == "hdf5") {
         ads.push_back({"highfive", decode_hdf5, hdf5_version()});
 #endif
+#if defined(COMPLIANCE_WITH_KILN_ASM)
+      } else if (fmt == "kiln") {
+        ads.push_back({"gld-kiln-asm", [](const std::vector<uint8_t>& raw, const std::string& schema) -> json {
+          static uint8_t arena_mem[65536];
+          kiln_arena_t arena;
+          kiln_result_t res{0, 0};
+          kiln_arena_init(&arena, arena_mem, sizeof arena_mem);
+          kiln_err_t err = KILN_ERR_TYPE;
+          if (schema == "tensor-v2") {
+            kiln_tensor_dir_t dir;
+            err = kiln_asm_decode_tensors(raw.data(), raw.size(), &dir, &arena, nullptr, &res);
+          } else if (schema == "frame") {
+            kiln_id_tensors_t v;
+            err = kiln_asm_decode_id_tensors_framed(raw.data(), raw.size(), &v, &arena, nullptr, &res);
+          } else if (!schema.empty() && schema[0] == '{') {
+            auto sc = json::parse(schema);
+            const std::string tp = sc.value("type", "");
+            if (tp == "struct") {
+              kiln_id_tensors_t v;
+              err = kiln_asm_decode_id_tensors(raw.data(), raw.size(), &v, &arena, nullptr, &res);
+            } else if (tp == "list") {
+              const std::string el = sc.value("element", "");
+              if (el == "f32") {
+                const uint8_t* ptr = nullptr; size_t cnt = 0;
+                err = kiln_asm_decode_list_f32(raw.data(), raw.size(), &ptr, &cnt, &arena, nullptr, &res);
+              } else if (el == "str") {
+                kiln_str_t* ptr = nullptr; size_t cnt = 0;
+                err = kiln_asm_decode_list_str(raw.data(), raw.size(), &ptr, &cnt, &arena, nullptr, &res);
+              } else if (el == "struct{a:i64}") {
+                const uint8_t* ptr = nullptr; size_t cnt = 0;
+                err = kiln_asm_decode_list_i64_struct(raw.data(), raw.size(), &ptr, &cnt, &arena, nullptr, &res);
+              }
+            }
+          }
+          if (err != KILN_OK) throw std::runtime_error(kiln_asm_err_name(err));
+          return json("ok");
+        }, kiln_asm_version()});
+#endif
       }
       {
         std::vector<Ad> keep;
@@ -590,7 +631,10 @@ int main(int argc, char** argv) {
             raw.assign(s.begin(), s.end());
           }
           std::string schema;
-          if (c.contains("schema") && c["schema"].is_string()) schema = c["schema"].get<std::string>();
+          if (c.contains("schema")) {
+            if (c["schema"].is_string()) schema = c["schema"].get<std::string>();
+            else if (!c["schema"].is_null()) schema = c["schema"].dump();
+          }
           auto got = ad.dec(raw, schema);
           if (c.value("expect", "") == "reject") {
             row["outcome"] = "fail";

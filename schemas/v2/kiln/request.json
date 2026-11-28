@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Request",
+  "type": "object",
+  "properties": {
+    "request_id":  { "type": "integer", "format": "int64" },
+    "model":       { "type": "string" },
+    "temperature": { "type": "number",  "format": "float" },
+    "inputs":      { "type": "object",  "format": "kiln-tensors" }
+  },
+  "required": ["request_id", "model", "temperature", "inputs"]
+}

@@ -26,6 +26,10 @@ if [[ ! -d vendor/gldjson_src ]]; then
   echo "[INFO] Fetching Mojo vendor trees..."
   ./scripts/fetch-vendors.sh
 fi
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.so" ]]; then
+  echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+  "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
 
 RESOLVED="$LOG_DIR/${BENCHMARK_TS}.resolved.json"
 PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \

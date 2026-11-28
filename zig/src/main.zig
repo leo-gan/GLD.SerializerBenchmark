@@ -58,4 +58,5 @@ test {
     _ = serde_ser;
     _ = extra;
     _ = @import("kiln_ser.zig");
+    _ = @import("kiln_asm_ser.zig");
 }

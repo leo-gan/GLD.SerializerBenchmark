@@ -16,6 +16,8 @@ def _package_version(distribution_name: str) -> str:
         import sys
 
         return sys.version.split()[0]
+    if distribution_name == "gld-kiln-asm":
+        return "0.2.0"
     try:
         from importlib.metadata import PackageNotFoundError, version
 
@@ -428,6 +430,39 @@ def _adios2_decode(data: bytes) -> Any:
         shutil.rmtree(root, ignore_errors=True)
 
 
+def _kiln_asm_decode(data: bytes) -> Any:
+    """Decode Kiln wire v2 compliance vectors via the CPython C extension."""
+    import json
+
+    from benchmark.serializers import _kiln_asm_ext  # type: ignore[import-not-found]
+    from .context import current_schema
+
+    schema = current_schema.get()
+    if schema == "tensor-v2" or schema is None:
+        tag = 0
+    elif schema == "frame":
+        tag = 1
+    elif isinstance(schema, dict):
+        typ = schema.get("type")
+        if typ == "struct":
+            tag = 2
+        elif typ == "list":
+            elem = schema.get("element")
+            if elem == "f32":
+                tag = 3
+            elif elem == "str":
+                tag = 4
+            elif elem == "struct{a:i64}":
+                tag = 5
+            else:
+                raise ValueError(f"unsupported kiln list element: {elem!r}")
+        else:
+            raise ValueError(f"unsupported kiln schema type: {typ!r}")
+    else:
+        raise ValueError(f"unsupported kiln schema: {schema!r}")
+    return json.loads(_kiln_asm_ext.compliance_decode_json(data, tag))
+
+
 def builtin_adapters() -> list[Adapter]:
     """Adapters that can be constructed; missing optional imports are skipped."""
     specs: list[tuple[str, str, DecodeFn, EncodeFn | None, str, str]] = [
@@ -486,6 +521,14 @@ def builtin_adapters() -> list[Adapter]:
         ("h5py", "hdf5", _h5py_decode, None, "h5py.is_hdf5", "h5py"),
         ("netCDF4", "netcdf", _netcdf4_decode, None, "netCDF4.Dataset open", "netCDF4"),
         ("adios2", "adios2", _adios2_decode, None, "adios2.Stream BP5 write then read", "adios2"),
+        (
+            "gld-kiln-asm",
+            "kiln",
+            _kiln_asm_decode,
+            None,
+            "gld-kiln-asm 0.2.0 CPython C extension over libkiln_asm_bench.a",
+            "gld-kiln-asm",
+        ),
     ]
     out: list[Adapter] = []
     for name, fmt, dec, enc, notes, package in specs:

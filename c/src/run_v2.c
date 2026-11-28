@@ -63,6 +63,10 @@ static test_data_kind_t kind_from_type_id(const char *type_id) {
     if (strcmp(type_id, "prompt") == 0) return TD_PROMPT;
     if (strcmp(type_id, "shard") == 0) return TD_SHARD;
     if (strcmp(type_id, "request") == 0) return TD_REQUEST;
+    if (strcmp(type_id, "table") == 0) return TD_TABLE;
+    if (strcmp(type_id, "table_project") == 0) return TD_TABLE_PROJECT;
+    if (strcmp(type_id, "nested_table") == 0) return TD_NESTED_TABLE;
+    if (strcmp(type_id, "signal") == 0) return TD_SIGNAL;
     return TD_MESSAGE;
 }
 
@@ -75,7 +79,8 @@ static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed, i
                             int children, int points, int str_count, int attr_count,
                             int nx, int ny, int x0, int y0, int wx, int wy,
                             int rows, int cols, int batch, int seq, int vocab,
-                            int hidden, int ffn, int string_min, int string_max) {
+                            int hidden, int ffn, int string_min, int string_max,
+                            int group_count) {
     test_data_kind_t kind = kind_from_type_id(type_id);
     if (kind == TD_GRID || kind == TD_GRID_WINDOW) {
         data_fill_grid(fx, kind, (uint64_t)seed, 0, nx, ny, x0, y0, wx, wy);
@@ -84,6 +89,14 @@ static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed, i
     if (kind_is_tensor(kind)) {
         data_fill_tensor(fx, kind, (uint64_t)seed, instance_index, rows, cols, batch, seq, vocab,
                          hidden, ffn, string_min, string_max);
+        return;
+    }
+    if (kind == TD_NESTED_TABLE) {
+        data_fill_nested_row(fx, (uint64_t)seed, instance_index, children, string_min, string_max);
+        return;
+    }
+    if (kind == TD_SIGNAL) {
+        data_fill_signal(fx, (uint64_t)seed, instance_index, group_count, string_min, string_max);
         return;
     }
     data_make_one(fx, kind, (uint64_t)seed, 0, children, points, str_count, attr_count);
@@ -306,6 +319,10 @@ int run_benchmarks_v2(int repetitions, const char *log_dir,
             "          int(tc.get('ffn', 512)),\n"
             "          int((tc.get('string_len') or {}).get('min', 3)),\n"
             "          int((tc.get('string_len') or {}).get('max', 16)),\n"
+            "          int(tc.get('group_count', 4)),\n"
+            "          int((tc.get('int_range') or {}).get('min', 0)),\n"
+            "          int((tc.get('int_range') or {}).get('max', 1000000)),\n"
+            "          float(tc.get('duplication', 0.5)),\n"
             "          sep='\\t')\n");
     fclose(cspf);
     char cells_cmd[512];
@@ -333,8 +350,11 @@ int run_benchmarks_v2(int repetitions, const char *log_dir,
         int nx = 512, ny = 512, x0 = 0, y0 = 0, wx = 0, wy = 0;
         int rows = 1024, cols = 1024, batch = 4, seq = 256, vocab = 32000;
         int hidden = 256, ffn = 512, string_min = 3, string_max = 16;
+        int group_count = 4, int_min = 0, int_max = 1000000;
+        double duplication = 0.5;
         /* type_id N hash points children count attr nx ny x0 y0 wx wy
-         * rows cols batch seq vocab hidden ffn string_min string_max */
+         * rows cols batch seq vocab hidden ffn string_min string_max
+         * group_count int_min int_max duplication */
         char *toks[32] = {0};
         int nt = 0;
         for (char *t = strtok(line, "\t\r\n"); t && nt < 32; t = strtok(NULL, "\t\r\n"))
@@ -370,6 +390,12 @@ int run_benchmarks_v2(int repetitions, const char *log_dir,
             string_min = atoi(toks[20]);
             string_max = atoi(toks[21]);
         }
+        if (nt >= 26) {
+            group_count = atoi(toks[22]);
+            int_min = atoi(toks[23]);
+            int_max = atoi(toks[24]);
+            duplication = atof(toks[25]);
+        }
         if (n < 1) n = 1;
         if (!name_match(type_id, data_filter)) continue;
         if (points < 0) points = 0;
@@ -377,52 +403,66 @@ int run_benchmarks_v2(int repetitions, const char *log_dir,
                type_id, n, type_hash, points);
         cells++;
 
-        /* Build N single-instance fixtures (seeded per index). */
-        test_fixture_t *items = (test_fixture_t *)calloc((size_t)n, sizeof(test_fixture_t));
-        if (!items) {
-            fprintf(stderr, "[ERROR] OOM batch N=%d\n", n);
-            continue;
-        }
-        for (int i = 0; i < n; i++) {
-            /* Suite keeps the historical per-cell seed. Tensor uses the suite seed
-             * and instance index, matching the other language generators. */
-            int draw_seed = (int)seed + cells * 1000 + i;
-            int draw_index = 0;
-            if (kind_is_tensor(kind_from_type_id(type_id))) {
-                draw_seed = (int)seed;
-                draw_index = i;
-            }
-            fill_v2_fixture(&items[i], type_id, draw_seed, draw_index,
-                            children, points, str_count, attr_count,
-                            nx, ny, x0, y0, wx, wy,
-                            rows, cols, batch, seq, vocab, hidden, ffn,
-                            string_min, string_max);
-            items[i].batch_n = 1;
-            items[i].batch = NULL;
-            items[i].name = type_id;
-        }
-
+        test_data_kind_t cell_kind = kind_from_type_id(type_id);
         test_fixture_t fx;
         memset(&fx, 0, sizeof(fx));
         char *name_owned = strdup(type_id);
-        fx.name = name_owned;
-        fx.kind = items[0].kind;
-        fx.batch_n = n;
-        if (n == 1) {
-            fx = items[0];
+        if (cell_kind == TD_TABLE || cell_kind == TD_TABLE_PROJECT) {
+            /* Table rows live in fx.table_rows (contiguous table_row_t[N]) so N=10000
+             * uses ~2.5 MB instead of allocating 10000 full test_fixture_t structs. */
+            data_fill_table_batch(&fx, cell_kind, seed, n, int_min, int_max,
+                                  string_min, string_max, duplication);
             fx.name = name_owned;
-            fx.batch_n = 1;
+            fx.batch_n = n;
             fx.batch = NULL;
-            free(items);
-            items = NULL;
         } else {
-            fx.batch = items;
-            /* peek first instance fields for codecs that only inspect union head */
-            fx.message = items[0].message;
-            fx.document = items[0].document;
-            fx.telemetry = items[0].telemetry;
-            fx.strings = items[0].strings;
-            fx.event = items[0].event;
+            /* Build N single-instance fixtures (seeded per index). */
+            test_fixture_t *items = (test_fixture_t *)calloc((size_t)n, sizeof(test_fixture_t));
+            if (!items) {
+                fprintf(stderr, "[ERROR] OOM batch N=%d\n", n);
+                free(name_owned);
+                continue;
+            }
+            for (int i = 0; i < n; i++) {
+                /* Suite keeps the historical per-cell seed. Tensor and columnar use
+                 * the suite seed and instance index, matching the other language generators. */
+                int draw_seed = (int)seed + cells * 1000 + i;
+                int draw_index = 0;
+                if (kind_is_tensor(cell_kind) || cell_kind == TD_NESTED_TABLE || cell_kind == TD_SIGNAL) {
+                    draw_seed = (int)seed;
+                    draw_index = i;
+                }
+                fill_v2_fixture(&items[i], type_id, draw_seed, draw_index,
+                                children, points, str_count, attr_count,
+                                nx, ny, x0, y0, wx, wy,
+                                rows, cols, batch, seq, vocab, hidden, ffn,
+                                string_min, string_max, group_count);
+                items[i].batch_n = 1;
+                items[i].batch = NULL;
+                items[i].name = type_id;
+            }
+
+            fx.name = name_owned;
+            fx.kind = items[0].kind;
+            fx.batch_n = n;
+            if (n == 1) {
+                fx = items[0];
+                fx.name = name_owned;
+                fx.batch_n = 1;
+                fx.batch = NULL;
+                free(items);
+                items = NULL;
+            } else {
+                fx.batch = items;
+                /* peek first instance fields for codecs that only inspect union head */
+                fx.message = items[0].message;
+                fx.document = items[0].document;
+                fx.telemetry = items[0].telemetry;
+                fx.strings = items[0].strings;
+                fx.event = items[0].event;
+                fx.nested_table = items[0].nested_table;
+                fx.signal = items[0].signal;
+            }
         }
 
         /* Untimed prepare once per cell; collect eligible serializers. */
@@ -497,9 +537,9 @@ int run_benchmarks_v2(int repetitions, const char *log_dir,
             }
         }
         free(name_owned);
-        if (n == 1) {
+        if (n == 1 || !fx.batch) {
             data_free_grid(&fx);
-        } else if (fx.batch) {
+        } else {
             for (int i = 0; i < n; i++) data_free_grid(&fx.batch[i]);
             free(fx.batch);
         }

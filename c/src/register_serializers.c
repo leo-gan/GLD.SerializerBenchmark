@@ -73,6 +73,9 @@ void register_all_serializers(serializer_t *out, int *count) {
 #ifdef HAS_KILN
     bench_register_kiln(out, count);
 #endif
+#ifdef HAS_KILN_ASM
+    bench_register_kiln_asm(out, count);
+#endif
 #ifdef HAS_HDF5
     bench_register_hdf5(out, count);
 #endif

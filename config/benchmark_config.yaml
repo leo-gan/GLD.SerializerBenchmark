@@ -170,6 +170,7 @@ serializer_data_sets:
     netCDF4: [array]
     adios2: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   cpp:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -185,6 +186,7 @@ serializer_data_sets:
     dagr-frozen: [suite, graph]
     highfive: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   csharp:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -195,6 +197,7 @@ serializer_data_sets:
     Apache.Avro: [suite, columnar]
     PureHDF: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   go:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -206,6 +209,7 @@ serializer_data_sets:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, tensor]
   java:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -218,6 +222,7 @@ serializer_data_sets:
     flatbuffers: [suite, columnar]
     avro: [suite, columnar]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, tensor]
   kotlin:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -229,6 +234,7 @@ serializer_data_sets:
     protobuf: [suite, columnar]
     flatbuffers: [suite, columnar]
     avro: [suite, columnar]
+    gld-kiln-asm: [suite, columnar]
   javascript:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -241,6 +247,7 @@ serializer_data_sets:
     dagr-frozen: [suite, graph]
     h5wasm: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   rust:
     arrow-ipc: [columnar]
     parquet: [columnar]
@@ -253,11 +260,13 @@ serializer_data_sets:
     dagr-frozen: [suite, graph]
     hdf5-metno: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   mojo:
     arrow-ipc: [columnar]
     parquet: [columnar]
     parquet-uncompressed: [columnar]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     gld-hdf5: [array]
@@ -265,16 +274,20 @@ serializer_data_sets:
     dagr-regular: [suite, graph]
     dagr-frozen: [suite, graph]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, tensor]
   c:
     hdf5: [array]
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, columnar, array, tensor]
   zig:
     gld-kiln: [suite, tensor]
+    gld-kiln-asm: [suite, tensor]
   fortran:
     hdf5-fortran: [array]
     netcdf-fortran: [array]
     adios2: [array]
     gld-arrow: [array]
+    gld-kiln-asm: [suite, array]
 
 # Shared test data — catalog is normative for shape knobs; names are type_id values.
 # data_set must match the data_sets membership above.
@@ -655,6 +668,12 @@ languages:
         version: "0.2.0"
         rationale: "Positional little-endian Kiln for the five suite types"
         optimal_api: "Writer.encode / decode on a positional schema; a batch is one list"
+      - name: gld-kiln-asm
+        category: binary
+        package: gld-kiln-asm
+        version: "0.2.0"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via thin CPython C extension linking libkiln_asm_bench.a"
+        optimal_api: "CPython C-API extension over AOT assembly codecs; TableColumns + KILN_OPT_EMBEDDED O(1) skip; KLNT v2 zero-copy tensor_view"
       - name: protobuf
         category: schema
         package: protobuf
@@ -976,6 +995,12 @@ languages:
         version: "0.2.0"
         rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
         optimal_api: "Reused writer. tensor_view borrows the f32 payload."
+      - name: gld-kiln-asm
+        category: binary
+        package: gld-kiln-asm
+        version: "0.2.0"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via Node N-API addon linking libkiln_asm_bench.a"
+        optimal_api: "Node N-API addon over AOT assembly codecs; TableColumns + KILN_OPT_EMBEDDED O(1) skip; KLNT v2 zero-copy subarray tensor_view"
       - name: JSON.stringify
         category: json
         package: builtin
@@ -1128,6 +1153,12 @@ languages:
         version: "0.2.0"
         rationale: "Positional Kiln. Same data sets as Mojo gld-kiln: suite and tensor."
         optimal_api: "Reused writer. tensor_view borrows the f32 payload."
+      - name: gld-kiln-asm
+        category: binary
+        package: gld-kiln-asm
+        version: "0.2.0"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via flat-pointer cgo bridge statically linking libkiln_asm_bench.a."
+        optimal_api: "Flat-pointer cgo bridge over AOT assembly codecs; TableColumns + KILN_OPT_EMBEDDED O(1) skip; KLNT v2 zero-copy tensor_view."
       - name: encoding/json
         category: json
         package: stdlib
@@ -1373,6 +1404,11 @@ languages:
         package: org.apache.avro:avro
         rationale: "Apache Avro reflect binding for data pipelines"
         optimal_api: "ReflectDatumWriter/Reader + reused BinaryEncoder/Decoder"
+      - name: gld-kiln-asm
+        category: schema
+        package: "leo-gan/gld-kiln-asm (0.2.0, shared libkiln_asm_jni.so)"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via JNI; covers suite, columnar (TableColumns + KILN_OPT_EMBEDDED table_project), and tensor (KLNT v2 + zero-copy tensor_view)"
+        optimal_api: "KilnAsmJni JNI bridge into libkiln_asm_bench.a"
 
   kotlin:
     display_name: Kotlin
@@ -1511,6 +1547,11 @@ languages:
         package: org.apache.avro:avro
         rationale: "Apache Avro reflect binding for data pipelines"
         optimal_api: "ReflectDatumWriter/Reader + reused BinaryEncoder/Decoder"
+      - name: gld-kiln-asm
+        category: schema
+        package: "leo-gan/gld-kiln-asm (0.2.0, shared libkiln_asm_jni.so)"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via JNI; covers suite and columnar (TableColumns + KILN_OPT_EMBEDDED table_project)"
+        optimal_api: "KilnAsmJni JNI bridge into libkiln_asm_bench.a"
       - name: thrift
         category: schema
         package: org.apache.thrift:libthrift
@@ -2172,6 +2213,11 @@ languages:
         package: leo-gan/gld-ion-swift
         rationale: "From-scratch Ion 1.0 binary for the five suite types"
         optimal_api: "encode with binary EncodeOptions / decodeBinary"
+      - name: gld-kiln-asm
+        category: schema
+        package: "leo-gan/gld-kiln-asm (0.2.0, shared libkiln_asm_bench.a)"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec statically linked via KilnAsmC; covers suite and tensor (KLNT v2 with zero-copy tensor_view)"
+        optimal_api: "kiln_asm_encode_bench_* / kiln_asm_decode_bench_* and kiln_asm_encode_tensors / kiln_asm_decode_tensors"
       - name: CapnProto
         category: schema
         package: capnproto C++ via CapnpBridge
@@ -2256,6 +2302,11 @@ languages:
         package: ornladios/ADIOS2
         rationale: "Official ADIOS2 Fortran binding on the array data set, serial BP5. BP5 writes a directory and has no bytes API, so the row is file-only."
         optimal_api: "adios2_put / adios2_get"
+      - name: gld-kiln-asm
+        category: schema
+        package: "leo-gan/gld-kiln-asm (0.2.0, shared libkiln_asm_bench)"
+        rationale: "Pure x86-64 Assembly Kiln Wire Format v2 codec via ISO_C_BINDING; covers suite (single + batch) and array (KLNT v2 grid + strided grid_window)"
+        optimal_api: "kiln_asm_encode_bench_* / kiln_asm_decode_bench_* and kiln_asm_encode_tensors / kiln_asm_decode_tensors"
       - name: gld-arrow
         category: binary
         package: leo-gan/gld-arrow-fortran

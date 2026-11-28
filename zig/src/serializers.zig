@@ -15,6 +15,7 @@ const capnp_ser = @import("capnp_ser.zig");
 const avro_ser = @import("avro_ser.zig");
 const arrow_ser = @import("arrow_ser.zig");
 const kiln_ser = @import("kiln_ser.zig");
+const kiln_asm_ser = @import("kiln_asm_ser.zig");
 const jsonz = @import("jsonz").typed;
 
 pub const StreamMode = enum {
@@ -402,8 +403,17 @@ const gld_kiln_vtable = Serializer.VTable{
     .encode_batch = kiln_ser.encodeBatch,
     .decode_batch = kiln_ser.decodeBatch,
 };
+const gld_kiln_asm_vtable = Serializer.VTable{
+    .prepare = kiln_asm_ser.prepare,
+    .begin_encode = kiln_asm_ser.beginEncode,
+    .serialize = kiln_asm_ser.serialize,
+    .deserialize = kiln_asm_ser.deserialize,
+    .supports = kiln_asm_ser.supports,
+    .encode_batch = kiln_asm_ser.encodeBatch,
+    .decode_batch = kiln_asm_ser.decodeBatch,
+};
 
-pub fn allSerializers() [24]Serializer {
+pub fn allSerializers() [25]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -596,6 +606,14 @@ pub fn allSerializers() [24]Serializer {
             .native_kind = .message,
             .ctx = @ptrCast(&kiln_ser.state),
             .vtable = &gld_kiln_vtable,
+        },
+        .{
+            .name = "gld-kiln-asm",
+            .version = kiln_asm_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .direct,
+            .ctx = @ptrCast(&kiln_asm_ser.state),
+            .vtable = &gld_kiln_asm_vtable,
         },
     };
 }

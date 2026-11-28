@@ -239,6 +239,7 @@ pub fn main(init: std.process.Init) !void {
         .{ .dir = "capnp", .sers = &.{"capnproto"} },
         .{ .dir = "flatbuffers", .sers = &.{"flatbuffers"} },
         .{ .dir = "zon", .sers = &.{ "std.zon", "serde.zon" } },
+        .{ .dir = "kiln", .sers = &.{"gld-kiln-asm"} },
     };
     for (extras) |ex| {
         if (!wantFmt(formats.items, ex.dir)) continue;
@@ -427,7 +428,88 @@ fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8, sch
         try decodeFlatbuffers(bytes);
         return;
     }
+    if (std.mem.eql(u8, ser, "gld-kiln-asm")) {
+        try decodeKilnAsm(alloc, bytes, schema);
+        return;
+    }
     return error.UnknownSerializer;
+}
+
+const KilnArena = extern struct { base: [*]u8, cur: [*]u8, end: [*]u8 };
+const KilnResult = extern struct { bytes: u64 = 0, hash: u64 = 0 };
+const KilnStr = extern struct { ptr: ?[*]const u8 = null, len: u64 = 0 };
+const KilnTensor = extern struct {
+    name: ?[*]const u8 = null,
+    name_len: u64 = 0,
+    layout: ?[*]const u8 = null,
+    layout_len: u64 = 0,
+    data: ?[*]const u8 = null,
+    data_len: u64 = 0,
+    shape: [8]u64 = .{ 0, 0, 0, 0, 0, 0, 0, 0 },
+    dtype: u16 = 0,
+    rank: u8 = 0,
+    _pad0: u8 = 0,
+    quant_scheme: u16 = 0,
+    quant_axis: u16 = 0xFFFF,
+    group_size: u32 = 0,
+    scale_index: u32 = 0xFFFFFFFF,
+    outer_index: u32 = 0xFFFFFFFF,
+    block_size: u32 = 0,
+    elem_count: u64 = 0,
+};
+const KilnTensorDir = extern struct {
+    items: ?[*]KilnTensor = null,
+    count: u64 = 0,
+    block_length: u64 = 0,
+    flags: u32 = 0,
+    version: u32 = 0,
+};
+const KilnIdTensors = extern struct { id: i64 = 0, batch: KilnTensorDir = .{} };
+
+extern fn kiln_asm_decode_tensors(src: [*]const u8, len: usize, out: *KilnTensorDir, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+extern fn kiln_asm_decode_id_tensors(src: [*]const u8, len: usize, out: *KilnIdTensors, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+extern fn kiln_asm_decode_id_tensors_framed(src: [*]const u8, len: usize, out: *KilnIdTensors, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+extern fn kiln_asm_decode_list_f32(src: [*]const u8, len: usize, out_items: *?[*]const u8, out_count: *usize, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+extern fn kiln_asm_decode_list_str(src: [*]const u8, len: usize, out_items: *?[*]KilnStr, out_count: *usize, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+extern fn kiln_asm_decode_list_i64_struct(src: [*]const u8, len: usize, out_items: *?[*]const u8, out_count: *usize, arena: *KilnArena, opts: ?*const anyopaque, res: *KilnResult) u32;
+
+fn decodeKilnAsm(alloc: std.mem.Allocator, bytes: []const u8, schema: []const u8) !void {
+    const arena_mem = try alloc.alloc(u8, 65536);
+    var arena = KilnArena{ .base = arena_mem.ptr, .cur = arena_mem.ptr, .end = arena_mem.ptr + arena_mem.len };
+    var res = KilnResult{};
+    var err: u32 = 5;
+    if (std.mem.eql(u8, schema, "tensor-v2")) {
+        var dir = KilnTensorDir{};
+        err = kiln_asm_decode_tensors(bytes.ptr, bytes.len, &dir, &arena, null, &res);
+    } else if (std.mem.eql(u8, schema, "frame")) {
+        var v = KilnIdTensors{};
+        err = kiln_asm_decode_id_tensors_framed(bytes.ptr, bytes.len, &v, &arena, null, &res);
+    } else if (schema.len > 0 and schema[0] == '{') {
+        const parsed = try std.json.parseFromSlice(std.json.Value, alloc, schema, .{});
+        defer parsed.deinit();
+        const obj = parsed.value.object;
+        const tp = if (obj.get("type")) |t| t.string else "";
+        if (std.mem.eql(u8, tp, "struct")) {
+            var v = KilnIdTensors{};
+            err = kiln_asm_decode_id_tensors(bytes.ptr, bytes.len, &v, &arena, null, &res);
+        } else if (std.mem.eql(u8, tp, "list")) {
+            const el = if (obj.get("element")) |e| e.string else "";
+            if (std.mem.eql(u8, el, "f32")) {
+                var ptr: ?[*]const u8 = null;
+                var cnt: usize = 0;
+                err = kiln_asm_decode_list_f32(bytes.ptr, bytes.len, &ptr, &cnt, &arena, null, &res);
+            } else if (std.mem.eql(u8, el, "str")) {
+                var ptr: ?[*]KilnStr = null;
+                var cnt: usize = 0;
+                err = kiln_asm_decode_list_str(bytes.ptr, bytes.len, &ptr, &cnt, &arena, null, &res);
+            } else if (std.mem.eql(u8, el, "struct{a:i64}")) {
+                var ptr: ?[*]const u8 = null;
+                var cnt: usize = 0;
+                err = kiln_asm_decode_list_i64_struct(bytes.ptr, bytes.len, &ptr, &cnt, &arena, null, &res);
+            }
+        }
+    }
+    if (err != 0) return error.KilnAsmDecode;
 }
 
 fn caseSchema(alloc: std.mem.Allocator, value: ?std.json.Value) ![]u8 {

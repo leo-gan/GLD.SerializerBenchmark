@@ -4,7 +4,10 @@ Compile against vendor/kiln_v2_src, not vendor/kiln_src. The bench pin stays
 0.2.0. This program does not time anything.
 """
 
+from std.benchmark import keep
 from std.collections import List, Span
+from std.ffi import OwnedDLHandle
+from std.os import getenv
 from std.sys import argv
 from emberjson import Value, parse
 from kiln import KilnError, TensorDir, decode, decode_framed, type_hash
@@ -344,6 +347,8 @@ def _check(buf: List[UInt8], schema: Value, expected: Value, has_decoded: Bool) 
 
 
 def _row(
+    serializer: String,
+    serializer_version: String,
     id: String,
     standard: String,
     standard_url: String,
@@ -364,7 +369,11 @@ def _row(
     return (
         "{\"id\":"
         + _esc(id)
-        + ",\"language\":\"mojo\",\"serializer\":\"gld-kiln\",\"serializer_version\":\"0.3.0\",\"format\":\"kiln\",\"standard\":"
+        + ",\"language\":\"mojo\",\"serializer\":"
+        + _esc(serializer)
+        + ",\"serializer_version\":"
+        + _esc(serializer_version)
+        + ",\"format\":\"kiln\",\"standard\":"
         + _esc(standard)
         + ",\"standard_url\":"
         + _esc(standard_url)
@@ -506,6 +515,8 @@ def main() raises:
         if ci > 0:
             rows += ","
         rows += _row(
+            "gld-kiln",
+            "0.3.0",
             id,
             standard,
             standard_url,
@@ -524,6 +535,136 @@ def main() raises:
             detail,
         )
         ci += 1
+
+    # Also score gld-kiln-asm via shared libkiln_asm_bench.so when present.
+    var asm_ok_lib = False
+    var asm_lib_path = getenv("GLD_KILN_ASM_BENCH_SO")
+    if asm_lib_path.byte_length() == 0:
+        asm_lib_path = "../build/kiln-asm/libkiln_asm_bench.so"
+    try:
+        var lib = OwnedDLHandle(asm_lib_path)
+        asm_ok_lib = True
+        comptime FnDec1 = def (UInt64, Int, UInt64, UInt64, UInt64, UInt64) thin abi("C") -> UInt32
+        comptime FnDecL = def (UInt64, Int, UInt64, UInt64, UInt64, UInt64, UInt64) thin abi("C") -> UInt32
+        var f_ten = lib._handle.get_function[FnDec1]("kiln_asm_decode_tensors")
+        var f_id = lib._handle.get_function[FnDec1]("kiln_asm_decode_id_tensors")
+        var f_idf = lib._handle.get_function[FnDec1]("kiln_asm_decode_id_tensors_framed")
+        var f_lf32 = lib._handle.get_function[FnDecL]("kiln_asm_decode_list_f32")
+        var f_lstr = lib._handle.get_function[FnDecL]("kiln_asm_decode_list_str")
+        var f_li64 = lib._handle.get_function[FnDecL]("kiln_asm_decode_list_i64_struct")
+        var arena_mem = List[UInt8](unsafe_uninit_length=65536)
+        var out_scratch = List[UInt8](unsafe_uninit_length=256)
+        var arena_struct = List[UInt64](capacity=3)
+        arena_struct.append(0)
+        arena_struct.append(0)
+        arena_struct.append(0)
+        var res_struct = List[UInt64](capacity=2)
+        res_struct.append(0)
+        res_struct.append(0)
+
+        var ai = 0
+        while ai < len(cases):
+            var c = Value(cases[ai].object().copy())
+            var id = _field(c, "id")
+            var expect = _field(c, "expect")
+            var title = _field(c, "title")
+            var section = _field(c, "section")
+            var section_title = _field(c, "section_title")
+            var section_url = _field(c, "section_url")
+            var paragraph = _field(c, "paragraph")
+            var requirement = _field(c, "requirement")
+            var input_text = _field(c, "input")
+            var enc = _field(c, "input_encoding")
+            if enc.byte_length() == 0:
+                enc = "utf-8"
+            var schema = c["schema"].copy()
+            var raw = _hex_bytes(input_text)
+            var base = UInt64(Int(arena_mem.unsafe_ptr()))
+            arena_struct[0] = base
+            arena_struct[1] = base
+            arena_struct[2] = base + UInt64(len(arena_mem))
+            res_struct[0] = 0
+            res_struct[1] = 0
+            var src_p = UInt64(Int(raw.unsafe_ptr()))
+            var out_p = UInt64(Int(out_scratch.unsafe_ptr()))
+            var arena_p = UInt64(Int(arena_struct.unsafe_ptr()))
+            var res_p = UInt64(Int(res_struct.unsafe_ptr()))
+            var err: UInt32 = 5
+            if schema.is_string():
+                var sname = String(schema.string())
+                if sname == "tensor-v2":
+                    err = f_ten(src_p, len(raw), out_p, arena_p, 0, res_p)
+                elif sname == "frame":
+                    err = f_idf(src_p, len(raw), out_p, arena_p, 0, res_p)
+            else:
+                var kind = String(schema.object()["type"].string())
+                if kind == "struct":
+                    err = f_id(src_p, len(raw), out_p, arena_p, 0, res_p)
+                elif kind == "list":
+                    var elem = String(schema.object()["element"].string())
+                    var ptr_out: UInt64 = 0
+                    var cnt_out: Int = 0
+                    var pp = UInt64(Int(Pointer(to=ptr_out)))
+                    var cp = UInt64(Int(Pointer(to=cnt_out)))
+                    if elem == "f32":
+                        err = f_lf32(src_p, len(raw), pp, cp, arena_p, 0, res_p)
+                    elif elem == "str":
+                        err = f_lstr(src_p, len(raw), pp, cp, arena_p, 0, res_p)
+                    elif elem == "struct{a:i64}":
+                        err = f_li64(src_p, len(raw), pp, cp, arena_p, 0, res_p)
+            keep(raw)
+            keep(arena_mem)
+            keep(out_scratch)
+            keep(arena_struct)
+            keep(res_struct)
+            var observed = ""
+            var outcome = ""
+            var detail = ""
+            if expect == "reject":
+                if err == 0:
+                    observed = "accepted"
+                    outcome = "fail"
+                    detail = "parser accepted input the spec requires to be rejected"
+                else:
+                    observed = "err=" + String(err)
+                    outcome = "pass"
+            else:
+                if err == 0:
+                    observed = "ok"
+                    outcome = "pass"
+                else:
+                    observed = "err=" + String(err)
+                    outcome = "fail"
+                    detail = observed
+            if outcome == "pass":
+                passed += 1
+            else:
+                failed += 1
+            rows += ","
+            rows += _row(
+                "gld-kiln-asm",
+                "0.2.0",
+                id,
+                standard,
+                standard_url,
+                version,
+                requirement,
+                expect,
+                section,
+                section_title,
+                section_url,
+                paragraph,
+                title,
+                input_text,
+                enc,
+                observed,
+                outcome,
+                detail,
+            )
+            ai += 1
+        _ = lib^
+    except:
+        _ = asm_ok_lib
     rows += "]"
     var head = (
         "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"kiln\"]},\"passed\":"

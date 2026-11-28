@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Message",
+  "type": "object",
+  "properties": {
+    "f_bool":     { "type": "boolean" },
+    "f_int32":    { "type": "integer", "format": "int32" },
+    "f_int64":    { "type": "integer", "format": "int64" },
+    "f_float64":  { "type": "number",  "format": "double" },
+    "f_string":   { "type": "string" },
+    "f_bool_2":   { "type": "boolean" },
+    "f_int32_2":  { "type": "integer", "format": "int32" },
+    "f_string_2": { "type": "string" }
+  },
+  "required": [
+    "f_bool", "f_int32", "f_int64", "f_float64",
+    "f_string", "f_bool_2", "f_int32_2", "f_string_2"
+  ]
+}

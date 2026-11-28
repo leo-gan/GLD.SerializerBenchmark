@@ -277,6 +277,7 @@ func TestStreamModeLabels(t *testing.T) {
 		"mongo-bson":               StreamNative,
 		"ion-go":                   StreamNative,
 		"gld-kiln":                 StreamAdapted,
+		"gld-kiln-asm":             StreamAdapted,
 		"goccy/go-yaml":            StreamNative,
 		"toon-go":                  StreamAdapted,
 		"pelletier/go-toml":        StreamNative,

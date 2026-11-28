@@ -171,7 +171,80 @@ static void test_v2_type_names(void) {
     }
     CHECK(strcmp(test_data_name(TD_GRID), "grid") == 0, "grid name");
     CHECK(strcmp(test_data_name(TD_GRID_WINDOW), "grid_window") == 0, "grid_window name");
+    CHECK(strcmp(test_data_name(TD_TABLE), "table") == 0, "table name");
+    CHECK(strcmp(test_data_name(TD_TABLE_PROJECT), "table_project") == 0, "table_project name");
+    CHECK(strcmp(test_data_name(TD_NESTED_TABLE), "nested_table") == 0, "nested_table name");
+    CHECK(strcmp(test_data_name(TD_SIGNAL), "signal") == 0, "signal name");
     for (int i = 0; i < TD_COUNT; i++) data_free_grid(&fixtures[i]);
+}
+
+static void test_kiln_asm_batches(void) {
+#ifdef HAS_KILN_ASM
+    serializer_t sers[BENCH_MAX_SERIALIZERS];
+    memset(sers, 0, sizeof sers);
+    int nser = 0;
+    register_all_serializers(sers, &nser);
+    serializer_t *S = NULL;
+    for (int i = 0; i < nser; i++) {
+        if (strcmp(sers[i].name, "gld-kiln-asm") == 0) { S = &sers[i]; break; }
+    }
+    CHECK(S != NULL, "gld-kiln-asm registered");
+    if (!S) return;
+
+    static uint8_t buf[4 * 1024 * 1024];
+    const test_data_kind_t batch_kinds[] = {
+        TD_MESSAGE, TD_DOCUMENT, TD_TELEMETRY, TD_STRINGS, TD_EVENT,
+        TD_NESTED_TABLE, TD_SIGNAL
+    };
+    const int N = 5;
+    for (size_t ki = 0; ki < sizeof(batch_kinds) / sizeof(batch_kinds[0]); ki++) {
+        test_data_kind_t k = batch_kinds[ki];
+        test_fixture_t items[5];
+        memset(items, 0, sizeof items);
+        for (int i = 0; i < N; i++) {
+            data_make_one(&items[i], k, (uint64_t)(2000 + i), i, 4, 16, 8, 4);
+        }
+        test_fixture_t fx;
+        memset(&fx, 0, sizeof fx);
+        fx.kind = k;
+        fx.name = test_data_name(k);
+        fx.batch_n = N;
+        fx.batch = items;
+        CHECK(S->prepare(k, &fx) == 0, "gld-kiln-asm batch prep %s", fx.name);
+        size_t len = 0;
+        CHECK(bench_serialize_cell(S, &fx, buf, sizeof buf, &len) == 0 && len > 0,
+              "gld-kiln-asm batch ser %s", fx.name);
+        test_fixture_t out;
+        memset(&out, 0, sizeof out);
+        out.kind = k;
+        out.batch_n = N;
+        CHECK(bench_deserialize_cell(S, buf, len, &out, k) == 0,
+              "gld-kiln-asm batch de %s", fx.name);
+        CHECK(bench_fidelity_cell(S, &fx, &out), "gld-kiln-asm batch fid %s", fx.name);
+        free(out.batch);
+    }
+
+    /* Table + table_project at N=100 */
+    const test_data_kind_t table_kinds[] = { TD_TABLE, TD_TABLE_PROJECT };
+    for (int ti = 0; ti < 2; ti++) {
+        test_fixture_t fx;
+        memset(&fx, 0, sizeof fx);
+        data_fill_table_batch(&fx, table_kinds[ti], 42, 100, 0, 1000000, 3, 16, 0.5);
+        CHECK(S->prepare(table_kinds[ti], &fx) == 0, "gld-kiln-asm prep %s N=100", fx.name);
+        size_t len = 0;
+        CHECK(bench_serialize_cell(S, &fx, buf, sizeof buf, &len) == 0 && len > 0,
+              "gld-kiln-asm ser %s N=100", fx.name);
+        test_fixture_t out;
+        memset(&out, 0, sizeof out);
+        out.kind = table_kinds[ti];
+        out.batch_n = 100;
+        CHECK(bench_deserialize_cell(S, buf, len, &out, table_kinds[ti]) == 0,
+              "gld-kiln-asm de %s N=100", fx.name);
+        CHECK(bench_fidelity_cell(S, &fx, &out), "gld-kiln-asm fid %s N=100", fx.name);
+        data_free_grid(&fx);
+        data_free_grid(&out);
+    }
+#endif
 }
 
 static void test_schedule_golden(void) {
@@ -193,6 +266,7 @@ int main(void) {
     test_telemetry_points_from_config();
     test_compress_sizes();
     test_all_roundtrips();
+    test_kiln_asm_batches();
     test_native_stream_batch();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

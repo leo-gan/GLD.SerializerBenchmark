@@ -9,13 +9,14 @@
 #define BENCH_MAX_SERIALIZERS 40
 #define BENCH_MAX_NAME 64
 
-/* Data Model v2 — suite records, grids, and the tensor set. */
+/* Data Model v2 — suite records, grids, tensors, and columnar types. */
 
 #define V2_MAX_CHILDREN 16
 #define V2_MAX_POINTS 512
 #define V2_MAX_STRINGS 64
 #define V2_MAX_TAGS 8
 #define V2_MAX_ATTRS 16
+#define V2_MAX_LEGS 16
 #define V2_STR 48
 
 typedef enum {
@@ -31,6 +32,10 @@ typedef enum {
     TD_PROMPT,
     TD_SHARD,
     TD_REQUEST,
+    TD_TABLE,
+    TD_TABLE_PROJECT,
+    TD_NESTED_TABLE,
+    TD_SIGNAL,
     TD_COUNT
 } test_data_kind_t;
 
@@ -130,6 +135,43 @@ typedef struct {
     event_attr_t attrs[V2_MAX_ATTRS];
 } event_t;
 
+typedef struct {
+    double f_float[16];
+    int64_t f_int[4];
+    char f_str_0[V2_STR];
+    char f_str_1[V2_STR];
+} table_row_t;
+
+typedef struct {
+    int count;
+    table_row_t *rows;
+} table_batch_t;
+
+typedef struct {
+    int count;
+    double *values;
+} table_project_t;
+
+typedef document_t nested_row_t;
+
+typedef struct {
+    int64_t leg_id;
+    int32_t leg_qty;
+    int32_t leg_pad;
+} signal_leg_t;
+
+typedef struct {
+    int64_t seq;
+    int64_t ts;
+    int64_t price_mantissa;
+    int32_t qty;
+    int32_t flags;
+    char symbol[V2_STR];
+    char venue[V2_STR];
+    int leg_count;
+    signal_leg_t legs[V2_MAX_LEGS];
+} signal_t;
+
 typedef struct test_fixture test_fixture_t;
 struct test_fixture {
     test_data_kind_t kind;
@@ -144,6 +186,10 @@ struct test_fixture {
     prompt_t prompt;
     shard_t shard;
     request_t request;
+    table_batch_t table_rows;
+    table_project_t table_project;
+    nested_row_t nested_table;
+    signal_t signal;
     /* Batch cell: batch_n==1 uses fields above; batch_n>1 uses heap array. */
     int batch_n;
     test_fixture_t *batch;
@@ -177,6 +223,13 @@ void data_fill_grid(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, i
 void data_fill_tensor(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
                       int rows, int cols, int batch, int seq, int vocab,
                       int hidden, int ffn, int string_min, int string_max);
+void data_fill_table_batch(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int count,
+                           int int_min, int int_max, int string_min, int string_max,
+                           double duplication);
+void data_fill_nested_row(test_fixture_t *out, uint64_t seed, int instance_index,
+                          int children, int string_min, int string_max);
+void data_fill_signal(test_fixture_t *out, uint64_t seed, int instance_index,
+                      int group_count, int string_min, int string_max);
 void data_free_grid(test_fixture_t *fx);
 const char *test_data_name(test_data_kind_t k);
 #ifdef __cplusplus
@@ -245,6 +298,7 @@ void bench_register_zcbor(serializer_t *out, int *count);
 void bench_register_ionc(serializer_t *out, int *count);
 void bench_register_hdf5(serializer_t *out, int *count);
 void bench_register_kiln(serializer_t *out, int *count);
+void bench_register_kiln_asm(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);

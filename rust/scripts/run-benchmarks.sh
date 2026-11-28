@@ -8,6 +8,11 @@ source "$PROJECT_ROOT/scripts/lib/config.sh"
 
 bench_init_runner rust serde_json "$@"
 
+if [[ ! -f "$PROJECT_ROOT/build/kiln-asm/libkiln_asm_bench.a" ]]; then
+    echo "[INFO] Building shared gld-kiln-asm benchmark library..."
+    "$PROJECT_ROOT/scripts/build-kiln-asm-bench.sh"
+fi
+
 echo "[INFO] Building Rust benchmark (release, mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$RUST_DIR"
 source "$HOME/.cargo/env" 2>/dev/null || true

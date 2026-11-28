@@ -41,6 +41,8 @@ mod direct;
 mod fory_ser;
 mod hdf5_metno;
 mod json;
+#[cfg(has_kiln_asm)]
+mod kiln_asm_ser;
 mod kiln_ser;
 mod kinded;
 mod prost_ser;
@@ -233,6 +235,8 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(BsonSer::default()),
         Box::new(IonRsSer::default()),
         Box::new(KilnSer::default()),
+        #[cfg(has_kiln_asm)]
+        Box::new(kiln_asm_ser::KilnAsmSer::default()),
         // Direct / zero-copy / schema
         Box::new(MinicborDirect::default()),
         Box::new(RkyvSer::default()),
@@ -314,7 +318,8 @@ mod tests {
         let fx = make_one("message", 42, 0, &TypeConfig::default()).unwrap();
         let mut ok = 0;
         let all = all_serializers();
-        assert_eq!(all.len(), 33);
+        let extra = usize::from(cfg!(has_kiln_asm));
+        assert_eq!(all.len(), 33 + extra);
         for mut ser in all_serializers() {
             if !ser.supports("message") {
                 continue;
@@ -323,7 +328,7 @@ mod tests {
             ok += 1;
         }
         // Columnar rows and HDF5 do not support message. scuffle-amf0 and the TOON rows do.
-        assert_eq!(ok, 28);
+        assert_eq!(ok, 28 + extra);
     }
 
     #[test]
