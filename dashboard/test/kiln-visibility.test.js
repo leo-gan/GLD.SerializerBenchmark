@@ -18,6 +18,20 @@ const WIRE = {
   shard: 1836060,
   request: 24623,
 };
+// Timed gld-kiln release on the published snapshot. Rust and the Mojo row
+// stay on 0.2.0. Compliance for these ports is still scored with 0.2.0.
+const KILN_VERSION = {
+  python: '0.2.2',
+  rust: '0.2.0',
+  c: '0.2.1',
+  cpp: '0.2.1',
+  javascript: '0.2.1',
+  go: '0.2.1',
+  java: '0.2.1',
+  swift: '0.2.1',
+  zig: '0.2.1',
+  csharp: '0.2.1',
+};
 
 
 function loadJsonGz(name) {
@@ -55,7 +69,7 @@ test('published snapshots include gld-kiln on suite and tensor', () => {
         (g) => baseType(g.test_data) === typeId && g.data_type_instance_count === 1,
       );
       assert.equal(group.standard, 'kiln', lang);
-      assert.equal(group.serializer_version, '0.2.0', lang);
+      assert.equal(group.serializer_version, KILN_VERSION[lang], lang);
       const metrics = group.variants.iqr_1_5 || group.variants['iqr_1.5'];
       assert.equal(metrics.mean_fidelity, 1, `${lang} ${typeId}`);
       assert.equal(metrics.median_size_bytes, sizes[typeId], `${lang} ${typeId} size`);

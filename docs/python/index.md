@@ -39,7 +39,7 @@ This runner executes under **CPython 3.12+** (not PyPy or Jython), managed via [
 | [dill](https://github.com/uqfoundation/dill) | `custom` | `suite` | `native` | Pure-Python extended pickler on dataclasses (unsafe on untrusted input) |
 | [flatbuffers](https://github.com/google/flatbuffers) | `flatbuffers` | `suite`, `columnar`, `tensor` | `adapted` | Pure-Python `Builder` on encode; zero-copy `GetRootAs` view on decode (`tensor_view` reads in place) |
 | [fory](https://github.com/apache/fory) | `custom` | `suite` | `adapted` | `pyfory` native mode on pre-registered dataclasses |
-| [gld-kiln](https://github.com/leo-gan/gld-kiln-python) | `kiln` | `suite`, `tensor` | `adapted` | `gld-kiln` 0.2.0 positional codec; `tensor_view` borrows `float32` payload |
+| [gld-kiln](https://github.com/leo-gan/gld-kiln-python) | `kiln` | `suite`, `tensor` | `adapted` | `gld-kiln` 0.2.2 positional codec; `tensor_view` borrows `float32` payload |
 | [gld-kiln-asm](https://github.com/leo-gan/gld-kiln-asm) | `kiln` | `suite`, `columnar`, `array`, `tensor` | `adapted` | Pure x86-64 Assembly Kiln v2 codec via thin CPython C extension (`libkiln_asm_bench.a`); `TableColumns` + `KILN_OPT_EMBEDDED` O(1) skip; KLNT v2 `grid_window` & zero-copy `memoryview` `tensor_view` |
 | [h5py](https://docs.h5py.org/) | `hdf5` | `array` | `adapted` | Official `h5py` using HDF5 core virtual file driver; hyperslab read for `grid_window` |
 | [json](https://github.com/python/cpython/tree/main/Lib/json) | `json` | `suite` | `adapted` | Stdlib `json.dumps` / `json.loads` on `dict` (compact baseline) |

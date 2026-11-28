@@ -46,27 +46,26 @@ function rowCounts(groups) {
  *  One parent row per serializer after I/O fold (bytes+stream are no longer two groups).
  */
 const ROW_COUNTS = {
-  // Published suite groups, including the gld-kiln splice (N=1 and N=100)
-  // on every language here except kotlin.
-  python: { message: 48, document: 48, telemetry: 48, strings: 48, event: 48 },
-  cpp: { message: 126, document: 126, telemetry: 126, strings: 126, event: 126 },
-  csharp: { message: 166, document: 162, telemetry: 162, strings: 166, event: 166 },
-  go: { message: 98, document: 98, telemetry: 98, strings: 98, event: 98 },
-  java: { message: 86, document: 86, telemetry: 86, strings: 86, event: 86 },
-  rust: { message: 79, document: 79, telemetry: 79, strings: 81, event: 79 },
-  javascript: { message: 54, document: 54, telemetry: 54, strings: 54, event: 54 },
-  kotlin: { message: 54, document: 54, telemetry: 54, strings: 54, event: 54 },
+  // Published suite groups, including gld-kiln and gld-kiln-asm.
+  python: { message: 60, document: 60, telemetry: 60, strings: 60, event: 60 },
+  cpp: { message: 72, document: 72, telemetry: 72, strings: 72, event: 72 },
+  csharp: { message: 106, document: 104, telemetry: 104, strings: 104, event: 106 },
+  go: { message: 64, document: 64, telemetry: 64, strings: 64, event: 64 },
+  java: { message: 51, document: 51, telemetry: 51, strings: 51, event: 51 },
+  rust: { message: 57, document: 57, telemetry: 57, strings: 58, event: 57 },
+  javascript: { message: 64, document: 64, telemetry: 64, strings: 64, event: 64 },
+  kotlin: { message: 57, document: 56, telemetry: 56, strings: 56, event: 56 },
 };
 
 const RUN_IDS = {
-  python: '2026-10-05-110943',
-  cpp: '2026-09-21-121230',
-  csharp: '2026-10-02-145902',
-  go: '2026-10-02-144747',
-  java: '2026-09-14-133226',
-  rust: '2026-10-02-150612',
-  javascript: '2026-09-29-183620',
-  kotlin: '2026-10-11-145043',
+  python: '2026-11-26-192240',
+  cpp: '2026-11-26-175843',
+  csharp: '2026-11-26-180413',
+  go: '2026-11-26-175943',
+  java: '2026-11-26-181330',
+  rust: '2026-11-12-161136',
+  javascript: '2026-11-26-180854',
+  kotlin: '2026-11-12-162622',
 };
 
 const MUST_HAVE = {
@@ -143,8 +142,11 @@ test('spliced snapshots keep the five-type matrix and add columnar groups', () =
     assert.equal(payload.run_id, RUN_IDS[lang], lang);
     assert.equal(payload.stats, undefined, `${lang} pack does not repeat the stats`);
     assert.deepEqual(rowCounts(stats.groups), expectedRows, `${lang} stats row counts`);
-    assert.match(stats.columnar_splice.note, /were not recomputed/);
-    assert.ok((stats.columnar_splice.reps || []).every((n) => n >= 50), lang);
+    // Later full-suite publishes keep the columnar groups and drop this footnote.
+    if (stats.columnar_splice) {
+      assert.match(stats.columnar_splice.note, /were not recomputed/);
+      assert.ok((stats.columnar_splice.reps || []).every((n) => n >= 50), lang);
+    }
     const columnarNames = new Set();
     for (const group of stats.groups) {
       if (COLUMNAR.includes(baseType(group.test_data))) columnarNames.add(group.serializer);

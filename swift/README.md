@@ -28,7 +28,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | **SwiftAvroCore** | Schema | lynixliu/SwiftAvroCore | Schemaless binary + JSON schema |
 | **gld-avro** | Schema | leo-gan/gld-avro-swift 0.2.0 | `parseAvsc` outside the timer; `encodeGeneric` / `decodeGeneric` |
 | **gld-ion** | Binary | leo-gan/gld-ion-swift 0.2.0 | Ion 1.0 binary `encode`; `decodeBinary` then field compare |
-| **gld-kiln** | Binary | leo-gan/gld-kiln-swift 0.2.0 | Positional `Writer.encode` / `decode`; a batch is one list |
+| **gld-kiln** | Binary | leo-gan/gld-kiln-swift 0.2.1 | Positional `Writer.encode` / `decode`; a batch is one list |
 | **CapnProto** | Schema | Cap’n Proto C++ | C ABI bridge (`CapnpBridge`) |
 | **dagr-packed** | Schema | local package `DagrGen/` (`dagr build`) | Generated from `schemas/v2/dagr/`; direct builder + lazy reader |
 | **dagr-regular** | Schema | local package `DagrGen/` | `<T>RegularGraph` (vtable nodes): generated arena → reused builder; lazy reader |
